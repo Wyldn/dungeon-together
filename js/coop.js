@@ -30,14 +30,27 @@ export class CoopSession {
       this.floorWaiters.get(d.floor)?.(d);
       this.floorWaiters.delete(d.floor);
     }));
+    this.offs.push(net.sys('roster', () => {
+      this._syncRoster();
+      this.onPartnerUpdate?.();
+    }));
     this.offs.push(net.sys('left', () => {
-      const ids = new Set(this.net.roster.map(p => p.id));
-      for (const id of [...this.partners.keys()]) if (!ids.has(id)) this.partners.delete(id);
+      this._syncRoster();
       // a smaller party may satisfy pending gates now
       for (const tag of [...this.gates.keys()]) this._checkGate(tag);
       this.onPartnerUpdate?.();
       this.onPartnerLeft?.();
     }));
+  }
+
+  _syncRoster() {
+    const ids = new Set(this.net.roster.map(p => p.id));
+    for (const id of [...this.partners.keys()]) if (!ids.has(id)) this.partners.delete(id);
+    for (const p of this.net.roster) {
+      if (p.id !== this.net.you && !this.partners.has(p.id)) {
+        this.partners.set(p.id, { name: p.name, classId: null, status: null, act: 'lobby' });
+      }
+    }
   }
 
   get isHost() { return this.net.isHost; }
