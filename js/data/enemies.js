@@ -83,19 +83,19 @@ export const ENEMIES = {
 export const BOSSES = {
   10: {
     id: 'elderwood', name: 'The Elderwood Guardian', glyph: '🌲', biome: 'forest',
-    hp: 140, atk: 12, def: 6, spd: 5, gold: [60, 90], xp: 60, regen: 0.04,
+    hp: 115, atk: 10, def: 5, spd: 5, gold: [60, 90], xp: 60, regen: 0.03,
     intro: 'The oldest tree in the forest uproots itself. It has judged ten thousand climbers.\nIt has approved of none.',
     taunt: 'YOU BURN LIKE ALL THE REST.',
   },
   20: {
     id: 'lich', name: 'Lich of the Fallen King', glyph: '👑', biome: 'ruins',
-    hp: 200, atk: 17, def: 7, spd: 8, gold: [90, 130], xp: 90, caster: true, sanityHit: 4, summons: 'skeleton',
+    hp: 175, atk: 15, def: 6, spd: 8, gold: [90, 130], xp: 90, caster: true, sanityHit: 3, summons: 'skeleton',
     intro: 'A crown floats above a throne of dust. Beneath it, two cold lights ignite.\n“Kneel. My kingdom needs subjects.”',
     taunt: 'DEATH IS A DOOR. I AM THE KEY.',
   },
   30: {
     id: 'frost_queen', name: 'Queen Vessalia the Unmelting', glyph: '❄️', biome: 'frost',
-    hp: 280, atk: 22, def: 10, spd: 9, gold: [120, 170], xp: 130, freeze: 0.4,
+    hp: 255, atk: 20, def: 9, spd: 9, gold: [120, 170], xp: 130, freeze: 0.35,
     intro: 'The Frost Queen does not rise from her throne. She merely opens her eyes,\nand the temperature of your blood becomes negotiable.',
     taunt: 'WINTER OUTLASTS EVERYTHING. EVEN HOPE.',
   },

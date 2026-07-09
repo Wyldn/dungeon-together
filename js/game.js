@@ -349,6 +349,13 @@ async function nextFloor() {
   if (BOSS_FLOORS.includes(run.floor)) return bossFloor(stage);
   if (run.floor % 5 === 0) return modifierFloor(stage);
 
+  // the floor before a boss is always a place to catch your breath
+  if (BOSS_FLOORS.includes(run.floor + 1)) {
+    const campfire = EVENTS.find(e => e.id === 'campfire');
+    saveRun(run);
+    return renderEventCard(stage, campfire);
+  }
+
   // regular floor: 42% combat encounter, else event card
   const rng = runRng(run);
   if (rng.chance(0.42)) { rng.advance(); saveRun(run); return encounterFloor(stage); }
@@ -524,7 +531,8 @@ async function bossFloor(stage) {
   SFX.bossIntro();
   document.getElementById('go').onclick = async () => {
     SFX.click();
-    const enemies = [buildEnemy(boss, run.floor, biome.floors[0], { boss: true })];
+    // bosses use their hand-tuned stats — no depth scaling
+    const enemies = [buildEnemy(boss, run.floor, run.floor, { boss: true })];
     await fightGroupBoss(stage, enemies, boss);
   };
 }
@@ -545,9 +553,16 @@ async function fightGroupBoss(stage, enemies, boss) {
 
   if (run.floor === LAST_FLOOR) return victoryScreen('win');
 
+  // gate blessing: the tower rewards regicide
+  heal(run, run.maxHp * 0.35);
+  run.mp = run.maxMp;
+
   // boss reward: relic choice
   SFX.victory();
-  const lines = [{ text: `${boss.name} falls. +${gold} gold, +${xp} XP`, cls: 'gold' }];
+  const lines = [
+    { text: `${boss.name} falls. +${gold} gold, +${xp} XP`, cls: 'gold' },
+    { text: 'The gate\'s blessing washes over you — wounds knit, mana returns.', cls: 'good' },
+  ];
   const ups = gainXp(run, xp, runRng(run));
   const rng2 = runRng(run);
   const choices = [rollRelic(rng2, run.relics), rollRelic(rng2, run.relics), rollRelic(rng2, run.relics)]
@@ -555,7 +570,7 @@ async function fightGroupBoss(stage, enemies, boss) {
   rng2.advance();
   saveRun(run);
 
-  await showOutcomePanel(stage, lines, ups, { continueLabel: 'Claim your prize' });
+  await showOutcomePanel(stage, lines, ups, { continueLabel: 'Claim your prize', advance: false });
 
   if (choices.length) {
     await modalCustom((m, close) => {
@@ -786,7 +801,7 @@ async function applyOutcome(stage, ev, o, rng, lines) {
       }
       return ENEMIES[biome.id][0];
     });
-    if (lines.length) await showOutcomePanel(stage, lines, ups, { continueLabel: 'Steel yourself' });
+    if (lines.length) await showOutcomePanel(stage, lines, ups, { continueLabel: 'Steel yourself', advance: false });
     return fightGroup(stage, specs, { text: o.combat.text });
   }
 
@@ -828,7 +843,7 @@ async function offerEquipment(item, lines) {
 }
 
 /* ---------- outcome panel + level-ups ---------- */
-async function showOutcomePanel(stage, lines, ups = [], { continueLabel = 'Ascend to the next floor' } = {}) {
+async function showOutcomePanel(stage, lines, ups = [], { continueLabel = 'Ascend to the next floor', advance = true } = {}) {
   for (const up of ups) await levelUpModal(up);
 
   const panel = el(`
@@ -842,7 +857,7 @@ async function showOutcomePanel(stage, lines, ups = [], { continueLabel = 'Ascen
   stage.appendChild(panel);
   renderHud();
   await new Promise(r => document.getElementById('continue').onclick = () => { SFX.click(); r(); });
-  nextFloor();
+  if (advance) nextFloor();
 }
 
 function nextFloorButton(stage) {

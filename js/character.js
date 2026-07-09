@@ -50,6 +50,7 @@ export function derived(run) {
     dmgTakenMult: gearMult(run, 'dmgTakenMult'),
     bossDmgMult: gearMult(run, 'bossDmgMult'),
     sanityGuard: gearSum(run, 'sanityGuard'),
+    enemyCrit: 4 + gearSum(run, 'enemyCrit'),
     burn: gearSum(run, 'burn'),
     freeze: gearSum(run, 'freeze'),
     manaRegen: 4 + Math.floor(run.stats.wis / 6) + gearSum(run, 'manaRegen'),

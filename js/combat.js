@@ -468,8 +468,7 @@ class Fight {
       }
 
       let dmg = e.atk * 1.35 * (0.85 + this.rng.next() * 0.3) * (this.mod.dmgMult || 1);
-      const enemyCrit = 4; // relic gamblers_die raises it via derived? keep flat
-      if (this.rng.chance(enemyCrit / 100)) dmg *= 1.5;
+      if (this.rng.chance(d.enemyCrit / 100)) dmg *= 1.5;
       dmg -= d.def;
       if (e.caster && e.turnCount % 2 === 0) { dmg *= 1.4; this.log(`${e.name} channels a darker spell!`, 'log-hit'); }
       const shield = this.player.statuses.shield;
@@ -558,7 +557,7 @@ class Fight {
         xp += e.xp;
       }
       gold = Math.round(gold * d.goldMult * d.combatGoldMult * (this.mod.goldMult || 1));
-      xp = Math.round(xp * d.xpMult);
+      xp = Math.round(xp * 1.3 * d.xpMult);
       this.finish('win', { gold, xp });
       return true;
     }
