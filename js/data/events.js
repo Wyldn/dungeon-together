@@ -546,7 +546,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'cowards_gate', biome: 'hell', type: 'story', glyph: '🌀', w: 7, cond: s => s.floor >= 43, once: true,
+    id: 'cowards_gate', biome: 'hell', type: 'story', glyph: '🌀', w: 7, cond: s => s.floor >= 43 && !s.coopMode, once: true,
     title: 'The Coward\'s Gate',
     text: 'A shimmering portal hums in an alcove, showing green fields, a road home, ordinary weather. Above it, carved politely: "NO SHAME. THE TOWER COUNTS SURVIVORS TOO."\n\nThis is real. This is a way OUT — with everything you carry, breathing, alive. The Demon King is eight floors up, and he is not polite.',
     choices: [

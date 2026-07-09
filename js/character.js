@@ -72,7 +72,7 @@ export function skillTier(run) {
 }
 
 export function xpForLevel(level) {
-  return Math.floor(40 * Math.pow(1.32, level - 1));
+  return Math.floor(32 * Math.pow(1.22, level - 1));
 }
 
 // Returns array of level-up records: {level, gains, evolution?}
@@ -93,8 +93,11 @@ export function gainXp(run, amount, rng) {
       run.stats[st]++;
       gains[st] = (gains[st] || 0) + 1;
     }
-    run.maxHp += gains.hp; run.hp = Math.min(run.maxHp, run.hp + gains.hp);
-    run.maxMp += gains.mp; run.mp = Math.min(run.maxMp, run.mp + gains.mp);
+    run.maxHp += gains.hp;
+    run.maxMp += gains.mp;
+    // levelling up mends you: half your (new) maximum returns
+    run.hp = Math.min(run.maxHp, run.hp + Math.round(run.maxHp * 0.5));
+    run.mp = Math.min(run.maxMp, run.mp + Math.round(run.maxMp * 0.5));
     const evolution = cls.evolutions.find(e => e.level === run.level);
     if (evolution) {
       for (const [k, v] of Object.entries(evolution.bonus)) {

@@ -91,7 +91,7 @@ export function newRun(meta, classId, name, rolled, seed = randomSeed()) {
     className: cls.name,
     level: 1,
     xp: 0,
-    xpNext: 40,
+    xpNext: 32,
     skillPoints: 0,
     stats: {
       str: rolled.str + prowess,
@@ -107,6 +107,7 @@ export function newRun(meta, classId, name, rolled, seed = randomSeed()) {
     skills: [...cls.startSkills],
     knownSkills: [...cls.startSkills],
     equipment: { weapon: null, armor: 'cloth_garb', accessory: null },
+    inventory: [], // unequipped gear (item ids)
     relics: [],
     consumables: ['potion_s'],
     weaponBonus: 0, // from Forgotten Forge upgrades
@@ -133,6 +134,8 @@ export function loadRun() {
     const raw = localStorage.getItem(RUN_KEY);
     if (!raw) return null;
     const run = JSON.parse(raw);
+    run.inventory = run.inventory || []; // saves from before the gear bag existed
+    if (run.coopMode) return null; // co-op climbs live and die with the party
     return run.over ? null : run;
   } catch { return null; }
 }
