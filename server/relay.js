@@ -25,6 +25,8 @@ const MIME = {
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.ico': 'image/x-icon',
+  '.ogg': 'audio/ogg',
+  '.wav': 'audio/wav',
 };
 
 const server = http.createServer((req, res) => {
