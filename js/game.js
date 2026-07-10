@@ -20,6 +20,8 @@ import { app, el, toast, modal, modalCustom, bar, rarityClass } from './ui.js';
 import { makeRng, randomSeed } from './rng.js';
 import { defaultServerUrl, isMixedContentBlocked, PUBLIC_GAME_URL } from './net.js';
 import { CoopSession, connectCoop } from './coop.js';
+import { Music } from './music.js';
+import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl } from './art.js';
 
 let meta = loadMeta();
 let run = null;
@@ -27,6 +29,14 @@ let coopS = null; // CoopSession | null — null means solo
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const BOSS_FLOORS = Object.keys(BOSSES).map(Number);
+const BIOME_MUSIC = { forest: 'forest', ruins: 'ruins', frost: 'frost', swamp: 'swamp', hell: 'hell', throne: 'boss' };
+
+// pixel backdrop behind every card-art panel for the current biome
+function applyCardBg(stage) {
+  const elx = stage?.querySelector?.('.card-art');
+  const bg = run && biomeBgUrl(run.biomeId);
+  if (elx && bg) { elx.classList.add('has-bg'); elx.style.backgroundImage = `url('${bg}')`; }
+}
 const LAST_FLOOR = 51;
 
 /* ============================================================
@@ -43,7 +53,7 @@ function titleScreen() {
   app.innerHTML = '';
   app.appendChild(el(`
     <div class="screen title-screen">
-      <div class="title-tower">🗼</div>
+      ${titleBgUrl() ? `<img class="title-vista" src="${titleBgUrl()}" alt="" />` : '<div class="title-tower">🗼</div>'}
       <h1 class="game-title">DUNGEON<br/>TOGETHER</h1>
       <p class="game-subtitle">Fifty-one floors. One throne. Every choice is a card, and the tower always deals first.</p>
       <div class="title-menu">
@@ -58,7 +68,7 @@ function titleScreen() {
         <span>Victories: <b>${meta.wins}</b></span>
         <span>Best Floor: <b>${meta.bestFloor}</b></span>
       </div>
-      <div class="title-footer">A CO-OP ROGUELIKE CARD-CRAWLER · EVERY RUN IS A NEW TOWER</div>
+      <div class="title-footer">A CO-OP ROGUELIKE CARD-CRAWLER · MUSIC BY XDEVIRUCHI · ART: PIXELFLUSH + ORIGINAL</div>
     </div>`));
 
   document.getElementById('btn-new').onclick = () => {
@@ -70,7 +80,8 @@ function titleScreen() {
   if (saved) document.getElementById('btn-continue').onclick = () => { SFX.click(); run = saved; enterFloorScreen(); };
   document.getElementById('btn-coop').onclick = () => { SFX.click(); coopMenu(); };
   document.getElementById('btn-sanctum').onclick = () => { SFX.click(); sanctumScreen(); };
-  document.getElementById('btn-mute').onclick = e => { const m = toggleMute(); e.target.textContent = m ? '🔇 Sound Off' : '🔊 Sound On'; };
+  document.getElementById('btn-mute').onclick = e => { const m = toggleMute(); Music.syncMute(); e.target.textContent = m ? '🔇 Sound Off' : '🔊 Sound On'; };
+  Music.play('title');
 }
 
 /* ============================================================
@@ -620,7 +631,7 @@ function renderHud() {
   const resName = resourceName(run);
   hud.innerHTML = `
     <div class="hud-identity" style="--accent:${CLASSES[run.classId].accent}">
-      <div class="hud-portrait">${ICONS[run.classId] || '🥋'}</div>
+      <div class="hud-portrait">${heroSpriteHtml(run.classId, 46) || ICONS[run.classId] || '🥋'}</div>
       <div>
         <div class="hud-name">${run.name}</div>
         <div class="hud-class">Lv ${run.level} ${run.raceName} ${classTitle(run)}</div>
@@ -726,6 +737,7 @@ async function nextFloor() {
   if (run.floor > meta.bestFloor) { meta.bestFloor = run.floor; saveMeta(meta); }
 
   saveRun(run);
+  Music.play(BIOME_MUSIC[run.biomeId] || 'forest');
 
   const stage = floorChrome();
 
@@ -740,6 +752,7 @@ async function nextFloor() {
           <div class="card-choices"><button class="choice-btn" id="go"><span class="choice-label">Step through the gate</span><span class="choice-hint">⟶</span></button></div>
         </div>
       </div></div>`;
+    applyCardBg(stage);
     SFX.cardDeal();
     await new Promise(r => document.getElementById('go').onclick = () => { SFX.click(); r(); });
   }
@@ -926,6 +939,7 @@ async function encounterFloor(stage, prebuiltGroup = null) {
         </div>
       </div>
     </div></div>`;
+  applyCardBg(stage);
   SFX.cardDeal();
 
   stage.querySelectorAll('[data-act]').forEach(btn => btn.onclick = async () => {
@@ -966,6 +980,7 @@ async function encounterFloor(stage, prebuiltGroup = null) {
 }
 
 async function fightGroup(stage, specs, { text = null, modifier = null, prebuilt = null } = {}) {
+  Music.play('battle');
   const biome = biomeForFloor(run.floor);
   const rng = runRng(run);
   const enemies = prebuilt || specs.map(s => buildEnemy(s, run.floor, biome.floors[0], { hpMult: modifier?.hpMult || 1 }));
@@ -1081,6 +1096,7 @@ async function modifierFloor(stage) {
         </div>
       </div>
     </div></div>`;
+  applyCardBg(stage);
   SFX.cardDeal();
   document.getElementById('go').onclick = () => {
     SFX.click();
@@ -1103,6 +1119,7 @@ async function bossFloor(stage) {
         </div>
       </div>
     </div></div>`;
+  applyCardBg(stage);
   SFX.bossIntro();
   document.getElementById('go').onclick = async () => {
     SFX.click();
@@ -1112,6 +1129,7 @@ async function bossFloor(stage) {
 }
 
 async function fightGroupBoss(stage, enemies, boss) {
+  Music.play('boss');
   const rng = runRng(run);
   const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
     container: stage, run, rng, enemies, introText: `${boss.name}: "${boss.taunt}"`, onHud: renderHud,
@@ -1309,6 +1327,7 @@ async function sharedFightCard(stage, content) {
 }
 
 async function coopFightShared(stage, enemies, { boss = null, mod = null } = {}) {
+  Music.play(boss ? 'boss' : 'battle');
   coopS.broadcastStatus(statusOf(run, 'fighting'), 'fighting');
   const rng = runRng(run);
   const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
@@ -1350,6 +1369,7 @@ async function throneRoomCoop(stage) {
         <div class="card-choices"><div class="modifier-banner" style="border-color:var(--panel-edge);color:var(--ink-dim)">⏳ The party leader answers the King…</div></div>
       </div>
     </div></div>`;
+  applyCardBg(stage);
   SFX.bossIntro();
   const handleThrone = async d => {
     if (d.ending === 'secret') return secretEnding(stage);
@@ -1384,8 +1404,12 @@ function reqMet(req) {
 
 const TYPE_LABEL = { story: 'STORY', risk: 'RISK', blessing: 'BLESSING', treasure: 'TREASURE', rest: 'RESPITE', shop: 'MERCHANT' };
 
+const MINIGAME_EVENTS = ['gambler', 'demon_gambler', 'wheel_of_the_tower', 'sparring_ring'];
+
 function renderEventCard(stage, ev, { originIntro = false } = {}) {
   if (ev.shop) return shopScreen(stage, ev);
+  if (ev.type === 'rest') Music.play('rest');
+  else if (MINIGAME_EVENTS.includes(ev.id)) Music.play('minigame');
 
   stage.innerHTML = `
     <div class="card-stage"><div class="panel event-card">
@@ -1398,6 +1422,7 @@ function renderEventCard(stage, ev, { originIntro = false } = {}) {
         <div class="card-choices" id="choices"></div>
       </div>
     </div></div>`;
+  applyCardBg(stage);
   SFX.cardDeal();
 
   const box = document.getElementById('choices');
@@ -1663,6 +1688,7 @@ function gearCard(item, label) {
   if (!item) return `<div class="gear-card empty"><div class="gc-label">${label}</div><div class="gc-name" style="color:var(--ink-faint)">— nothing —</div></div>`;
   return `<div class="gear-card">
     <div class="gc-label">${label}</div>
+    ${itemIconHtml(item.id, 44)}
     <div class="gc-name ${rarityClass(item.rarity)}">${item.name}</div>
     <div class="gc-rarity tag ${rarityClass(item.rarity)}">${item.rarity} ${item.slot}${item.wtype ? ' · ' + item.wtype : ''}</div>
     <div class="gc-desc">${item.desc}</div>
@@ -1732,6 +1758,7 @@ async function showOutcomePanel(stage, lines, ups = [], { continueLabel = 'Ascen
   stage.innerHTML = '';
   stage.appendChild(panel);
   renderHud();
+  Music.play(BIOME_MUSIC[run.biomeId] || 'forest');
   await new Promise(r => document.getElementById('continue').onclick = () => { SFX.click(); r(); });
   if (advance) {
     if (coopS) await coopAdvance(document.getElementById('continue'));
@@ -1902,6 +1929,7 @@ async function swapSkillModal(newSkill) {
    SHOP
    ============================================================ */
 async function shopScreen(stage, ev) {
+  Music.play('rest');
   const rng = runRng(run);
   const tier = biomeTier();
   const stock = [];
@@ -1935,6 +1963,7 @@ async function shopScreen(stage, ev) {
           <div class="shop-list">
             ${stock.map((s, i) => `
               <div class="shop-item">
+                ${itemIconHtml(s.item.id, 32)}
                 <div class="si-info"><div class="si-name ${rarityClass(s.item.rarity)}">${s.item.name}</div><div class="si-desc">${s.item.desc}</div></div>
                 <span class="si-price">🪙 ${price(s.price)}</span>
                 <button class="btn small ${run.gold >= price(s.price) ? 'primary' : ''}" data-i="${i}" ${run.gold < price(s.price) ? 'disabled' : ''}>Buy</button>
@@ -2034,7 +2063,7 @@ function characterSheet() {
             ${EQUIP_SLOTS.map(slot => {
               const it = eq[slot] ? itemById(eq[slot]) : null;
               const label = slot.startsWith('accessory') ? 'ring ' + slot.slice(-1) : slot;
-              return `<div class="inv-item"><div><div class="item-name ${it ? rarityClass(it.rarity) : ''}">${it ? it.name : `<span style="color:var(--ink-faint)">— empty —</span>`}</div>
+              return `<div class="inv-item">${it ? itemIconHtml(it.id, 30) : ''}<div><div class="item-name ${it ? rarityClass(it.rarity) : ''}">${it ? it.name : `<span style="color:var(--ink-faint)">— empty —</span>`}</div>
                 ${it ? `<div class="item-desc">${it.desc}</div>` : ''}</div>
                 <span class="tag">${label}</span></div>`;
             }).join('')}
@@ -2051,7 +2080,7 @@ function characterSheet() {
             <h4 style="margin-top:14px">Pack</h4>
             ${run.inventory.length ? run.inventory.map((id, i) => {
               const it = itemById(id);
-              return `<div class="inv-item"><div><div class="item-name ${rarityClass(it.rarity)}">${it.name}</div><div class="item-desc">${it.desc}</div></div>
+              return `<div class="inv-item">${itemIconHtml(it.id, 30)}<div><div class="item-name ${rarityClass(it.rarity)}">${it.name}</div><div class="item-desc">${it.desc}</div></div>
                 <div style="display:flex;gap:6px">
                   <button class="btn small" data-equip="${i}">Equip</button>
                   <button class="btn small ghost" data-sellinv="${i}">Sell ${Math.round(it.price * 0.5)}g</button>
@@ -2061,7 +2090,7 @@ function characterSheet() {
             ${run.consumables.length ? [...new Set(run.consumables)].map(id => {
               const c = itemById(id);
               const n = run.consumables.filter(x => x === id).length;
-              return `<div class="inv-item"><div><div class="item-name">${c.name} ×${n}</div><div class="item-desc">${c.desc}</div></div>
+              return `<div class="inv-item">${itemIconHtml(c.id, 28)}<div><div class="item-name">${c.name} ×${n}</div><div class="item-desc">${c.desc}</div></div>
                 <button class="btn small" data-use="${id}">Use</button></div>`;
             }).join('') : '<div style="color:var(--ink-faint);font-size:14px">Empty pockets.</div>'}
             <h4 style="margin-top:14px">Relics</h4>
@@ -2143,6 +2172,7 @@ async function throneRoom(stage) {
         <div class="card-choices" id="choices"></div>
       </div>
     </div></div>`;
+  applyCardBg(stage);
   SFX.bossIntro();
 
   const box = document.getElementById('choices');
@@ -2191,6 +2221,7 @@ async function throneRoom(stage) {
 }
 
 async function secretEnding(stage) {
+  Music.play('victory');
   teardownCoop();
   unlock('secret');
   meta.wins++;
@@ -2239,6 +2270,7 @@ function shardsFor(outcome) {
 }
 
 async function victoryScreen(type) {
+  Music.play('victory');
   teardownCoop();
   const shards = shardsFor(type === 'win' ? 'win' : 'escape');
   meta.shards += shards;
@@ -2289,6 +2321,7 @@ const EPITAPHS = {
 
 async function endRun(cause) {
   teardownCoop();
+  Music.stop(1.2);
   SFX.death();
   const shards = shardsFor(cause);
   meta.shards += shards;

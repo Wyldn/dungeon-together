@@ -13,6 +13,7 @@ import { CONFIG } from './data/config.js';
 import { derived, gearHas, heal, restoreMana, usableSkillIds, resourceName, changeFame } from './character.js';
 import { initiativeOrder, addCharge, canAfford, pickEnemySpecial, enemyTelegraph, applyGuard } from './systems.js';
 import { ICONS } from './icons.js';
+import { enemySpriteHtml, heroSpriteHtml, biomeBgUrl } from './art.js';
 import { SFX } from './audio.js';
 import { screenShake } from './fx.js';
 
@@ -183,6 +184,9 @@ class Fight {
         <div class="action-bar"></div>
         <div class="combat-utility"></div>
       </div>`;
+    const bf = this.el.querySelector('.battlefield');
+    const bg = biomeBgUrl(this.run.biomeId);
+    if (bf && bg) { bf.classList.add('has-bg'); bf.style.backgroundImage = `url('${bg}')`; }
     this.enemyRow = this.el.querySelector('.enemy-row');
     this.playerRow = this.el.querySelector('.player-row');
     this.turnOrderEl = this.el.querySelector('#turn-order');
@@ -234,9 +238,10 @@ class Fight {
       const tel = e.hp > 0 ? enemyTelegraph(e) : null;
       const div = document.createElement('div');
       div.className = `combatant enemy ${e.elite ? 'elite' : ''} ${e.boss ? 'boss' : ''} ${e.hp <= 0 ? 'dead' : 'targetable'} ${i === this.target ? 'target' : ''}`;
+      const art = enemySpriteHtml(e.id, { boss: e.boss, elite: e.elite });
       div.innerHTML = `
         ${tel ? `<div class="telegraph ${tel.ready ? 'ready' : ''}">${tel.ready ? '⚠ ' + tel.name + '!' : '… ' + tel.desc}</div>` : ''}
-        <div class="fighter-sprite" id="sprite-${e.uid}">${e.glyph}</div>
+        <div class="fighter-sprite" id="sprite-${e.uid}">${art || e.glyph}</div>
         <div class="fighter-name">${e.name}</div>
         <div class="fighter-hp"><div class="bar"><div class="bar-fill hp" style="width:${clamp(e.hp / e.maxHp * 100, 0, 100)}%"></div></div></div>
         ${e.specials ? `<div class="fighter-charge">${this.chargePips(e.charge || 0, CONFIG.charge.max, 'enemy')}</div>` : ''}
@@ -254,7 +259,7 @@ class Fight {
     const s = this.player.statuses;
     let html = `
       <div class="combatant ${this.run.down ? 'downed' : ''} ${actingKey === 'player' ? 'acting' : ''}">
-        <div class="fighter-sprite" id="sprite-player">${ICONS[this.run.classId]}</div>
+        <div class="fighter-sprite" id="sprite-player">${heroSpriteHtml(this.run.classId) || ICONS[this.run.classId]}</div>
         <div class="fighter-name">${this.run.name}${this.run.down ? ' (down)' : ''}</div>
         <div class="fighter-statuses">
           ${this.player.guarding ? '<span class="status-pip guard-pip">🛡 GUARD</span>' : ''}
@@ -264,7 +269,7 @@ class Fight {
     for (const [id, a] of this.allies) {
       html += `
         <div class="combatant ${a.down ? 'downed' : ''} ${actingKey === 'ally-' + id ? 'acting' : ''}">
-          <div class="fighter-sprite" id="sprite-${id}">${ICONS[a.classId] || ICONS.warrior}</div>
+          <div class="fighter-sprite" id="sprite-${id}">${heroSpriteHtml(a.classId) || ICONS[a.classId] || ICONS.warrior}</div>
           <div class="fighter-name">${a.name}${a.down ? ' (down)' : ''}</div>
           <div class="ally-hp"><div class="bar"><div class="bar-fill hp" style="width:${clamp(a.hp / a.maxHp * 100, 0, 100)}%"></div></div></div>
         </div>`;
