@@ -4,6 +4,7 @@
 // scripted playtest bot; everything testable headlessly lives here.
 
 import { CLASSES, SUBCLASSES, subclassOptions } from '../js/data/classes.js';
+import { ACHIEVEMENTS } from '../js/state.js';
 import { RACES } from '../js/data/races.js';
 import { ORIGINS } from '../js/data/origins.js';
 import { SKILLS } from '../js/data/skills.js';
@@ -14,6 +15,8 @@ import { CONFIG } from '../js/data/config.js';
 import { RANK_ORDER, rankFor, rankAtLeast, appraisalRange, rollGrowthRank, growthMult } from '../js/data/ranks.js';
 import { rollInitiative, initiativeOrder, addCharge, canAfford, pickEnemySpecial, enemyTelegraph, applyGuard } from '../js/systems.js';
 import { makeRng } from '../js/rng.js';
+
+globalThis.localStorage = globalThis.localStorage || { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 
 let pass = 0, fail = 0;
 function t(name, cond) {
@@ -49,7 +52,8 @@ console.log('— growth inverse correlation —');
 }
 
 console.log('— classes & subclasses (handoff §21) —');
-t('six starting classes', Object.keys(CLASSES).length === 6);
+t('nine classes (6 base + Warlock + Bard + hidden Necromancer)', Object.keys(CLASSES).length === 9);
+t('exactly one hidden class with an unlock condition', Object.values(CLASSES).filter(c => c.hidden).length === 1 && typeof Object.values(CLASSES).find(c => c.hidden).unlockCond === 'function');
 for (const cls of Object.values(CLASSES)) {
   const immediates = Object.values(SUBCLASSES).filter(s => s.parent === cls.id && s.tier === 1 && !s.secret);
   const secrets = Object.values(SUBCLASSES).filter(s => s.parent === cls.id && s.secret);
@@ -61,6 +65,10 @@ for (const cls of Object.values(CLASSES)) {
   }
   t(`${cls.id}: class resource defined`, !!cls.resource?.name);
   t(`${cls.id}: weapon types defined`, Array.isArray(cls.weapons) && cls.weapons.length > 0);
+  t(`${cls.id}: kit is 3 fixed skills`, cls.startSkills.length === 3);
+  t(`${cls.id}: no AOE in the fixed kit`, cls.startSkills.every(id => SKILLS[id].target !== 'all'));
+  t(`${cls.id}: random pool valid`, !!SKILLS[cls.pool?.common] && !!SKILLS[cls.pool?.rare]);
+  t(`${cls.id}: pool rare is the class AOE`, cls.pool?.rare === cls.aoeSkill && SKILLS[cls.aoeSkill]?.target === 'all');
   t(`${cls.id}: starting weapon exists & compatible`, (() => {
     const w = itemById(cls.startWeapon);
     return w && w.slot === 'weapon' && cls.weapons.includes(w.wtype);
@@ -83,6 +91,7 @@ for (const r of Object.values(RACES)) {
 
 console.log('— origins (handoff §23) —');
 t('several origins', ORIGINS.length >= 5);
+t('new achievements present', ['untouchable','overcharged','guardian','silver_tongue','assessed','party_of_four','hoarder'].every(id => ACHIEVEMENTS.some(a => a.id === id)));
 for (const o of ORIGINS) t(`${o.id}: playable (has choices)`, Array.isArray(o.choices) && o.choices.length >= 2);
 
 console.log('— skills & Battle Charge (handoff §11) —');
@@ -97,7 +106,7 @@ t('charge floors at zero', addCharge(1, -5) === 0);
 t('canAfford checks both pools', canAfford({ cost: 10, charge: 3 }, 10, 3) && !canAfford({ cost: 10, charge: 3 }, 9, 3) && !canAfford({ cost: 10, charge: 3 }, 10, 2));
 
 console.log('— Guard (handoff §10) —');
-t('guard blocks 70%', applyGuard(100, true) === 30);
+t('guard blocks 30%', applyGuard(100, true) === 70);
 t('guard-piercing ignores guard', applyGuard(100, true, true) === 100);
 t('no guard, no reduction', applyGuard(100, false) === 100);
 
@@ -191,10 +200,31 @@ console.log('— bribery (handoff §25) —');
   t('bandits can be bribed', !!all.find(e => e.id === 'bandit').intelligent);
 }
 
+console.log('— combat pacing (patch) —');
+{
+  // a level-1 basic attack must NOT one-shot a basic enemy (2-3 hits minimum)
+  const C = CONFIG.combat;
+  const strongStart = 14; // near-max level-1 governing stat
+  const maxHit = (strongStart * C.playerStatWeight + 2 * C.playerAtkWeight + 1 * C.playerLevelWeight + C.playerFlat) * 1.15; // 100-power skill, max variance
+  const weakestEnemy = Math.min(...Object.values(ENEMIES).flat().map(e => e.hp));
+  t('no one-shots with free attacks', maxHit < weakestEnemy);
+  t('basic enemies take 2-3 basic hits', weakestEnemy / (maxHit * 0.9) >= 1.3);
+  t('lifesteal capped at a sliver', C.lifestealCapPct <= 0.05 && C.lifestealCapPct >= 0.01);
+  t('victory healing is lean', CONFIG.recovery.victoryHealPct <= 0.06 && CONFIG.recovery.floorHealPct <= 0.04);
+}
+
+console.log('— kits & AOE access (patch) —');
+{
+  const { EVENTS: EVS } = await import('../js/data/events.js');
+  t('an academy event teaches the AOE', EVS.some(e => JSON.stringify(e.choices).includes('learnAoe')));
+  const { ORIGINS: ORS } = await import('../js/data/origins.js');
+  t('academy origins can teach the AOE', JSON.stringify(ORS).includes('learnAoe'));
+}
+
 console.log('— config sanity —');
 t('level-up restores 50% of missing', CONFIG.recovery.levelUpMissingPct === 0.5);
 t('death respawn at 25%', CONFIG.death.respawnHpPct === 0.25 && CONFIG.death.respawnResourcePct === 0.25);
-t('guard blocks 70% (config)', CONFIG.guard.blockPct === 0.7);
+t('guard blocks 30% (config)', CONFIG.guard.blockPct === 0.3);
 t('charge display name configurable', typeof CONFIG.charge.displayName === 'string');
 t('modifiers have no sanity mechanics', !JSON.stringify(MODIFIERS).includes('sanity'));
 t('relics have no sanity mechanics', !JSON.stringify(RELICS).includes('anity'));

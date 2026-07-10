@@ -4,8 +4,22 @@
 export const CONFIG = {
   /* ---- combat: Guard ---- */
   guard: {
-    blockPct: 0.70,        // damage blocked while guarding
+    blockPct: 0.30,        // damage blocked while guarding
     chargeGain: 1,         // bonus Battle Charge for guarding
+  },
+
+  /* ---- combat: damage model ----
+     Tuned so a basic attack takes 2-3 swings to fell a basic enemy, and an
+     unprepared player loses roughly 40% of even-floor fights. Gear, training,
+     and events are how you bend those odds. */
+  combat: {
+    playerStatWeight: 0.9,   // damage per point of governing stat
+    playerAtkWeight: 1.5,    // damage per point of weapon atk
+    playerLevelWeight: 0.8,
+    playerFlat: 1,
+    enemyAtkMult: 1.5,       // enemy atk → damage multiplier
+    lifestealCapPct: 0.04,   // max heal per hit from any single lifesteal source
+    hexTakenMult: 1.25,      // hexed targets take +25% damage
   },
 
   /* ---- combat: Battle Charge ---- */
@@ -26,13 +40,13 @@ export const CONFIG = {
     beginnerPlayerBonus: 3,
   },
 
-  /* ---- recovery ---- */
+  /* ---- recovery (lean: the tower is not a spa) ---- */
   recovery: {
     levelUpMissingPct: 0.5,      // restore 50% of MISSING hp/resource on level up
-    victoryHealPct: 0.15,        // % max hp after any combat win
-    bossVictoryHealPct: 0.35,    // extra gate blessing after bosses
-    floorHealPct: 0.08,          // catching your breath between floors
-    floorManaPct: 0.15,
+    victoryHealPct: 0.05,        // % max hp after any combat win
+    bossVictoryHealPct: 0.2,     // gate blessing after bosses
+    floorHealPct: 0.04,          // catching your breath between floors
+    floorManaPct: 0.12,
   },
 
   /* ---- multiplayer death ---- */
@@ -45,9 +59,10 @@ export const CONFIG = {
 
   /* ---- party-size scaling (independent from floor scaling) ---- */
   partyScaling: {
-    hpMultPerExtra: 0.35,     // modest hp bump per extra player
-    extraEnemyAt: 2,          // party size that adds +1 enemy
-    eliteChanceBonus: 0.1,    // per extra player
+    hpMultPerExtra: 0.3,       // modest hp bump per extra player
+    extraEnemyAt: 2,           // party size that guarantees +1 enemy
+    moreEnemyChance: 0.35,     // per member beyond 2: chance of yet another enemy
+    bossMinionAt: 3,           // parties this large face bosses with an escort
   },
 
   /* ---- character generation ---- */

@@ -71,4 +71,25 @@ export const SFX = {
   freeze: () => tone({ freq: 1800, type: 'sine', decay: 0.3, peak: 0.06, slideTo: 2400 }),
   fire: () => noise({ decay: 0.3, freq: 900, peak: 0.1 }),
   unlock: () => [660, 880].forEach((f, i) => tone({ freq: f, type: 'square', decay: 0.12, peak: 0.05, delay: i * 0.08 })),
+  yourTurn: () => [523, 784].forEach((f, i) => tone({ freq: f, type: 'triangle', decay: 0.14, peak: 0.07, delay: i * 0.07 })),
+
+  // per-skill-type sounds: every class's techniques get their own voice
+  skill: type => (SKILL_SFX[type] || SKILL_SFX.blunt)(),
+};
+
+const SKILL_SFX = {
+  slash: () => { noise({ decay: 0.14, freq: 2600, peak: 0.1 }); tone({ freq: 700, type: 'sawtooth', decay: 0.08, peak: 0.05, slideTo: 220 }); },
+  pierce: () => { noise({ decay: 0.08, freq: 3600, peak: 0.08 }); tone({ freq: 1500, type: 'sine', decay: 0.1, peak: 0.06, slideTo: 500 }); },
+  blunt: () => { tone({ freq: 120, type: 'sine', decay: 0.16, peak: 0.14, slideTo: 60 }); noise({ decay: 0.1, freq: 500, peak: 0.1 }); },
+  arcane: () => { tone({ freq: 880, type: 'triangle', decay: 0.2, peak: 0.08, slideTo: 1320 }); tone({ freq: 1108, type: 'sine', decay: 0.24, peak: 0.05, delay: 0.05 }); },
+  fire: () => { noise({ decay: 0.3, freq: 800, peak: 0.11 }); tone({ freq: 200, type: 'sawtooth', decay: 0.2, peak: 0.06, slideTo: 90 }); },
+  ice: () => { tone({ freq: 2100, type: 'sine', decay: 0.22, peak: 0.07, slideTo: 2800 }); noise({ decay: 0.12, freq: 5000, peak: 0.04 }); },
+  poison: () => { noise({ decay: 0.28, freq: 350, peak: 0.07 }); tone({ freq: 300, type: 'sine', decay: 0.3, peak: 0.05, slideTo: 150 }); },
+  holy: () => [659, 831, 988].forEach((f, i) => tone({ freq: f, type: 'triangle', decay: 0.3, peak: 0.06, delay: i * 0.05 })),
+  shadow: () => { tone({ freq: 160, type: 'sawtooth', decay: 0.35, peak: 0.08, slideTo: 55 }); tone({ freq: 466, type: 'sine', decay: 0.3, peak: 0.04, slideTo: 233, delay: 0.05 }); },
+  wind: () => noise({ decay: 0.3, freq: 1800, peak: 0.08 }),
+  thunder: () => { noise({ decay: 0.22, freq: 250, peak: 0.14 }); tone({ freq: 1760, type: 'square', decay: 0.06, peak: 0.05 }); },
+  heal: () => [523, 659, 784].forEach((f, i) => tone({ freq: f, type: 'sine', decay: 0.22, peak: 0.07, delay: i * 0.06 })),
+  buff: () => tone({ freq: 440, type: 'triangle', decay: 0.25, peak: 0.07, slideTo: 660 }),
+  luck: () => [988, 1319, 1568].forEach((f, i) => tone({ freq: f, type: 'triangle', decay: 0.12, peak: 0.05, delay: i * 0.04 })),
 };

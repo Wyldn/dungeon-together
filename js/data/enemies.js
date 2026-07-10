@@ -46,17 +46,17 @@ export function biomeForFloor(floor) {
 
 export const ENEMIES = {
   forest: [
-    { id: 'wolf', name: 'Dire Wolf', glyph: '🐺', hp: 21, atk: 6, def: 1, spd: 8, gold: [6, 14], xp: 10, pack: true,
+    { id: 'wolf', name: 'Dire Wolf', glyph: '🐺', hp: 28, atk: 6, def: 1, spd: 8, gold: [6, 14], xp: 10, pack: true,
       specials: [{ at: 4, name: 'Savage Pounce', mult: 1.6, desc: 'lunges for the throat' }] },
-    { id: 'sprite', name: 'Feral Sprite', glyph: '🧚', hp: 15, atk: 5, def: 0, spd: 11, gold: [8, 16], xp: 9, caster: true, intelligent: true,
+    { id: 'sprite', name: 'Feral Sprite', glyph: '🧚', hp: 24, atk: 5, def: 0, spd: 11, gold: [8, 16], xp: 9, caster: true, intelligent: true,
       specials: [{ at: 3, name: 'Glimmer Burst', mult: 1.5, desc: 'gathers stolen light' }] },
-    { id: 'boar', name: 'Ironback Boar', glyph: '🐗', hp: 32, atk: 7, def: 2, spd: 4, gold: [7, 15], xp: 12,
+    { id: 'boar', name: 'Ironback Boar', glyph: '🐗', hp: 38, atk: 7, def: 2, spd: 4, gold: [7, 15], xp: 12,
       specials: [{ at: 5, name: 'Full Gore', mult: 1.8, desc: 'paws the ground' }] },
-    { id: 'bandit', name: 'Forest Bandit', glyph: '🗡️', hp: 25, atk: 7, def: 1, spd: 7, gold: [14, 28], xp: 12, pack: true, intelligent: true,
+    { id: 'bandit', name: 'Forest Bandit', glyph: '🗡️', hp: 31, atk: 7, def: 1, spd: 7, gold: [14, 28], xp: 12, pack: true, intelligent: true,
       specials: [{ at: 4, name: 'Dirty Trick', mult: 1.4, stun: 0.4, desc: 'palms something glinting' }] },
-    { id: 'treant', name: 'Young Treant', glyph: '🌳', hp: 45, atk: 8, def: 4, spd: 2, gold: [10, 20], xp: 16, elite: true,
+    { id: 'treant', name: 'Young Treant', glyph: '🌳', hp: 52, atk: 8, def: 4, spd: 2, gold: [10, 20], xp: 16, elite: true,
       specials: [{ at: 4, name: 'Rootquake', mult: 1.3, aoe: true, desc: 'roots coil beneath everyone' }] },
-    { id: 'spider', name: 'Widow Spider', glyph: '🕷️', hp: 19, atk: 6, def: 1, spd: 9, gold: [6, 13], xp: 10, poison: 0.4,
+    { id: 'spider', name: 'Widow Spider', glyph: '🕷️', hp: 26, atk: 6, def: 1, spd: 9, gold: [6, 13], xp: 10, poison: 0.4,
       specials: [{ at: 4, name: 'Venom Flood', mult: 1.3, poisonSure: true, desc: 'fangs drip freely' }] },
   ],
   ruins: [

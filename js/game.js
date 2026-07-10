@@ -175,10 +175,20 @@ function creationFlow(coopContext = null) {
     }
     if (step === 1) {
       sub.textContent = 'Six callings. What you\'re truly made of, you\'ll discover on the way up.';
-      body.innerHTML = '<div class="class-grid" id="classes"></div>';
+            body.innerHTML = '<div class="class-grid" id="classes"></div>';
       for (const cls of Object.values(CLASSES)) {
-        const card = el(`<div class="panel class-card ${pick.classId === cls.id ? 'selected' : ''}" style="--accent:${cls.accent}">
-          <div class="class-icon">${ICONS[cls.id] || `<div style="font-size:48px">${cls.id === 'priest' ? '✝️' : '🥋'}</div>`}</div>
+        const locked = cls.hidden && !(cls.unlockCond?.(meta));
+        if (locked) {
+          body.querySelector('#classes').appendChild(el(`<div class="panel class-card locked-class">
+            <div style="font-size:48px;margin-bottom:6px;filter:grayscale(1);opacity:.5">🔒</div>
+            <h3 style="color:var(--ink-faint)">? ? ?</h3>
+            <div class="class-epithet">${cls.unlockHint || 'The tower has not shown you this calling yet.'}</div>
+          </div>`));
+          continue;
+        }
+        const card = el(`<div class="panel class-card ${pick.classId === cls.id ? 'selected' : ''} ${cls.hidden ? 'secret-class' : ''}" style="--accent:${cls.accent}">
+          ${cls.hidden ? '<span class="tag" style="border-color:var(--gold);color:var(--gold-bright);position:absolute;top:8px;right:8px">unearthed</span>' : ''}
+          <div class="class-icon">${ICONS[cls.id]}</div>
           <h3>${cls.name}</h3>
           <div class="class-epithet">${cls.epithet}</div>
           <div class="class-evo">Resource: ${cls.resource.name} · Weapons: ${cls.weapons.join(', ')}</div>
@@ -383,16 +393,18 @@ function coopLobby(myName) {
   let decisionMode = 'majority'; // host-controlled (handoff §3)
   const lobbyState = new Map();
 
+  // Remote updates touch ONLY the roster/mode sections — never the whole
+  // screen, so nothing jumps while you are picking (patch).
   const offLobby = coopS.net.on('lobby', (d, from) => {
     lobbyState.set(from, d);
     const p = coopS.partners.get(from);
     if (p) p.classId = d.classId;
-    render();
+    updateRoster();
   });
-  const offMode = coopS.net.on('mode', d => { decisionMode = d.mode; render(); });
+  const offMode = coopS.net.on('mode', d => { decisionMode = d.mode; updateModeButtons(); });
   const offStart = coopS.net.on('start', d => beginCoopRun(d.mode));
-  coopS.onPartnerUpdate = () => render();
-  coopS.onPartnerLeft = () => render();
+  coopS.onPartnerUpdate = () => updateRoster();
+  coopS.onPartnerLeft = () => updateRoster();
 
   function sendLobby() {
     coopS.net.send({ k: 'lobby', classId: myPick.classId, raceId: myPick.raceId, ready: myReady, name: myName });
@@ -412,6 +424,7 @@ function coopLobby(myName) {
     coopS.decisionMode = mode || decisionMode;
     run = newRun(meta, { classId: myPick.classId, raceId: myPick.raceId, originId: myPick.originId, name: myName, seed: coopS.seed });
     run.coopMode = true;
+    if (coopS.partySize >= 4) unlock('party_of_four');
     meta.totalRuns++;
     saveMeta(meta);
     SFX.unlock();
@@ -425,9 +438,89 @@ function coopLobby(myName) {
     gateEntry(() => beginRun());
   }
 
+  // proper grid pickers instead of click-to-cycle (patch)
+  function openPicker(kind) {
+    if (myReady) return;
+    const defs = {
+      race: { title: 'Bloodline', items: Object.values(RACES).map(r => ({ id: r.id, glyph: r.glyph, name: r.name, desc: r.hint })) },
+      class: {
+        title: 'Calling',
+        items: Object.values(CLASSES)
+          .filter(c => !c.hidden || c.unlockCond?.(meta))
+          .map(c => ({ id: c.id, glyph: null, icon: ICONS[c.id], accent: c.accent, name: c.name, desc: `${c.resource.name} · ${c.weapons.join(', ')}` })),
+      },
+      origin: { title: 'Origin', items: ORIGINS.map(o => ({ id: o.id, glyph: o.glyph, name: o.name, desc: o.blurb })) },
+    };
+    const def = defs[kind];
+    modalCustom((m, close) => {
+      m.innerHTML = `<h3>Choose your ${def.title}</h3>
+        <div class="picker-grid">${def.items.map(it => `
+          <button class="picker-card" data-id="${it.id}" ${it.accent ? `style="--accent:${it.accent}"` : ''}>
+            <div class="pk-glyph">${it.icon || `<span style="font-size:34px">${it.glyph}</span>`}</div>
+            <div class="pk-name">${it.name}</div>
+            <div class="pk-desc">${it.desc}</div>
+          </button>`).join('')}
+        </div>`;
+      m.querySelectorAll('.picker-card').forEach(b => b.onclick = () => {
+        myPick[kind + 'Id'] = b.dataset.id;
+        SFX.click();
+        close();
+        updatePickTiles();
+        sendLobby();
+      });
+    });
+  }
+
+  function pickTilesHtml() {
+    return `
+      <div class="panel pick-tile" id="pick-race"><div style="font-size:32px">${RACES[myPick.raceId].glyph}</div><b>${RACES[myPick.raceId].name}</b><div class="pt-hint">change race</div></div>
+      <div class="panel pick-tile" id="pick-class"><div class="class-icon" style="width:40px;height:40px;margin:0 auto;color:${CLASSES[myPick.classId].accent}">${ICONS[myPick.classId]}</div><b>${CLASSES[myPick.classId].name}</b><div class="pt-hint">change class</div></div>
+      <div class="panel pick-tile" id="pick-origin"><div style="font-size:32px">${originById(myPick.originId).glyph}</div><b style="font-size:13px">${originById(myPick.originId).name}</b><div class="pt-hint">change origin</div></div>`;
+  }
+
+  function updatePickTiles() {
+    const row = document.getElementById('pick-row');
+    if (!row) return;
+    row.innerHTML = pickTilesHtml();
+    bindPickTiles();
+  }
+
+  function bindPickTiles() {
+    document.getElementById('pick-race').onclick = () => openPicker('race');
+    document.getElementById('pick-class').onclick = () => openPicker('class');
+    document.getElementById('pick-origin').onclick = () => openPicker('origin');
+  }
+
+  function rosterHtml() {
+    const partners = [...coopS.partners.entries()];
+    const rows = [
+      { name: myName + ' (you)', classId: myPick.classId, raceId: myPick.raceId, ready: myReady, host: coopS.isHost },
+      ...partners.map(([id, p]) => ({ name: p.name, classId: lobbyState.get(id)?.classId, raceId: lobbyState.get(id)?.raceId, ready: lobbyState.get(id)?.ready, host: coopS.net.roster.find(r => r.id === id)?.host })),
+    ];
+    return rows.map(r => `
+      <div class="inv-item">
+        <div class="item-name">${r.host ? '👑 ' : ''}${r.name}</div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span class="tag">${r.raceId ? RACES[r.raceId]?.name || '' : ''} ${r.classId ? CLASSES[r.classId].name : 'choosing...'}</span>
+          <span class="tag" style="${r.ready ? 'color:var(--luck);border-color:var(--luck)' : ''}">${r.ready ? 'READY' : 'not ready'}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  function updateRoster() {
+    const rEl = document.getElementById('roster');
+    if (rEl) rEl.innerHTML = rosterHtml();
+    const go = document.getElementById('btn-go');
+    if (go) go.disabled = !everyoneReady();
+  }
+
+  function updateModeButtons() {
+    document.querySelectorAll('[data-mode]').forEach(b =>
+      b.classList.toggle('primary', b.dataset.mode === decisionMode));
+  }
+
   function render() {
     app.innerHTML = '';
-    const partners = [...coopS.partners.entries()];
     const scr = el(`<div class="screen">
       <div class="select-header">
         <h2>The Party Gathers</h2>
@@ -441,13 +534,9 @@ function coopLobby(myName) {
           <button class="btn small ${decisionMode === 'first' ? 'primary' : ''}" data-mode="first" ${coopS.isHost ? '' : 'disabled'}>⚡ First Pick — fastest hand decides</button>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px" id="pick-row">
-        <div class="panel" style="padding:12px;text-align:center;cursor:pointer" id="pick-race"><div style="font-size:32px">${RACES[myPick.raceId].glyph}</div><b>${RACES[myPick.raceId].name}</b><div style="font-size:12px;color:var(--ink-dim)">change race</div></div>
-        <div class="panel" style="padding:12px;text-align:center;cursor:pointer" id="pick-class"><div class="class-icon" style="width:40px;height:40px;margin:0 auto;color:${CLASSES[myPick.classId].accent}">${ICONS[myPick.classId] || '🥋'}</div><b>${CLASSES[myPick.classId].name}</b><div style="font-size:12px;color:var(--ink-dim)">change class</div></div>
-        <div class="panel" style="padding:12px;text-align:center;cursor:pointer" id="pick-origin"><div style="font-size:32px">${originById(myPick.originId).glyph}</div><b style="font-size:13px">${originById(myPick.originId).name}</b><div style="font-size:12px;color:var(--ink-dim)">change origin</div></div>
-      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px" id="pick-row">${pickTilesHtml()}</div>
       <div class="panel" style="padding:18px 22px">
-        <div id="roster"></div>
+        <div id="roster">${rosterHtml()}</div>
         <div class="divider"></div>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
           <button class="btn ${myReady ? '' : 'primary'}" id="btn-ready">${myReady ? '✔ Ready (click to unready)' : 'Ready Up'}</button>
@@ -462,36 +551,18 @@ function coopLobby(myName) {
       if (!coopS.isHost) return;
       decisionMode = b.dataset.mode;
       coopS.net.send({ k: 'mode', mode: decisionMode });
-      SFX.click(); render();
+      SFX.click();
+      updateModeButtons();
     });
-
-    const cyclePick = (key, list) => {
-      const ids = list.map(x => x.id);
-      const i = ids.indexOf(myPick[key]);
-      myPick[key] = ids[(i + 1) % ids.length];
-      SFX.click(); sendLobby(); render();
-    };
-    scr.querySelector('#pick-race').onclick = () => { if (!myReady) cyclePick('raceId', Object.values(RACES)); };
-    scr.querySelector('#pick-class').onclick = () => { if (!myReady) cyclePick('classId', Object.values(CLASSES)); };
-    scr.querySelector('#pick-origin').onclick = () => { if (!myReady) cyclePick('originId', ORIGINS); };
-
-    const rosterEl = scr.querySelector('#roster');
-    const rows = [
-      { name: myName + ' (you)', classId: myPick.classId, raceId: myPick.raceId, ready: myReady, host: coopS.isHost },
-      ...partners.map(([id, p]) => ({ name: p.name, classId: lobbyState.get(id)?.classId, raceId: lobbyState.get(id)?.raceId, ready: lobbyState.get(id)?.ready, host: coopS.net.roster.find(r => r.id === id)?.host })),
-    ];
-    rosterEl.innerHTML = rows.map(r => `
-      <div class="inv-item">
-        <div class="item-name">${r.host ? '👑 ' : ''}${r.name}</div>
-        <div style="display:flex;gap:10px;align-items:center">
-          <span class="tag">${r.raceId ? RACES[r.raceId]?.name || '' : ''} ${r.classId ? CLASSES[r.classId].name : 'choosing...'}</span>
-          <span class="tag" style="${r.ready ? 'color:var(--luck);border-color:var(--luck)' : ''}">${r.ready ? 'READY' : 'not ready'}</span>
-        </div>
-      </div>`).join('');
+    bindPickTiles();
 
     scr.querySelector('#btn-ready').onclick = () => {
       myReady = !myReady;
-      SFX.click(); sendLobby(); render();
+      SFX.click(); sendLobby();
+      const b = scr.querySelector('#btn-ready');
+      b.textContent = myReady ? '✔ Ready (click to unready)' : 'Ready Up';
+      b.classList.toggle('primary', !myReady);
+      updateRoster();
     };
     scr.querySelector('#btn-go')?.addEventListener('click', () => {
       if (!everyoneReady()) return;
@@ -644,6 +715,9 @@ async function nextFloor() {
   }
 
   if (run.fame >= 50) unlock('famous');
+  if ((run.guardCount || 0) >= 15) unlock('guardian');
+  if (run.gold >= 1000) unlock('hoarder');
+  if (meta.bestFloor >= 20) unlock('grave_calling');
   if (run.floor >= 10 && !meta.classFloor10.includes(run.classId)) {
     meta.classFloor10.push(run.classId);
     if (meta.classFloor10.length >= 4) unlock('all_classes');
@@ -766,10 +840,12 @@ function renderCardChoice(stage, cards, coopCtx = null) {
       const i = +cardEl.dataset.i;
       SFX.click();
       if (!coopCtx) return resolveCard(stage, cards[i]);
-      if (picks.has(coopS.you)) return; // no duplicate submissions
+      const prev = picks.get(coopS.you);
+      if (prev === i) return; // same card, nothing to change
+      if (prev != null && coopCtx.mode === 'first') return; // first-pick locks your hand
       picks.set(coopS.you, i);
       coopS.net.send({ k: 'pick', floor: run.floor, idx: i });
-      cardEl.classList.add('picked');
+      stage.querySelectorAll('.pick-card').forEach(c => c.classList.toggle('picked', +c.dataset.i === i));
       renderVotes();
       coopCtx.onLocalPick(i, picks);
     };
@@ -815,6 +891,10 @@ function pickEnemyGroup(rng, biome, partySize = 1) {
   if (partySize >= CONFIG.partyScaling.extraEnemyAt) {
     group.push(rng.pick(pool.filter(e => !e.elite)));
   }
+  // bigger parties court bigger crowds
+  for (let m = 2; m < partySize; m++) {
+    if (rng.chance(CONFIG.partyScaling.moreEnemyChance)) group.push(rng.pick(pool.filter(e => !e.elite)));
+  }
   return group;
 }
 
@@ -858,6 +938,8 @@ async function encounterFloor(stage, prebuiltGroup = null) {
     }
     if (act === 'bribe') {
       run.gold -= bribe;
+      run.bribes = (run.bribes || 0) + 1;
+      if (run.bribes >= 3) unlock('silver_tongue');
       rng2.advance(); saveRun(run);
       return showOutcomePanel(stage, [
         { text: `You toss the purse. They count it — twice, insultingly — and melt back into the dark. (-${bribe} gold)`, cls: 'gold' },
@@ -890,10 +972,11 @@ async function fightGroup(stage, specs, { text = null, modifier = null, prebuilt
   if (modifier?.extraEnemy) {
     enemies.push(buildEnemy(runRng(run).pick(ENEMIES[biome.id].filter(e => !e.elite)), run.floor, biome.floors[0]));
   }
-  const { result, gold = 0, xp = 0 } = await startCombat({
+  const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
     container: stage, run, rng, enemies, modifier,
     introText: text, onHud: renderHud,
   });
+  if (result === 'win') { if (noDamage) unlock('untouchable'); if (usedUltimate) unlock('overcharged'); }
 
   if (result === 'dead') {
     if (coopS && !coopS.alone) {
@@ -972,6 +1055,8 @@ async function bossRelicPick(stage) {
       });
     });
   }
+  // bosses teach: claim a technique from your class pool (AOE often lives here)
+  await offerSkillChoice();
   renderHud();
   nextFloorButton(document.getElementById('stage'));
 }
@@ -1028,10 +1113,12 @@ async function bossFloor(stage) {
 
 async function fightGroupBoss(stage, enemies, boss) {
   const rng = runRng(run);
-  const { result, gold = 0, xp = 0 } = await startCombat({
+  const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
     container: stage, run, rng, enemies, introText: `${boss.name}: "${boss.taunt}"`, onHud: renderHud,
   });
   if (result === 'dead') return endRun('dead');
+  if (noDamage) unlock('untouchable');
+  if (usedUltimate) unlock('overcharged');
 
   const achMap = { 10: 'floor_10', 20: 'floor_20', 30: 'floor_30', 40: 'floor_40', 50: 'floor_50' };
   if (achMap[run.floor]) unlock(achMap[run.floor]);
@@ -1062,7 +1149,12 @@ function hostPublishFloorContent() {
   if (run.floor === LAST_FLOOR) {
     content = { floor: run.floor, type: 'throne' };
   } else if (BOSS_FLOORS.includes(run.floor)) {
-    content = { floor: run.floor, type: 'boss', enemies: buildSharedEnemies([BOSSES[run.floor]], { boss: true }) };
+    const bossEnemies = buildSharedEnemies([BOSSES[run.floor]], { boss: true });
+    if (coopS.partySize >= CONFIG.partyScaling.bossMinionAt) {
+      const pool = (ENEMIES[biome.id] || ENEMIES.hell).filter(e => !e.elite);
+      bossEnemies.push(...buildSharedEnemies([rng.pick(pool)]));
+    }
+    content = { floor: run.floor, type: 'boss', enemies: bossEnemies };
   } else if (run.floor % 5 === 0) {
     const mod = rng.pick(MODIFIERS);
     const group = pickEnemyGroup(rng, biome, coopS.partySize);
@@ -1219,7 +1311,7 @@ async function sharedFightCard(stage, content) {
 async function coopFightShared(stage, enemies, { boss = null, mod = null } = {}) {
   coopS.broadcastStatus(statusOf(run, 'fighting'), 'fighting');
   const rng = runRng(run);
-  const { result, gold = 0, xp = 0 } = await startCombat({
+  const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
     container: stage, run, rng, enemies,
     modifier: mod ? { ...mod, goldMult: (mod.goldMult || 1) * 1.5 } : null,
     introText: boss ? `${boss.name}: "${boss.taunt}"` : 'Side by side, blades out.',
@@ -1228,6 +1320,8 @@ async function coopFightShared(stage, enemies, { boss = null, mod = null } = {})
   });
 
   if (result === 'wipe') return endRun('dead');
+  if (noDamage) unlock('untouchable');
+  if (usedUltimate) unlock('overcharged');
 
   const d = derived(run);
   const goldGain = Math.round(gold * d.goldMult * d.combatGoldMult);
@@ -1420,6 +1514,7 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
 
   if (o.appraisal) {
     appraiseRun(rng, run, { partial: o.appraisal === 'partial', location: ev.title });
+    unlock('assessed');
     lines.push({ text: '📜 The reading is complete. Your character page now carries the appraisal.', cls: 'item' });
     SFX.unlock();
   }
@@ -1456,6 +1551,16 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
   if (o.useItem) {
     const i = run.consumables.indexOf(o.useItem);
     if (i > -1) run.consumables.splice(i, 1);
+  }
+  if (o.learnAoe) {
+    const aoeId = CLASSES[run.classId].aoeSkill;
+    if (aoeId && !run.knownSkills.includes(aoeId)) {
+      lines.push({ text: `The technique takes root: ${SKILLS[aoeId].name}.`, cls: 'item' });
+      await maybeEquipSkill(SKILLS[aoeId]);
+    } else {
+      lines.push({ text: 'The lesson sharpens what you already know.', cls: 'good' });
+      run.xp += 20;
+    }
   }
   if (o.upgradeWeapon) {
     run.weaponBonus += 4;
@@ -1730,6 +1835,14 @@ async function levelUpModal(up) {
   }
 
   if (SKILL_OFFER_LEVELS.includes(up.level)) {
+    await offerSkillChoice();
+  }
+}
+
+// The climb teaches: pick one technique from your class pool (level-ups and
+// boss victories both call this — bosses are where AOE usually arrives).
+async function offerSkillChoice() {
+  {
     const rng = runRng(run);
     const pool = rng.shuffle(learnableSkills(run)).slice(0, 3);
     rng.advance();

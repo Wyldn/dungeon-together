@@ -612,6 +612,59 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 .to-entry.to-player { color: var(--gold-bright); }
 .to-entry.active { background: rgba(217,165,63,.12); border-color: var(--gold); color: var(--ink); }
 
+/* lobby pick tiles + picker modal grid */
+.pick-tile { padding: 12px; text-align: center; cursor: pointer; transition: border-color .15s, transform .12s; }
+.pick-tile:hover { border-color: var(--gold); transform: translateY(-2px); }
+.pick-tile .pt-hint { font-size: 12px; color: var(--ink-dim); }
+.picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.picker-card {
+  padding: 14px 10px; text-align: center; cursor: pointer; border-radius: 12px;
+  background: rgba(255,255,255,.035); border: 1px solid var(--panel-edge);
+  transition: border-color .15s, transform .12s; color: var(--ink);
+}
+.picker-card:hover { border-color: var(--accent, var(--gold)); transform: translateY(-3px); }
+.picker-card .pk-glyph { height: 44px; display: grid; place-items: center; margin-bottom: 6px; color: var(--accent, var(--gold)); }
+.picker-card .pk-glyph svg { width: 40px; height: 40px; }
+.picker-card .pk-name { font-family: var(--font-display); font-weight: 700; font-size: 14px; }
+.picker-card .pk-desc { font-size: 11.5px; color: var(--ink-dim); margin-top: 3px; }
+.class-card.locked-class { opacity: .6; cursor: default; }
+.class-card.secret-class { border-color: color-mix(in srgb, var(--gold) 40%, var(--panel-edge)); position: relative; }
+
+/* your-turn banner */
+.turn-banner {
+  text-align: center; font-family: var(--font-display); font-weight: 800;
+  letter-spacing: .25em; font-size: 15px; color: var(--gold-bright);
+  padding: 7px; border-radius: 10px; border: 1px solid var(--gold);
+  background: rgba(217,165,63,.08);
+  animation: turn-pulse 1.4s ease-in-out infinite;
+}
+@keyframes turn-pulse { 50% { box-shadow: 0 0 22px rgba(255,216,115,.35); background: rgba(217,165,63,.16); } }
+
+/* heal target picking */
+.player-row.heal-pick .combatant { outline: 2px dashed var(--sanity, #62c9b8); outline-offset: 5px; border-radius: 10px; animation: turn-pulse 1.2s ease-in-out infinite; }
+
+/* per-skill-type visual effects */
+.skill-fx { position: absolute; inset: -8px; pointer-events: none; border-radius: 14px; z-index: 6; }
+@keyframes fx-flash { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes fx-rise { 0% { opacity: 0; transform: translateY(12px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-18px); } }
+@keyframes fx-spin { 0% { opacity: 0; transform: rotate(0deg) scale(.7); } 30% { opacity: 1; } 100% { opacity: 0; transform: rotate(200deg) scale(1.2); } }
+@keyframes fx-shatter { 0% { opacity: 0; transform: scale(.5); } 35% { opacity: 1; transform: scale(1.05); } 100% { opacity: 0; transform: scale(1.3); } }
+.skill-fx { animation: fx-flash .7s ease-out forwards; }
+.fx-slash { background: linear-gradient(125deg, transparent 42%, rgba(255,255,255,.95) 49%, rgba(200,220,255,.9) 51%, transparent 58%); animation: fx-flash .5s ease-out forwards; }
+.fx-pierce { background: linear-gradient(90deg, transparent 46%, rgba(255,255,255,.9) 50%, transparent 54%); animation: fx-flash .4s ease-out forwards; }
+.fx-blunt { box-shadow: inset 0 0 30px rgba(255,235,180,.8); animation: fx-shatter .5s ease-out forwards; }
+.fx-arcane { box-shadow: inset 0 0 26px rgba(140,120,255,.9); border: 1px solid rgba(180,160,255,.8); animation: fx-spin .7s ease-out forwards; }
+.fx-fire { background: radial-gradient(circle at 50% 80%, rgba(255,140,40,.85), rgba(255,60,20,.4) 55%, transparent 75%); animation: fx-rise .7s ease-out forwards; }
+.fx-ice { box-shadow: inset 0 0 26px rgba(140,220,255,.95); border: 1px solid rgba(200,240,255,.9); animation: fx-shatter .7s ease-out forwards; }
+.fx-poison { background: radial-gradient(circle at 50% 70%, rgba(120,220,80,.75), transparent 70%); animation: fx-rise .8s ease-out forwards; }
+.fx-holy { background: radial-gradient(circle at 50% 20%, rgba(255,245,190,.95), transparent 70%); animation: fx-rise .7s ease-out forwards; }
+.fx-shadow { background: radial-gradient(circle, rgba(60,20,90,.9), rgba(10,5,20,.5) 60%, transparent 80%); animation: fx-shatter .7s ease-out forwards; }
+.fx-wind { background: repeating-linear-gradient(100deg, transparent 0 8px, rgba(200,255,240,.5) 9px 11px); animation: fx-flash .5s ease-out forwards; }
+.fx-thunder { background: linear-gradient(170deg, transparent 40%, rgba(255,255,160,.95) 48%, transparent 52%), radial-gradient(circle at 50% 10%, rgba(255,255,200,.6), transparent 60%); animation: fx-flash .4s ease-out forwards; }
+.fx-heal { box-shadow: inset 0 0 28px rgba(120,240,160,.9); animation: fx-rise .8s ease-out forwards; }
+.fx-buff { border: 2px solid rgba(255,216,115,.8); box-shadow: 0 0 18px rgba(255,216,115,.5); animation: fx-rise .7s ease-out forwards; }
+.fx-luck { background: radial-gradient(circle at 30% 30%, rgba(255,230,120,.6), transparent 45%), radial-gradient(circle at 70% 60%, rgba(255,230,120,.6), transparent 45%); animation: fx-spin .6s ease-out forwards; }
+
 /* skill buttons: universal + incompatible states */
 .skill-btn.universal { border-color: color-mix(in srgb, var(--sanity, #62c9b8) 35%, var(--panel-edge)); }
 .skill-btn.incompatible { opacity: .45; }

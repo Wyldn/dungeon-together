@@ -40,6 +40,14 @@ export const ACHIEVEMENTS = [
   { id: 'promoted', icon: '🧬', name: 'More Than Blood', desc: 'Achieve a race promotion.' },
   { id: 'secret_class', icon: '🎭', name: 'The Hidden Path', desc: 'Unlock a secret subclass.' },
   { id: 'all_classes', icon: '🎪', name: 'Full Party', desc: 'Reach floor 10 with four different classes.' },
+  { id: 'untouchable', icon: '🌬️', name: 'Untouchable', desc: 'Win a battle without taking a single point of damage.' },
+  { id: 'overcharged', icon: '⚡', name: 'Overcharged', desc: 'Unleash a 6-charge ultimate technique.' },
+  { id: 'guardian', icon: '🛡️', name: 'The Wall', desc: 'Guard 15 times in a single run.' },
+  { id: 'silver_tongue', icon: '👅', name: 'Silver Tongue', desc: 'Bribe your way past 3 encounters in one run.' },
+  { id: 'assessed', icon: '🔍', name: 'Know Thyself (Approximately)', desc: 'Get appraised for the first time.' },
+  { id: 'grave_calling', icon: '🦴', name: 'The Tower Shows Its Basement', desc: 'Unlock the hidden Necromancer calling.' },
+  { id: 'party_of_four', icon: '👥', name: 'Full Banner', desc: 'Enter the tower with a party of four.' },
+  { id: 'hoarder', icon: '🏦', name: 'Economically Unkillable', desc: 'Hold 1,000 gold at once.' },
 ];
 
 const defaultMeta = () => ({
@@ -116,6 +124,9 @@ export function newRun(meta, { classId, raceId = 'human', originId = null, name,
   const cls = CLASSES[classId];
   const up = id => upgradeRank(meta, id);
   const gen = rollStart(classId, raceId, randomSeed());
+  // 3 fixed skills + 1 random from the class pool — rarely (15%), it's the AOE
+  const kitRng = makeRng(randomSeed());
+  const bonusSkill = cls.pool ? (kitRng.chance(0.15) ? cls.pool.rare : cls.pool.common) : cls.startSkills[0];
 
   const maxHp = gen.stats.hp + up('vitality') * 8;
   const maxMp = gen.stats.mp + up('arcana') * 6;
@@ -154,8 +165,8 @@ export function newRun(meta, { classId, raceId = 'human', originId = null, name,
     maxMp, mp: maxMp,
     fame: CONFIG.fame.start + up('renown') * 5,
     gold: 30 + up('fortune') * 25,
-    skills: [...cls.startSkills],
-    knownSkills: [...cls.startSkills],
+    skills: [...cls.startSkills, bonusSkill],
+    knownSkills: [...cls.startSkills, bonusSkill],
     equipment: {
       weapon: cls.startWeapon, helmet: null, chest: 'cloth_garb', legs: null, boots: null,
       accessory1: null, accessory2: null, accessory3: null,
@@ -169,6 +180,7 @@ export function newRun(meta, { classId, raceId = 'human', originId = null, name,
     sigils: [],
     kills: 0,
     guardCount: 0,
+    bribes: 0,
     goldEarned: 0,
     usedRevive: false,
     down: false,

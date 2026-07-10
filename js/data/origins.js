@@ -11,8 +11,8 @@ export const ORIGINS = [
     title: 'Graduation Night',
     text: 'The Arcanum\'s spire hums above you. Tomorrow you climb the tower; tonight, the Academy offers a graduate one parting gift. Professor Immel waits with three doors open.',
     choices: [
-      { label: 'The library — take the sealed grimoire', hint: 'arcane knowledge',
-        outcome: { text: 'The grimoire\'s lock clicks open at your touch — it was waiting for you. Old power settles into your hands.', statUp: { stat: 'int', amt: 3 }, mana: 10, flag: 'origin_arcane' } },
+      { label: 'The library — take the sealed grimoire', hint: 'a wide-taught technique',
+        outcome: { text: 'The grimoire\'s lock clicks open at your touch — it was waiting for you. Its central chapter teaches the sweeping form: how to strike EVERYTHING at once.', learnAoe: true, flag: 'origin_arcane' } },
       { label: 'The vault — take the focus crystal', hint: 'equipment',
         outcome: { text: 'The crystal drinks the lamplight. "Sell it if you must," Immel sighs, "but it would rather be used."', item: 'oak_staff', gold: 30, flag: 'origin_arcane' } },
       { label: 'The observatory — one reading of your stars', hint: 'appraisal',
@@ -27,8 +27,8 @@ export const ORIGINS = [
     title: 'The Final Bout',
     text: 'Master Ollen circles you on the sparring sand — your last lesson before the tower. "Show me what you leave with," she says, and attacks.',
     choices: [
-      { label: 'Overpower her', hint: 'strength',
-        outcome: { text: 'You catch her blade on yours and PUSH. She lands on her back, laughing. "Good. The tower respects rude strength."', statUp: { stat: 'str', amt: 3 }, hp: 5 } },
+      { label: 'Overpower her', hint: 'the sweeping form',
+        outcome: { text: 'You catch her blade on yours and PUSH. She lands on her back, laughing. "Good. Then you\'re ready for the Ninth Hall\'s last lesson — the form that answers MANY blades."', learnAoe: true } },
       { label: 'Outlast her', hint: 'guard training',
         outcome: { text: 'You give ground, guard high, until her arms tire first. "Better," she pants. "Walls win wars." Your Guard is drilled into instinct.', statUp: { stat: 'wis', amt: 2 }, maxHp: 10, flag: 'guard_trained' } },
       { label: 'Trick her', hint: 'technique',
