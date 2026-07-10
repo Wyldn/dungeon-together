@@ -1,11 +1,14 @@
-// Derived stats, leveling, evolutions, inventory helpers.
+// Derived stats, leveling, growth, subclasses, appraisal, fame, inventory.
 
-import { CLASSES } from './data/classes.js';
-import { itemById, RELICS } from './data/items.js';
+import { CLASSES, SUBCLASSES, EVOLUTION_LEVELS, subclassOptions, deeperBranch } from './data/classes.js';
+import { RACES } from './data/races.js';
+import { itemById, RELICS, EQUIP_SLOTS } from './data/items.js';
 import { SKILLS } from './data/skills.js';
+import { CONFIG } from './data/config.js';
+import { rankFor, appraisalRange, growthMult } from './data/ranks.js';
 
 export function equippedItems(run) {
-  return ['weapon', 'armor', 'accessory']
+  return EQUIP_SLOTS
     .map(slot => run.equipment[slot] && itemById(run.equipment[slot]))
     .filter(Boolean);
 }
@@ -14,7 +17,6 @@ export function relicItems(run) {
   return run.relics.map(id => RELICS.find(r => r.id === id)).filter(Boolean);
 }
 
-// Sum a numeric property across equipment + relics.
 function gearSum(run, prop) {
   let sum = 0;
   for (const it of [...equippedItems(run), ...relicItems(run)]) sum += it[prop] || 0;
@@ -29,8 +31,34 @@ export function gearHas(run, prop) {
   return [...equippedItems(run), ...relicItems(run)].some(it => it[prop]);
 }
 
+/* ---------------- weapon compatibility (handoff §20) ---------------- */
+export function allowedWeaponTypes(run) {
+  const types = [...(CLASSES[run.classId]?.weapons || [])];
+  // subclass grants (Spellblade exception)
+  let sub = run.subclassId && SUBCLASSES[run.subclassId];
+  while (sub) {
+    if (sub.weaponAdd) types.push(...sub.weaponAdd);
+    sub = sub.parent && SUBCLASSES[sub.parent];
+  }
+  return types;
+}
+
+export function weaponCompatible(run) {
+  const w = run.equipment.weapon ? itemById(run.equipment.weapon) : null;
+  if (!w) return true; // bare hands never disable anything
+  return allowedWeaponTypes(run).includes(w.wtype);
+}
+
+// Skills currently usable: incompatible weapon leaves Strike + Guard only.
+export function usableSkillIds(run) {
+  if (!weaponCompatible(run)) return ['basic_attack', 'guard'];
+  return ['basic_attack', 'guard', ...run.skills];
+}
+
+/* ---------------- derived stats ---------------- */
 export function derived(run) {
   const s = run.stats;
+  const race = RACES[run.raceId] || {};
   const weapon = run.equipment.weapon ? itemById(run.equipment.weapon) : null;
   return {
     str: s.str + gearSum(run, 'str'),
@@ -39,97 +67,136 @@ export function derived(run) {
     wis: s.wis + gearSum(run, 'wis'),
     lk: s.lk + gearSum(run, 'lk'),
     atk: (weapon ? weapon.atk : 0) + run.weaponBonus,
-    def: gearSum(run, 'def'),
+    def: gearSum(run, 'def') + (race.def || 0) + (run.raceDef || 0),
     crit: 5 + s.dex * 0.35 + s.lk * 0.5 + gearSum(run, 'crit'),
     dodge: Math.min(35, 3 + s.dex * 0.45 + gearSum(run, 'dodge')),
     lifesteal: gearSum(run, 'lifesteal'),
-    goldMult: gearMult(run, 'goldMult'),
+    goldMult: gearMult(run, 'goldMult') * (race.goldMult || 1),
     combatGoldMult: gearMult(run, 'combatGoldMult'),
     xpMult: gearMult(run, 'xpMult'),
     dmgMult: gearMult(run, 'dmgMult'),
     dmgTakenMult: gearMult(run, 'dmgTakenMult'),
     bossDmgMult: gearMult(run, 'bossDmgMult'),
-    sanityGuard: gearSum(run, 'sanityGuard'),
     enemyCrit: 4 + gearSum(run, 'enemyCrit'),
     burn: gearSum(run, 'burn'),
     freeze: gearSum(run, 'freeze'),
     manaRegen: 4 + Math.floor(run.stats.wis / 6) + gearSum(run, 'manaRegen'),
+    initiative: (race.initiative || 0) + gearSum(run, 'initiative'),
+    fameGainMult: (race.fameGainMult || 1) * gearMult(run, 'fameGainMult'),
+    startCharge: gearSum(run, 'startCharge'),
+    poisonResist: race.poisonResist || 0,
+    chargeOnHit: !!race.chargeOnHit,
   };
 }
 
+/* ---------------- hidden-stat reveal permissions (handoff §5) ---------- */
+// 'exact' > 'ranks' > null. Sources: equipped items with reveal prop.
+export function revealLevel(run) {
+  let best = null;
+  for (const it of equippedItems(run)) {
+    if (it.reveal === 'exact') return 'exact';
+    if (it.reveal === 'ranks') best = 'ranks';
+  }
+  return best;
+}
+
+/* ---------------- appraisal ---------------- */
+export const APPRAISABLE = ['str', 'dex', 'int', 'wis', 'lk'];
+
+export function appraiseRun(rng, run, { partial = false, location = 'the tower' } = {}) {
+  const d = derived(run);
+  const stats = partial ? rng.shuffle(APPRAISABLE).slice(0, 2) : APPRAISABLE;
+  const results = {};
+  for (const st of stats) results[st] = appraisalRange(rng, d[st]);
+  const total = APPRAISABLE.reduce((s, k) => s + d[k], 0);
+  run.appraisal = {
+    floor: run.floor,
+    level: run.level,
+    location,
+    partial,
+    results,
+    overall: rankFor(Math.round(total / APPRAISABLE.length * 1.6)),
+  };
+  return run.appraisal;
+}
+
+/* ---------------- fame ---------------- */
+export function changeFame(run, amt) {
+  if (amt > 0) amt = Math.round(amt * derived(run).fameGainMult);
+  run.fame = Math.max(0, (run.fame || 0) + amt);
+  return amt;
+}
+
+/* ---------------- class titles / advancement ---------------- */
 export function classTitle(run) {
-  const cls = CLASSES[run.classId];
-  let title = cls.name;
-  for (const evo of cls.evolutions) if (run.level >= evo.level) title = evo.name;
-  return title;
+  if (run.subclassId) return SUBCLASSES[run.subclassId].name;
+  return CLASSES[run.classId].name;
 }
 
 export function skillTier(run) {
-  const cls = CLASSES[run.classId];
-  let tier = 1;
-  cls.evolutions.forEach((evo, i) => { if (run.level >= evo.level) tier = i + 2; });
-  return tier;
+  if (run.level >= EVOLUTION_LEVELS.second) return 3;
+  if (run.level >= EVOLUTION_LEVELS.first) return 2;
+  return 1;
 }
 
 export function xpForLevel(level) {
   return Math.floor(32 * Math.pow(1.22, level - 1));
 }
 
-// Returns array of level-up records: {level, gains, evolution?}
+export function applySubclass(run, sub) {
+  run.subclassId = sub.id;
+  run.className = sub.name;
+  const b = sub.bonus || {};
+  for (const k of ['str', 'dex', 'int', 'wis', 'lk']) if (b[k]) run.stats[k] += b[k];
+  if (b.hp) { run.maxHp += b.hp; run.hp += b.hp; }
+  if (b.mp) { run.maxMp += b.mp; run.mp += b.mp; }
+  if (sub.skill && !run.knownSkills.includes(sub.skill)) run.knownSkills.push(sub.skill);
+  return sub;
+}
+
+// Level up. Gains scale with the HIDDEN growth modifier. Returns records:
+// {level, evolutionChoice?: [options], deeper?: subclass}
 export function gainXp(run, amount, rng) {
   run.xp += amount;
   const ups = [];
+  const gMult = growthMult(run.growthRank || 'C');
   while (run.xp >= run.xpNext) {
     run.xp -= run.xpNext;
     run.level++;
     run.xpNext = xpForLevel(run.level);
-    const cls = CLASSES[run.classId];
-    const gains = { hp: 6 + rng.int(0, 4), mp: 3 + rng.int(0, 2) };
-    // two random stat points, biased toward class strengths
-    const bias = { warrior: ['str', 'str', 'dex', 'wis'], mage: ['int', 'int', 'wis', 'lk'],
-                   archer: ['dex', 'dex', 'lk', 'str'], rogue: ['dex', 'lk', 'lk', 'str'] }[run.classId];
-    for (let i = 0; i < 2; i++) {
-      const st = rng.chance(0.6) ? rng.pick(bias) : rng.pick(['str', 'dex', 'int', 'wis', 'lk']);
+
+    const hpGain = Math.round((6 + rng.int(0, 4)) * gMult);
+    const mpGain = Math.round((3 + rng.int(0, 2)) * gMult);
+    const statPoints = Math.max(1, Math.round(2 * gMult + (rng.chance(0.3) ? 1 : 0)));
+    const bias = CLASSES[run.classId].growthBias;
+    for (let i = 0; i < statPoints; i++) {
+      const st = rng.chance(0.6) ? rng.pick(bias) : rng.pick(APPRAISABLE);
       run.stats[st]++;
-      gains[st] = (gains[st] || 0) + 1;
     }
-    run.maxHp += gains.hp;
-    run.maxMp += gains.mp;
-    // levelling up mends you: half your (new) maximum returns
-    run.hp = Math.min(run.maxHp, run.hp + Math.round(run.maxHp * 0.5));
-    run.mp = Math.min(run.maxMp, run.mp + Math.round(run.maxMp * 0.5));
-    const evolution = cls.evolutions.find(e => e.level === run.level);
-    if (evolution) {
-      for (const [k, v] of Object.entries(evolution.bonus)) {
-        if (k === 'hp') { run.maxHp += v; run.hp += v; }
-        else if (k === 'mp') { run.maxMp += v; run.mp += v; }
-        else run.stats[k] += v;
-      }
-      run.className = evolution.name;
+    run.maxHp += hpGain;
+    run.maxMp += mpGain;
+    // level-up recovery: 50% of MISSING health/resource (handoff §15)
+    run.hp = Math.min(run.maxHp, run.hp + Math.round((run.maxHp - run.hp) * CONFIG.recovery.levelUpMissingPct));
+    run.mp = Math.min(run.maxMp, run.mp + Math.round((run.maxMp - run.mp) * CONFIG.recovery.levelUpMissingPct));
+
+    const up = { level: run.level };
+    if (run.level === EVOLUTION_LEVELS.first && !run.subclassId) {
+      up.evolutionChoice = subclassOptions(run);
     }
-    ups.push({ level: run.level, gains, evolution });
+    if (run.level === EVOLUTION_LEVELS.second && run.subclassId) {
+      const next = deeperBranch(run);
+      if (next) up.deeper = next;
+    }
+    ups.push(up);
   }
   return ups;
 }
 
-// Skills the player could learn right now (new tier unlocks + unlearned).
+// Skills the player could learn right now.
 export function learnableSkills(run) {
   const tier = skillTier(run);
   return Object.values(SKILLS).filter(sk =>
     sk.class === run.classId && (sk.tier || 1) <= tier && !run.knownSkills.includes(sk.id));
-}
-
-export function changeSanity(run, delta) {
-  if (delta < 0) {
-    const d = derived(run);
-    delta = Math.min(0, delta + d.sanityGuard);
-  }
-  run.sanity = Math.max(0, Math.min(run.maxSanity + relicMaxSanity(run), run.sanity + delta));
-  return delta;
-}
-
-export function relicMaxSanity(run) {
-  return relicItems(run).reduce((s, r) => s + (r.maxSanity || 0), 0);
 }
 
 export function heal(run, amount) {
@@ -142,4 +209,8 @@ export function restoreMana(run, amount) {
   const before = run.mp;
   run.mp = Math.min(run.maxMp, run.mp + Math.round(amount));
   return run.mp - before;
+}
+
+export function resourceName(run) {
+  return CLASSES[run.classId]?.resource?.name || 'Mana';
 }

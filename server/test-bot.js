@@ -46,10 +46,21 @@ ws.on('message', raw => {
       break;
     case 'floor':
       me.floor = d.floor;
-      console.log(`[bot] floor ${d.floor}: ${d.type}${d.eventId ? ' (' + d.eventId + ')' : ''}`);
-      // next-floor revive
-      if (me.down) { me.down = false; me.hp = Math.round(me.maxHp * 0.3); }
+      console.log(`[bot] floor ${d.floor}: ${d.type}${d.eventId ? ' (' + d.eventId + ')' : ''}${d.cards ? ' [' + d.cards.map(c => c.category).join(', ') + ']' : ''}`);
+      // next-floor revive (25%)
+      if (me.down) { me.down = false; me.hp = Math.round(me.maxHp * 0.25); }
       status('choosing');
+      // three-card draw: vote for a random card after a beat
+      if (d.type === 'cards') {
+        const idx = Math.floor(Math.random() * d.cards.length);
+        setTimeout(() => { console.log(`[bot] picking card ${idx}`); send({ k: 'pick', floor: d.floor, idx }); }, 700);
+      }
+      break;
+    case 'cardresult':
+      console.log(`[bot] party chose card ${d.idx} on floor ${d.floor}`);
+      break;
+    case 'mode':
+      console.log(`[bot] decision mode: ${d.mode}`);
       break;
     case 'gate':
       // mirror every gate so the host never waits on us

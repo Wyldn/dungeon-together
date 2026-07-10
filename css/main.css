@@ -497,6 +497,139 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 .achievement .ach-name { font-weight: 600; }
 .achievement .ach-desc { font-size: 13px; color: var(--ink-dim); }
 
+/* ============================================================
+   EXPANSION: creation flow, gate, 3-card draw, charge, turn order
+   ============================================================ */
+.panel-inset { background: rgba(0,0,0,.28); border: 1px solid var(--panel-edge); border-radius: 10px; }
+
+/* creation steps */
+.step-dots { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+.fdot { width: 9px; height: 9px; border-radius: 50%; background: #2c2838; border: 1px solid #443e58; }
+.fdot.on { background: var(--gold-bright); border-color: var(--gold-bright); box-shadow: 0 0 10px var(--gold); }
+.fdot.done { background: var(--biome-glow); }
+.start-feel { padding: 18px 22px; text-align: center; }
+.start-feel .sf-word { font-family: var(--font-display); font-size: 30px; font-weight: 800; color: var(--gold-bright); letter-spacing: .05em; }
+.start-feel .sf-flavor { font-style: italic; color: var(--ink-dim); margin: 8px 0 10px; }
+.start-feel .sf-note { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); letter-spacing: .04em; }
+
+/* gate entry (handoff §27) */
+.gate-overlay {
+  position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 18px;
+  background: radial-gradient(ellipse at 50% 60%, #1a1426 0%, #060409 75%);
+  cursor: pointer;
+}
+.gate-arch {
+  width: 190px; height: 250px; border-radius: 95px 95px 8px 8px;
+  border: 3px solid var(--gold); border-bottom-width: 6px;
+  display: grid; place-items: center;
+  box-shadow: 0 0 60px rgba(217,165,63,.25), inset 0 0 60px rgba(217,165,63,.1);
+  animation: gate-pulse 2.2s ease-in-out infinite;
+}
+.gate-doors { font-size: 84px; filter: drop-shadow(0 0 30px rgba(138,47,110,.8)); animation: glyph-idle 3s ease-in-out infinite; }
+.gate-caption { font-family: var(--font-display); letter-spacing: .3em; color: var(--gold-bright); font-size: 15px; }
+.gate-skip { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); letter-spacing: .1em; }
+@keyframes gate-pulse { 50% { box-shadow: 0 0 100px rgba(217,165,63,.4), inset 0 0 80px rgba(217,165,63,.18); } }
+.gate-overlay.entering .gate-arch { animation: gate-zoom .9s cubic-bezier(.6,0,.9,.4) forwards; }
+.gate-overlay.quick.entering .gate-arch { animation-duration: .35s; }
+.gate-overlay.entering { animation: fade-out .9s ease forwards; }
+.gate-overlay.quick.entering { animation-duration: .35s; }
+@keyframes gate-zoom { to { transform: scale(14); opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
+
+/* the three-card draw (handoff §4) */
+.draw-header { text-align: center; margin-bottom: 18px; }
+.draw-header h3 { font-size: 26px; color: var(--gold-bright); margin: 6px 0 4px; }
+.draw-header p { color: var(--ink-dim); font-style: italic; font-size: 15px; }
+.pick-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; perspective: 1200px; }
+.pick-card {
+  width: 190px; min-height: 240px; padding: 26px 16px; text-align: center; cursor: pointer;
+  background: linear-gradient(160deg, #241f34, #151220 70%);
+  border: 1px solid var(--panel-edge); border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  transition: transform .18s ease, border-color .2s, box-shadow .25s;
+  position: relative; overflow: hidden;
+  animation: card-deal .6s cubic-bezier(.2,.9,.25,1.05);
+}
+.pick-card:hover { transform: translateY(-8px) rotateX(4deg); border-color: var(--gold); }
+.pick-card.picked { border-color: var(--sanity, #62c9b8); }
+.pick-card.chosen { border-color: var(--gold-bright); box-shadow: 0 0 0 2px var(--gold), 0 18px 50px rgba(217,165,63,.25); transform: translateY(-8px) scale(1.04); }
+.pick-card .pc-glyph { font-size: 52px; margin-bottom: 12px; filter: drop-shadow(0 6px 16px rgba(0,0,0,.6)); }
+.pick-card .pc-cat { font-family: var(--font-display); font-weight: 700; letter-spacing: .12em; font-size: 15px; text-transform: uppercase; }
+.pick-card .pc-blurb { color: var(--ink-dim); font-style: italic; font-size: 13.5px; margin-top: 8px; }
+.pick-card .pc-votes { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin-top: 14px; min-height: 22px; }
+.vote-chip { font-family: var(--font-mono); font-size: 10.5px; padding: 2px 9px; border-radius: 12px; background: rgba(98,201,184,.12); border: 1px solid rgba(98,201,184,.4); color: #a8e8dc; }
+/* affinity sparkle — a hint, never an explanation (handoff §4) */
+.pick-card.sparkle::after {
+  content: '✦'; position: absolute; top: 10px; right: 14px; color: var(--gold-bright);
+  animation: sparkle-tw 1.8s ease-in-out infinite; font-size: 15px;
+  text-shadow: 0 0 12px var(--gold);
+}
+.pick-card.sparkle { border-color: color-mix(in srgb, var(--gold) 45%, var(--panel-edge)); }
+@keyframes sparkle-tw { 0%,100% { opacity: .35; transform: scale(.9) rotate(0deg); } 50% { opacity: 1; transform: scale(1.25) rotate(20deg); } }
+
+/* Battle Charge (handoff §11) */
+.charge-tray {
+  display: flex; align-items: center; gap: 10px; justify-content: center;
+  padding: 8px 14px; border-radius: 10px; background: rgba(0,0,0,.25);
+  border: 1px solid var(--panel-edge);
+}
+.charge-label { font-family: var(--font-display); font-size: 12px; letter-spacing: .14em; color: var(--ink-dim); text-transform: uppercase; }
+.charge-num { font-family: var(--font-mono); font-size: 12px; color: var(--crit); }
+.cpips { display: inline-flex; gap: 4px; }
+.cpip {
+  width: 16px; height: 9px; border-radius: 3px; transform: skewX(-14deg);
+  background: #241f30; border: 1px solid #3d3550;
+}
+.cpip.lit { background: linear-gradient(180deg, #ffd873, #d9a53f); border-color: var(--gold-bright); box-shadow: 0 0 8px rgba(255,216,115,.5); }
+.cpip.enemy { width: 10px; height: 6px; }
+.cpip.enemy.lit { background: linear-gradient(180deg, #ff7a5a, #b8352f); border-color: #ff8a7a; box-shadow: 0 0 6px rgba(216,74,63,.6); }
+.fighter-charge { margin-top: 4px; }
+
+/* enemy telegraph (handoff §12) */
+.telegraph {
+  position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+  white-space: nowrap; font-family: var(--font-mono); font-size: 10.5px;
+  color: var(--crit); background: rgba(20,15,10,.9); padding: 2px 10px;
+  border-radius: 10px; border: 1px solid rgba(255,179,71,.4); z-index: 4;
+}
+.telegraph.ready { color: #ff9a8a; border-color: var(--blood); animation: pulse-node 1s ease-in-out infinite; font-weight: 700; }
+.combatant { position: relative; }
+
+/* turn order (handoff §14) */
+.turn-order {
+  flex: 0 0 130px; align-self: stretch; padding: 10px 8px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 4px; max-height: 320px;
+  scrollbar-width: thin;
+}
+.to-title { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .18em; color: var(--ink-faint); text-align: center; margin-bottom: 4px; }
+.to-entry {
+  display: flex; align-items: center; gap: 7px; padding: 4px 8px; border-radius: 7px;
+  font-size: 12px; color: var(--ink-dim); border: 1px solid transparent;
+}
+.to-entry .to-glyph { font-size: 15px; }
+.to-entry .to-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.to-entry.to-player { color: var(--gold-bright); }
+.to-entry.active { background: rgba(217,165,63,.12); border-color: var(--gold); color: var(--ink); }
+
+/* skill buttons: universal + incompatible states */
+.skill-btn.universal { border-color: color-mix(in srgb, var(--sanity, #62c9b8) 35%, var(--panel-edge)); }
+.skill-btn.incompatible { opacity: .45; }
+.guard-pip { color: #a8e8dc; border-color: rgba(98,201,184,.5) !important; }
+
+/* subclass secret option */
+.pick-option.secret-path { border-color: var(--gold); background: rgba(217,165,63,.06); }
+
+/* character sheet extras */
+.fame-line { font-size: 17px; }
+.gc-warn { margin-top: 8px; font-size: 12px; color: var(--crit); }
+
+@media (max-width: 700px) {
+  .turn-order { display: none; } /* order still shown via acting highlights */
+  .pick-card { width: 100%; min-height: 0; padding: 16px; }
+  .pick-row { flex-direction: column; }
+}
+
 /* ---------- Screen shake ---------- */
 .shake { animation: shake .4s ease; }
 @keyframes shake {

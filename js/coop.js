@@ -30,6 +30,11 @@ export class CoopSession {
       this.floorWaiters.get(d.floor)?.(d);
       this.floorWaiters.delete(d.floor);
     }));
+    // buffered so a slow client can't miss a decision that already resolved
+    this.cardResults = new Map(); // floor -> idx
+    this.offs.push(net.on('cardresult', d => this.cardResults.set(d.floor, d.idx)));
+    this.throneMsg = null;
+    this.offs.push(net.on('throne', d => { this.throneMsg = d; }));
     this.offs.push(net.sys('roster', () => {
       this._syncRoster();
       this.onPartnerUpdate?.();

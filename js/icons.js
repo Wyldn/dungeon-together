@@ -32,4 +32,20 @@ export const ICONS = {
     <circle cx="27" cy="18" r="1.6" fill="currentColor" stroke="none"/>
     <circle cx="37" cy="18" r="1.6" fill="currentColor" stroke="none"/>
   `),
+  priest: wrap(`
+    <circle cx="32" cy="14" r="7" fill="currentColor" fill-opacity=".15"/>
+    <path d="M32 21 L32 54" />
+    <path d="M22 32 L42 32" />
+    <path d="M26 48 L38 48" />
+    <circle cx="32" cy="14" r="2.2" fill="currentColor" stroke="none">
+      <animate attributeName="opacity" values="1;.4;1" dur="2.4s" repeatCount="indefinite"/>
+    </circle>
+  `),
+  monk: wrap(`
+    <circle cx="32" cy="30" r="16" fill="currentColor" fill-opacity=".12"/>
+    <path d="M32 14 C 40 20 40 28 32 30 C 24 32 24 40 32 46" />
+    <circle cx="32" cy="22" r="1.8" fill="currentColor" stroke="none"/>
+    <circle cx="32" cy="38" r="1.8" fill="currentColor" stroke="none"/>
+    <path d="M20 52 L44 52" />
+  `),
 };

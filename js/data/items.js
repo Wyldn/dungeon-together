@@ -1,70 +1,109 @@
-// Equipment, relics, consumables. Rarity gates where things can drop.
-// tier roughly tracks biome depth (1=forest ... 5=hell).
+// Equipment, relics, consumables.
+// Slots (handoff §19): weapon, helmet, chest, legs, boots, accessory ×3.
+// Weapons carry a wtype; classes define compatible types (§20). Equipping an
+// incompatible weapon disables everything except Strike and Guard.
+
+export const EQUIP_SLOTS = ['weapon', 'helmet', 'chest', 'legs', 'boots', 'accessory1', 'accessory2', 'accessory3'];
 
 export const WEAPONS = [
-  { id: 'rusty_sword', name: 'Rusty Sword', slot: 'weapon', rarity: 'common', tier: 1, atk: 2, desc: '+2 damage. Tetanus sold separately.', price: 25 },
-  { id: 'hunting_bow', name: 'Hunting Bow', slot: 'weapon', rarity: 'common', tier: 1, atk: 2, dex: 1, desc: '+2 damage, +1 DEX.', price: 30 },
-  { id: 'oak_staff', name: 'Oak Staff', slot: 'weapon', rarity: 'common', tier: 1, atk: 1, int: 2, desc: '+1 damage, +2 INT.', price: 30 },
-  { id: 'steel_blade', name: 'Steel Blade', slot: 'weapon', rarity: 'uncommon', tier: 2, atk: 4, desc: '+4 damage. Honest work.', price: 70 },
-  { id: 'runed_dagger', name: 'Runed Dagger', slot: 'weapon', rarity: 'uncommon', tier: 2, atk: 3, crit: 6, desc: '+3 damage, +6% crit.', price: 85 },
-  { id: 'frost_brand', name: 'Frostbrand', slot: 'weapon', rarity: 'rare', tier: 3, atk: 6, freeze: 0.15, desc: '+6 damage, 15% chance to freeze on hit.', price: 160 },
-  { id: 'storm_bow', name: 'Stormcaller Bow', slot: 'weapon', rarity: 'rare', tier: 3, atk: 5, dex: 3, crit: 8, desc: '+5 damage, +3 DEX, +8% crit.', price: 175 },
-  { id: 'void_scepter', name: 'Void Scepter', slot: 'weapon', rarity: 'epic', tier: 4, atk: 8, int: 5, lifesteal: 0.15, desc: '+8 damage, +5 INT, 15% lifesteal.', price: 300 },
-  { id: 'dragonfang', name: 'Dragonfang Greatsword', slot: 'weapon', rarity: 'epic', tier: 4, atk: 11, str: 3, desc: '+11 damage, +3 STR. Still warm.', price: 320 },
-  { id: 'excalibur', name: 'Excalibur, the Promised Dawn', slot: 'weapon', rarity: 'legendary', tier: 5, atk: 15, str: 4, wis: 4, crit: 10, desc: 'The one-of-one blade of legend. +15 dmg, +4 STR/WIS, +10% crit.', price: 999, unique: true },
+  // ---- starting weapons (one per class) ----
+  { id: 'rusty_sword', name: 'Rusty Sword', slot: 'weapon', wtype: 'sword', rarity: 'common', tier: 1, atk: 2, desc: 'Sword · +2 damage. Tetanus sold separately.', price: 25 },
+  { id: 'oak_staff', name: 'Oak Staff', slot: 'weapon', wtype: 'staff', rarity: 'common', tier: 1, atk: 1, int: 2, desc: 'Staff · +1 damage, +2 INT.', price: 30 },
+  { id: 'hunting_bow', name: 'Hunting Bow', slot: 'weapon', wtype: 'bow', rarity: 'common', tier: 1, atk: 2, dex: 1, desc: 'Bow · +2 damage, +1 DEX.', price: 30 },
+  { id: 'runed_dagger_worn', name: 'Worn Dagger', slot: 'weapon', wtype: 'dagger', rarity: 'common', tier: 1, atk: 2, crit: 3, desc: 'Dagger · +2 damage, +3% crit.', price: 25 },
+  { id: 'novice_mace', name: 'Novice\'s Mace', slot: 'weapon', wtype: 'mace', rarity: 'common', tier: 1, atk: 2, wis: 1, desc: 'Mace · +2 damage, +1 WIS.', price: 25 },
+  { id: 'wraps', name: 'Cloth Wraps', slot: 'weapon', wtype: 'fist', rarity: 'common', tier: 1, atk: 2, dex: 1, desc: 'Fist · +2 damage, +1 DEX. Your hands were always the weapon.', price: 20 },
+
+  // ---- found/shop weapons ----
+  { id: 'steel_blade', name: 'Steel Blade', slot: 'weapon', wtype: 'sword', rarity: 'uncommon', tier: 2, atk: 4, desc: 'Sword · +4 damage. Honest work.', price: 70 },
+  { id: 'battle_axe', name: 'Bearded Axe', slot: 'weapon', wtype: 'axe', rarity: 'uncommon', tier: 2, atk: 5, str: 1, desc: 'Axe · +5 damage, +1 STR.', price: 85 },
+  { id: 'runed_dagger', name: 'Runed Dagger', slot: 'weapon', wtype: 'dagger', rarity: 'uncommon', tier: 2, atk: 3, crit: 6, desc: 'Dagger · +3 damage, +6% crit.', price: 85 },
+  { id: 'pilgrims_cudgel', name: 'Pilgrim\'s Cudgel', slot: 'weapon', wtype: 'mace', rarity: 'uncommon', tier: 2, atk: 3, wis: 2, desc: 'Mace · +3 damage, +2 WIS.', price: 80 },
+  { id: 'ashwood_staff', name: 'Ashwood Staff', slot: 'weapon', wtype: 'staff', rarity: 'uncommon', tier: 2, atk: 2, int: 3, mp: 8, desc: 'Staff · +2 damage, +3 INT, +8 max resource.', price: 90 },
+  { id: 'tiger_wraps', name: 'Tigerhide Wraps', slot: 'weapon', wtype: 'fist', rarity: 'uncommon', tier: 2, atk: 4, dex: 2, desc: 'Fist · +4 damage, +2 DEX.', price: 85 },
+  { id: 'frost_brand', name: 'Frostbrand', slot: 'weapon', wtype: 'sword', rarity: 'rare', tier: 3, atk: 6, freeze: 0.15, desc: 'Sword · +6 damage, 15% freeze on hit.', price: 160 },
+  { id: 'storm_bow', name: 'Stormcaller Bow', slot: 'weapon', wtype: 'bow', rarity: 'rare', tier: 3, atk: 5, dex: 3, crit: 8, desc: 'Bow · +5 damage, +3 DEX, +8% crit.', price: 175 },
+  { id: 'sun_mace', name: 'Morning Benediction', slot: 'weapon', wtype: 'mace', rarity: 'rare', tier: 3, atk: 6, wis: 3, desc: 'Mace · +6 damage, +3 WIS. Warm to the touch.', price: 170 },
+  { id: 'void_scepter', name: 'Void Scepter', slot: 'weapon', wtype: 'staff', rarity: 'epic', tier: 4, atk: 8, int: 5, lifesteal: 0.15, desc: 'Staff · +8 damage, +5 INT, 15% lifesteal.', price: 300 },
+  { id: 'dragonfang', name: 'Dragonfang Greatsword', slot: 'weapon', wtype: 'sword', rarity: 'epic', tier: 4, atk: 11, str: 3, desc: 'Sword · +11 damage, +3 STR. Still warm.', price: 320 },
+  { id: 'comet_wraps', name: 'Comet-Trail Wraps', slot: 'weapon', wtype: 'fist', rarity: 'epic', tier: 4, atk: 9, dex: 4, initiative: 2, desc: 'Fist · +9 damage, +4 DEX, faster initiative.', price: 310 },
+  { id: 'excalibur', name: 'Excalibur, the Promised Dawn', slot: 'weapon', wtype: 'sword', rarity: 'legendary', tier: 5, atk: 15, str: 4, wis: 4, crit: 10, desc: 'Sword · the one-of-one blade of legend. +15 dmg, +4 STR/WIS, +10% crit.', price: 999, unique: true },
 ];
 
-export const ARMORS = [
-  { id: 'cloth_garb', name: 'Traveler’s Garb', slot: 'armor', rarity: 'common', tier: 1, def: 1, desc: '+1 defense. Fashionably doomed.', price: 20 },
-  { id: 'leather_jerkin', name: 'Leather Jerkin', slot: 'armor', rarity: 'common', tier: 1, def: 2, desc: '+2 defense.', price: 40 },
-  { id: 'chainmail', name: 'Chainmail Hauberk', slot: 'armor', rarity: 'uncommon', tier: 2, def: 4, desc: '+4 defense. Jingles ominously.', price: 90 },
-  { id: 'wardweave', name: 'Wardweave Robe', slot: 'armor', rarity: 'rare', tier: 3, def: 3, int: 3, mp: 12, desc: '+3 defense, +3 INT, +12 max Mana.', price: 150 },
-  { id: 'frostplate', name: 'Frostforged Plate', slot: 'armor', rarity: 'rare', tier: 3, def: 6, hp: 15, desc: '+6 defense, +15 max HP.', price: 190 },
-  { id: 'shadow_shroud', name: 'Shroud of Still Shadows', slot: 'armor', rarity: 'epic', tier: 4, def: 5, dodge: 8, dex: 3, desc: '+5 defense, +8% dodge, +3 DEX.', price: 280 },
-  { id: 'aegis', name: 'Aegis of the First Climber', slot: 'armor', rarity: 'legendary', tier: 5, def: 9, hp: 40, sanityGuard: 1, desc: '+9 defense, +40 HP. Sanity losses reduced by 1.', price: 850, unique: true },
+export const HELMETS = [
+  { id: 'leather_cap', name: 'Leather Cap', slot: 'helmet', rarity: 'common', tier: 1, def: 1, desc: '+1 defense. Better than hair.', price: 25 },
+  { id: 'iron_helm', name: 'Iron Helm', slot: 'helmet', rarity: 'uncommon', tier: 2, def: 2, hp: 6, desc: '+2 defense, +6 max HP.', price: 70 },
+  { id: 'scholars_hood', name: 'Scholar\'s Hood', slot: 'helmet', rarity: 'rare', tier: 3, def: 1, int: 3, mp: 10, desc: '+1 defense, +3 INT, +10 max resource.', price: 140 },
+  { id: 'dragonbone_helm', name: 'Dragonbone Helm', slot: 'helmet', rarity: 'epic', tier: 4, def: 4, hp: 15, str: 2, desc: '+4 defense, +15 HP, +2 STR.', price: 280 },
+];
+
+export const CHEST_ARMOR = [
+  { id: 'cloth_garb', name: 'Traveler\'s Garb', slot: 'chest', rarity: 'common', tier: 1, def: 1, desc: '+1 defense. Fashionably doomed.', price: 20 },
+  { id: 'leather_jerkin', name: 'Leather Jerkin', slot: 'chest', rarity: 'common', tier: 1, def: 2, desc: '+2 defense.', price: 40 },
+  { id: 'chainmail', name: 'Chainmail Hauberk', slot: 'chest', rarity: 'uncommon', tier: 2, def: 4, desc: '+4 defense. Jingles ominously.', price: 90 },
+  { id: 'wardweave', name: 'Wardweave Robe', slot: 'chest', rarity: 'rare', tier: 3, def: 3, int: 3, mp: 12, desc: '+3 defense, +3 INT, +12 max resource.', price: 150 },
+  { id: 'frostplate', name: 'Frostforged Plate', slot: 'chest', rarity: 'rare', tier: 3, def: 6, hp: 15, desc: '+6 defense, +15 max HP.', price: 190 },
+  { id: 'shadow_shroud', name: 'Shroud of Still Shadows', slot: 'chest', rarity: 'epic', tier: 4, def: 5, dodge: 8, dex: 3, desc: '+5 defense, +8% dodge, +3 DEX.', price: 280 },
+  { id: 'aegis', name: 'Aegis of the First Climber', slot: 'chest', rarity: 'legendary', tier: 5, def: 9, hp: 40, dmgTakenMult: 0.92, desc: '+9 defense, +40 HP, take 8% less damage.', price: 850, unique: true },
+];
+
+export const LEG_ARMOR = [
+  { id: 'cloth_trousers', name: 'Sturdy Trousers', slot: 'legs', rarity: 'common', tier: 1, def: 1, desc: '+1 defense. Pockets included.', price: 20 },
+  { id: 'chain_leggings', name: 'Chain Leggings', slot: 'legs', rarity: 'uncommon', tier: 2, def: 2, hp: 5, desc: '+2 defense, +5 max HP.', price: 65 },
+  { id: 'windstriders', name: 'Windstrider Greaves', slot: 'legs', rarity: 'rare', tier: 3, def: 2, dex: 2, initiative: 1, desc: '+2 defense, +2 DEX, quicker into the fray.', price: 150 },
+];
+
+export const BOOTS = [
+  { id: 'worn_boots', name: 'Worn Boots', slot: 'boots', rarity: 'common', tier: 1, def: 1, desc: '+1 defense. They know the road.', price: 20 },
+  { id: 'scouts_boots', name: 'Scout\'s Boots', slot: 'boots', rarity: 'uncommon', tier: 2, dodge: 4, initiative: 1, desc: '+4% dodge, quicker initiative.', price: 75 },
+  { id: 'stoneroot_sabatons', name: 'Stoneroot Sabatons', slot: 'boots', rarity: 'rare', tier: 3, def: 3, hp: 10, desc: '+3 defense, +10 max HP.', price: 145 },
+  { id: 'seven_league', name: 'Seven-League Boots', slot: 'boots', rarity: 'epic', tier: 4, dodge: 6, dex: 3, initiative: 3, desc: '+6% dodge, +3 DEX, always first to the argument.', price: 290 },
 ];
 
 export const ACCESSORIES = [
   { id: 'lucky_coin', name: 'Lucky Coin', slot: 'accessory', rarity: 'common', tier: 1, lk: 3, desc: '+3 Luck. Heads, you live.', price: 45 },
   { id: 'iron_ring', name: 'Iron Signet', slot: 'accessory', rarity: 'common', tier: 1, str: 2, hp: 8, desc: '+2 STR, +8 max HP.', price: 45 },
-  { id: 'clarity_pendant', name: 'Pendant of Clarity', slot: 'accessory', rarity: 'uncommon', tier: 2, wis: 3, sanityGuard: 1, desc: '+3 WIS. Sanity losses reduced by 1.', price: 110 },
   { id: 'hawk_charm', name: 'Hawkeye Charm', slot: 'accessory', rarity: 'uncommon', tier: 2, crit: 8, desc: '+8% crit chance.', price: 100 },
+  { id: 'herald_ribbon', name: 'Herald\'s Ribbon', slot: 'accessory', rarity: 'uncommon', tier: 2, fameGainMult: 1.3, desc: 'Word of your deeds travels 30% further.', price: 95 },
+  { id: 'seer_monocle', name: 'Seer\'s Monocle', slot: 'accessory', rarity: 'rare', tier: 3, reveal: 'ranks', wis: 2, desc: 'While worn: see your own LIVE stat ranks. +2 WIS.', price: 210 },
   { id: 'vampire_fang', name: 'Vampire Fang', slot: 'accessory', rarity: 'rare', tier: 3, lifesteal: 0.12, desc: 'Heal 12% of damage you deal.', price: 180 },
   { id: 'greed_band', name: 'Band of Greed', slot: 'accessory', rarity: 'rare', tier: 3, goldMult: 1.35, desc: '+35% gold from all sources.', price: 200 },
   { id: 'phoenix_feather', name: 'Phoenix Feather', slot: 'accessory', rarity: 'epic', tier: 4, revive: true, desc: 'Once per run: survive a killing blow with 30% HP.', price: 350 },
-  { id: 'kings_eye', name: 'Eye of the Nameless King', slot: 'accessory', rarity: 'legendary', tier: 5, int: 4, wis: 4, lk: 4, desc: '+4 INT/WIS/LK. It blinks when you lie.', price: 800, unique: true },
+  { id: 'kings_eye', name: 'Eye of the Nameless King', slot: 'accessory', rarity: 'legendary', tier: 5, reveal: 'exact', int: 4, wis: 4, lk: 4, desc: 'While worn: see your EXACT live stats, and glimpse enemy strength. +4 INT/WIS/LK.', price: 800, unique: true },
 ];
 
-// Relics: passive run-defining effects (design doc: random relics, snowball builds)
+// Relics: passive run-defining effects
 export const RELICS = [
   { id: 'ember_heart', name: 'Ember Heart', rarity: 'uncommon', desc: 'Your attacks have +15% chance to burn.', burn: 0.15 },
   { id: 'frozen_tear', name: 'Frozen Tear', rarity: 'uncommon', desc: 'Your attacks have +12% chance to freeze.', freeze: 0.12 },
   { id: 'whetstone', name: 'Eternal Whetstone', rarity: 'common', desc: '+12% damage dealt.', dmgMult: 1.12 },
   { id: 'tortoise_shell', name: 'Tortoise Idol', rarity: 'common', desc: 'Take 10% less damage.', dmgTakenMult: 0.9 },
-  { id: 'moon_dial', name: 'Moon Dial', rarity: 'uncommon', desc: 'Restore 6 Mana at the start of each battle turn (was 4).', manaRegen: 2 },
+  { id: 'moon_dial', name: 'Moon Dial', rarity: 'uncommon', desc: 'Restore extra class resource each combat turn.', manaRegen: 2 },
   { id: 'blood_chalice', name: 'Blood Chalice', rarity: 'rare', desc: 'Heal 8% max HP after every victory.', victoryHeal: 0.08 },
-  { id: 'gamblers_die', name: 'Gambler’s Die', rarity: 'rare', desc: '+10% crit chance, +5% enemy crit chance. Live a little.', crit: 10, enemyCrit: 5 },
+  { id: 'gamblers_die', name: 'Gambler\'s Die', rarity: 'rare', desc: '+10% crit chance, +5% enemy crit chance. Live a little.', crit: 10, enemyCrit: 5 },
   { id: 'golden_idol', name: 'Golden Idol', rarity: 'rare', desc: '+50% gold from combat.', combatGoldMult: 1.5 },
-  { id: 'sanity_lantern', name: 'Lantern of Reason', rarity: 'rare', desc: 'Sanity losses reduced by 2. The dark is just dark.', sanityGuard: 2 },
+  { id: 'renown_lantern', name: 'Lantern of Renown', rarity: 'rare', desc: 'Your victories are witnessed — gain 1 Fame after every battle.', fameOnVictory: 1 },
   { id: 'xp_tome', name: 'Tome of Echoed Deeds', rarity: 'rare', desc: '+30% experience gained.', xpMult: 1.3 },
   { id: 'mimic_tooth', name: 'Mimic Tooth', rarity: 'uncommon', desc: 'Chests are never mimics. Mimics hold grudges about this.', noMimic: true },
   { id: 'boss_bane', name: 'Regicide Nail', rarity: 'epic', desc: '+25% damage against bosses.', bossDmgMult: 1.25 },
   { id: 'second_wind', name: 'Second Wind Bellows', rarity: 'epic', desc: 'Heal 15% max HP when a floor begins and you are below 30%.', lowHpHeal: 0.15 },
-  { id: 'demon_pact', name: 'Pact of the Patient Demon', rarity: 'epic', desc: '+30% damage dealt, but max Sanity reduced by 15. Read the fine print.', dmgMult: 1.3, maxSanity: -15 },
+  { id: 'demon_pact', name: 'Pact of the Patient Demon', rarity: 'epic', desc: '+30% damage dealt, but max HP reduced by 10%. Read the fine print.', dmgMult: 1.3, maxHpMult: 0.9 },
   { id: 'hourglass', name: 'Cracked Hourglass', rarity: 'epic', desc: 'Once per battle, surviving a killing blow leaves you at 1 HP instead.', deathward: true },
+  { id: 'war_drum', name: 'War Drum of the Deep', rarity: 'epic', desc: 'Begin every battle with 2 Battle Charge.', startCharge: 2 },
   { id: 'heros_ashes', name: 'Ashes of a Previous Hero', rarity: 'legendary', desc: '+3 to ALL stats. They almost made it. Carry them the rest of the way.', allStats: 3 },
 ];
 
 export const CONSUMABLES = [
   { id: 'potion_s', name: 'Minor Healing Potion', rarity: 'common', desc: 'Restore 30 HP.', heal: 30, price: 25 },
   { id: 'potion_l', name: 'Greater Healing Potion', rarity: 'uncommon', desc: 'Restore 70 HP.', heal: 70, price: 60 },
-  { id: 'mana_vial', name: 'Mana Vial', rarity: 'common', desc: 'Restore 25 Mana.', mana: 25, price: 25 },
-  { id: 'calming_tea', name: 'Monastery Tea', rarity: 'uncommon', desc: 'Restore 15 Sanity. Tastes like being forgiven.', sanity: 15, price: 45 },
-  { id: 'bomb', name: 'Alchemist’s Bomb', rarity: 'uncommon', desc: 'Deal 40 damage to all enemies.', bombDmg: 40, price: 55 },
+  { id: 'mana_vial', name: 'Essence Vial', rarity: 'common', desc: 'Restore 25 class resource.', mana: 25, price: 25 },
+  { id: 'calming_tea', name: 'Hero\'s Tonic', rarity: 'uncommon', desc: 'Restore 25 HP and steel your reputation (+2 Fame).', heal: 25, fame: 2, price: 45 },
+  { id: 'bomb', name: 'Alchemist\'s Bomb', rarity: 'uncommon', desc: 'Deal 40 damage to all enemies.', bombDmg: 40, price: 55 },
   { id: 'smelling_salts', name: 'Smelling Salts', rarity: 'rare', desc: 'Cure all ailments and restore 20 HP.', cure: true, heal: 20, price: 70 },
+  { id: 'appraisal_scroll', name: 'Scroll of Appraisal', rarity: 'rare', desc: 'A single-use reading of your current potential.', appraisal: true, price: 90 },
 ];
 
-export const ALL_EQUIPMENT = [...WEAPONS, ...ARMORS, ...ACCESSORIES];
+export const ALL_EQUIPMENT = [...WEAPONS, ...HELMETS, ...CHEST_ARMOR, ...LEG_ARMOR, ...BOOTS, ...ACCESSORIES];
 
 export function itemById(id) {
   return ALL_EQUIPMENT.find(i => i.id === id)

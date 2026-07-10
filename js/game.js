@@ -1,12 +1,17 @@
-// Game orchestrator: screens, floor flow, event resolution, endings.
+// Game orchestrator: screens, floor flow, three-card draws, event resolution,
+// character creation (race → class → origin), co-op decisions, endings.
 
-import { CLASSES, RANDOM_NAMES } from './data/classes.js';
+import { CLASSES, SUBCLASSES, RANDOM_NAMES, subclassOptions } from './data/classes.js';
+import { RACES, applyRacePromotion } from './data/races.js';
+import { ORIGINS, originById } from './data/origins.js';
 import { SKILLS } from './data/skills.js';
 import { BIOMES, biomeForFloor, ENEMIES, BOSSES, MODIFIERS } from './data/enemies.js';
-import { EVENTS, drawEvent } from './data/events.js';
-import { WEAPONS, ARMORS, ACCESSORIES, RELICS, CONSUMABLES, itemById, rollEquipment, rollRelic } from './data/items.js';
-import { loadMeta, saveMeta, upgradeRank, award, UPGRADES, ACHIEVEMENTS, newRun, saveRun, loadRun, clearRun, runRng } from './state.js';
-import { derived, classTitle, skillTier, gainXp, learnableSkills, changeSanity, heal, restoreMana, relicItems, equippedItems } from './character.js';
+import { EVENTS, CATEGORY_META, drawEvent } from './data/events.js';
+import { CONFIG } from './data/config.js';
+import { rankFor } from './data/ranks.js';
+import { CONSUMABLES, itemById, rollEquipment, rollRelic, EQUIP_SLOTS } from './data/items.js';
+import { loadMeta, saveMeta, upgradeRank, award, UPGRADES, ACHIEVEMENTS, newRun, saveRun, loadRun, clearRun, runRng, rollStart, startDescriptor } from './state.js';
+import { derived, classTitle, skillTier, gainXp, learnableSkills, heal, restoreMana, relicItems, equippedItems, changeFame, resourceName, appraiseRun, revealLevel, applySubclass as applySubclassFn, APPRAISABLE, allowedWeaponTypes, weaponCompatible } from './character.js';
 import { startCombat, buildEnemy } from './combat.js';
 import { ICONS } from './icons.js';
 import { SFX, toggleMute, isMuted } from './audio.js';
@@ -30,8 +35,6 @@ const LAST_FLOOR = 51;
 export function boot() {
   setParticles('dust');
   setBiomeGlow('#3f3a58');
-  const saved = loadRun();
-  if (saved) { run = saved; }
   titleScreen();
 }
 
@@ -55,14 +58,14 @@ function titleScreen() {
         <span>Victories: <b>${meta.wins}</b></span>
         <span>Best Floor: <b>${meta.bestFloor}</b></span>
       </div>
-      <div class="title-footer">A ROGUELIKE CARD-CRAWLER · EVERY RUN IS A NEW TOWER</div>
+      <div class="title-footer">A CO-OP ROGUELIKE CARD-CRAWLER · EVERY RUN IS A NEW TOWER</div>
     </div>`));
 
   document.getElementById('btn-new').onclick = () => {
     SFX.click();
     if (saved && !confirm('Abandon the current climb? Your climber will not be remembered kindly.')) return;
     clearRun(); run = null;
-    classSelect();
+    creationFlow();
   };
   if (saved) document.getElementById('btn-continue').onclick = () => { SFX.click(); run = saved; enterFloorScreen(); };
   document.getElementById('btn-coop').onclick = () => { SFX.click(); coopMenu(); };
@@ -127,6 +130,187 @@ function sanctumScreen() {
 }
 
 /* ============================================================
+   CHARACTER CREATION: race → class → origin → name (handoff §6, §22, §23)
+   ============================================================ */
+function creationFlow(coopContext = null) {
+  const pick = { raceId: 'human', classId: 'warrior', originId: ORIGINS[0].id };
+  let step = 0; // 0 race, 1 class, 2 origin, 3 name
+  let rerolls = 0;
+  let gen = null;
+
+  function maxRerolls() { return CONFIG.chargen.rerolls + (RACES[pick.raceId].extraReroll || 0); }
+
+  function render() {
+    app.innerHTML = '';
+    const steps = ['Bloodline', 'Calling', 'Origin', 'The Name'];
+    const scr = el(`<div class="screen">
+      <div class="select-header">
+        <h2>${steps[step]}</h2>
+        <p id="step-sub"></p>
+        <div class="step-dots">${steps.map((_, i) => `<span class="fdot ${i === step ? 'on' : i < step ? 'done' : ''}"></span>`).join('')}</div>
+      </div>
+      <div id="step-body"></div>
+      <div style="display:flex;justify-content:center;gap:10px;margin-top:18px">
+        ${step > 0 ? '<button class="btn small" id="btn-prev">← Back</button>' : '<button class="btn ghost small" id="btn-title">← Title</button>'}
+        <button class="btn primary" id="btn-next">${step === 3 ? 'Approach the Gate' : 'Continue →'}</button>
+      </div>
+    </div>`);
+    app.appendChild(scr);
+    const body = scr.querySelector('#step-body');
+    const sub = scr.querySelector('#step-sub');
+
+    if (step === 0) {
+      sub.textContent = 'Four peoples climb. The tower does not care which — but the tower is often wrong about what matters.';
+      body.innerHTML = '<div class="class-grid" id="races"></div>';
+      for (const race of Object.values(RACES)) {
+        const card = el(`<div class="panel class-card ${pick.raceId === race.id ? 'selected' : ''}" style="--accent:#c9a53f">
+          <div style="font-size:52px;margin-bottom:6px">${race.glyph}</div>
+          <h3>${race.name}</h3>
+          <div class="class-epithet">${race.blurb}</div>
+          <div class="class-evo">${race.hint}</div>
+        </div>`);
+        card.onclick = () => { pick.raceId = race.id; SFX.click(); render(); };
+        body.querySelector('#races').appendChild(card);
+      }
+    }
+    if (step === 1) {
+      sub.textContent = 'Six callings. What you\'re truly made of, you\'ll discover on the way up.';
+      body.innerHTML = '<div class="class-grid" id="classes"></div>';
+      for (const cls of Object.values(CLASSES)) {
+        const card = el(`<div class="panel class-card ${pick.classId === cls.id ? 'selected' : ''}" style="--accent:${cls.accent}">
+          <div class="class-icon">${ICONS[cls.id] || `<div style="font-size:48px">${cls.id === 'priest' ? '✝️' : '🥋'}</div>`}</div>
+          <h3>${cls.name}</h3>
+          <div class="class-epithet">${cls.epithet}</div>
+          <div class="class-evo">Resource: ${cls.resource.name} · Weapons: ${cls.weapons.join(', ')}</div>
+        </div>`);
+        card.onclick = () => { pick.classId = cls.id; SFX.click(); render(); };
+        body.querySelector('#classes').appendChild(card);
+      }
+    }
+    if (step === 2) {
+      sub.textContent = 'Where were you, the day before the tower? Origins are lived, not listed — yours plays out at the gate.';
+      body.innerHTML = '<div class="class-grid" id="origins"></div>';
+      for (const o of ORIGINS) {
+        const card = el(`<div class="panel class-card ${pick.originId === o.id ? 'selected' : ''}" style="--accent:#8fa8d9">
+          <div style="font-size:44px;margin-bottom:6px">${o.glyph}</div>
+          <h3 style="font-size:17px">${o.name}</h3>
+          <div class="class-epithet">${o.blurb}</div>
+        </div>`);
+        card.onclick = () => { pick.originId = o.id; SFX.click(); render(); };
+        body.querySelector('#origins').appendChild(card);
+      }
+    }
+    if (step === 3) {
+      if (!gen) gen = rollStart(pick.classId, pick.raceId);
+      const desc = startDescriptor(gen.percentile);
+      sub.textContent = 'The tower rolls your beginnings behind its back. You get a feeling — nothing more.';
+      body.innerHTML = `
+        <div class="panel roll-panel" style="flex-direction:column;align-items:stretch;gap:14px">
+          <div style="display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap">
+            <span style="font-size:40px">${RACES[pick.raceId].glyph}</span>
+            <div>
+              <div style="font-family:var(--font-display);font-size:19px">${RACES[pick.raceId].name} ${CLASSES[pick.classId].name}</div>
+              <div style="color:var(--ink-dim);font-size:14px">${originById(pick.originId).name}</div>
+            </div>
+          </div>
+          <div class="start-feel panel-inset">
+            <div class="sf-word">"${desc.word}"</div>
+            <div class="sf-flavor">${desc.flavor}</div>
+            <div class="sf-note">Exact stats, growth, and potential remain hidden. An appraiser could tell you more — for a price.</div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <input class="name-input" id="name" maxlength="16" placeholder="Name your climber..." />
+            <button class="btn small" id="btn-reroll" ${rerolls >= maxRerolls() ? 'disabled' : ''}>🎲 Tempt fate again (${maxRerolls() - rerolls} left)</button>
+          </div>
+        </div>`;
+      const nameInput = body.querySelector('#name');
+      nameInput.value = body._name || RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
+      body.querySelector('#btn-reroll').onclick = () => {
+        if (rerolls >= maxRerolls()) return;
+        rerolls++;
+        gen = rollStart(pick.classId, pick.raceId);
+        SFX.cardDeal();
+        render();
+      };
+    }
+
+    scr.querySelector('#btn-prev')?.addEventListener('click', () => { step--; gen = null; rerolls = 0; SFX.click(); render(); });
+    scr.querySelector('#btn-title')?.addEventListener('click', () => { SFX.click(); titleScreen(); });
+    scr.querySelector('#btn-next').onclick = () => {
+      SFX.click();
+      if (step < 3) { step++; render(); return; }
+      const name = scr.querySelector('#name')?.value.trim() || 'The Nameless';
+      if (coopContext) return coopContext.done({ ...pick, name, gen });
+      run = newRun(meta, { classId: pick.classId, raceId: pick.raceId, originId: pick.originId, name });
+      // creation already rolled; overwrite with the rolls the player "felt"
+      applyGen(run, pick, gen);
+      meta.totalRuns++;
+      saveMeta(meta);
+      SFX.unlock();
+      gateEntry(() => beginRun());
+    };
+  }
+  render();
+}
+
+function applyGen(run, pick, gen) {
+  const up = id => upgradeRank(meta, id);
+  const prowess = up('prowess');
+  run.stats = {
+    str: gen.stats.str + prowess, dex: gen.stats.dex + prowess,
+    int: gen.stats.int + prowess, wis: gen.stats.wis + prowess, lk: gen.stats.lk + prowess,
+  };
+  run.maxHp = gen.stats.hp + up('vitality') * 8;
+  run.hp = run.maxHp;
+  run.maxMp = gen.stats.mp + up('arcana') * 6;
+  run.mp = run.maxMp;
+  run.growthRank = gen.growthRank;
+  run.startPercentile = gen.percentile;
+  run.underdog = gen.percentile <= CONFIG.chargen.underdogPercentile;
+}
+
+/* ---------- gate entry presentation (handoff §27) ---------- */
+function gateEntry(then) {
+  const quick = (meta.gateSeen || 0) >= 3;
+  meta.gateSeen = (meta.gateSeen || 0) + 1;
+  saveMeta(meta);
+  const overlay = el(`
+    <div class="gate-overlay ${quick ? 'quick' : ''}">
+      <div class="gate-arch">
+        <div class="gate-doors"><span>🌑</span></div>
+      </div>
+      <div class="gate-caption">THE GATE ACKNOWLEDGES YOU</div>
+      <div class="gate-skip">click to enter</div>
+    </div>`);
+  document.body.appendChild(overlay);
+  SFX.bossIntro();
+  let doneCalled = false;
+  const go = () => {
+    if (doneCalled) return;
+    doneCalled = true;
+    overlay.classList.add('entering');
+    setTimeout(() => { overlay.remove(); then(); }, quick ? 350 : 900);
+  };
+  overlay.onclick = go;
+  setTimeout(go, quick ? 900 : 2600);
+}
+
+function beginRun() {
+  // origins are briefly playable: the origin's card resolves before floor 1
+  const origin = run.originId && originById(run.originId);
+  if (origin && !run.flags.origin_done) {
+    run.flags.origin_done = true;
+    const stage = floorChrome();
+    renderEventCard(stage, {
+      id: 'origin_' + origin.id, category: 'unknown', type: 'story',
+      glyph: origin.glyph, title: origin.title, text: origin.text, choices: origin.choices,
+    }, { originIntro: true });
+    return;
+  }
+  enterFloorScreen(true);
+}
+
+/* ============================================================
    CO-OP: menu, lobby, session plumbing
    ============================================================ */
 function coopMenu() {
@@ -143,7 +327,7 @@ function coopMenu() {
   const scr = el(`<div class="screen" style="max-width:560px">
     <div class="select-header">
       <h2>Climb Together</h2>
-      <p>One tower, one fate, up to four climbers. Combat is fought side by side;<br/>every choice is still your own.</p>
+      <p>One tower, one fate, up to four climbers. Combat is fought side by side;<br/>every choice is still your own — unless the party votes otherwise.</p>
     </div>
     <div class="panel" style="padding:24px">
       <input class="name-input" id="coop-name" maxlength="16" placeholder="Your name..." style="width:100%;margin-bottom:14px" />
@@ -194,9 +378,10 @@ function coopMenu() {
 }
 
 function coopLobby(myName) {
-  let myClass = 'warrior';
+  let myPick = { raceId: 'human', classId: 'warrior', originId: ORIGINS[0].id };
   let myReady = false;
-  const lobbyState = new Map(); // id -> {classId, ready}
+  let decisionMode = 'majority'; // host-controlled (handoff §3)
+  const lobbyState = new Map();
 
   const offLobby = coopS.net.on('lobby', (d, from) => {
     lobbyState.set(from, d);
@@ -204,12 +389,13 @@ function coopLobby(myName) {
     if (p) p.classId = d.classId;
     render();
   });
-  const offStart = coopS.net.on('start', () => beginCoopRun());
+  const offMode = coopS.net.on('mode', d => { decisionMode = d.mode; render(); });
+  const offStart = coopS.net.on('start', d => beginCoopRun(d.mode));
   coopS.onPartnerUpdate = () => render();
   coopS.onPartnerLeft = () => render();
 
   function sendLobby() {
-    coopS.net.send({ k: 'lobby', classId: myClass, ready: myReady, name: myName });
+    coopS.net.send({ k: 'lobby', classId: myPick.classId, raceId: myPick.raceId, ready: myReady, name: myName });
   }
 
   function everyoneReady() {
@@ -220,15 +406,15 @@ function coopLobby(myName) {
     return true;
   }
 
-  function beginCoopRun() {
-    offLobby(); offStart();
+  function beginCoopRun(mode) {
+    offLobby(); offStart(); offMode();
     clearRun();
-    run = newRun(meta, myClass, myName, rollStats(CLASSES[myClass]), coopS.seed);
+    coopS.decisionMode = mode || decisionMode;
+    run = newRun(meta, { classId: myPick.classId, raceId: myPick.raceId, originId: myPick.originId, name: myName, seed: coopS.seed });
     run.coopMode = true;
     meta.totalRuns++;
     saveMeta(meta);
     SFX.unlock();
-    // if the host quits, the next climber inherits the deck
     coopS.onPartnerLeft = () => {
       toast('A climber has left the party.', 'bad');
       if (coopS.isHost && run && run.floor > 0 && !coopS.floorContent.has(run.floor)) {
@@ -236,7 +422,7 @@ function coopLobby(myName) {
       }
       refreshPartnerStrip();
     };
-    enterFloorScreen(true);
+    gateEntry(() => beginRun());
   }
 
   function render() {
@@ -248,40 +434,57 @@ function coopLobby(myName) {
         <p>Party code: <b style="color:var(--gold-bright);font-size:26px;letter-spacing:.25em;font-family:var(--font-mono)">${coopS.net.code}</b><br/>
         Share it with your friend${coopS.partySize > 2 ? 's' : ''} — up to 4 climbers.</p>
       </div>
-      <div class="class-grid" id="classes"></div>
+      <div class="panel" style="padding:14px 18px;margin-bottom:14px">
+        <div style="font-family:var(--font-display);font-size:13px;letter-spacing:.08em;color:var(--ink-dim);margin-bottom:8px">PARTY DECISIONS ${coopS.isHost ? '(you choose)' : '(host chooses)'}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn small ${decisionMode === 'majority' ? 'primary' : ''}" data-mode="majority" ${coopS.isHost ? '' : 'disabled'}>🗳 Majority Vote — ties roll randomly</button>
+          <button class="btn small ${decisionMode === 'first' ? 'primary' : ''}" data-mode="first" ${coopS.isHost ? '' : 'disabled'}>⚡ First Pick — fastest hand decides</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px" id="pick-row">
+        <div class="panel" style="padding:12px;text-align:center;cursor:pointer" id="pick-race"><div style="font-size:32px">${RACES[myPick.raceId].glyph}</div><b>${RACES[myPick.raceId].name}</b><div style="font-size:12px;color:var(--ink-dim)">change race</div></div>
+        <div class="panel" style="padding:12px;text-align:center;cursor:pointer" id="pick-class"><div class="class-icon" style="width:40px;height:40px;margin:0 auto;color:${CLASSES[myPick.classId].accent}">${ICONS[myPick.classId] || '🥋'}</div><b>${CLASSES[myPick.classId].name}</b><div style="font-size:12px;color:var(--ink-dim)">change class</div></div>
+        <div class="panel" style="padding:12px;text-align:center;cursor:pointer" id="pick-origin"><div style="font-size:32px">${originById(myPick.originId).glyph}</div><b style="font-size:13px">${originById(myPick.originId).name}</b><div style="font-size:12px;color:var(--ink-dim)">change origin</div></div>
+      </div>
       <div class="panel" style="padding:18px 22px">
         <div id="roster"></div>
         <div class="divider"></div>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
           <button class="btn ${myReady ? '' : 'primary'}" id="btn-ready">${myReady ? '✔ Ready (click to unready)' : 'Ready Up'}</button>
-          ${coopS.isHost ? `<button class="btn primary" id="btn-go" ${everyoneReady() && coopS.partySize >= 1 ? '' : 'disabled'}>Enter the Tower</button>` : `<span style="align-self:center;color:var(--ink-dim);font-style:italic">The host opens the gate when all are ready.</span>`}
+          ${coopS.isHost ? `<button class="btn primary" id="btn-go" ${everyoneReady() ? '' : 'disabled'}>Enter the Tower</button>` : `<span style="align-self:center;color:var(--ink-dim);font-style:italic">The host opens the gate when all are ready.</span>`}
           <button class="btn ghost small" id="btn-leave">Leave</button>
         </div>
       </div>
     </div>`);
     app.appendChild(scr);
 
-    const grid = scr.querySelector('#classes');
-    for (const cls of Object.values(CLASSES)) {
-      const card = el(`<div class="panel class-card ${myClass === cls.id ? 'selected' : ''}" style="--accent:${cls.accent}">
-        <div class="class-icon">${ICONS[cls.id]}</div>
-        <h3>${cls.name}</h3>
-        <div class="class-epithet">${cls.epithet}</div>
-      </div>`);
-      card.onclick = () => { if (!myReady) { myClass = cls.id; SFX.click(); sendLobby(); render(); } };
-      grid.appendChild(card);
-    }
+    scr.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
+      if (!coopS.isHost) return;
+      decisionMode = b.dataset.mode;
+      coopS.net.send({ k: 'mode', mode: decisionMode });
+      SFX.click(); render();
+    });
+
+    const cyclePick = (key, list) => {
+      const ids = list.map(x => x.id);
+      const i = ids.indexOf(myPick[key]);
+      myPick[key] = ids[(i + 1) % ids.length];
+      SFX.click(); sendLobby(); render();
+    };
+    scr.querySelector('#pick-race').onclick = () => { if (!myReady) cyclePick('raceId', Object.values(RACES)); };
+    scr.querySelector('#pick-class').onclick = () => { if (!myReady) cyclePick('classId', Object.values(CLASSES)); };
+    scr.querySelector('#pick-origin').onclick = () => { if (!myReady) cyclePick('originId', ORIGINS); };
 
     const rosterEl = scr.querySelector('#roster');
     const rows = [
-      { name: myName + ' (you)', classId: myClass, ready: myReady, host: coopS.isHost },
-      ...partners.map(([id, p]) => ({ name: p.name, classId: lobbyState.get(id)?.classId, ready: lobbyState.get(id)?.ready, host: coopS.net.roster.find(r => r.id === id)?.host })),
+      { name: myName + ' (you)', classId: myPick.classId, raceId: myPick.raceId, ready: myReady, host: coopS.isHost },
+      ...partners.map(([id, p]) => ({ name: p.name, classId: lobbyState.get(id)?.classId, raceId: lobbyState.get(id)?.raceId, ready: lobbyState.get(id)?.ready, host: coopS.net.roster.find(r => r.id === id)?.host })),
     ];
     rosterEl.innerHTML = rows.map(r => `
       <div class="inv-item">
         <div class="item-name">${r.host ? '👑 ' : ''}${r.name}</div>
         <div style="display:flex;gap:10px;align-items:center">
-          <span class="tag">${r.classId ? CLASSES[r.classId].name : 'choosing...'}</span>
+          <span class="tag">${r.raceId ? RACES[r.raceId]?.name || '' : ''} ${r.classId ? CLASSES[r.classId].name : 'choosing...'}</span>
           <span class="tag" style="${r.ready ? 'color:var(--luck);border-color:var(--luck)' : ''}">${r.ready ? 'READY' : 'not ready'}</span>
         </div>
       </div>`).join('');
@@ -292,8 +495,8 @@ function coopLobby(myName) {
     };
     scr.querySelector('#btn-go')?.addEventListener('click', () => {
       if (!everyoneReady()) return;
-      coopS.net.send({ k: 'start' });
-      beginCoopRun();
+      coopS.net.send({ k: 'start', mode: decisionMode });
+      beginCoopRun(decisionMode);
     });
     scr.querySelector('#btn-leave').onclick = () => {
       coopS.destroy(); coopS = null;
@@ -305,12 +508,10 @@ function coopLobby(myName) {
   render();
 }
 
-// End-of-run cleanup shared by every exit path
 function teardownCoop() {
   if (coopS) { coopS.destroy(); coopS = null; }
 }
 
-// Status the combat engine and HUD broadcast to partners
 function statusOf(run, act) {
   const d = derived(run);
   return { ...run, def: d.def, dodge: Math.round(d.dodge), act };
@@ -340,92 +541,28 @@ function refreshPartnerStrip() {
 }
 
 /* ============================================================
-   CLASS SELECT + STAT ROLL
-   ============================================================ */
-function rollStats(cls) {
-  const rng = makeRng(randomSeed());
-  const r = {};
-  for (const k of ['hp', 'mp', 'str', 'dex', 'int', 'wis', 'lk']) {
-    r[k] = cls.base[k] + rng.int(0, cls.roll[k]);
-  }
-  return r;
-}
-
-function classSelect() {
-  let selected = 'warrior';
-
-  app.innerHTML = '';
-  const scr = el(`<div class="screen">
-    <div class="select-header">
-      <h2>Choose Your Climber</h2>
-      <p>The tower accepts all classes. The tower keeps all classes.<br/>What you're made of, you'll discover on the way up.</p>
-    </div>
-    <div class="class-grid" id="classes"></div>
-    <div class="panel roll-panel" style="justify-content:center">
-      <div class="roll-actions">
-        <input class="name-input" id="name" maxlength="16" placeholder="Name your climber..." />
-        <button class="btn primary" id="btn-start">Begin the Climb</button>
-      </div>
-    </div>
-    <div style="text-align:center;margin-top:16px"><button class="btn ghost small" id="btn-back">← Back</button></div>
-  </div>`);
-  app.appendChild(scr);
-
-  const grid = scr.querySelector('#classes');
-  for (const cls of Object.values(CLASSES)) {
-    const card = el(`<div class="panel class-card" style="--accent:${cls.accent}" data-id="${cls.id}">
-      <div class="class-icon">${ICONS[cls.id]}</div>
-      <h3>${cls.name}</h3>
-      <div class="class-epithet">${cls.epithet}</div>
-    </div>`);
-    card.onclick = () => { selected = cls.id; SFX.click(); update(); };
-    grid.appendChild(card);
-  }
-
-  const nameInput = scr.querySelector('#name');
-  nameInput.value = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
-
-  function update() {
-    grid.querySelectorAll('.class-card').forEach(c => c.classList.toggle('selected', c.dataset.id === selected));
-  }
-
-  scr.querySelector('#btn-start').onclick = () => {
-    const name = nameInput.value.trim() || 'The Nameless';
-    // stats are rolled behind the curtain — the tower knows, you don't (yet)
-    run = newRun(meta, selected, name, rollStats(CLASSES[selected]));
-    meta.totalRuns++;
-    saveMeta(meta);
-    SFX.unlock();
-    enterFloorScreen(true);
-  };
-  scr.querySelector('#btn-back').onclick = () => { SFX.click(); titleScreen(); };
-
-  update();
-}
-
-/* ============================================================
    HUD + FLOOR CHROME
    ============================================================ */
 function renderHud() {
   const hud = document.querySelector('.hud');
   if (!hud || !run) return;
-  const d = derived(run);
+  const resName = resourceName(run);
   hud.innerHTML = `
     <div class="hud-identity" style="--accent:${CLASSES[run.classId].accent}">
-      <div class="hud-portrait">${ICONS[run.classId]}</div>
+      <div class="hud-portrait">${ICONS[run.classId] || '🥋'}</div>
       <div>
         <div class="hud-name">${run.name}</div>
-        <div class="hud-class">Lv ${run.level} ${classTitle(run)}</div>
+        <div class="hud-class">Lv ${run.level} ${run.raceName} ${classTitle(run)}</div>
       </div>
     </div>
     <div class="hud-bars">
       ${bar('hp', run.hp, run.maxHp, '❤ HP')}
-      ${bar('mp', run.mp, run.maxMp, '✦ Mana')}
-      ${bar('sanity', run.sanity, run.maxSanity, '☯ Sanity')}
+      ${bar('mp', run.mp, run.maxMp, `✦ ${resName}`)}
       ${bar('xp', run.xp, run.xpNext, `XP → Lv ${run.level + 1}`)}
     </div>
     <div class="hud-meta">
       <div class="hud-chip">🪙 <b>${run.gold}</b></div>
+      <div class="hud-chip" title="Fame — always visible, always watching">🌟 <b>${run.fame}</b></div>
       <div class="hud-chip">🗼 <b>F${run.floor}</b></div>
       ${run.sigils.length ? `<div class="hud-chip">✦ <b>${run.sigils.length}/3</b></div>` : ''}
     </div>
@@ -464,7 +601,7 @@ function floorChrome() {
     <div class="screen" style="padding-top:0">
       <div class="hud panel"></div>
       ${partnerStrip()}
-      ${floorStrip()}
+      ${run.floor > 0 ? floorStrip() : ''}
       <div id="stage"></div>
     </div>`;
   renderHud();
@@ -487,19 +624,18 @@ async function nextFloor() {
   setBiomeGlow(biome.glow);
   setParticles(biome.particle);
 
-  // co-op mercy: the fallen rise at the next floor (design doc)
+  // co-op mercy: the fallen rise at the next floor — at a price (handoff §16)
   if (run.down) {
     run.down = false;
-    run.hp = Math.max(run.hp, Math.round(run.maxHp * 0.3));
-    if (run.sanity < 15) run.sanity = 15;
-    toast('Your companions drag you to your feet. Back in the fight.', 'info');
+    run.hp = Math.max(1, Math.round(run.maxHp * CONFIG.death.respawnHpPct));
+    run.mp = Math.round(run.maxMp * CONFIG.death.respawnResourcePct);
+    const lost = deathItemLoss();
+    toast(`Your companions drag you to your feet.${lost.length ? ' Lost in the fall: ' + lost.join(', ') : ''}`, 'bad');
   }
 
-  // catching your breath between floors
-  heal(run, run.maxHp * 0.08);
-  restoreMana(run, run.maxMp * 0.15);
+  heal(run, run.maxHp * CONFIG.recovery.floorHealPct);
+  restoreMana(run, run.maxMp * CONFIG.recovery.floorManaPct);
 
-  // relic: second wind
   const relics = relicItems(run);
   const lowHeal = relics.find(r => r.lowHpHeal);
   if (lowHeal && run.hp / run.maxHp < 0.3) {
@@ -507,11 +643,10 @@ async function nextFloor() {
     toast(`${lowHeal.name} stirs — you breathe easier.`, 'info');
   }
 
-  // sanity achievement
-  if (run.sanity > 0 && run.sanity <= 5) unlock('broke_sane');
+  if (run.fame >= 50) unlock('famous');
   if (run.floor >= 10 && !meta.classFloor10.includes(run.classId)) {
     meta.classFloor10.push(run.classId);
-    if (meta.classFloor10.length === 4) unlock('all_classes');
+    if (meta.classFloor10.length >= 4) unlock('all_classes');
     saveMeta(meta);
   }
   if (run.floor > meta.bestFloor) { meta.bestFloor = run.floor; saveMeta(meta); }
@@ -520,7 +655,6 @@ async function nextFloor() {
 
   const stage = floorChrome();
 
-  // biome intro splash on first floor of each biome
   if (run.floor === biome.floors[0]) {
     stage.innerHTML = `
       <div class="card-stage"><div class="panel event-card">
@@ -542,28 +676,382 @@ async function nextFloor() {
   if (BOSS_FLOORS.includes(run.floor)) return bossFloor(stage);
   if (run.floor % 5 === 0) return modifierFloor(stage);
 
-  // the floor before a boss is always a place to catch your breath
   if (BOSS_FLOORS.includes(run.floor + 1)) {
     const campfire = EVENTS.find(e => e.id === 'campfire');
     saveRun(run);
     return renderEventCard(stage, campfire);
   }
 
-  // regular floor: 42% combat encounter, else event card
-  const rng = runRng(run);
-  if (rng.chance(0.42)) { rng.advance(); saveRun(run); return encounterFloor(stage); }
-  rng.advance();
+  // THE THREE-CARD DRAW (handoff §4): most floors deal a choice of paths
+  const cards = generateCards(runRng(run));
+  saveRun(run);
+  renderCardChoice(stage, cards);
+}
 
-  const ev = drawEvent(runRng(run), run);
+/* ---------- three-card generation ---------- */
+function generateCards(rng, forParty = null) {
+  const biome = biomeForFloor(run.floor);
+  const cards = [];
+  const usedEvents = [];
+  const n = CONFIG.events.cardsPerDraw;
+  // one slot is combat-weighted; others draw distinct events
+  const combatSlot = rng.chance(0.75) ? rng.int(0, n - 1) : -1;
+  for (let i = 0; i < n; i++) {
+    if (i === combatSlot) {
+      const group = pickEnemyGroup(rng, biome, forParty?.partySize || 1);
+      cards.push({ kind: 'encounter', category: 'combat', enemies: forParty ? buildPartyEnemies(group, forParty.partySize) : group.map(g => ({ ...g })), sparkle: false });
+      continue;
+    }
+    const ev = drawEvent(rng, run, { exclude: usedEvents });
+    usedEvents.push(ev.id);
+    // affinity sparkle: sometimes, never explained (handoff §4)
+    let affine = false;
+    if (ev.affinity) {
+      const classes = forParty?.classes || [run.classId];
+      if (ev.affinity.classes?.some(c => classes.includes(c))) affine = true;
+      if (ev.affinity.races?.includes(run.raceId)) affine = true;
+      if (ev.affinity.underdog && run.underdog) affine = true;
+    }
+    cards.push({ kind: 'event', category: ev.category || 'unknown', eventId: ev.id, sparkle: affine && rng.chance(CONFIG.events.sparkleChance) });
+  }
+  rng.advance();
+  return cards;
+}
+
+function renderCardChoice(stage, cards, coopCtx = null) {
+  const picks = new Map(); // playerId -> card index (co-op)
+  let locked = false;
+
+  function cardFace(c, i) {
+    const m = CATEGORY_META[c.category] || CATEGORY_META.unknown;
+    return `
+      <div class="pick-card ${c.sparkle ? 'sparkle' : ''}" data-i="${i}">
+        <div class="pc-glyph">${m.glyph}</div>
+        <div class="pc-cat">${m.label}</div>
+        <div class="pc-blurb">${m.blurb}</div>
+        <div class="pc-votes" id="votes-${i}"></div>
+      </div>`;
+  }
+
+  stage.innerHTML = `
+    <div class="draw-header">
+      <span class="tag">FLOOR ${run.floor}</span>
+      <h3>The Tower Deals ${cards.length}</h3>
+      <p>${coopCtx ? (coopCtx.mode === 'first' ? 'First pick decides — fastest hand wins.' : 'The party votes. Majority rules; ties spin the tower\'s coin.') : 'Choose your path. The cards show only their nature, never their contents.'}</p>
+    </div>
+    <div class="pick-row">${cards.map((c, i) => cardFace(c, i)).join('')}</div>`;
+  SFX.cardDeal();
+
+  function renderVotes() {
+    if (!coopCtx) return;
+    for (let i = 0; i < cards.length; i++) {
+      const votes = [...picks.entries()].filter(([, v]) => v === i);
+      const elv = document.getElementById(`votes-${i}`);
+      if (elv) elv.innerHTML = votes.map(([id]) => {
+        const name = id === coopS.you ? 'You' : (coopS.partners.get(id)?.name || '?');
+        return `<span class="vote-chip">${name}</span>`;
+      }).join('');
+    }
+    // waiting hint
+    const missing = coopS.partySize - picks.size;
+    const hdr = stage.querySelector('.draw-header p');
+    if (hdr && coopCtx.mode === 'majority' && picks.size > 0) {
+      hdr.textContent = missing > 0 ? `Waiting on ${missing} vote${missing > 1 ? 's' : ''}…` : 'Votes are in — the tower counts.';
+    }
+  }
+
+  stage.querySelectorAll('.pick-card').forEach(cardEl => {
+    cardEl.onclick = () => {
+      if (locked) return;
+      const i = +cardEl.dataset.i;
+      SFX.click();
+      if (!coopCtx) return resolveCard(stage, cards[i]);
+      if (picks.has(coopS.you)) return; // no duplicate submissions
+      picks.set(coopS.you, i);
+      coopS.net.send({ k: 'pick', floor: run.floor, idx: i });
+      cardEl.classList.add('picked');
+      renderVotes();
+      coopCtx.onLocalPick(i, picks);
+    };
+  });
+
+  if (coopCtx) {
+    coopCtx.bind({ picks, renderVotes, lock: idx => {
+      locked = true;
+      stage.querySelectorAll('.pick-card').forEach(c => c.classList.toggle('chosen', +c.dataset.i === idx));
+      setTimeout(() => resolveCard(stage, cards[idx]), 700);
+    } });
+  }
+}
+
+function resolveCard(stage, card) {
+  if (card.kind === 'encounter') {
+    if (coopS) {
+      const enemies = rehydrateEnemies(card.enemies);
+      return sharedFightCard(stage, { type: 'encounter', enemies });
+    }
+    return encounterFloor(stage, card.enemies);
+  }
+  const ev = EVENTS.find(e => e.id === card.eventId);
   run.seenEvents.push(ev.id);
   saveRun(run);
   renderEventCard(stage, ev);
 }
 
-/* ---------- co-op floor flow: host draws, everyone plays ---------- */
+/* ---------- combat encounter card (Fight / Sneak / Bribe) ---------- */
+function pickEnemyGroup(rng, biome, partySize = 1) {
+  const depth = run.floor - biome.floors[0];
+  let pool = ENEMIES[biome.id] || ENEMIES.hell;
+  if (depth < 4) pool = pool.filter(e => !e.elite);
+  const lead = rng.pick(pool);
+  const group = [lead];
+  if (lead.pack) {
+    const extra = depth < 3 ? 1 : rng.int(1, 2);
+    for (let i = 0; i < extra; i++) group.push(rng.chance(0.7) ? lead : rng.pick(pool.filter(e => !e.elite)));
+  } else if (!lead.elite && depth >= 2 && rng.chance(0.25)) {
+    group.push(rng.pick(pool.filter(e => !e.elite)));
+  }
+  // party-size scaling: more bodies, not just bigger health bars (handoff §7)
+  if (partySize >= CONFIG.partyScaling.extraEnemyAt) {
+    group.push(rng.pick(pool.filter(e => !e.elite)));
+  }
+  return group;
+}
+
+async function encounterFloor(stage, prebuiltGroup = null) {
+  const rng = runRng(run);
+  const biome = biomeForFloor(run.floor);
+  const group = prebuiltGroup || pickEnemyGroup(rng, biome);
+  rng.advance(); saveRun(run);
+
+  const names = [...new Set(group.map(g => g.name))].join(', ');
+  const bribable = group.every(g => g.intelligent);
+  // fame lowers the price of being left alone (handoff §25)
+  const fameDiscount = Math.min(0.5, Math.floor(run.fame / 10) * CONFIG.fame.bribeDiscountPer10);
+  const bribe = Math.round(group.reduce((s, g) => s + g.gold[1], 0) * 0.8 * (1 - fameDiscount));
+
+  stage.innerHTML = `
+    <div class="card-stage"><div class="panel event-card">
+      <div class="card-art"><div class="card-glyph">${group[0].glyph}</div>
+        <span class="tag card-type-tag">ENCOUNTER</span><span class="tag card-floor-tag">FLOOR ${run.floor}</span></div>
+      <div class="card-body">
+        <h3>Hostiles Ahead</h3>
+        <div class="card-text">The floor narrows, and the dark produces: ${names}${group.length > 1 ? ` — ${group.length} of them` : ''}. They have already noticed you. The only question is what happens next.</div>
+        <div class="card-choices">
+          <button class="choice-btn" data-act="fight"><span class="choice-label">⚔ Fight</span><span class="choice-hint">XP + gold</span></button>
+          <button class="choice-btn" data-act="sneak"><span class="choice-label">🕶 Sneak past</span><span class="choice-hint">a test of agility</span></button>
+          ${bribable
+            ? `<button class="choice-btn" data-act="bribe" ${run.gold < bribe ? 'disabled' : ''}><span class="choice-label">🪙 Bribe them</span><span class="choice-hint ${run.gold < bribe ? 'choice-req' : ''}">-${bribe}g${fameDiscount > 0 ? ' (your name precedes you)' : ''}</span></button>`
+            : `<button class="choice-btn locked" disabled><span class="choice-label">🪙 Bribe them</span><span class="choice-hint choice-req">🔒 they can't be reasoned with</span></button>`}
+        </div>
+      </div>
+    </div></div>`;
+  SFX.cardDeal();
+
+  stage.querySelectorAll('[data-act]').forEach(btn => btn.onclick = async () => {
+    SFX.click();
+    const act = btn.dataset.act;
+    const rng2 = runRng(run);
+    if (act === 'fight') {
+      rng2.advance();
+      return fightGroup(stage, group, { text: 'Steel answers steel.' });
+    }
+    if (act === 'bribe') {
+      run.gold -= bribe;
+      rng2.advance(); saveRun(run);
+      return showOutcomePanel(stage, [
+        { text: `You toss the purse. They count it — twice, insultingly — and melt back into the dark. (-${bribe} gold)`, cls: 'gold' },
+      ]);
+    }
+    // sneak: a hidden check — no numbers shown (handoff §5)
+    const d = derived(run);
+    const sneakDc = 10 + Math.floor(run.floor / 8);
+    const roll = rng2.int(1, 8);
+    const total = d.dex + roll + Math.floor(d.lk / 4);
+    rng2.advance(); saveRun(run);
+    if (total >= sneakDc) {
+      const xp = 10 + Math.floor(run.floor * 1.2);
+      const ups = gainXp(run, xp, runRng(run));
+      await showOutcomePanel(stage, [
+        { text: `You move like a rumor — they never knew you were there. +${xp} XP`, cls: 'good' },
+      ], ups);
+    } else {
+      await modal(`<h3>Spotted!</h3><p class="modal-sub">A twig. It's always a twig.</p>
+        <div class="pick-grid"><button class="pick-option" data-close="x"><span class="po-name">They ambush you</span></button></div>`);
+      return fightGroup(stage, group, { text: 'They were waiting for the twig.', modifier: { name: 'Ambushed', desc: 'Enemies strike first.', enemyFirst: true } });
+    }
+  });
+}
+
+async function fightGroup(stage, specs, { text = null, modifier = null, prebuilt = null } = {}) {
+  const biome = biomeForFloor(run.floor);
+  const rng = runRng(run);
+  const enemies = prebuilt || specs.map(s => buildEnemy(s, run.floor, biome.floors[0], { hpMult: modifier?.hpMult || 1 }));
+  if (modifier?.extraEnemy) {
+    enemies.push(buildEnemy(runRng(run).pick(ENEMIES[biome.id].filter(e => !e.elite)), run.floor, biome.floors[0]));
+  }
+  const { result, gold = 0, xp = 0 } = await startCombat({
+    container: stage, run, rng, enemies, modifier,
+    introText: text, onHud: renderHud,
+  });
+
+  if (result === 'dead') {
+    if (coopS && !coopS.alone) {
+      run.down = true;
+      saveRun(run);
+      coopS.broadcastStatus(statusOf(run, 'waiting'), 'waiting');
+      return showOutcomePanel(stage, [
+        { text: 'You fall — but you are not alone in this tower. Your companions find you and carry you to the stairs.', cls: 'bad' },
+      ]);
+    }
+    return endRun('dead');
+  }
+  if (result === 'fled') {
+    saveRun(run);
+    return showOutcomePanel(stage, [{ text: 'You live to climb another floor. The tower notes your pragmatism.', cls: 'good' }]);
+  }
+
+  await afterVictory(stage, enemies, gold, xp);
+}
+
+async function afterVictory(stage, enemies, gold, xp, { boss = null } = {}) {
+  run.kills += enemies.length;
+  run.gold += gold;
+  run.goldEarned += gold;
+  unlock('first_blood');
+  if (run.gold >= 500) unlock('rich');
+  if (enemies.some(e => e.id === 'mimic')) unlock('mimic');
+
+  const lines = [{ text: `Victory! +${gold} gold, +${xp} XP`, cls: 'gold' }];
+
+  // victory recovery (handoff §15) — more generous than the old build
+  const vh = heal(run, run.maxHp * CONFIG.recovery.victoryHealPct);
+  if (vh > 0) lines.push({ text: `You bind your wounds in the quiet after. (+${vh} HP)`, cls: 'good' });
+  const victoryHeal = relicItems(run).find(r => r.victoryHeal);
+  if (victoryHeal) {
+    const amt = heal(run, run.maxHp * victoryHeal.victoryHeal);
+    if (amt) lines.push({ text: `${victoryHeal.name} hums — you recover ${amt} HP.`, cls: 'good' });
+  }
+  const fameRelic = relicItems(run).find(r => r.fameOnVictory);
+  if (fameRelic) { changeFame(run, fameRelic.fameOnVictory); lines.push({ text: 'Your lantern carries the tale. (+Fame)', cls: 'good' }); }
+  if (boss) {
+    heal(run, run.maxHp * CONFIG.recovery.bossVictoryHealPct);
+    run.mp = run.maxMp;
+    changeFame(run, 6);
+    lines.push({ text: 'The gate\'s blessing washes over you — wounds knit, strength returns, and the tower learns your name. (+Fame)', cls: 'good' });
+  }
+  SFX.victory();
+  const ups = gainXp(run, xp, runRng(run));
+  saveRun(run);
+  await showOutcomePanel(stage, lines, ups, boss ? { continueLabel: 'Claim your prize', advance: false } : {});
+  if (boss) await bossRelicPick(stage);
+}
+
+async function bossRelicPick(stage) {
+  const rng2 = runRng(run);
+  const choices = [rollRelic(rng2, run.relics), rollRelic(rng2, run.relics), rollRelic(rng2, run.relics)]
+    .filter((r, i, a) => r && a.findIndex(x => x && x.id === r.id) === i);
+  rng2.advance();
+  saveRun(run);
+  if (choices.length) {
+    await modalCustom((m, close) => {
+      m.innerHTML = `<h3>The Gate Opens</h3><p class="modal-sub">Something glitters in the hoard. Choose one relic.</p>
+        <div class="pick-grid">${choices.map((r, i) => `
+          <button class="pick-option" data-i="${i}">
+            <span class="po-tag tag ${rarityClass(r.rarity)}">${r.rarity}</span>
+            <div class="po-name">${r.name}</div><div class="po-desc">${r.desc}</div>
+          </button>`).join('')}
+        </div>`;
+      m.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
+        const r = choices[+b.dataset.i];
+        run.relics.push(r.id);
+        SFX.unlock();
+        toast(`Relic claimed: ${r.name}`, 'info');
+        saveRun(run);
+        close();
+      });
+    });
+  }
+  renderHud();
+  nextFloorButton(document.getElementById('stage'));
+}
+
+/* ---------- trial + boss floors (fixed single cards) ---------- */
+async function modifierFloor(stage) {
+  const rng = runRng(run);
+  const mod = rng.pick(MODIFIERS);
+  const biome = biomeForFloor(run.floor);
+  const group = pickEnemyGroup(rng, biome);
+  rng.advance(); saveRun(run);
+
+  stage.innerHTML = `
+    <div class="card-stage"><div class="panel event-card">
+      <div class="card-art"><div class="card-glyph">⚠️</div>
+        <span class="tag card-type-tag">TRIAL</span><span class="tag card-floor-tag">FLOOR ${run.floor}</span></div>
+      <div class="card-body">
+        <h3>Trial Floor: ${mod.name}</h3>
+        <div class="card-text">The tower posts terms for this floor, burned into the wall in letters that smoke slightly:\n\n"${mod.desc}"\n\nThere is no way around a trial floor. There is only through.</div>
+        <div class="card-choices">
+          <button class="choice-btn" id="go"><span class="choice-label">⚔ Accept the trial</span><span class="choice-hint">bonus loot</span></button>
+        </div>
+      </div>
+    </div></div>`;
+  SFX.cardDeal();
+  document.getElementById('go').onclick = () => {
+    SFX.click();
+    fightGroup(stage, group, { text: `Trial: ${mod.name}.`, modifier: { ...mod, goldMult: (mod.goldMult || 1) * 1.5 } });
+  };
+}
+
+async function bossFloor(stage) {
+  const boss = BOSSES[run.floor];
+  stage.innerHTML = `
+    <div class="card-stage"><div class="panel event-card">
+      <div class="card-art"><div class="card-glyph">${boss.glyph}</div>
+        <span class="tag card-type-tag" style="border-color:var(--blood);color:#f0a8a0">BOSS</span>
+        <span class="tag card-floor-tag">FLOOR ${run.floor}</span></div>
+      <div class="card-body">
+        <h3>${boss.name}</h3>
+        <div class="card-text">${boss.intro}</div>
+        <div class="card-choices">
+          <button class="choice-btn" id="go"><span class="choice-label">⚔ Face it</span><span class="choice-hint">no retreat</span></button>
+        </div>
+      </div>
+    </div></div>`;
+  SFX.bossIntro();
+  document.getElementById('go').onclick = async () => {
+    SFX.click();
+    const enemies = [buildEnemy(boss, run.floor, run.floor, { boss: true })];
+    await fightGroupBoss(stage, enemies, boss);
+  };
+}
+
+async function fightGroupBoss(stage, enemies, boss) {
+  const rng = runRng(run);
+  const { result, gold = 0, xp = 0 } = await startCombat({
+    container: stage, run, rng, enemies, introText: `${boss.name}: "${boss.taunt}"`, onHud: renderHud,
+  });
+  if (result === 'dead') return endRun('dead');
+
+  const achMap = { 10: 'floor_10', 20: 'floor_20', 30: 'floor_30', 40: 'floor_40', 50: 'floor_50' };
+  if (achMap[run.floor]) unlock(achMap[run.floor]);
+  if (run.floor === LAST_FLOOR) return victoryScreen('win');
+
+  await afterVictory(stage, enemies, gold, xp, { boss });
+}
+
+/* ============================================================
+   CO-OP FLOOR FLOW
+   ============================================================ */
+function buildPartyEnemies(specs, partySize) {
+  const biome = biomeForFloor(run.floor);
+  const hpMult = 1 + CONFIG.partyScaling.hpMultPerExtra * (partySize - 1);
+  return specs.map(s => buildEnemy(s, run.floor, biome.floors[0], { hpMult }));
+}
+
 function buildSharedEnemies(specs, { boss = false } = {}) {
   const biome = biomeForFloor(run.floor);
-  const hpMult = 1 + 0.5 * (coopS.partySize - 1);
+  const hpMult = 1 + CONFIG.partyScaling.hpMultPerExtra * (coopS.partySize - 1);
   return specs.map(s => buildEnemy(s, run.floor, boss ? run.floor : biome.floors[0], { boss, hpMult }));
 }
 
@@ -577,18 +1065,14 @@ function hostPublishFloorContent() {
     content = { floor: run.floor, type: 'boss', enemies: buildSharedEnemies([BOSSES[run.floor]], { boss: true }) };
   } else if (run.floor % 5 === 0) {
     const mod = rng.pick(MODIFIERS);
-    let group = pickEnemyGroup(rng, biome);
-    if (coopS.partySize > 1) group = [...group, rng.pick((ENEMIES[biome.id] || ENEMIES.hell).filter(e => !e.elite))];
+    const group = pickEnemyGroup(rng, biome, coopS.partySize);
     content = { floor: run.floor, type: 'trial', modId: mod.id, enemies: buildSharedEnemies(group) };
   } else if (BOSS_FLOORS.includes(run.floor + 1)) {
     content = { floor: run.floor, type: 'event', eventId: 'campfire' };
-  } else if (rng.chance(0.42)) {
-    let group = pickEnemyGroup(rng, biome);
-    if (coopS.partySize > 1) group = [...group, rng.pick((ENEMIES[biome.id] || ENEMIES.hell).filter(e => !e.elite))];
-    content = { floor: run.floor, type: 'encounter', enemies: buildSharedEnemies(group) };
   } else {
-    const ev = drawEvent(rng, run);
-    content = { floor: run.floor, type: 'event', eventId: ev.id };
+    const partyClasses = [run.classId, ...[...coopS.partners.values()].map(p => p.classId).filter(Boolean)];
+    const cards = generateCards(rng, { partySize: coopS.partySize, classes: partyClasses });
+    content = { floor: run.floor, type: 'cards', cards };
   }
   rng.advance();
   coopS.publishFloor(content);
@@ -605,18 +1089,89 @@ async function coopFloor(stage) {
   saveRun(run);
 
   if (content.type === 'throne') return throneRoomCoop(stage);
-  if (content.type === 'boss' || content.type === 'trial' || content.type === 'encounter') {
+  if (content.type === 'boss' || content.type === 'trial') {
     return sharedFightCard(stage, content);
   }
-  // event floor: personal choices, same card for everyone
+  if (content.type === 'cards') {
+    return coopCardChoice(stage, content.cards);
+  }
   const ev = EVENTS.find(e => e.id === content.eventId) || EVENTS.find(e => e.id === 'campfire');
   run.seenEvents.push(ev.id);
   saveRun(run);
   renderEventCard(stage, ev);
 }
 
-function rehydrateEnemies(list) {
-  return list.map(e => ({ ...e, statuses: e.statuses || {}, phaseTriggers: e.phaseTriggers || [] }));
+// Party card selection with decision modes (handoff §3, §4)
+function coopCardChoice(stage, cards) {
+  const mode = coopS.decisionMode || 'majority';
+  const floor = run.floor;
+  let api = null;
+  const remotePicks = new Map();
+  let resolved = false;
+  const offs = [];
+
+  // the party may have already decided while we were loading in
+  if (coopS.cardResults.has(floor)) {
+    const idx = coopS.cardResults.get(floor);
+    renderCardChoice(stage, cards, { mode, bind(a) { a.lock(idx); }, onLocalPick() {} });
+    return;
+  }
+
+  const finish = idx => {
+    if (resolved) return;
+    resolved = true;
+    for (const off of offs) off();
+    api?.lock(idx);
+  };
+
+  offs.push(coopS.net.on('pick', (d, from) => {
+    if (d.floor !== floor || resolved) return;
+    remotePicks.set(from, d.idx);
+    api?.picks.set(from, d.idx);
+    api?.renderVotes();
+    if (mode === 'first' && coopS.isHost) {
+      // host arbitrates first-selection: first pick it learns about wins
+      coopS.net.send({ k: 'cardresult', floor, idx: d.idx });
+      finish(d.idx);
+    } else if (mode === 'majority' && coopS.isHost) {
+      hostTallyIfComplete();
+    }
+  }));
+  offs.push(coopS.net.on('cardresult', d => {
+    if (d.floor !== floor) return;
+    finish(d.idx);
+  }));
+
+  function hostTallyIfComplete() {
+    const all = new Map([...remotePicks, ...(api?.picks.has(coopS.you) ? [[coopS.you, api.picks.get(coopS.you)]] : [])]);
+    if (all.size < coopS.partySize) return;
+    // tally; ties resolved randomly, synchronized via broadcast (handoff §3)
+    const counts = {};
+    for (const idx of all.values()) counts[idx] = (counts[idx] || 0) + 1;
+    const max = Math.max(...Object.values(counts));
+    const tied = Object.keys(counts).filter(k => counts[k] === max).map(Number);
+    const rng = runRng(run);
+    const winner = tied.length === 1 ? tied[0] : rng.pick(tied);
+    rng.advance();
+    coopS.net.send({ k: 'cardresult', floor, idx: winner });
+    finish(winner);
+  }
+
+  renderCardChoice(stage, cards, {
+    mode,
+    bind(a) { api = a; },
+    onLocalPick(idx) {
+      if (mode === 'first') {
+        if (coopS.isHost) {
+          coopS.net.send({ k: 'cardresult', floor, idx });
+          finish(idx);
+        }
+        // guests wait for the host's cardresult (their pick may still win the race)
+      } else if (coopS.isHost) {
+        hostTallyIfComplete();
+      }
+    },
+  });
 }
 
 async function sharedFightCard(stage, content) {
@@ -672,77 +1227,24 @@ async function coopFightShared(stage, enemies, { boss = null, mod = null } = {})
     coop: coopS,
   });
 
-  if (result === 'wipe') return endRun(run.hp <= 0 ? 'dead' : 'madness');
+  if (result === 'wipe') return endRun('dead');
 
-  // win — everyone gets full loot
-  run.kills += enemies.length;
   const d = derived(run);
   const goldGain = Math.round(gold * d.goldMult * d.combatGoldMult);
   const xpGain = Math.round(xp * d.xpMult);
-  run.gold += goldGain;
-  run.goldEarned += goldGain;
-  unlock('first_blood');
-  if (run.gold >= 500) unlock('rich');
 
   if (boss) {
     const achMap = { 10: 'floor_10', 20: 'floor_20', 30: 'floor_30', 40: 'floor_40', 50: 'floor_50' };
     if (achMap[run.floor]) unlock(achMap[run.floor]);
     if (run.floor === LAST_FLOOR) return victoryScreen('win');
-    heal(run, run.maxHp * 0.35);
-    run.mp = run.maxMp;
   }
-
-  const victoryHeal = relicItems(run).find(r => r.victoryHeal);
-  const lines = [{ text: `Victory! +${goldGain} gold, +${xpGain} XP (full share for every climber)`, cls: 'gold' }];
-  if (boss) lines.push({ text: 'The gate\'s blessing washes over the party — wounds knit, mana returns.', cls: 'good' });
-  if (victoryHeal) {
-    const amt = heal(run, run.maxHp * victoryHeal.victoryHeal);
-    if (amt) lines.push({ text: `${victoryHeal.name} hums — you recover ${amt} HP.`, cls: 'good' });
-  }
-  SFX.victory();
-  const ups = gainXp(run, xpGain, runRng(run));
-  saveRun(run);
-
-  if (boss) {
-    // personal relic pick from the hoard
-    await showOutcomePanel(stage, lines, ups, { continueLabel: 'Claim your prize', advance: false });
-    const rng2 = runRng(run);
-    const choices = [rollRelic(rng2, run.relics), rollRelic(rng2, run.relics), rollRelic(rng2, run.relics)]
-      .filter((r, i, a) => r && a.findIndex(x => x && x.id === r.id) === i);
-    rng2.advance();
-    if (choices.length) {
-      await modalCustom((m, close) => {
-        m.innerHTML = `<h3>The Gate Opens</h3><p class="modal-sub">Something glitters in the hoard. Choose one relic — your companions choose their own.</p>
-          <div class="pick-grid">${choices.map((r, i) => `
-            <button class="pick-option" data-i="${i}">
-              <span class="po-tag tag ${rarityClass(r.rarity)}">${r.rarity}</span>
-              <div class="po-name">${r.name}</div><div class="po-desc">${r.desc}</div>
-            </button>`).join('')}
-          </div>`;
-        m.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
-          const r = choices[+b.dataset.i];
-          run.relics.push(r.id);
-          SFX.unlock();
-          toast(`Relic claimed: ${r.name}`, 'info');
-          saveRun(run);
-          close();
-        });
-      });
-    }
-    renderHud();
-    nextFloorButton(document.getElementById('stage'));
-  } else {
-    await showOutcomePanel(stage, lines, ups);
-  }
+  await afterVictory(stage, enemies, goldGain, xpGain, { boss });
 }
 
-/* ---------- co-op throne room: the host answers for the party ---------- */
+/* ---------- co-op throne room ---------- */
 async function throneRoomCoop(stage) {
   const boss = BOSSES[51];
-  if (coopS.isHost) {
-    // host sees the full choice card; broadcast decides everyone's fate
-    return throneRoom(stage);
-  }
+  if (coopS.isHost) return throneRoom(stage);
   stage.innerHTML = `
     <div class="card-stage"><div class="panel event-card">
       <div class="card-art"><div class="card-glyph">${boss.glyph}</div>
@@ -755,257 +1257,18 @@ async function throneRoomCoop(stage) {
       </div>
     </div></div>`;
   SFX.bossIntro();
-  // wait for the host's resolution: either a shared fight or a shared ending
-  const off = coopS.net.on('throne', async d => {
-    off();
+  const handleThrone = async d => {
     if (d.ending === 'secret') return secretEnding(stage);
     const enemies = rehydrateEnemies(d.enemies);
     await coopS.gate('fight-51');
     coopFightShared(stage, enemies, { boss });
-  });
-}
-
-/* ---------- combat encounter card (Fight / Sneak / Bribe) ---------- */
-function pickEnemyGroup(rng, biome) {
-  const depth = run.floor - biome.floors[0]; // 0..9 within the biome
-  let pool = ENEMIES[biome.id] || ENEMIES.hell;
-  if (depth < 4) pool = pool.filter(e => !e.elite); // elites guard the deeper halves
-  const lead = rng.pick(pool);
-  const group = [lead];
-  if (lead.pack) {
-    const extra = depth < 3 ? 1 : rng.int(1, 2);
-    for (let i = 0; i < extra; i++) group.push(rng.chance(0.7) ? lead : rng.pick(pool.filter(e => !e.elite)));
-  } else if (!lead.elite && depth >= 2 && rng.chance(0.25)) {
-    group.push(rng.pick(pool.filter(e => !e.elite)));
-  }
-  return group;
-}
-
-async function encounterFloor(stage) {
-  const rng = runRng(run);
-  const biome = biomeForFloor(run.floor);
-  const group = pickEnemyGroup(rng, biome);
-  rng.advance(); saveRun(run);
-
-  const names = [...new Set(group.map(g => g.name))].join(', ');
-  const bribe = Math.round(group.reduce((s, g) => s + g.gold[1], 0) * 0.8);
-  const bribable = group.every(g => g.intelligent);
-  const d = derived(run);
-  const sneakDc = 10 + Math.floor(run.floor / 8);
-
-  stage.innerHTML = `
-    <div class="card-stage"><div class="panel event-card">
-      <div class="card-art"><div class="card-glyph">${group[0].glyph}</div>
-        <span class="tag card-type-tag">ENCOUNTER</span><span class="tag card-floor-tag">FLOOR ${run.floor}</span></div>
-      <div class="card-body">
-        <h3>Hostiles Ahead</h3>
-        <div class="card-text">The floor narrows, and the dark produces: ${names}${group.length > 1 ? ` — ${group.length} of them` : ''}. They have already noticed you. The only question is what happens next.</div>
-        <div class="card-choices">
-          <button class="choice-btn" data-act="fight"><span class="choice-label">⚔ Fight</span><span class="choice-hint">XP + gold</span></button>
-          <button class="choice-btn" data-act="sneak"><span class="choice-label">🕶 Sneak past</span><span class="choice-hint">DEX check (${sneakDc}) · you have ${d.dex}</span></button>
-          ${bribable
-            ? `<button class="choice-btn" data-act="bribe" ${run.gold < bribe ? 'disabled' : ''}><span class="choice-label">🪙 Bribe them</span><span class="choice-hint ${run.gold < bribe ? 'choice-req' : ''}">-${bribe}g</span></button>`
-            : `<button class="choice-btn locked" disabled><span class="choice-label">🪙 Bribe them</span><span class="choice-hint choice-req">🔒 they can't be reasoned with</span></button>`}
-        </div>
-      </div>
-    </div></div>`;
-  SFX.cardDeal();
-
-  stage.querySelectorAll('[data-act]').forEach(btn => btn.onclick = async () => {
-    SFX.click();
-    const act = btn.dataset.act;
-    const rng2 = runRng(run);
-    if (act === 'fight') {
-      rng2.advance();
-      return fightGroup(stage, group, { text: 'Steel answers steel.' });
-    }
-    if (act === 'bribe') {
-      run.gold -= bribe;
-      rng2.advance(); saveRun(run);
-      return showOutcomePanel(stage, [
-        { text: `You toss the purse. They count it — twice, insultingly — and melt back into the dark. (-${bribe} gold)`, cls: 'gold' },
-      ]);
-    }
-    // sneak
-    const roll = rng2.int(1, 8);
-    const total = d.dex + roll + Math.floor(d.lk / 4);
-    rng2.advance(); saveRun(run);
-    if (total >= sneakDc) {
-      const xp = 10 + Math.floor(run.floor * 1.2);
-      const ups = gainXp(run, xp, runRng(run));
-      await showOutcomePanel(stage, [
-        { text: `You move like a rumor. (DEX ${d.dex} + roll ${roll} = ${total} vs ${sneakDc}) — they never knew you were there. +${xp} XP`, cls: 'good' },
-      ], ups);
-    } else {
-      await modal(`<h3>Spotted!</h3><p class="modal-sub">DEX ${d.dex} + roll ${roll} = ${total} vs ${sneakDc}. A twig. It's always a twig.</p>
-        <div class="pick-grid"><button class="pick-option" data-close="x"><span class="po-name">They ambush you</span></button></div>`);
-      return fightGroup(stage, group, { text: 'They were waiting for the twig.', modifier: { name: 'Ambushed', desc: 'Enemies strike first.', enemyFirst: true } });
-    }
-  });
-}
-
-async function fightGroup(stage, specs, { text = null, modifier = null, boss = false, prebuilt = null } = {}) {
-  const biome = biomeForFloor(run.floor);
-  const rng = runRng(run);
-  const enemies = prebuilt || specs.map(s => buildEnemy(s, run.floor, biome.floors[0], { hpMult: modifier?.hpMult || 1 }));
-  if (modifier?.extraEnemy && !boss) {
-    enemies.push(buildEnemy(runRng(run).pick(ENEMIES[biome.id].filter(e => !e.elite)), run.floor, biome.floors[0]));
-  }
-  const { result, gold = 0, xp = 0 } = await startCombat({
-    container: stage, run, rng, enemies, modifier,
-    introText: text, onHud: renderHud,
-  });
-
-  if (result === 'dead' || result === 'madness') {
-    // in co-op, a solo event-fight loss downs you instead of ending the run
-    if (coopS && !coopS.alone) {
-      run.down = true;
-      run.hp = Math.max(run.hp, 0);
-      if (run.sanity <= 0) run.sanity = 1;
-      saveRun(run);
-      coopS.broadcastStatus(statusOf(run, 'waiting'), 'waiting');
-      return showOutcomePanel(stage, [
-        { text: 'You fall — but you are not alone in this tower. Your companions find you and carry you to the stairs.', cls: 'bad' },
-      ]);
-    }
-    return endRun(result === 'dead' ? 'dead' : 'madness');
-  }
-  if (result === 'fled') {
-    saveRun(run);
-    return showOutcomePanel(stage, [{ text: 'You live to climb another floor. The tower notes your pragmatism.', cls: 'good' }]);
-  }
-
-  // victory
-  run.kills += enemies.length;
-  run.gold += gold;
-  run.goldEarned += gold;
-  unlock('first_blood');
-  if (run.gold >= 500) unlock('rich');
-  if (enemies.some(e => e.id === 'mimic')) unlock('mimic');
-
-  const victoryHeal = relicItems(run).find(r => r.victoryHeal);
-  const lines = [
-    { text: `Victory! +${gold} gold, +${xp} XP`, cls: 'gold' },
-  ];
-  if (victoryHeal) {
-    const amt = heal(run, run.maxHp * victoryHeal.victoryHeal);
-    if (amt) lines.push({ text: `${victoryHeal.name} hums — you recover ${amt} HP.`, cls: 'good' });
-  }
-  SFX.victory();
-  const ups = gainXp(run, xp, runRng(run));
-  saveRun(run);
-  await showOutcomePanel(stage, lines, ups);
-}
-
-/* ---------- modifier floor (every 5th) ---------- */
-async function modifierFloor(stage) {
-  const rng = runRng(run);
-  const mod = rng.pick(MODIFIERS);
-  const biome = biomeForFloor(run.floor);
-  const group = pickEnemyGroup(rng, biome);
-  rng.advance(); saveRun(run);
-
-  stage.innerHTML = `
-    <div class="card-stage"><div class="panel event-card">
-      <div class="card-art"><div class="card-glyph">⚠️</div>
-        <span class="tag card-type-tag">TRIAL</span><span class="tag card-floor-tag">FLOOR ${run.floor}</span></div>
-      <div class="card-body">
-        <h3>Trial Floor: ${mod.name}</h3>
-        <div class="card-text">The tower posts terms for this floor, burned into the wall in letters that smoke slightly:\n\n"${mod.desc}"\n\nThere is no way around a trial floor. There is only through.</div>
-        <div class="card-choices">
-          <button class="choice-btn" id="go"><span class="choice-label">⚔ Accept the trial</span><span class="choice-hint">bonus loot</span></button>
-        </div>
-      </div>
-    </div></div>`;
-  SFX.cardDeal();
-  document.getElementById('go').onclick = () => {
-    SFX.click();
-    fightGroup(stage, group, { text: `Trial: ${mod.name}.`, modifier: { ...mod, goldMult: (mod.goldMult || 1) * 1.5 } });
   };
+  if (coopS.throneMsg) return handleThrone(coopS.throneMsg);
+  const off = coopS.net.on('throne', d => { off(); handleThrone(d); });
 }
 
-/* ---------- boss floor ---------- */
-async function bossFloor(stage) {
-  const boss = BOSSES[run.floor];
-  const biome = biomeForFloor(run.floor);
-  stage.innerHTML = `
-    <div class="card-stage"><div class="panel event-card">
-      <div class="card-art"><div class="card-glyph">${boss.glyph}</div>
-        <span class="tag card-type-tag" style="border-color:var(--blood);color:#f0a8a0">BOSS</span>
-        <span class="tag card-floor-tag">FLOOR ${run.floor}</span></div>
-      <div class="card-body">
-        <h3>${boss.name}</h3>
-        <div class="card-text">${boss.intro}</div>
-        <div class="card-choices">
-          <button class="choice-btn" id="go"><span class="choice-label">⚔ Face it</span><span class="choice-hint">no retreat</span></button>
-        </div>
-      </div>
-    </div></div>`;
-  SFX.bossIntro();
-  document.getElementById('go').onclick = async () => {
-    SFX.click();
-    // bosses use their hand-tuned stats — no depth scaling
-    const enemies = [buildEnemy(boss, run.floor, run.floor, { boss: true })];
-    await fightGroupBoss(stage, enemies, boss);
-  };
-}
-
-async function fightGroupBoss(stage, enemies, boss) {
-  const rng = runRng(run);
-  const { result, gold = 0, xp = 0 } = await startCombat({
-    container: stage, run, rng, enemies, introText: `${boss.name}: "${boss.taunt}"`, onHud: renderHud,
-  });
-  if (result === 'dead') return endRun('dead');
-  if (result === 'madness') return endRun('madness');
-
-  run.kills++;
-  run.gold += gold;
-  run.goldEarned += gold;
-  const achMap = { 10: 'floor_10', 20: 'floor_20', 30: 'floor_30', 40: 'floor_40', 50: 'floor_50' };
-  if (achMap[run.floor]) unlock(achMap[run.floor]);
-
-  if (run.floor === LAST_FLOOR) return victoryScreen('win');
-
-  // gate blessing: the tower rewards regicide
-  heal(run, run.maxHp * 0.35);
-  run.mp = run.maxMp;
-
-  // boss reward: relic choice
-  SFX.victory();
-  const lines = [
-    { text: `${boss.name} falls. +${gold} gold, +${xp} XP`, cls: 'gold' },
-    { text: 'The gate\'s blessing washes over you — wounds knit, mana returns.', cls: 'good' },
-  ];
-  const ups = gainXp(run, xp, runRng(run));
-  const rng2 = runRng(run);
-  const choices = [rollRelic(rng2, run.relics), rollRelic(rng2, run.relics), rollRelic(rng2, run.relics)]
-    .filter((r, i, a) => r && a.findIndex(x => x && x.id === r.id) === i);
-  rng2.advance();
-  saveRun(run);
-
-  await showOutcomePanel(stage, lines, ups, { continueLabel: 'Claim your prize', advance: false });
-
-  if (choices.length) {
-    await modalCustom((m, close) => {
-      m.innerHTML = `<h3>The Gate Opens</h3><p class="modal-sub">Something glitters in the boss's hoard. Choose one relic.</p>
-        <div class="pick-grid">${choices.map((r, i) => `
-          <button class="pick-option" data-i="${i}">
-            <span class="po-tag tag ${rarityClass(r.rarity)}">${r.rarity}</span>
-            <div class="po-name">${r.name}</div><div class="po-desc">${r.desc}</div>
-          </button>`).join('')}
-        </div>`;
-      m.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
-        const r = choices[+b.dataset.i];
-        run.relics.push(r.id);
-        SFX.unlock();
-        toast(`Relic claimed: ${r.name}`, 'info');
-        saveRun(run);
-        close();
-      });
-    });
-  }
-  renderHud();
-  nextFloorButton(document.getElementById('stage'));
+function rehydrateEnemies(list) {
+  return list.map(e => ({ ...e, statuses: e.statuses || {}, phaseTriggers: e.phaseTriggers || [], charge: e.charge || 0 }));
 }
 
 /* ============================================================
@@ -1014,9 +1277,11 @@ async function fightGroupBoss(stage, enemies, boss) {
 function reqMet(req) {
   if (!req) return { ok: true };
   const d = derived(run);
-  if (req.stat && d[req.stat] < req.min) return { ok: false, why: `${req.stat.toUpperCase()} ${req.min}+ (you: ${d[req.stat]})` };
+  // requirement hints never reveal your numbers (handoff §5)
+  if (req.stat && d[req.stat] < req.min) return { ok: false, why: 'you lack the ' + ({ str: 'strength', dex: 'deftness', int: 'learning', wis: 'insight', lk: 'fortune' }[req.stat] || 'gift') };
   if (req.class && run.classId !== req.class) return { ok: false, why: `${CLASSES[req.class].name} only` };
   if (req.gold && run.gold < req.gold) return { ok: false, why: `${req.gold}g needed` };
+  if (req.fame && run.fame < req.fame) return { ok: false, why: 'your name is not yet known' };
   if (req.flag && !run.flags[req.flag]) return { ok: false, why: '???' };
   if (req.notFlag && run.flags[req.notFlag]) return { ok: false, why: 'unavailable' };
   if (req.item && !run.consumables.includes(req.item)) return { ok: false, why: 'item needed' };
@@ -1025,14 +1290,14 @@ function reqMet(req) {
 
 const TYPE_LABEL = { story: 'STORY', risk: 'RISK', blessing: 'BLESSING', treasure: 'TREASURE', rest: 'RESPITE', shop: 'MERCHANT' };
 
-function renderEventCard(stage, ev) {
+function renderEventCard(stage, ev, { originIntro = false } = {}) {
   if (ev.shop) return shopScreen(stage, ev);
 
   stage.innerHTML = `
     <div class="card-stage"><div class="panel event-card">
       <div class="card-art"><div class="card-glyph">${ev.glyph}</div>
-        <span class="tag card-type-tag">${TYPE_LABEL[ev.type] || 'EVENT'}</span>
-        <span class="tag card-floor-tag">FLOOR ${run.floor}</span></div>
+        <span class="tag card-type-tag">${originIntro ? 'ORIGIN' : TYPE_LABEL[ev.type] || 'EVENT'}</span>
+        <span class="tag card-floor-tag">${originIntro ? 'THE DAY BEFORE' : `FLOOR ${run.floor}`}</span></div>
       <div class="card-body">
         <h3>${ev.title}</h3>
         <div class="card-text">${ev.text}</div>
@@ -1048,16 +1313,15 @@ function renderEventCard(stage, ev) {
       <span class="choice-label">${choice.label}</span>
       <span class="choice-hint ${choice.req ? 'choice-req' : ''}">${r.ok ? (choice.hint || '') : `🔒 ${r.why}`}</span>
     </button>`);
-    btn.onclick = () => { SFX.click(); resolveChoice(stage, ev, choice); };
+    btn.onclick = () => { SFX.click(); resolveChoice(stage, ev, choice, { originIntro }); };
     box.appendChild(btn);
   });
 }
 
-async function resolveChoice(stage, ev, choice) {
+async function resolveChoice(stage, ev, choice, opts = {}) {
   const rng = runRng(run);
   let outcome = choice.outcome;
 
-  // stat-check roll
   if (outcome.roll) {
     const d = derived(run);
     const spec = outcome.roll;
@@ -1067,27 +1331,33 @@ async function resolveChoice(stage, ev, choice) {
     const die = rng.int(1, 8);
     const total = d[spec.stat] + die + bonus;
     const ok = total >= spec.dc;
-    const rollLine = { text: `${spec.stat.toUpperCase()} check: ${d[spec.stat]} + 🎲${die}${bonus ? (bonus > 0 ? ` +${bonus}` : ` ${bonus}`) : ''} = ${total} vs DC ${spec.dc} — ${ok ? 'SUCCESS' : 'FAILURE'}`, cls: ok ? 'good' : 'bad' };
+    // the roll's drama, without the actuarial tables (handoff §5)
+    const rollLine = { text: `${({ str: 'Strength', dex: 'Agility', int: 'Intellect', wis: 'Wisdom', lk: 'Luck' }[spec.stat])} is tested… ${ok ? 'and holds. SUCCESS.' : 'and falters. FAILURE.'}`, cls: ok ? 'good' : 'bad' };
     outcome = ok ? outcome.success : outcome.fail;
-    await applyOutcome(stage, ev, outcome, rng, [rollLine]);
+    await applyOutcome(stage, ev, outcome, rng, [rollLine], opts);
   } else {
-    await applyOutcome(stage, ev, outcome, rng, []);
+    await applyOutcome(stage, ev, outcome, rng, [], opts);
   }
 }
 
-async function applyOutcome(stage, ev, o, rng, lines) {
+async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
   const d = derived(run);
+
+  if (o.randomOutcome) {
+    // random-roll resolution: the tower picks (handoff §3)
+    o = rng.pick(o.randomOutcome);
+    lines.push({ text: 'The tower decides…', cls: 'item' });
+  }
 
   if (o.escape) return victoryScreen('escape');
 
   if (o.text) lines.push({ text: o.text, cls: '' });
 
-  // chest / mimic
   if (o.chest) {
     const isMimic = !o.safeMimic && !relicItems(run).some(r => r.noMimic) && rng.chance(ev.mimicChance || 0.25);
     if (isMimic) {
       rng.advance(); saveRun(run);
-      const mimic = { id: 'mimic', name: 'Mimic', glyph: '🦷', hp: 30 + run.floor * 4, atk: 6 + run.floor, def: 2, spd: 8, gold: [40 + run.floor * 3, 60 + run.floor * 4], xp: 15 + run.floor * 2 };
+      const mimic = { id: 'mimic', name: 'Mimic', glyph: '🦷', hp: 30 + run.floor * 4, atk: 6 + run.floor, def: 2, spd: 7, gold: [40 + run.floor * 3, 60 + run.floor * 4], xp: 15 + run.floor * 2 };
       return fightGroup(stage, [mimic], { text: 'The chest grows TEETH. Of course it does.' });
     }
     const gold = Math.round((30 + run.floor * 4 + rng.int(0, 25)) * d.goldMult);
@@ -1104,7 +1374,6 @@ async function applyOutcome(stage, ev, o, rng, lines) {
     }
   }
 
-  // resources
   if (o.gold) {
     const amt = o.gold > 0 ? Math.round(o.gold * d.goldMult) : o.gold;
     run.gold = Math.max(0, run.gold + amt);
@@ -1126,14 +1395,14 @@ async function applyOutcome(stage, ev, o, rng, lines) {
     if (amt > 0) heal(run, amt); else run.hp = Math.max(0, run.hp + amt);
     lines.push({ text: `${amt > 0 ? '+' : ''}${amt} HP`, cls: amt > 0 ? 'good' : 'bad' });
   }
+  if (o.maxHp) { run.maxHp += o.maxHp; run.hp += o.maxHp; lines.push({ text: 'You feel your endurance deepen.', cls: 'good' }); }
   if (o.fullHeal) { run.hp = run.maxHp; lines.push({ text: 'Fully healed.', cls: 'good' }); SFX.heal(); }
   if (o.mana) restoreMana(run, o.mana);
-  if (o.manaPct) { restoreMana(run, run.maxMp * o.manaPct); lines.push({ text: `+${Math.round(run.maxMp * o.manaPct)} Mana`, cls: 'good' }); }
-  if (o.fullMana) { run.mp = run.maxMp; lines.push({ text: 'Mana restored.', cls: 'good' }); }
-  if (o.sanity) {
-    const applied = changeSanity(run, o.sanity);
-    lines.push({ text: `${applied > 0 ? '+' : ''}${applied} Sanity`, cls: applied >= 0 ? 'good' : 'bad' });
-    if (applied < 0) SFX.sanity();
+  if (o.manaPct) { restoreMana(run, run.maxMp * o.manaPct); lines.push({ text: `${resourceName(run)} restored.`, cls: 'good' }); }
+  if (o.fullMana) { run.mp = run.maxMp; lines.push({ text: `${resourceName(run)} restored.`, cls: 'good' }); }
+  if (o.fame) {
+    const amt = changeFame(run, o.fame);
+    lines.push({ text: `${amt > 0 ? '+' : ''}${amt} Fame`, cls: amt >= 0 ? 'good' : 'bad' });
   }
   if (o.statUp) {
     run.stats[o.statUp.stat] = Math.max(1, run.stats[o.statUp.stat] + o.statUp.amt);
@@ -1143,13 +1412,26 @@ async function applyOutcome(stage, ev, o, rng, lines) {
   }
   if (o.statUpRandom) {
     for (let i = 0; i < o.statUpRandom; i++) {
-      run.stats[rng.pick(['str', 'dex', 'int', 'wis', 'lk'])]++;
+      run.stats[rng.pick(APPRAISABLE)]++;
     }
     lines.push({ text: 'Power settles into you — you couldn\'t say where.', cls: 'good' });
     SFX.levelup();
   }
 
-  // items
+  if (o.appraisal) {
+    appraiseRun(rng, run, { partial: o.appraisal === 'partial', location: ev.title });
+    lines.push({ text: '📜 The reading is complete. Your character page now carries the appraisal.', cls: 'item' });
+    SFX.unlock();
+  }
+  if (o.promoteRace) {
+    const p = applyRacePromotion(run);
+    if (p) {
+      lines.push({ text: `🧬 ${p.blurb}\n\nYou are ${run.raceName === 'Awakened Human' ? 'an' : 'a'} ${run.raceName} now.`, cls: 'item' });
+      unlock('promoted');
+      SFX.evolve();
+    }
+  }
+
   if (o.itemRoll) {
     const item = rollEquipment(rng, biomeTier(), Math.floor(d.lk / 3));
     await offerEquipment(item, lines);
@@ -1167,6 +1449,10 @@ async function applyOutcome(stage, ev, o, rng, lines) {
     run.consumables.push(o.consumable);
     lines.push({ text: `Received: ${itemById(o.consumable).name}`, cls: 'item' });
   }
+  if (o.consumable2) {
+    run.consumables.push(o.consumable2);
+    lines.push({ text: `Received: ${itemById(o.consumable2).name}`, cls: 'item' });
+  }
   if (o.useItem) {
     const i = run.consumables.indexOf(o.useItem);
     if (i > -1) run.consumables.splice(i, 1);
@@ -1177,7 +1463,6 @@ async function applyOutcome(stage, ev, o, rng, lines) {
     SFX.unlock();
   }
 
-  // meta / flags
   if (o.flag) run.flags[o.flag] = true;
   if (o.clearFlag) delete run.flags[o.clearFlag];
   if (o.sigil && !run.sigils.includes(o.sigil)) {
@@ -1188,12 +1473,11 @@ async function applyOutcome(stage, ev, o, rng, lines) {
   if (o.revealFloors) {
     const upcoming = [];
     for (let f = run.floor + 1; f <= Math.min(run.floor + o.revealFloors, LAST_FLOOR); f++) {
-      upcoming.push(`F${f}: ${f === LAST_FLOOR ? 'THE THRONE' : BOSS_FLOORS.includes(f) ? 'BOSS' : f % 5 === 0 ? 'Trial' : 'Unknown card'}`);
+      upcoming.push(`F${f}: ${f === LAST_FLOOR ? 'THE THRONE' : BOSS_FLOORS.includes(f) ? 'BOSS' : f % 5 === 0 ? 'Trial' : 'Unknown cards'}`);
     }
     lines.push({ text: `The map shows: ${upcoming.join(' · ')}`, cls: 'item' });
   }
 
-  // XP last (may trigger level-ups)
   let ups = [];
   if (o.xp) {
     const amt = Math.round(o.xp * d.xpMult);
@@ -1206,7 +1490,6 @@ async function applyOutcome(stage, ev, o, rng, lines) {
   renderHud();
   if (coopS) coopS.broadcastStatus(statusOf(run, 'choosing'), 'choosing');
 
-  // combat outcome from an event
   if (o.combat) {
     const biome = biomeForFloor(run.floor);
     const specs = o.combat.enemies.map(id => {
@@ -1220,17 +1503,21 @@ async function applyOutcome(stage, ev, o, rng, lines) {
     return fightGroup(stage, specs, { text: o.combat.text });
   }
 
-  // death by event
-  if (run.hp <= 0 || run.sanity <= 0) {
+  if (run.hp <= 0) {
     if (coopS && !coopS.alone) {
       run.down = true;
-      if (run.sanity <= 0) run.sanity = 1;
       saveRun(run);
       coopS.broadcastStatus(statusOf(run, 'waiting'), 'waiting');
       lines.push({ text: 'The tower takes you — almost. Your companions refuse to let it finish the job.', cls: 'bad' });
       return showOutcomePanel(stage, lines, ups);
     }
-    return endRun(run.hp <= 0 ? 'dead' : 'madness');
+    return endRun('dead');
+  }
+
+  // origin intros lead into floor 1 instead of "the next floor"
+  if (opts.originIntro) {
+    await showOutcomePanel(stage, lines, ups, { continueLabel: 'The tower awaits — Floor 1', advance: false });
+    return enterFloorScreen(true);
   }
 
   await showOutcomePanel(stage, lines, ups);
@@ -1240,29 +1527,64 @@ function biomeTier() {
   return { forest: 1, ruins: 2, frost: 3, swamp: 4, hell: 5, throne: 5 }[run.biomeId] || 1;
 }
 
+/* ---------- co-op death penalty: lose a few lesser items (handoff §16) ---------- */
+function deathItemLoss() {
+  const lost = [];
+  const rng = runRng(run);
+  // eligible: consumables + low-rarity pack gear; protected: equipped, epic+
+  const eligible = [];
+  run.consumables.forEach((id, i) => eligible.push({ kind: 'consumable', i, id }));
+  run.inventory.forEach((id, i) => {
+    const it = itemById(id);
+    if (it && !CONFIG.death.protectedRarities.includes(it.rarity)) eligible.push({ kind: 'inventory', i, id });
+  });
+  const shuffled = rng.shuffle(eligible).slice(0, CONFIG.death.itemsLost);
+  // remove by id (indexes shift as we splice)
+  for (const pick of shuffled) {
+    if (pick.kind === 'consumable') {
+      const idx = run.consumables.indexOf(pick.id);
+      if (idx > -1) { run.consumables.splice(idx, 1); lost.push(itemById(pick.id)?.name || pick.id); }
+    } else {
+      const idx = run.inventory.indexOf(pick.id);
+      if (idx > -1) { run.inventory.splice(idx, 1); lost.push(itemById(pick.id)?.name || pick.id); }
+    }
+  }
+  rng.advance();
+  return lost;
+}
+
 /* ---------- equipment offer / compare ---------- */
 function gearCard(item, label) {
   if (!item) return `<div class="gear-card empty"><div class="gc-label">${label}</div><div class="gc-name" style="color:var(--ink-faint)">— nothing —</div></div>`;
   return `<div class="gear-card">
     <div class="gc-label">${label}</div>
     <div class="gc-name ${rarityClass(item.rarity)}">${item.name}</div>
-    <div class="gc-rarity tag ${rarityClass(item.rarity)}">${item.rarity} ${item.slot}</div>
+    <div class="gc-rarity tag ${rarityClass(item.rarity)}">${item.rarity} ${item.slot}${item.wtype ? ' · ' + item.wtype : ''}</div>
     <div class="gc-desc">${item.desc}</div>
+    ${item.wtype && !allowedWeaponTypes(run).includes(item.wtype) ? '<div class="gc-warn">⚠ Incompatible with your class — equipping it disables all techniques except Strike and Guard.</div>' : ''}
   </div>`;
 }
 
-function equipItem(item) {
-  const oldId = run.equipment[item.slot];
+function slotFor(item) {
+  if (item.slot !== 'accessory') return item.slot;
+  // accessories fill the first open ring, else replace accessory1
+  for (const s of ['accessory1', 'accessory2', 'accessory3']) if (!run.equipment[s]) return s;
+  return 'accessory1';
+}
+
+function equipItem(item, targetSlot = null) {
+  const slot = targetSlot || slotFor(item);
+  const oldId = run.equipment[slot];
   if (oldId) run.inventory.push(oldId);
-  // if it came from the bag, remove it there
   const bagIdx = run.inventory.indexOf(item.id);
   if (bagIdx > -1) run.inventory.splice(bagIdx, 1);
-  run.equipment[item.slot] = item.id;
+  run.equipment[slot] = item.id;
   if (item.rarity === 'legendary') unlock('legendary');
 }
 
 async function offerEquipment(item, lines) {
-  const current = run.equipment[item.slot] ? itemById(run.equipment[item.slot]) : null;
+  const compareSlot = slotFor(item);
+  const current = run.equipment[compareSlot] ? itemById(run.equipment[compareSlot]) : null;
   const sellPrice = Math.round(item.price * 0.6);
   const v = await modal(`
     <h3>Loot!</h3>
@@ -1312,7 +1634,6 @@ async function showOutcomePanel(stage, lines, ups = [], { continueLabel = 'Ascen
   }
 }
 
-// lock-step: the party ascends together
 async function coopAdvance(btnEl) {
   coopS.broadcastStatus(statusOf(run, 'waiting'), 'waiting');
   if (btnEl) {
@@ -1344,8 +1665,7 @@ function nextFloorButton(stage) {
   };
 }
 
-const SKILL_OFFER_LEVELS = [3, 5, 8, 11, 14, 17, 20, 24];
-
+/* ---------- level-ups, subclass advancement (handoff §21) ---------- */
 const LEVEL_FLAVOR = [
   'Your wounds knit. The tower feels a fraction smaller.',
   'Something settles into your bones — you are more than you were a floor ago.',
@@ -1353,17 +1673,63 @@ const LEVEL_FLAVOR = [
   'Strength arrives quietly, like it was always yours and just got lost in the mail.',
 ];
 
+const SKILL_OFFER_LEVELS = [3, 5, 8, 11, 14, 17, 20, 24];
+
 async function levelUpModal(up) {
   SFX.levelup();
   await modal(`
-    <div class="levelup-burst">${up.evolution ? '🌟' : '✨'}</div>
-    <h3 style="text-align:center">${up.evolution ? `EVOLUTION — ${up.evolution.name}!` : `Level ${up.level}!`}</h3>
-    <p class="modal-sub" style="text-align:center">${up.evolution ? up.evolution.blurb : LEVEL_FLAVOR[up.level % LEVEL_FLAVOR.length]}</p>
-    <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">${up.evolution ? 'Rise' : 'Continue'}</span></button></div>`);
-  if (up.evolution) SFX.evolve();
+    <div class="levelup-burst">✨</div>
+    <h3 style="text-align:center">Level ${up.level}!</h3>
+    <p class="modal-sub" style="text-align:center">${LEVEL_FLAVOR[up.level % LEVEL_FLAVOR.length]}</p>
+    <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">Continue</span></button></div>`);
 
-  // skill offer
-  if (SKILL_OFFER_LEVELS.includes(up.level) || up.evolution) {
+  // level 6: the subclass choice — secret options appear unannounced
+  if (up.evolutionChoice?.length) {
+    await modalCustom((m, close) => {
+      m.innerHTML = `<h3>The Path Divides</h3>
+        <p class="modal-sub">The tower recognizes what you are becoming — and offers a choice it will hold you to. This cannot be undone this climb.</p>
+        <div class="pick-grid">
+          ${up.evolutionChoice.map((s, i) => `
+            <button class="pick-option ${s.secret ? 'secret-path' : ''}" data-i="${i}">
+              ${s.secret ? '<span class="po-tag tag" style="border-color:var(--gold);color:var(--gold-bright)">✦ hidden path</span>' : ''}
+              <div class="po-name">${s.name}</div>
+              <div class="po-desc">${s.hint}</div>
+            </button>`).join('')}
+        </div>`;
+      m.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
+        const sub = up.evolutionChoice[+b.dataset.i];
+        applySubclassFn(run, sub);
+        if (sub.secret) unlock('secret_class');
+        SFX.evolve();
+        close();
+        modal(`
+          <div class="levelup-burst">🌟</div>
+          <h3 style="text-align:center">EVOLUTION — ${sub.name}!</h3>
+          <p class="modal-sub" style="text-align:center">${sub.blurb}</p>
+          <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">Rise</span></button></div>`).then(async () => {
+          if (sub.skill) await maybeEquipSkill(SKILLS[sub.skill]);
+          saveRun(run);
+          renderHud();
+        });
+      });
+    });
+  }
+
+  // level 13: the deeper branch arrives on its own
+  if (up.deeper) {
+    applySubclassFn(run, up.deeper);
+    SFX.evolve();
+    await modal(`
+      <div class="levelup-burst">🌟</div>
+      <h3 style="text-align:center">EVOLUTION — ${up.deeper.name}!</h3>
+      <p class="modal-sub" style="text-align:center">${up.deeper.blurb}</p>
+      <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">Rise</span></button></div>`);
+    if (up.deeper.skill) await maybeEquipSkill(SKILLS[up.deeper.skill]);
+    saveRun(run);
+    renderHud();
+  }
+
+  if (SKILL_OFFER_LEVELS.includes(up.level)) {
     const rng = runRng(run);
     const pool = rng.shuffle(learnableSkills(run)).slice(0, 3);
     rng.advance();
@@ -1372,7 +1738,7 @@ async function levelUpModal(up) {
         m.innerHTML = `<h3>New Technique</h3><p class="modal-sub">The climb teaches. Choose one skill to learn.</p>
           <div class="pick-grid">
             ${pool.map((s, i) => `<button class="pick-option" data-i="${i}">
-              <span class="po-tag tag">${s.cost ? s.cost + ' MP' : 'FREE'}</span>
+              <span class="po-tag tag">${s.cost ? s.cost + ' ' + resourceName(run) : ''}${s.charge ? ' +' + s.charge + '⚡' : ''}${!s.cost && !s.charge ? 'FREE' : ''}</span>
               <div class="po-name">${s.name}</div><div class="po-desc">${s.desc}</div>
             </button>`).join('')}
             <button class="pick-option" data-skip="1"><div class="po-name" style="color:var(--ink-dim)">Skip — stay sharp with what you know</div></button>
@@ -1381,12 +1747,7 @@ async function levelUpModal(up) {
           const sk = pool[+b.dataset.i];
           run.knownSkills.push(sk.id);
           close();
-          if (run.skills.length < 4) {
-            run.skills.push(sk.id);
-            toast(`Learned ${sk.name}`, 'info');
-          } else {
-            await swapSkillModal(sk);
-          }
+          await maybeEquipSkill(sk);
           saveRun(run);
         });
         m.querySelector('[data-skip]').onclick = () => close();
@@ -1395,9 +1756,20 @@ async function levelUpModal(up) {
   }
 }
 
+async function maybeEquipSkill(sk) {
+  if (!sk) return;
+  if (!run.knownSkills.includes(sk.id)) run.knownSkills.push(sk.id);
+  if (run.skills.length < 4) {
+    run.skills.push(sk.id);
+    toast(`Learned ${sk.name}`, 'info');
+  } else {
+    await swapSkillModal(sk);
+  }
+}
+
 async function swapSkillModal(newSkill) {
   await modalCustom((m, close) => {
-    m.innerHTML = `<h3>Equip ${newSkill.name}?</h3><p class="modal-sub">You can carry four techniques into battle. Replace one, or keep it in reserve (swap anytime from the Character screen).</p>
+    m.innerHTML = `<h3>Equip ${newSkill.name}?</h3><p class="modal-sub">You can carry four techniques into battle (plus Strike and Guard, always). Replace one, or keep it in reserve.</p>
       <div class="pick-grid">
         ${run.skills.map((id, i) => `<button class="pick-option" data-i="${i}">
           <div class="po-name">Replace ${SKILLS[id].name}</div><div class="po-desc">${SKILLS[id].desc}</div>
@@ -1420,36 +1792,39 @@ async function shopScreen(stage, ev) {
   const rng = runRng(run);
   const tier = biomeTier();
   const stock = [];
-  // consumables
-  const cons = rng.shuffle(CONSUMABLES).slice(0, 3);
+  const cons = rng.shuffle(CONSUMABLES.filter(c => !c.appraisal)).slice(0, 3);
   cons.forEach(c => stock.push({ kind: 'consumable', item: c, price: c.price }));
-  // equipment
+  if (rng.chance(0.4)) stock.push({ kind: 'consumable', item: CONSUMABLES.find(c => c.appraisal), price: 90 });
   for (let i = 0; i < 2; i++) {
     const item = rollEquipment(rng, tier, 2);
     if (!stock.some(s => s.item.id === item.id)) stock.push({ kind: 'equip', item, price: item.price });
   }
-  // maybe a relic
   if (rng.chance(0.5)) {
     const r = rollRelic(rng, run.relics);
     if (r) stock.push({ kind: 'relic', item: r, price: 120 + tier * 40 });
   }
   rng.advance(); saveRun(run);
 
+  // fame opens wallets and lowers prices (handoff §18)
+  const discount = run.fame >= CONFIG.fame.shopDiscountAt ? CONFIG.fame.shopDiscountPct : 0;
+
+  function price(p) { return Math.round(p * (1 - discount)); }
+
   function render() {
-    const healCost = Math.max(10, Math.round((run.maxHp - run.hp) * 0.8));
+    const healCost = Math.max(10, Math.round((run.maxHp - run.hp) * 0.8 * (1 - discount)));
     stage.innerHTML = `
       <div class="card-stage"><div class="panel event-card">
         <div class="card-art"><div class="card-glyph">🧳</div>
           <span class="tag card-type-tag">MERCHANT</span><span class="tag card-floor-tag">FLOOR ${run.floor}</span></div>
         <div class="card-body">
           <h3>${ev.title}</h3>
-          <div class="card-text">"Browse, browse! Prices reflect the difficulty of my supply chain, which is <i>vertical</i>."</div>
+          <div class="card-text">"Browse, browse! Prices reflect the difficulty of my supply chain, which is <i>vertical</i>."${discount ? '<br/><i>"Wait — I know that face! For a climber of your reputation, a consideration."</i> (fame discount)' : ''}</div>
           <div class="shop-list">
             ${stock.map((s, i) => `
               <div class="shop-item">
                 <div class="si-info"><div class="si-name ${rarityClass(s.item.rarity)}">${s.item.name}</div><div class="si-desc">${s.item.desc}</div></div>
-                <span class="si-price">🪙 ${s.price}</span>
-                <button class="btn small ${run.gold >= s.price ? 'primary' : ''}" data-i="${i}" ${run.gold < s.price ? 'disabled' : ''}>Buy</button>
+                <span class="si-price">🪙 ${price(s.price)}</span>
+                <button class="btn small ${run.gold >= price(s.price) ? 'primary' : ''}" data-i="${i}" ${run.gold < price(s.price) ? 'disabled' : ''}>Buy</button>
               </div>`).join('')}
             <div class="shop-item">
               <div class="si-info"><div class="si-name">Patch you up</div><div class="si-desc">Full heal. "I studied medicine for a week."</div></div>
@@ -1463,17 +1838,28 @@ async function shopScreen(stage, ev) {
 
     stage.querySelectorAll('[data-i]').forEach(btn => btn.onclick = async () => {
       const s = stock[+btn.dataset.i];
-      if (run.gold < s.price) return;
-      run.gold -= s.price;
+      const p = price(s.price);
+      if (run.gold < p) return;
+      run.gold -= p;
       SFX.gold();
-      if (s.kind === 'consumable') { run.consumables.push(s.item.id); toast(`Bought ${s.item.name}`); }
+      if (s.kind === 'consumable') {
+        if (s.item.appraisal) {
+          const rng2 = runRng(run);
+          appraiseRun(rng2, run, { partial: false, location: 'a merchant\'s scroll' });
+          rng2.advance();
+          toast('The scroll reads you. Check your Character page.', 'info');
+        } else {
+          run.consumables.push(s.item.id);
+          toast(`Bought ${s.item.name}`);
+        }
+      }
       if (s.kind === 'relic') { run.relics.push(s.item.id); toast(`Relic: ${s.item.name}`, 'info'); SFX.unlock(); }
       if (s.kind === 'equip') { const lines = []; await offerEquipment(s.item, lines); }
       stock.splice(+btn.dataset.i, 1);
       saveRun(run); renderHud(); render();
     });
     stage.querySelector('#buy-heal').onclick = () => {
-      const cost = Math.max(10, Math.round((run.maxHp - run.hp) * 0.8));
+      const cost = Math.max(10, Math.round((run.maxHp - run.hp) * 0.8 * (1 - discount)));
       if (run.gold < cost) return;
       run.gold -= cost; run.hp = run.maxHp;
       SFX.heal(); toast('Fully healed');
@@ -1495,38 +1881,60 @@ async function shopScreen(stage, ev) {
 }
 
 /* ============================================================
-   CHARACTER SHEET
+   CHARACTER SHEET — hidden stats, appraisal, fame, 8 slots
    ============================================================ */
-function characterSheet() {
+function statDisplay(stat) {
+  const reveal = revealLevel(run);
   const d = derived(run);
+  if (reveal === 'exact') return `<b>${d[stat]}</b>`;
+  if (reveal === 'ranks') return `<b>${rankFor(d[stat])}</b> <span style="color:var(--ink-faint)">(live)</span>`;
+  const app = run.appraisal?.results?.[stat];
+  if (app) return `<span title="as of floor ${run.appraisal.floor}">${app.rank} · ~${app.lo}–${app.hi}</span>`;
+  return '<span style="color:var(--ink-faint)">?</span>';
+}
+
+function characterSheet() {
   modalCustom((m, close) => {
     function render() {
       const eq = run.equipment;
+      const compatible = weaponCompatible(run);
+      const appr = run.appraisal;
       m.innerHTML = `
-        <h3>${run.name} — Lv ${run.level} ${classTitle(run)}</h3>
-        <p class="modal-sub">Seed ${run.seed.toString(16)} · Floor ${run.floor} · ${run.kills} kills</p>
+        <h3>${run.name} — Lv ${run.level} ${run.raceName} ${classTitle(run)}</h3>
+        <p class="modal-sub">Floor ${run.floor} · ${run.kills} kills · Origin: ${run.originId ? originById(run.originId)?.name : 'Unknown'}</p>
         <div class="sheet-grid">
           <div class="sheet-section">
-            <h4>Stats</h4>
+            <h4>Fame</h4>
+            <div class="fame-line">🌟 <b>${run.fame}</b> <span style="color:var(--ink-dim);font-size:13px">— the tower talks. Fame opens doors, discounts bribes, and impresses merchants.</span></div>
+            <h4 style="margin-top:14px">Stats ${appr ? `<span class="tag" style="margin-left:6px" title="Appraisals age — you have grown since.">last appraised · Floor ${appr.floor}</span>` : '<span class="tag" style="margin-left:6px">unappraised</span>'}</h4>
+            ${appr && appr.floor < run.floor ? '<div style="font-size:12px;color:var(--crit);margin-bottom:6px">⚠ This reading is from an earlier floor — you have changed since.</div>' : ''}
             <table class="stat-table">
-              <tr><td>Strength</td><td>${d.str}</td></tr>
-              <tr><td>Dexterity</td><td>${d.dex}</td></tr>
-              <tr><td>Intelligence</td><td>${d.int}</td></tr>
-              <tr><td>Wisdom</td><td>${d.wis}</td></tr>
-              <tr><td>Luck</td><td>${d.lk}</td></tr>
-              <tr><td>Weapon damage</td><td>+${d.atk}</td></tr>
-              <tr><td>Defense</td><td>${d.def}</td></tr>
-              <tr><td>Crit chance</td><td>${d.crit.toFixed(0)}%</td></tr>
-              <tr><td>Dodge</td><td>${d.dodge.toFixed(0)}%</td></tr>
+              <tr><td>Strength</td><td>${statDisplay('str')}</td></tr>
+              <tr><td>Dexterity</td><td>${statDisplay('dex')}</td></tr>
+              <tr><td>Intelligence</td><td>${statDisplay('int')}</td></tr>
+              <tr><td>Wisdom</td><td>${statDisplay('wis')}</td></tr>
+              <tr><td>Luck</td><td>${statDisplay('lk')}</td></tr>
+              <tr><td>Growth potential</td><td><span style="color:var(--ink-faint)">?</span></td></tr>
+              ${appr ? `<tr><td>Overall (appraised)</td><td><b>${appr.overall}</b></td></tr>` : ''}
             </table>
-            <h4 style="margin-top:14px">Equipped</h4>
-            ${['weapon', 'armor', 'accessory'].map(slot => {
+            <h4 style="margin-top:14px">Equipped ${!compatible ? '<span class="tag" style="color:var(--crit);border-color:var(--crit)">⚠ weapon incompatible</span>' : ''}</h4>
+            ${EQUIP_SLOTS.map(slot => {
               const it = eq[slot] ? itemById(eq[slot]) : null;
-              return `<div class="inv-item"><div><div class="item-name ${it ? rarityClass(it.rarity) : ''}">${it ? it.name : `<span style="color:var(--ink-faint)">— no ${slot} —</span>`}</div>
+              const label = slot.startsWith('accessory') ? 'ring ' + slot.slice(-1) : slot;
+              return `<div class="inv-item"><div><div class="item-name ${it ? rarityClass(it.rarity) : ''}">${it ? it.name : `<span style="color:var(--ink-faint)">— empty —</span>`}</div>
                 ${it ? `<div class="item-desc">${it.desc}</div>` : ''}</div>
-                <span class="tag">${slot}</span></div>`;
+                <span class="tag">${label}</span></div>`;
             }).join('')}
             ${run.weaponBonus ? `<div style="font-size:13px;color:var(--ink-dim)">Forge-honed: +${run.weaponBonus} weapon damage</div>` : ''}
+          </div>
+          <div class="sheet-section">
+            <h4>Techniques (4 + Strike &amp; Guard)</h4>
+            ${run.skills.map(id => `<div class="inv-item"><div><div class="item-name">${SKILLS[id].name}${SKILLS[id].charge ? ` <span class="tag">${SKILLS[id].charge}⚡</span>` : ''}</div><div class="item-desc">${SKILLS[id].desc}</div></div></div>`).join('')}
+            ${run.knownSkills.filter(id => !run.skills.includes(id)).length ? `
+              <h4 style="margin-top:12px">Reserve</h4>
+              ${run.knownSkills.filter(id => !run.skills.includes(id)).map(id => `
+                <div class="inv-item"><div><div class="item-name">${SKILLS[id].name}</div><div class="item-desc">${SKILLS[id].desc}</div></div>
+                <button class="btn small" data-swap="${id}">Equip</button></div>`).join('')}` : ''}
             <h4 style="margin-top:14px">Pack</h4>
             ${run.inventory.length ? run.inventory.map((id, i) => {
               const it = itemById(id);
@@ -1536,15 +1944,6 @@ function characterSheet() {
                   <button class="btn small ghost" data-sellinv="${i}">Sell ${Math.round(it.price * 0.5)}g</button>
                 </div></div>`;
             }).join('') : '<div style="color:var(--ink-faint);font-size:14px">No spare gear.</div>'}
-          </div>
-          <div class="sheet-section">
-            <h4>Techniques (4 equipped)</h4>
-            ${run.skills.map(id => `<div class="inv-item"><div><div class="item-name">${SKILLS[id].name}</div><div class="item-desc">${SKILLS[id].desc}</div></div></div>`).join('')}
-            ${run.knownSkills.filter(id => !run.skills.includes(id)).length ? `
-              <h4 style="margin-top:12px">Reserve</h4>
-              ${run.knownSkills.filter(id => !run.skills.includes(id)).map(id => `
-                <div class="inv-item"><div><div class="item-name">${SKILLS[id].name}</div><div class="item-desc">${SKILLS[id].desc}</div></div>
-                <button class="btn small" data-swap="${id}">Equip</button></div>`).join('')}` : ''}
             <h4 style="margin-top:14px">Consumables</h4>
             ${run.consumables.length ? [...new Set(run.consumables)].map(id => {
               const c = itemById(id);
@@ -1566,9 +1965,14 @@ function characterSheet() {
         const i = run.consumables.indexOf(c.id);
         if (i === -1) return;
         run.consumables.splice(i, 1);
+        if (c.appraisal) {
+          const rng2 = runRng(run);
+          appraiseRun(rng2, run, { partial: false, location: 'a scroll of appraisal' });
+          rng2.advance();
+        }
         if (c.heal) heal(run, c.heal);
         if (c.mana) restoreMana(run, c.mana);
-        if (c.sanity) changeSanity(run, c.sanity);
+        if (c.fame) changeFame(run, c.fame);
         SFX.heal(); saveRun(run); renderHud(); render();
       });
       m.querySelectorAll('[data-swap]').forEach(b => b.onclick = async () => {
@@ -1600,7 +2004,6 @@ async function throneRoom(stage) {
   const boss = BOSSES[51];
   const hasSigils = run.sigils.length >= 3;
 
-  // clause seven collects first
   let clauseLine = '';
   if (run.flags.clause_seven) {
     const cost = Math.round(run.maxHp * 0.25);
@@ -1611,7 +2014,7 @@ async function throneRoom(stage) {
   let angelLine = '';
   if (run.flags.freed_angel) {
     run.hp = run.maxHp; run.mp = run.maxMp;
-    angelLine = `<div class="outcome-line good">Light floods the antechamber — six wings, briefly, like a blessing that refuses to be witnessed. Your wounds close. Your mana sings. A voice: "ANSWER HONESTLY."</div>`;
+    angelLine = `<div class="outcome-line good">Light floods the antechamber — six wings, briefly, like a blessing that refuses to be witnessed. Your wounds close. Your ${resourceName(run)} sings. A voice: "ANSWER HONESTLY."</div>`;
     saveRun(run); renderHud();
   }
 
@@ -1630,14 +2033,12 @@ async function throneRoom(stage) {
   SFX.bossIntro();
 
   const box = document.getElementById('choices');
-  const addChoice = (html, fn, disabled = false) => {
+  const addChoice = (html, fn) => {
     const b = el(html);
-    if (disabled) b.disabled = true;
     b.onclick = () => { SFX.click(); fn(); };
     box.appendChild(b);
   };
 
-  // one path for solo and co-op: co-op broadcasts the fight and gathers the party
   const throneFight = async (hpMult) => {
     if (coopS) {
       const enemies = buildSharedEnemies([boss], { boss: true });
@@ -1670,7 +2071,7 @@ async function throneRoom(stage) {
   addChoice(`<button class="choice-btn"><span class="choice-label">🗣 Answer honestly: "I don't know yet."</span><span class="choice-hint">${run.flags.angel_lore || run.flags.tree_lore ? 'you know what he asks' : 'risky honesty'}</span></button>`, async () => {
     await modal(`<h3>The Question</h3><p class="modal-sub">"Would you take this throne," Vorath asks, "if it were offered?"<br/><br/>"I don't know yet," you say. The Demon King smiles — the first true smile in a century. "Honest. FINALLY." He offers a duelist's salute. "Then let us find out what you are."</p>
       <div class="pick-grid"><button class="pick-option" data-close="x"><span class="po-name">Begin</span></button></div>`);
-    changeSanity(run, 15);
+    changeFame(run, 5);
     renderHud();
     throneFight(0.92);
   });
@@ -1743,13 +2144,13 @@ async function victoryScreen(type) {
       <div class="end-glyph">${isWin ? '👑' : '🌀'}</div>
       <h1 class="end-title victory">${isWin ? 'THE KING IS DEAD' : 'YOU WENT HOME'}</h1>
       <p class="end-epitaph">${isWin
-        ? `Vorath falls to one knee, then both — and he is <i>smiling</i>. "The interesting kind after all." The tower shudders as its crown changes... no. You sheathe your weapon and walk past the throne without sitting down. Let the next century wonder why the top floor stands empty.<br/><br/>${run.name} the ${classTitle(run)} conquered all fifty-one floors.`
+        ? `Vorath falls to one knee, then both — and he is <i>smiling</i>. "The interesting kind after all." The tower shudders as its crown changes... no. You sheathe your weapon and walk past the throne without sitting down. Let the next century wonder why the top floor stands empty.<br/><br/>${run.name} the ${run.raceName} ${classTitle(run)} conquered all fifty-one floors.`
         : `The portal closes behind you, and the world is suddenly, absurdly ordinary: weather, birdsong, a road. You are alive. Every scar came home with you, and so did every story.<br/><br/>The tower still stands on the horizon. You don't look at it. Mostly.<br/><br/>${run.name} the ${classTitle(run)} survived ${run.floor} floors — and chose to keep living.`}</p>
       <div class="end-stats">
         <div><b>${run.floor}</b>floors</div>
         <div><b>${run.kills}</b>slain</div>
         <div><b>${run.level}</b>level</div>
-        <div><b>${run.goldEarned}</b>gold earned</div>
+        <div><b>${run.fame}</b>fame</div>
       </div>
       <div class="shard-award">◈ <b>+${shards}</b> Soul Shards for the Sanctum</div>
       <div style="display:flex;gap:10px">
@@ -1758,7 +2159,7 @@ async function victoryScreen(type) {
       </div>
     </div>`));
   SFX.victory();
-  document.getElementById('btn-again').onclick = () => { meta = loadMeta(); classSelect(); };
+  document.getElementById('btn-again').onclick = () => { meta = loadMeta(); creationFlow(); };
   document.getElementById('btn-title').onclick = () => { meta = loadMeta(); titleScreen(); };
 }
 
@@ -1767,11 +2168,6 @@ const EPITAPHS = {
     'The tower keeps what it kills. It kept you somewhere nice, at least.',
     'Your candle in the Vigil Room is still lit. Somebody will climb past it tomorrow.',
     'The Bone Gambler pours one out for you. He waters it down, but it\'s the thought.',
-  ],
-  madness: [
-    'You are still in the tower. You are always in the tower. The tower is very happy to have you.',
-    'They found your journal. The last forty pages are one word, beautifully calligraphed.',
-    'Your mind went home without you. Parts of it send postcards.',
   ],
   abandon: [
     'Some climbs end with a decision instead of a death. The tower respects the paperwork.',
@@ -1793,14 +2189,14 @@ async function endRun(cause) {
   const epitaph = EPITAPHS[cause] ? EPITAPHS[cause][Math.floor(Math.random() * EPITAPHS[cause].length)] : EPITAPHS.dead[0];
   app.appendChild(el(`
     <div class="screen end-screen">
-      <div class="end-glyph">${cause === 'madness' ? '🫥' : '💀'}</div>
-      <h1 class="end-title defeat">${cause === 'madness' ? 'MIND, UNMADE' : cause === 'abandon' ? 'THE CLIMB ENDS' : 'YOU DIED'}</h1>
-      <p class="end-epitaph">${deadRun.name} the ${classTitle(deadRun)} — Floor ${deadRun.floor}, ${biomeForFloor(deadRun.floor).name}.<br/><br/>${epitaph}</p>
+      <div class="end-glyph">💀</div>
+      <h1 class="end-title defeat">${cause === 'abandon' ? 'THE CLIMB ENDS' : 'YOU DIED'}</h1>
+      <p class="end-epitaph">${deadRun.name} the ${deadRun.raceName} ${deadRun.subclassId ? SUBCLASSES[deadRun.subclassId].name : CLASSES[deadRun.classId].name} — Floor ${deadRun.floor}, ${biomeForFloor(deadRun.floor).name}.<br/><br/>${epitaph}</p>
       <div class="end-stats">
         <div><b>${deadRun.floor}</b>floors</div>
         <div><b>${deadRun.kills}</b>slain</div>
         <div><b>${deadRun.level}</b>level</div>
-        <div><b>${deadRun.goldEarned}</b>gold earned</div>
+        <div><b>${deadRun.fame}</b>fame</div>
       </div>
       <div class="shard-award">◈ <b>+${shards}</b> Soul Shards carried back to the Sanctum</div>
       <div style="display:flex;gap:10px">
@@ -1808,7 +2204,7 @@ async function endRun(cause) {
         <button class="btn" id="btn-title">Title Screen</button>
       </div>
     </div>`));
-  document.getElementById('btn-again').onclick = () => { meta = loadMeta(); classSelect(); };
+  document.getElementById('btn-again').onclick = () => { meta = loadMeta(); creationFlow(); };
   document.getElementById('btn-title').onclick = () => { meta = loadMeta(); titleScreen(); };
 }
 

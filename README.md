@@ -44,14 +44,15 @@ Port 3117/tcp is open in firewalld + the OCI security list. `server/test-bot.js`
 
 ## 🎮 How to play
 
-- **Pick a class** — Warrior, Mage, Archer, or Rogue — and roll your RNG stats (3 rerolls).
-- **Each floor deals one card**: an encounter, a story event, a treasure (👀 mimics), a risk, a blessing, a merchant, or a rest.
-- **Every choice is a tradeoff** — gold vs. HP, XP vs. Sanity. Stat requirements (DEX 12+, INT 13+…) gate the good options; Luck sweetens every roll.
-- **Combat is turn-based** with a 4-skill loadout you customize as you learn new techniques. Enemies come in packs; bosses have phases.
-- **Lose conditions:** HP = 0 (death) or Sanity = 0 (the tower keeps your mind).
-- **Every 10th floor is a boss.** Every 5th is a Trial floor with battle modifiers.
-- **Biomes:** Whispering Forest → Sunken Ruins → Frozen Citadel → Weeping Mire → The Scorch → the Throne (Floor 51).
-- **Death is permanent** — but Soul Shards flow back to the **Sanctum** for permanent upgrades, and your next climber starts stronger.
+- **Build a climber**: pick a **bloodline** (Human/Elf/Orc/Dwarf), a **calling** (Warrior, Mage, Archer, Rogue, Priest, Monk — each with its own class resource: Vigor, Mana, Focus, Energy, Faith, Ki), and a **playable origin** (Academy, Mercenary Company, Temple, Undercity…). Your exact stats and growth potential stay **hidden** — you get a feeling and 2 rerolls, nothing more. Pay an **appraiser** mid-run for approximate ranks (F → E → D → C → B → A → S → EX → WRLD).
+- **The tower deals three cards per floor** — you see only their nature (Combat, Mystery, Merchant, Appraisal, Dangerous…), never their contents. Watch for the occasional ✦ sparkle: something behind that card suits someone in your party. It won't say what, or who.
+- **Combat is initiative-rolled and turn-based**: turn order on the left, your character on the right. Everyone always has **Strike** and **Guard** (70% block, builds charge). Big hits and AOE cost **Battle Charge** (6 segments) — and enemies charge up too, telegraphing their specials one segment early.
+- **Weapon compatibility matters**: a Mage holding a sword keeps only Strike and Guard — unless they walk the Spellblade path.
+- **At level 6 the path divides**: every class chooses between two subclasses — and if you've earned it, a **secret third option** appears. Level 13 deepens the branch. Rare events can even **promote your race** (Elf → High Elf, Human → Awakened…).
+- **Fame is always visible** and always working: discounts bribes (only intelligent enemies take gold), unlocks merchant deals, opens doors.
+- **Weak starts fight back**: underdog climbers encounter rare mentors, hidden trainers, and awakenings more often. Strong starts usually grow slower. The tower evens out — eventually.
+- **Every 10th floor is a boss** with its own charge economy and initiative profile. Every 5th is a Trial. Biomes: Forest → Ruins → Frozen Citadel → Mire → the Scorch → the Throne (Floor 51).
+- **Death is permanent** (solo). In co-op you fall, lose a couple of lesser items, and rejoin next floor at 25%. Soul Shards flow back to the **Sanctum** either way.
 - **Three endings.** Slay the Demon King, take the Coward's Gate... or find the three hidden Sigils and learn what the tower actually is.
 
 ## 🗂️ Project structure
@@ -80,12 +81,12 @@ js/
 
 ## 🛠️ Adding content (contributor cheatsheet)
 
-Everything is data-driven — most contributions never touch the engine:
+Everything is data-driven — most contributions never touch the engine. **Full authoring guide: [docs/CONTENT.md](docs/CONTENT.md).** Balance constants are centralized in `js/data/config.js`. Verify contributions with:
 
-- **New event card** → add an object to `js/data/events.js`. Effects are declarative (`{ gold: 50, sanity: -5, flag: 'x' }`); flags let later events remember earlier choices.
-- **New skill** → `js/data/skills.js`. Fields like `power`, `stun`, `poison`, `shield`, `buff` are resolved by the engine automatically.
-- **New enemy/boss** → `js/data/enemies.js`. Traits: `pack`, `elite`, `caster`, `regen`, `sanityHit`, `summons`, `heads`, `phases`.
-- **New relic/item** → `js/data/items.js`. Passive props (`dmgMult`, `sanityGuard`, `noMimic`, `revive`…) are picked up by `character.js#derived`.
+```bash
+node tools/test.js   # 465+ data & logic assertions
+node tools/sim.js    # seeded balance simulations (10k trials)
+```
 
 ## 🗺️ Roadmap (from the design doc)
 
