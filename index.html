@@ -7,15 +7,19 @@
   <meta name="description" content="A dark-fantasy roguelike card-crawler. Climb the Tower, defy the Demon King." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/main.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗼</text></svg>" />
 </head>
 <body>
-  <canvas id="fx-canvas"></canvas>
-  <div id="vignette"></div>
-  <div id="app" role="application" aria-label="Dungeon Together"></div>
-  <div id="toast-layer"></div>
+  <div id="viewport">
+    <div id="frame">
+      <canvas id="fx-canvas"></canvas>
+      <div id="vignette"></div>
+      <div id="app" role="application" aria-label="Dungeon Together"></div>
+      <div id="toast-layer"></div>
+    </div>
+  </div>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

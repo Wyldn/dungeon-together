@@ -15,7 +15,9 @@ import { derived, classTitle, skillTier, gainXp, learnableSkills, heal, restoreM
 import { startCombat, buildEnemy } from './combat.js';
 import { ICONS } from './icons.js';
 import { SFX, toggleMute, isMuted } from './audio.js';
-import { setParticles, setBiomeGlow } from './fx.js';
+import { setParticles, setBiomeGlow, flash } from './fx.js';
+import { mountCrystal } from './crystal.js';
+import { renderTravelMap, resetTravelTrail } from './travelmap.js';
 import { app, el, toast, modal, modalCustom, bar, rarityClass } from './ui.js';
 import { makeRng, randomSeed } from './rng.js';
 import { defaultServerUrl, isMixedContentBlocked, PUBLIC_GAME_URL } from './net.js';
@@ -45,7 +47,29 @@ const LAST_FLOOR = 51;
 export function boot() {
   setParticles('dust');
   setBiomeGlow('#3f3a58');
+  if (devJump()) return;
   titleScreen();
+}
+
+// Local-only dev nav (?dev=combat|creation|sheet|map|appraisal) — never ships UI.
+function devJump() {
+  const p = new URLSearchParams(location.search).get('dev');
+  if (!p) return false;
+  meta = loadMeta();
+  run = newRun(meta, { classId: 'archer', raceId: 'human', originId: ORIGINS[0]?.id, name: 'Elba' });
+  run.floor = 1;
+  setBiomeGlow('#3f7d4a'); setParticles('leaves');
+  if (p === 'creation' || p === 'appraisal') { creationFlow(); return true; }
+  if (p === 'sheet') { appraiseRun(runRng(run), run, { partial: false }); floorChrome(); characterSheet(); return true; }
+  if (p === 'combat') {
+    const biome = biomeForFloor(1);
+    const stage = floorChrome();
+    const specs = (ENEMIES[biome.id] || []).filter(e => !e.elite).slice(0, 1);
+    fightGroup(stage, specs, { text: 'A wild foe erupts from the brush!' });
+    return true;
+  }
+  if (p === 'map') { enterFloorScreen(true); return true; }
+  return false;
 }
 
 function titleScreen() {
@@ -75,7 +99,7 @@ function titleScreen() {
     SFX.click();
     if (saved && !confirm('Abandon the current climb? Your climber will not be remembered kindly.')) return;
     clearRun(); run = null;
-    creationFlow();
+    flash(() => creationFlow());
   };
   if (saved) document.getElementById('btn-continue').onclick = () => { SFX.click(); run = saved; enterFloorScreen(); };
   document.getElementById('btn-coop').onclick = () => { SFX.click(); coopMenu(); };
@@ -143,15 +167,32 @@ function sanctumScreen() {
 /* ============================================================
    CHARACTER CREATION: race → class → origin → name (handoff §6, §22, §23)
    ============================================================ */
+// Deliberately WIDE flavor band (NOT the real hidden rank) for the Monolith.
+const RANK_ASC = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'EX', 'WRLD'];
+function potentialBand(percentile) {
+  const center = 3 + Math.round((percentile ?? 0.5) * 3); // C..S-ish center
+  // width varies: sometimes tight (B–A), sometimes wide (C–EX)
+  const loOff = Math.floor(Math.random() * 4); // 0..3
+  const hiOff = Math.floor(Math.random() * 4); // 0..3
+  let lo = Math.max(0, center - loOff);
+  let hi = Math.min(RANK_ASC.length - 1, center + hiOff);
+  if (hi <= lo) { if (hi < RANK_ASC.length - 1) hi = lo + 1; else lo = hi - 1; } // guarantee a span
+  return { low: RANK_ASC[lo], high: RANK_ASC[hi] };
+}
+
 function creationFlow(coopContext = null) {
   const pick = { raceId: 'human', classId: 'warrior', originId: ORIGINS[0].id };
   let step = 0; // 0 race, 1 class, 2 origin, 3 name
   let rerolls = 0;
   let gen = null;
+  let appraised = false;      // has the Monolith crystal been charged?
+  let crystalCtl = null;
+  let apprBand = null;        // the revealed potential band (computed once per roll)
 
   function maxRerolls() { return CONFIG.chargen.rerolls + (RACES[pick.raceId].extraReroll || 0); }
 
   function render() {
+    if (crystalCtl) { crystalCtl.destroy(); crystalCtl = null; }
     app.innerHTML = '';
     const steps = ['Bloodline', 'Calling', 'Origin', 'The Name'];
     const scr = el(`<div class="screen">
@@ -170,94 +211,136 @@ function creationFlow(coopContext = null) {
     const body = scr.querySelector('#step-body');
     const sub = scr.querySelector('#step-sub');
 
-    if (step === 0) {
-      sub.textContent = 'Four peoples climb. The tower does not care which — but the tower is often wrong about what matters.';
-      body.innerHTML = '<div class="class-grid" id="races"></div>';
-      for (const race of Object.values(RACES)) {
-        const card = el(`<div class="panel class-card ${pick.raceId === race.id ? 'selected' : ''}" style="--accent:#c9a53f">
-          <div style="font-size:52px;margin-bottom:6px">${race.glyph}</div>
-          <h3>${race.name}</h3>
-          <div class="class-epithet">${race.blurb}</div>
-          <div class="class-evo">${race.hint}</div>
+    if (step === 0 || step === 1 || step === 2) {
+      // Handoff §2: sliding rail + centre showcase + side text box.
+      const isClass = step === 1;
+      const isOrigin = step === 2;
+      sub.textContent = isClass
+        ? 'Six callings. What you\'re truly made of, you\'ll discover on the way up.'
+        : isOrigin
+          ? 'Where were you, the day before the tower? Origins are lived, not listed — yours plays out at the gate.'
+          : 'Four peoples climb. The tower does not care which — but the tower is often wrong about what matters.';
+      const RACE_TAG = { human: 'ADAPTABLE', elf: 'ARCANE', orc: 'BRUTAL', dwarf: 'ENDURING' };
+      const ORIGIN_TAG = { mage_academy: 'SCHOLAR', sword_academy: 'DUELIST', mercenary: 'SELLSWORD', guild: 'LICENSED', temple: 'DEVOUT', streets: 'OUTLAW' };
+      const list = isOrigin ? ORIGINS : Object.values(isClass ? CLASSES : RACES);
+      const key = isClass ? 'classId' : isOrigin ? 'originId' : 'raceId';
+      const selectable = it => isClass ? !(it.hidden && !(it.unlockCond?.(meta))) : true;
+      const accentOf = it => isClass ? it.accent : isOrigin ? '#8fd8cc' : '#e8b64a';
+      const tagOf = it => isClass ? it.resource.name.toUpperCase() : isOrigin ? (ORIGIN_TAG[it.id] || 'ORIGIN') : (RACE_TAG[it.id] || 'CLIMBER');
+      const blurbOf = it => isClass ? it.epithet : it.blurb;
+      const emblemOf = it => isOrigin ? (it.name.replace(/^The\s+/i, '')[0] || it.name[0]) : it.name[0];
+      const artOf = it => isClass
+        ? (heroSpriteHtml(it.id, 220) || `<div class="class-icon" style="width:170px;height:170px">${ICONS[it.id]}</div>`)
+        : isOrigin
+          ? `<div style="font-size:130px;line-height:1">${it.glyph}</div>`
+          : `<div class="showcase-ph">PLACEHOLDER</div>`;
+
+      body.innerHTML = `
+        <div class="creation-stage">
+          <div class="showcase">
+            <div class="showcase-art" id="sc-art"></div>
+            <div class="showcase-name" id="sc-name"></div>
+          </div>
+          <div class="showcase-text" id="sc-text"></div>
+          <div class="creation-rail">
+            <div class="rail-arrow" id="rail-left">◄</div>
+            <div class="rail-window"><div class="rail-track" id="rail-track"></div></div>
+            <div class="rail-arrow" id="rail-right">►</div>
+          </div>
+        </div>`;
+
+      const track = body.querySelector('#rail-track');
+      for (const it of list) {
+        const lock = !selectable(it);
+        const acc = accentOf(it);
+        const card = el(`<div class="rail-card ${lock ? 'locked' : ''}" data-id="${it.id}" style="--sel:${acc};--sel-glow:${acc}55">
+          <div class="rail-emblem" style="background:linear-gradient(135deg,${acc},#ffffff40);border-color:${acc}">${lock ? '?' : emblemOf(it)}</div>
+          <div class="rail-name">${lock ? '? ? ?' : it.name}</div>
+          <div class="rail-tag" style="color:${lock ? 'var(--ink-faint)' : acc}">${lock ? 'LOCKED' : tagOf(it)}</div>
         </div>`);
-        card.onclick = () => { pick.raceId = race.id; SFX.click(); render(); };
-        body.querySelector('#races').appendChild(card);
+        if (!lock) card.onclick = () => selectItem(it.id);
+        track.appendChild(card);
       }
-    }
-    if (step === 1) {
-      sub.textContent = 'Six callings. What you\'re truly made of, you\'ll discover on the way up.';
-            body.innerHTML = '<div class="class-grid" id="classes"></div>';
-      for (const cls of Object.values(CLASSES)) {
-        const locked = cls.hidden && !(cls.unlockCond?.(meta));
-        if (locked) {
-          body.querySelector('#classes').appendChild(el(`<div class="panel class-card locked-class">
-            <div style="font-size:48px;margin-bottom:6px;filter:grayscale(1);opacity:.5">🔒</div>
-            <h3 style="color:var(--ink-faint)">? ? ?</h3>
-            <div class="class-epithet">${cls.unlockHint || 'The tower has not shown you this calling yet.'}</div>
-          </div>`));
-          continue;
-        }
-        const card = el(`<div class="panel class-card ${pick.classId === cls.id ? 'selected' : ''} ${cls.hidden ? 'secret-class' : ''}" style="--accent:${cls.accent}">
-          ${cls.hidden ? '<span class="tag" style="border-color:var(--gold);color:var(--gold-bright);position:absolute;top:8px;right:8px">unearthed</span>' : ''}
-          <div class="class-icon">${ICONS[cls.id]}</div>
-          <h3>${cls.name}</h3>
-          <div class="class-epithet">${cls.epithet}</div>
-          <div class="class-evo">Resource: ${cls.resource.name} · Weapons: ${cls.weapons.join(', ')}</div>
-        </div>`);
-        card.onclick = () => { pick.classId = cls.id; SFX.click(); render(); };
-        body.querySelector('#classes').appendChild(card);
+
+      const idxOf = id => list.findIndex(it => it.id === id);
+      const art = body.querySelector('#sc-art'), nameEl = body.querySelector('#sc-name'), textEl = body.querySelector('#sc-text');
+      function paint(it, fade) {
+        const acc = accentOf(it);
+        const write = () => {
+          art.innerHTML = artOf(it);
+          nameEl.textContent = it.name;
+          textEl.style.borderLeftColor = acc;
+          textEl.innerHTML = `<div class="showcase-tag" style="color:${acc}">${tagOf(it)}</div><div class="showcase-blurb">${blurbOf(it)}</div>`;
+          art.style.opacity = nameEl.style.opacity = textEl.style.opacity = '1';
+        };
+        if (fade) { art.style.opacity = nameEl.style.opacity = textEl.style.opacity = '0'; clearTimeout(body._sc); body._sc = setTimeout(write, 150); }
+        else write();
       }
-    }
-    if (step === 2) {
-      sub.textContent = 'Where were you, the day before the tower? Origins are lived, not listed — yours plays out at the gate.';
-      body.innerHTML = '<div class="class-grid" id="origins"></div>';
-      for (const o of ORIGINS) {
-        const card = el(`<div class="panel class-card ${pick.originId === o.id ? 'selected' : ''}" style="--accent:#8fa8d9">
-          <div style="font-size:44px;margin-bottom:6px">${o.glyph}</div>
-          <h3 style="font-size:17px">${o.name}</h3>
-          <div class="class-epithet">${o.blurb}</div>
-        </div>`);
-        card.onclick = () => { pick.originId = o.id; SFX.click(); render(); };
-        body.querySelector('#origins').appendChild(card);
+      function center() {
+        const selIdx = idxOf(pick[key]);
+        track.style.transform = `translateX(${257 - 166 * selIdx}px)`;
+        track.querySelectorAll('.rail-card').forEach(c => c.classList.toggle('active', c.dataset.id === pick[key]));
       }
+      function selectItem(id) { if (id === pick[key]) return; pick[key] = id; SFX.click(); center(); paint(list[idxOf(id)], true); }
+      function stepSel(dir) {
+        let i = idxOf(pick[key]) + dir;
+        while (i >= 0 && i < list.length) { if (selectable(list[i])) return selectItem(list[i].id); i += dir; }
+      }
+      body.querySelector('#rail-left').onclick = () => stepSel(-1);
+      body.querySelector('#rail-right').onclick = () => stepSel(1);
+      center();
+      paint(list[idxOf(pick[key])], false);
     }
     if (step === 3) {
       if (!gen) gen = rollStart(pick.classId, pick.raceId);
       const desc = startDescriptor(gen.percentile);
-      sub.textContent = 'The tower rolls your beginnings behind its back. You get a feeling — nothing more.';
-      body.innerHTML = `
-        <div class="panel roll-panel" style="flex-direction:column;align-items:stretch;gap:14px">
-          <div style="display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap">
-            <span style="font-size:40px">${RACES[pick.raceId].glyph}</span>
-            <div>
-              <div style="font-family:var(--font-display);font-size:19px">${RACES[pick.raceId].name} ${CLASSES[pick.classId].name}</div>
-              <div style="color:var(--ink-dim);font-size:14px">${originById(pick.originId).name}</div>
-            </div>
+      const band = apprBand || potentialBand(gen.percentile);
+      sub.textContent = appraised ? 'Awakening sealed. This is your beginning.' : 'Attune to the Monolith — press & hold to gauge your potential.';
+      const reveal = appraised ? `
+        <div class="mono-reveal">
+          <div class="mono-feel">"${desc.word}"</div>
+          <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:3px;color:var(--ink-faint);margin:14px 0 8px">POTENTIAL RANGE</div>
+          <div class="mono-band">
+            <span style="color:var(--rk-${band.low})">${band.low}</span>
+            <span style="color:#6a5d44">—</span>
+            <span style="color:var(--rk-${band.high})">${band.high}</span>
           </div>
-          <div class="start-feel panel-inset">
-            <div class="sf-word">"${desc.word}"</div>
-            <div class="sf-flavor">${desc.flavor}</div>
-            <div class="sf-note">Exact stats, growth, and potential remain hidden. An appraiser could tell you more — for a price.</div>
-          </div>
-          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <div class="sf-flavor" style="margin-top:12px">Your true rank is not given — it is earned within.</div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px">
             <input class="name-input" id="name" maxlength="16" placeholder="Name your climber..." />
-            <button class="btn small" id="btn-reroll" ${rerolls >= maxRerolls() ? 'disabled' : ''}>🎲 Tempt fate again (${maxRerolls() - rerolls} left)</button>
+            <button class="btn small" id="btn-reroll" ${rerolls >= maxRerolls() ? 'disabled' : ''}>🎲 Tempt fate (${maxRerolls() - rerolls} left)</button>
           </div>
+        </div>` : `<div class="mono-hint">press &amp; hold the crystal to measure your potential</div>`;
+      body.innerHTML = `
+        <div style="text-align:center">
+          <div class="mono-title">THE MONOLITH OF MEASURE</div>
+          <div style="display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;margin:6px 0 4px">
+            <span style="font-size:28px">${RACES[pick.raceId].glyph}</span>
+            <div style="font-family:var(--font-display);font-size:12px;color:var(--ink-dim)">${RACES[pick.raceId].name} ${CLASSES[pick.classId].name} · ${originById(pick.originId).name}</div>
+          </div>
+          <canvas id="crystal" style="width:320px;height:400px;cursor:pointer;touch-action:none;user-select:none"></canvas>
+          <div id="mono-reveal" style="min-height:96px;margin-top:-40px">${reveal}</div>
         </div>`;
-      const nameInput = body.querySelector('#name');
-      nameInput.value = body._name || RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
-      body.querySelector('#btn-reroll').onclick = () => {
-        if (rerolls >= maxRerolls()) return;
-        rerolls++;
-        gen = rollStart(pick.classId, pick.raceId);
-        SFX.cardDeal();
-        render();
-      };
+      const cv = body.querySelector('#crystal');
+      if (!appraised) {
+        crystalCtl = mountCrystal(cv, { onComplete: () => { appraised = true; apprBand = potentialBand(gen.percentile); SFX.unlock(); render(); } });
+      } else {
+        const nameInput = body.querySelector('#name');
+        nameInput.value = body._name || RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
+        body.querySelector('#btn-reroll').onclick = () => {
+          if (rerolls >= maxRerolls()) return;
+          rerolls++; gen = rollStart(pick.classId, pick.raceId); appraised = false; apprBand = null;
+          SFX.cardDeal(); render();
+        };
+      }
     }
 
-    scr.querySelector('#btn-prev')?.addEventListener('click', () => { step--; gen = null; rerolls = 0; SFX.click(); render(); });
+    scr.querySelector('#btn-prev')?.addEventListener('click', () => { step--; gen = null; rerolls = 0; appraised = false; apprBand = null; SFX.click(); render(); });
     scr.querySelector('#btn-title')?.addEventListener('click', () => { SFX.click(); titleScreen(); });
-    scr.querySelector('#btn-next').onclick = () => {
+    const nextBtn = scr.querySelector('#btn-next');
+    if (step === 3 && !appraised) { nextBtn.disabled = true; nextBtn.title = 'Charge the Monolith first'; }
+    nextBtn.onclick = () => {
+      if (step === 3 && !appraised) return;
       SFX.click();
       if (step < 3) { step++; render(); return; }
       const name = scr.querySelector('#name')?.value.trim() || 'The Nameless';
@@ -303,7 +386,7 @@ function gateEntry(then) {
       <div class="gate-caption">THE GATE ACKNOWLEDGES YOU</div>
       <div class="gate-skip">click to enter</div>
     </div>`);
-  document.body.appendChild(overlay);
+  (document.getElementById('frame') || document.body).appendChild(overlay);
   SFX.bossIntro();
   let doneCalled = false;
   const go = () => {
@@ -695,7 +778,7 @@ function floorChrome() {
    FLOOR FLOW
    ============================================================ */
 async function enterFloorScreen(fresh = false) {
-  if (fresh) run.floor = 0;
+  if (fresh) { run.floor = 0; resetTravelTrail(); }
   nextFloor();
 }
 
@@ -769,10 +852,15 @@ async function nextFloor() {
     return renderEventCard(stage, campfire);
   }
 
-  // THE THREE-CARD DRAW (handoff §4): most floors deal a choice of paths
+  // THE TRAVEL MAP (handoff §6): most floors branch into a choice of paths
   const cards = generateCards(runRng(run));
   saveRun(run);
-  renderCardChoice(stage, cards);
+  renderTravelMap(stage, cards, null, travelCtx());
+}
+
+// context passed to the travel map — real run data + the resolution engine
+function travelCtx() {
+  return { run, coopS, resolveCard, flash, biome: biomeForFloor(run.floor) };
 }
 
 /* ---------- three-card generation ---------- */
@@ -989,7 +1077,7 @@ async function fightGroup(stage, specs, { text = null, modifier = null, prebuilt
   }
   const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
     container: stage, run, rng, enemies, modifier,
-    introText: text, onHud: renderHud,
+    introText: text, onHud: renderHud, onCharacter: () => characterSheet(),
   });
   if (result === 'win') { if (noDamage) unlock('untouchable'); if (usedUltimate) unlock('overcharged'); }
 
@@ -1132,7 +1220,7 @@ async function fightGroupBoss(stage, enemies, boss) {
   Music.play('boss');
   const rng = runRng(run);
   const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
-    container: stage, run, rng, enemies, introText: `${boss.name}: "${boss.taunt}"`, onHud: renderHud,
+    container: stage, run, rng, enemies, introText: `${boss.name}: "${boss.taunt}"`, onHud: renderHud, onCharacter: () => characterSheet(),
   });
   if (result === 'dead') return endRun('dead');
   if (noDamage) unlock('untouchable');
@@ -1223,7 +1311,7 @@ function coopCardChoice(stage, cards) {
   // the party may have already decided while we were loading in
   if (coopS.cardResults.has(floor)) {
     const idx = coopS.cardResults.get(floor);
-    renderCardChoice(stage, cards, { mode, bind(a) { a.lock(idx); }, onLocalPick() {} });
+    renderTravelMap(stage, cards, { mode, bind(a) { a.lock(idx); }, onLocalPick() {} }, travelCtx());
     return;
   }
 
@@ -1267,7 +1355,7 @@ function coopCardChoice(stage, cards) {
     finish(winner);
   }
 
-  renderCardChoice(stage, cards, {
+  renderTravelMap(stage, cards, {
     mode,
     bind(a) { api = a; },
     onLocalPick(idx) {
@@ -1281,7 +1369,7 @@ function coopCardChoice(stage, cards) {
         hostTallyIfComplete();
       }
     },
-  });
+  }, travelCtx());
 }
 
 async function sharedFightCard(stage, content) {
@@ -1334,7 +1422,7 @@ async function coopFightShared(stage, enemies, { boss = null, mod = null } = {})
     container: stage, run, rng, enemies,
     modifier: mod ? { ...mod, goldMult: (mod.goldMult || 1) * 1.5 } : null,
     introText: boss ? `${boss.name}: "${boss.taunt}"` : 'Side by side, blades out.',
-    onHud: renderHud,
+    onHud: renderHud, onCharacter: () => characterSheet(),
     coop: coopS,
   });
 
@@ -2031,7 +2119,7 @@ function statDisplay(stat) {
   if (reveal === 'exact') return `<b>${d[stat]}</b>`;
   if (reveal === 'ranks') return `<b>${rankFor(d[stat])}</b> <span style="color:var(--ink-faint)">(live)</span>`;
   const app = run.appraisal?.results?.[stat];
-  if (app) return `<span title="as of floor ${run.appraisal.floor}">${app.rank} · ~${app.lo}–${app.hi}</span>`;
+  if (app) return `<span class="stat-appr" title="as of floor ${run.appraisal.floor}">${app.rank} · ~${app.lo}–${app.hi}</span>`;
   return '<span style="color:var(--ink-faint)">?</span>';
 }
 

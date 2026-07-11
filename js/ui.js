@@ -2,6 +2,10 @@
 
 export const app = document.getElementById('app');
 
+// Overlays mount inside the scaled 1280x720 #frame so they scale/letterbox
+// with everything else (fall back to body if the frame isn't present).
+const overlayHost = () => document.getElementById('frame') || document.body;
+
 export function el(html) {
   const t = document.createElement('template');
   t.innerHTML = html.trim();
@@ -20,7 +24,7 @@ export function toast(msg, cls = '') {
 export function modal(innerHtml, { dismissible = false } = {}) {
   return new Promise(resolve => {
     const backdrop = el(`<div class="modal-backdrop"><div class="modal panel">${innerHtml}</div></div>`);
-    document.body.appendChild(backdrop);
+    overlayHost().appendChild(backdrop);
     const close = value => { backdrop.remove(); resolve(value); };
     backdrop.querySelectorAll('[data-close]').forEach(btn =>
       btn.addEventListener('click', () => close(btn.dataset.close)));
@@ -33,7 +37,7 @@ export function modal(innerHtml, { dismissible = false } = {}) {
 export function modalCustom(build) {
   return new Promise(resolve => {
     const backdrop = el(`<div class="modal-backdrop"><div class="modal panel"></div></div>`);
-    document.body.appendChild(backdrop);
+    overlayHost().appendChild(backdrop);
     const close = value => { backdrop.remove(); resolve(value); };
     build(backdrop.querySelector('.modal'), close);
   });

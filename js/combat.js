@@ -10,8 +10,9 @@
 import { SKILLS } from './data/skills.js';
 import { CONSUMABLES } from './data/items.js';
 import { CONFIG } from './data/config.js';
-import { derived, gearHas, heal, restoreMana, usableSkillIds, resourceName, changeFame } from './character.js';
+import { derived, gearHas, heal, restoreMana, usableSkillIds, resourceName, changeFame, classTitle } from './character.js';
 import { initiativeOrder, addCharge, canAfford, pickEnemySpecial, enemyTelegraph, applyGuard } from './systems.js';
+import { biomeForFloor } from './data/enemies.js';
 import { ICONS } from './icons.js';
 import { enemySpriteHtml, heroSpriteHtml, biomeBgUrl } from './art.js';
 import { SFX } from './audio.js';
@@ -19,6 +20,7 @@ import { screenShake } from './fx.js';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const LAST_FLOOR = 51;
 
 export function buildEnemy(spec, floor, biomeStart, { boss = false, hpMult = 1 } = {}) {
   const depth = Math.max(0, floor - biomeStart);
@@ -39,15 +41,15 @@ export function buildEnemy(spec, floor, biomeStart, { boss = false, hpMult = 1 }
   };
 }
 
-export function startCombat({ container, run, rng, enemies, modifier = null, introText = null, onHud, coop = null }) {
+export function startCombat({ container, run, rng, enemies, modifier = null, introText = null, onHud, coop = null, onCharacter = null }) {
   return new Promise(resolve => {
-    const C = new Fight(container, run, rng, enemies, modifier, introText, onHud, resolve, coop);
+    const C = new Fight(container, run, rng, enemies, modifier, introText, onHud, resolve, coop, onCharacter);
     C.begin();
   });
 }
 
 class Fight {
-  constructor(container, run, rng, enemies, modifier, introText, onHud, resolve, coop) {
+  constructor(container, run, rng, enemies, modifier, introText, onHud, resolve, coop, onCharacter) {
     this.el = container;
     this.run = run;
     this.rng = rng;
@@ -57,9 +59,12 @@ class Fight {
     this.onHud = onHud;
     this.resolve = resolve;
     this.coop = coop;
+    this.onCharacter = onCharacter;
     this.shared = !!coop;
     this.player = { statuses: {}, buffs: [], guarding: false };
     this.charge = clamp((run.metaStartCharge || 0) + derived(run).startCharge, 0, CONFIG.charge.max);
+    this.actionMode = 'root'; // root | skills | items | flee (handoff moded menu)
+    this._actEnabled = false;
     this.target = 0;
     this.locked = true;
     this.usedDeathward = false;
@@ -102,7 +107,11 @@ class Fight {
     if (cls) div.className = cls;
     div.textContent = msg;
     this.logEl.prepend(div);
-    while (this.logEl.children.length > 50) this.logEl.lastChild.remove();
+    while (this.logEl.children.length > 8) this.logEl.lastChild.remove();
+    // wake the log, then fade it out after a spell of quiet
+    this.logEl.style.opacity = '1';
+    clearTimeout(this._logFade);
+    this._logFade = setTimeout(() => { if (this.logEl) this.logEl.style.opacity = '0'; }, 6000);
   }
 
   float(hostEl, text, cls) {
@@ -170,23 +179,43 @@ class Fight {
 
   /* ---------------- rendering ---------------- */
   begin() {
+    const biome = biomeForFloor(this.run.floor);
     this.el.innerHTML = `
-      <div class="combat-screen">
-        ${this.mod.name ? `<div class="modifier-banner">⚠ ${this.mod.name} — ${this.mod.desc}</div>` : ''}
-        <div class="battlefield">
-          <div class="turn-order panel-inset" id="turn-order"></div>
-          <div class="enemy-row"></div>
-          <div class="player-row"></div>
+      <div class="combat-screen cx-full">
+        <div class="battlefield cx-bg">
+          ${this.mod.name ? `<div class="modifier-banner cx-mod">⚠ ${this.mod.name} — ${this.mod.desc}</div>` : ''}
+          <!-- top bar: floor plate (centre) + hero plate + CHARACTER -->
+          <div class="cx-topbar">
+            <div class="cx-side"></div>
+            <div class="cx-floor">
+              <div class="cx-floor-biome">${biome.name}</div>
+              <div class="cx-floor-num">FLOOR ${this.run.floor} <span>/</span> ${LAST_FLOOR}</div>
+            </div>
+            <div class="cx-hero">
+              <div class="cx-hero-plate">
+                <div class="cx-hero-name">${this.run.name}</div>
+                <div class="cx-hero-title">Lv.${this.run.level} ${this.run.raceName} ${classTitle(this.run)}</div>
+              </div>
+              <button class="cx-char-btn" id="cx-character">◈ CHARACTER</button>
+            </div>
+          </div>
+          <div class="turn-order cx-turnorder" id="turn-order"></div>
+          <div class="charge-tray cx-charge" id="charge-tray"></div>
+          <div class="turn-banner cx-banner" id="turn-banner" style="display:none">⚔ YOUR TURN</div>
+          <div class="enemy-row cx-monsters"></div>
+          <div class="player-row cx-party"></div>
+          <div class="combat-log cx-log"></div>
+          <div class="combat-actions">
+            <div class="combat-utility"></div>
+            <div class="action-bar mode-root"></div>
+          </div>
         </div>
-        <div class="turn-banner" id="turn-banner" style="display:none">⚔ YOUR TURN</div>
-        <div class="charge-tray" id="charge-tray"></div>
-        <div class="combat-log panel"></div>
-        <div class="action-bar"></div>
-        <div class="combat-utility"></div>
       </div>`;
     const bf = this.el.querySelector('.battlefield');
     const bg = biomeBgUrl(this.run.biomeId);
     if (bf && bg) { bf.classList.add('has-bg'); bf.style.backgroundImage = `url('${bg}')`; }
+    const charBtn = this.el.querySelector('#cx-character');
+    if (charBtn) charBtn.onclick = () => { SFX.click(); this.onCharacter?.(); };
     this.enemyRow = this.el.querySelector('.enemy-row');
     this.playerRow = this.el.querySelector('.player-row');
     this.turnOrderEl = this.el.querySelector('#turn-order');
@@ -213,6 +242,13 @@ class Fight {
     let pips = '';
     for (let i = 0; i < max; i++) pips += `<span class="cpip ${i < current ? 'lit' : ''} ${cls}"></span>`;
     return `<span class="cpips">${pips}</span>`;
+  }
+
+  // per-fighter FOC pips (handoff §4) — filled = charge segments
+  focPips(current, max = CONFIG.charge.max) {
+    let p = '';
+    for (let i = 0; i < max; i++) p += `<span class="fpip ${i < current ? 'lit' : ''}"></span>`;
+    return `<span class="foc-pips">${p}</span>`;
   }
 
   renderCharge() {
@@ -242,9 +278,11 @@ class Fight {
       div.innerHTML = `
         ${tel ? `<div class="telegraph ${tel.ready ? 'ready' : ''}">${tel.ready ? '⚠ ' + tel.name + '!' : '… ' + tel.desc}</div>` : ''}
         <div class="fighter-sprite" id="sprite-${e.uid}">${art || e.glyph}</div>
-        <div class="fighter-name">${e.name}</div>
-        <div class="fighter-hp"><div class="bar"><div class="bar-fill hp" style="width:${clamp(e.hp / e.maxHp * 100, 0, 100)}%"></div></div></div>
-        ${e.specials ? `<div class="fighter-charge">${this.chargePips(e.charge || 0, CONFIG.charge.max, 'enemy')}</div>` : ''}
+        <div class="cx-info">
+          <div class="cx-head"><span class="fighter-name">${e.name}</span><span class="cx-lv">Lv.${this.run.floor}</span></div>
+          <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${clamp(e.hp / e.maxHp * 100, 0, 100)}%"></div></div></div>
+          <div class="cx-bar-row"><span class="cx-blabel foc">FOC</span>${this.focPips(e.charge || 0)}</div>
+        </div>
         <div class="fighter-statuses">${this.statusPips(e.statuses)}</div>`;
       div.onclick = () => { if (e.hp > 0) { this.target = i; this.renderEnemies(); SFX.click(); } };
       this.enemyRow.appendChild(div);
@@ -257,10 +295,17 @@ class Fight {
 
   renderPlayers(actingKey = null) {
     const s = this.player.statuses;
+    const hpW = clamp(this.run.hp / this.run.maxHp * 100, 0, 100);
+    const mpW = clamp(this.run.mp / Math.max(1, this.run.maxMp) * 100, 0, 100);
     let html = `
       <div class="combatant ${this.run.down ? 'downed' : ''} ${actingKey === 'player' ? 'acting' : ''}">
         <div class="fighter-sprite" id="sprite-player">${heroSpriteHtml(this.run.classId) || ICONS[this.run.classId]}</div>
-        <div class="fighter-name">${this.run.name}${this.run.down ? ' (down)' : ''}</div>
+        <div class="cx-info">
+          <div class="cx-head"><span class="fighter-name">${this.run.name}${this.run.down ? ' (down)' : ''}</span></div>
+          <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${hpW}%"></div></div></div>
+          <div class="cx-bar-row"><span class="cx-blabel mp">MP</span><div class="bar cx-thin"><div class="bar-fill mp" style="width:${mpW}%"></div></div></div>
+          <div class="cx-bar-row"><span class="cx-blabel foc">FOC</span>${this.focPips(this.charge)}</div>
+        </div>
         <div class="fighter-statuses">
           ${this.player.guarding ? '<span class="status-pip guard-pip">🛡 GUARD</span>' : ''}
           ${this.statusPips(s)}${this.player.buffs.map(b => `<span class="status-pip">▲${b.label} ${b.turns}</span>`).join('')}
@@ -270,8 +315,10 @@ class Fight {
       html += `
         <div class="combatant ${a.down ? 'downed' : ''} ${actingKey === 'ally-' + id ? 'acting' : ''}">
           <div class="fighter-sprite" id="sprite-${id}">${heroSpriteHtml(a.classId) || ICONS[a.classId] || ICONS.warrior}</div>
-          <div class="fighter-name">${a.name}${a.down ? ' (down)' : ''}</div>
-          <div class="ally-hp"><div class="bar"><div class="bar-fill hp" style="width:${clamp(a.hp / a.maxHp * 100, 0, 100)}%"></div></div></div>
+          <div class="cx-info">
+            <div class="cx-head"><span class="fighter-name">${a.name}${a.down ? ' (down)' : ''}</span></div>
+            <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${clamp(a.hp / a.maxHp * 100, 0, 100)}%"></div></div></div>
+          </div>
         </div>`;
     }
     this.playerRow.innerHTML = html;
@@ -289,13 +336,58 @@ class Fight {
     return pips.join('');
   }
 
+  // Moded floating menu (handoff §4): root → FIGHT/ITEMS/FLEE, each opening a
+  // submenu with a BACK chip. Wraps the existing useSkill/useConsumable/tryFlee.
+  setMode(m) { this.actionMode = m; SFX.click(); this.renderActions(this._actEnabled); }
+
   renderActions(enabled) {
+    this._actEnabled = enabled;
+    if (!enabled) this.actionMode = 'root'; // reset when the turn ends
     this.actionBar.innerHTML = '';
+    this.utilBar.innerHTML = '';
+    switch (this.actionMode) {
+      case 'skills': this.renderSkillMode(enabled); break;
+      case 'items': this.renderItemMode(enabled); break;
+      case 'flee': this.renderFleeMode(enabled); break;
+      default: this.renderRootMode(enabled);
+    }
+  }
+
+  backChip() {
+    const b = document.createElement('button');
+    b.className = 'action-back';
+    b.textContent = '◄ BACK';
+    b.disabled = !this._actEnabled;
+    b.onclick = () => { if (!this.locked) this.setMode('root'); };
+    return b;
+  }
+
+  renderRootMode(enabled) {
+    this.actionBar.className = 'action-bar mode-root';
+    const anyBoss = this.enemies.some(e => e.boss);
+    const roots = [
+      { label: 'FIGHT', accent: 'var(--blood)', go: () => this.setMode('skills') },
+      { label: 'ITEMS', accent: 'var(--teal)', go: () => this.setMode('items') },
+    ];
+    if (!anyBoss && !this.shared) roots.push({ label: 'FLEE', accent: 'var(--gold)', go: () => this.setMode('flee') });
+    for (const r of roots) {
+      const btn = document.createElement('button');
+      btn.className = 'action-root-btn';
+      btn.style.setProperty('--acc', r.accent);
+      btn.disabled = !enabled;
+      btn.textContent = r.label;
+      btn.onclick = () => { if (!this.locked) r.go(); };
+      this.actionBar.appendChild(btn);
+    }
+  }
+
+  renderSkillMode(enabled) {
+    this.actionBar.className = 'action-bar mode-skills';
+    this.utilBar.appendChild(this.backChip());
     const costMult = this.mod.costMult || 1;
     const usable = usableSkillIds(this.run);
     const incompatible = !usable.includes(this.run.skills[0]) && this.run.skills.length > 0;
     const resName = resourceName(this.run);
-
     const ids = ['basic_attack', 'guard', ...this.run.skills];
     for (const id of ids) {
       const sk = SKILLS[id];
@@ -321,32 +413,50 @@ class Fight {
       warn.textContent = '⚠ Incompatible weapon equipped — only Strike and Guard are available.';
       this.actionBar.prepend(warn);
     }
+  }
 
-    this.utilBar.innerHTML = '';
+  renderItemMode(enabled) {
+    this.actionBar.className = 'action-bar mode-items';
+    this.utilBar.appendChild(this.backChip());
     const pots = this.run.consumables;
-    if (pots.length) {
-      const uniq = [...new Set(pots)];
-      for (const cid of uniq) {
-        const c = CONSUMABLES.find(x => x.id === cid);
-        if (!c) continue;
-        const count = pots.filter(x => x === cid).length;
-        const b = document.createElement('button');
-        b.className = 'btn small';
-        b.disabled = !enabled;
-        b.textContent = `${c.name} ×${count}`;
-        b.onclick = () => { if (!this.locked) this.useConsumable(c); };
-        this.utilBar.appendChild(b);
-      }
+    const uniq = [...new Set(pots)];
+    if (!uniq.length) {
+      const empty = document.createElement('div');
+      empty.className = 'combat-empty';
+      empty.textContent = 'No items in your pack.';
+      this.actionBar.appendChild(empty);
+      return;
     }
-    const anyBoss = this.enemies.some(e => e.boss);
-    if (!anyBoss && !this.shared) {
-      const flee = document.createElement('button');
-      flee.className = 'btn small ghost';
-      flee.disabled = !enabled;
-      flee.textContent = '🏃 Flee';
-      flee.onclick = () => { if (!this.locked) this.tryFlee(); };
-      this.utilBar.appendChild(flee);
+    for (const cid of uniq) {
+      const c = CONSUMABLES.find(x => x.id === cid);
+      if (!c) continue;
+      const count = pots.filter(x => x === cid).length;
+      const b = document.createElement('button');
+      b.className = 'item-btn';
+      b.disabled = !enabled;
+      b.innerHTML = `<span class="it-name">${c.name}</span><span class="it-qty">×${count}</span>`;
+      b.onclick = () => { if (!this.locked) this.useConsumable(c); };
+      this.actionBar.appendChild(b);
     }
+  }
+
+  renderFleeMode(enabled) {
+    this.actionBar.className = 'action-bar mode-flee';
+    this.actionBar.innerHTML = `<div class="flee-warn">The Tower does not release its guests so easily…</div>`;
+    const row = document.createElement('div');
+    row.className = 'flee-row';
+    const stand = document.createElement('button');
+    stand.className = 'flee-stand';
+    stand.textContent = 'STAND & FIGHT';
+    stand.disabled = !enabled;
+    stand.onclick = () => { if (!this.locked) this.setMode('root'); };
+    const run = document.createElement('button');
+    run.className = 'flee-go';
+    run.textContent = 'ATTEMPT FLEE';
+    run.disabled = !enabled;
+    run.onclick = () => { if (!this.locked) this.tryFlee(); };
+    row.appendChild(stand); row.appendChild(run);
+    this.actionBar.appendChild(row);
   }
 
   waitingBanner(name) {

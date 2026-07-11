@@ -29,12 +29,21 @@ function spawn(cfg, randomY = true) {
   };
 }
 
+// Fixed design frame — the canvas lives inside the scaled 1280x720 #frame.
+const FRAME_W = 1280, FRAME_H = 720;
 function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  canvas.width = FRAME_W;
+  canvas.height = FRAME_H;
 }
-window.addEventListener('resize', resize);
 resize();
+
+// Scale the fixed frame to fit the viewport (letterboxed), centred.
+export function fitFrame() {
+  const s = Math.min(window.innerWidth / FRAME_W, window.innerHeight / FRAME_H);
+  document.documentElement.style.setProperty('--frame-scale', s);
+}
+window.addEventListener('resize', fitFrame);
+fitFrame();
 
 function loop() {
   if (!running) return;
@@ -79,4 +88,24 @@ export function screenShake() {
   document.getElementById('app').classList.remove('shake');
   void document.getElementById('app').offsetWidth; // restart animation
   document.getElementById('app').classList.add('shake');
+}
+
+// Full-frame radial screen-transition flash. Calls swap() at the peak, then
+// fades out. Purely local/cosmetic — never gate network sync behind it.
+export function flash(swap) {
+  const frame = document.getElementById('frame') || document.body;
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) { swap && swap(); return; }
+  const el = document.createElement('div');
+  el.className = 'screen-flash';
+  frame.appendChild(el);
+  // opacity 0 -> 1 (~0.4s), swap at peak, fade out ~0.08s later, then remove.
+  requestAnimationFrame(() => { el.style.opacity = '1'; });
+  setTimeout(() => {
+    swap && swap();
+    setTimeout(() => {
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 200);
+    }, 80);
+  }, 400);
 }
