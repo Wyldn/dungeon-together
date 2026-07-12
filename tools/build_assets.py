@@ -35,7 +35,7 @@ _existing_map = os.path.join(ROOT, 'js', 'data', 'artmap.js')
 if os.path.exists(_existing_map):
     import re as _re
     _txt = open(_existing_map, encoding='utf-8').read()
-    for key, var in [('enemies', 'ENEMY_ART'), ('items', 'ITEM_ART'), ('heroes', 'HERO_ART'), ('bg', 'BIOME_BG'), ('music', 'MUSIC_TRACKS')]:
+    for key, var in [('enemies', 'ENEMY_ART'), ('items', 'ITEM_ART'), ('heroes', 'HERO_ART'), ('bg', 'BIOME_BG'), ('music', 'MUSIC_TRACKS'), ('races', 'RACE_ART'), ('origins', 'ORIGIN_ART'), ('events', 'EVENT_CAT_ART')]:
         m = _re.search(r'export const ' + var + r' = (\{.*?\});', _txt, _re.S)
         if m:
             try:
@@ -416,6 +416,120 @@ for cid, (main, dark, trim) in HERO_PAL.items():
     strip.save(os.path.join(OUT, 'img/heroes', f'{cid}.png'))
     artmap['heroes'][cid] = {'f': f'assets/img/heroes/{cid}.png', 'w': 32, 'h': 32}
 
+# ============ 4b. RACE PORTRAITS (distinct 32x32 busts) ============
+for d in ['img/races', 'img/origins', 'img/events']:
+    os.makedirs(os.path.join(OUT, d), exist_ok=True)
+artmap.setdefault('races', {}); artmap.setdefault('origins', {}); artmap.setdefault('events', {})
+
+def _portrait_base(d, skin, hair, hair_dark):
+    # shoulders
+    d.polygon([(6, 30), (9, 22), (23, 22), (26, 30)], fill=(48, 42, 60, 255), outline=OUTLINE)
+    # neck + face
+    d.rectangle([14, 18, 18, 23], fill=skin)
+    d.ellipse([9, 5, 23, 21], fill=skin, outline=OUTLINE)
+    # eyes
+    d.rectangle([12, 12, 13, 14], fill=(30, 24, 34, 255))
+    d.rectangle([19, 12, 20, 14], fill=(30, 24, 34, 255))
+    return skin, hair, hair_dark
+
+def race_human(d):
+    _portrait_base(d, (226, 190, 156, 255), (120, 82, 48, 255), (86, 58, 34, 255))
+    d.polygon([(8, 8), (16, 2), (24, 8), (23, 12), (9, 12)], fill=(120, 82, 48, 255), outline=OUTLINE)  # hair
+    d.line([(10, 10), (22, 10)], fill=(86, 58, 34, 255), width=1)
+    d.line([(11, 16), (13, 16)], fill=(150, 120, 90, 255), width=1)  # slight brow
+
+def race_elf(d):
+    _portrait_base(d, (232, 214, 196, 255), (232, 224, 180, 255), (190, 178, 130, 255))
+    # long pale hair
+    d.polygon([(7, 7), (16, 1), (25, 7), (26, 22), (23, 22), (22, 9), (10, 9), (9, 22), (6, 22)], fill=(232, 224, 180, 255), outline=OUTLINE)
+    # pointed ears
+    d.polygon([(8, 12), (5, 8), (9, 15)], fill=(232, 214, 196, 255), outline=OUTLINE)
+    d.polygon([(24, 12), (27, 8), (23, 15)], fill=(232, 214, 196, 255), outline=OUTLINE)
+    d.point((16, 4), fill=(180, 220, 255, 255))  # circlet gem
+    d.line([(11, 5), (21, 5)], fill=(200, 200, 220, 255), width=1)  # circlet
+
+def race_orc(d):
+    _portrait_base(d, (110, 150, 88, 255), (40, 36, 30, 255), (26, 24, 20, 255))
+    d.polygon([(8, 8), (16, 3), (24, 8), (23, 11), (9, 11)], fill=(40, 36, 30, 255), outline=OUTLINE)  # dark hair
+    # tusks jutting up from jaw
+    d.polygon([(12, 20), (11, 15), (13, 20)], fill=(235, 232, 220, 255), outline=OUTLINE)
+    d.polygon([(20, 20), (21, 15), (19, 20)], fill=(235, 232, 220, 255), outline=OUTLINE)
+    d.line([(11, 11), (14, 12)], fill=(70, 100, 55, 255), width=1)  # heavy brow
+    d.line([(18, 12), (21, 11)], fill=(70, 100, 55, 255), width=1)
+    d.rectangle([12, 12, 13, 13], fill=(220, 90, 60, 255))  # reddish eyes
+    d.rectangle([19, 12, 20, 13], fill=(220, 90, 60, 255))
+
+def race_dwarf(d):
+    _portrait_base(d, (222, 168, 132, 255), (150, 90, 50, 255), (110, 64, 34, 255))
+    # helmet
+    d.polygon([(8, 9), (10, 3), (22, 3), (24, 9)], fill=(150, 155, 165, 255), outline=OUTLINE)
+    d.rectangle([8, 8, 24, 10], fill=(110, 115, 128, 255))
+    d.line([(16, 3), (16, 9)], fill=(90, 95, 108, 255), width=1)  # nose guard
+    # huge braided beard covering lower face
+    d.polygon([(9, 15), (23, 15), (21, 31), (11, 31)], fill=(150, 90, 50, 255), outline=OUTLINE)
+    d.line([(13, 18), (13, 30)], fill=(110, 64, 34, 255), width=1)
+    d.line([(16, 17), (16, 31)], fill=(110, 64, 34, 255), width=1)
+    d.line([(19, 18), (19, 30)], fill=(110, 64, 34, 255), width=1)
+    d.ellipse([13, 27, 15, 29], fill=(200, 170, 90, 255))  # braid bead
+    d.ellipse([17, 27, 19, 29], fill=(200, 170, 90, 255))
+
+RACE_DRAW = {'human': race_human, 'elf': race_elf, 'orc': race_orc, 'dwarf': race_dwarf}
+for rid, painter in RACE_DRAW.items():
+    im = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
+    painter(ImageDraw.Draw(im))
+    im.save(os.path.join(OUT, 'img/races', f'{rid}.png'))
+    artmap['races'][rid] = f'assets/img/races/{rid}.png'
+
+# ============ 4c. ORIGIN EMBLEMS (32x32 scene icons) ============
+def emblem(painter, iid, bucket='origins', folder='origins'):
+    im = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
+    painter(ImageDraw.Draw(im))
+    im.save(os.path.join(OUT, f'img/{folder}', f'{iid}.png'))
+    artmap[bucket][iid] = f'assets/img/{folder}/{iid}.png'
+
+def org_mage(d):
+    d.rectangle([9, 18, 23, 27], fill=(70, 60, 130, 255), outline=OUTLINE)  # book
+    d.line([(16, 18), (16, 27)], fill=(40, 34, 80, 255), width=1)
+    d.polygon([(16, 3), (18, 9), (24, 9), (19, 13), (21, 19), (16, 15), (11, 19), (13, 13), (8, 9), (14, 9)], fill=(240, 220, 130, 255), outline=OUTLINE)  # star
+
+def org_sword(d):
+    d.line([(7, 25), (23, 7)], fill=STEEL, width=2)  # blade 1
+    d.line([(25, 25), (9, 7)], fill=STEEL, width=2)  # blade 2
+    d.line([(6, 22), (12, 26)], fill=(150, 110, 60, 255), width=2)  # hilt 1
+    d.line([(26, 22), (20, 26)], fill=(150, 110, 60, 255), width=2)  # hilt 2
+
+def org_merc(d):
+    d.rectangle([9, 5, 11, 28], fill=(90, 70, 50, 255), outline=OUTLINE)  # pole
+    d.polygon([(11, 6), (26, 9), (11, 15)], fill=(170, 60, 60, 255), outline=OUTLINE)  # banner
+    d.line([(15, 9), (22, 10)], fill=(230, 200, 120, 255), width=1)
+
+def org_guild(d):
+    d.polygon([(8, 6), (24, 6), (24, 18), (16, 27), (8, 18)], fill=(80, 110, 150, 255), outline=OUTLINE)  # shield
+    d.polygon([(16, 10), (20, 18), (12, 18)], fill=(230, 210, 140, 255))  # emblem
+    d.point((16, 14), fill=(255, 255, 255, 255))
+
+def org_temple(d):
+    d.ellipse([10, 4, 22, 16], fill=(250, 235, 170, 255), outline=(230, 200, 110, 255))  # sun
+    for a in range(0, 360, 45):
+        import math as _m
+        x = 16 + int(11 * _m.cos(_m.radians(a))); yy = 10 + int(11 * _m.sin(_m.radians(a)))
+        d.point((x, yy), fill=(250, 220, 120, 255))
+    d.rectangle([8, 24, 24, 28], fill=(200, 190, 170, 255), outline=OUTLINE)  # steps
+    d.rectangle([11, 18, 21, 24], fill=(220, 210, 190, 255), outline=OUTLINE)  # arch
+
+def org_streets(d):
+    d.line([(9, 24), (20, 10)], fill=STEEL, width=2)  # dagger blade
+    d.line([(7, 26), (12, 22)], fill=(90, 70, 50, 255), width=2)  # hilt
+    d.ellipse([18, 18, 27, 27], fill=(210, 180, 80, 255), outline=OUTLINE)  # coin
+    d.point((22, 22), fill=(150, 120, 40, 255))
+
+ORIGIN_DRAW = {
+    'mage_academy': org_mage, 'sword_academy': org_sword, 'mercenary': org_merc,
+    'guild': org_guild, 'temple': org_temple, 'streets': org_streets,
+}
+for oid, painter in ORIGIN_DRAW.items():
+    emblem(painter, oid)
+
 # ============ 5. BIOME BACKGROUNDS (generated 320x180 parallax scenes) ============
 import random
 def dither_band(d, x0, x1, y0, y1, c_top, c_bot, rnd):
@@ -532,11 +646,142 @@ if have(MUS):
         done[src] = key
         artmap['music'][key] = {'f': f'assets/music/{key}.ogg', 'ls': ls, 'le': le}
 
+# ============ 6b. EVENT CATEGORY EMBLEMS (48x48 pixel scenes) ============
+import math as _math
+def ev_icon(painter, cid):
+    im = Image.new('RGBA', (48, 48), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    # soft round backing so it reads on any card art
+    d.ellipse([2, 2, 46, 46], fill=(18, 14, 26, 170), outline=(120, 100, 60, 120))
+    painter(d)
+    im.save(os.path.join(OUT, 'img/events', f'cat_{cid}.png'))
+    artmap['events'][cid] = f'assets/img/events/cat_{cid}.png'
+
+def ec_combat(d):
+    d.line([(12, 36), (32, 12)], fill=STEEL, width=3)  # sword
+    d.line([(10, 12), (30, 34)], fill=(200, 130, 70, 255), width=2)  # axe haft
+    d.polygon([(28, 30), (36, 30), (34, 40), (26, 40)], fill=(150, 60, 55, 255), outline=OUTLINE)  # axe head
+    d.rectangle([30, 26, 40, 40], fill=(90, 110, 150, 200), outline=OUTLINE)  # shield
+
+def ec_mystery(d):
+    for i, r in enumerate([18, 13, 8]):
+        d.arc([24 - r, 24 - r, 24 + r, 24 + r], 20 + i * 40, 260 + i * 40, fill=(150, 120, 210, 255), width=2)
+    d.ellipse([20, 20, 28, 28], fill=(200, 180, 255, 255))
+    d.point((24, 24), fill=(255, 255, 255, 255))
+
+def ec_merchant(d):
+    d.polygon([(16, 20), (32, 20), (34, 40), (14, 40)], fill=(150, 110, 60, 255), outline=OUTLINE)  # purse
+    d.line([(18, 20), (22, 14), (26, 14), (30, 20)], fill=(110, 80, 44, 255), width=2)  # drawstring
+    d.ellipse([20, 27, 28, 35], fill=(230, 200, 90, 255))  # coin
+    d.point((24, 31), fill=(150, 120, 40, 255))
+
+def ec_recovery(d):
+    d.polygon([(24, 14), (34, 40), (14, 40)], fill=(60, 90, 120, 255), outline=OUTLINE)  # tent
+    d.polygon([(24, 22), (30, 40), (18, 40)], fill=(20, 16, 26, 255))  # opening
+    d.ellipse([20, 34, 28, 42], fill=(240, 150, 50, 255))  # fire glow
+    d.point((24, 37), fill=(255, 230, 120, 255))
+
+def ec_training(d):
+    for r, c in [(18, (200, 60, 55)), (12, (240, 240, 235)), (6, (200, 60, 55))]:
+        d.ellipse([24 - r, 24 - r, 24 + r, 24 + r], fill=c + (255,), outline=OUTLINE)
+    d.ellipse([21, 21, 27, 27], (230, 210, 130, 255))
+    d.line([(6, 42), (24, 24)], fill=(150, 110, 60, 255), width=2)  # arrow in target
+
+def ec_appraisal(d):
+    d.ellipse([12, 12, 28, 28], outline=(220, 200, 120, 255), width=3)  # lens ring
+    d.ellipse([15, 15, 25, 25], fill=(120, 180, 220, 120))
+    d.line([(26, 26), (38, 38)], fill=(200, 180, 110, 255), width=3)  # handle
+    d.polygon([(18, 20), (21, 15), (24, 20), (21, 24)], fill=(180, 230, 255, 255))  # gem glint
+
+def ec_equipment(d):
+    d.rectangle([12, 22, 36, 38], fill=(120, 84, 48, 255), outline=OUTLINE)  # chest body
+    d.polygon([(12, 22), (24, 14), (36, 22)], fill=(150, 108, 64, 255), outline=OUTLINE)  # lid
+    d.rectangle([22, 24, 26, 30], fill=(230, 200, 90, 255))  # lock
+    d.line([(12, 30), (36, 30)], fill=(90, 62, 34, 255), width=1)
+    d.point((24, 20), fill=(255, 240, 160, 255))
+
+def ec_social(d):
+    d.polygon([(8, 14), (24, 14), (24, 26), (16, 26), (12, 32), (13, 26), (8, 26)], fill=(90, 130, 180, 255), outline=OUTLINE)
+    d.polygon([(24, 20), (40, 20), (40, 32), (36, 32), (35, 38), (32, 32), (24, 32)], fill=(180, 120, 150, 255), outline=OUTLINE)
+
+def ec_advancement(d):
+    d.polygon([(24, 6), (28, 18), (40, 18), (30, 26), (34, 38), (24, 30), (14, 38), (18, 26), (8, 18), (20, 18)], fill=(240, 210, 110, 255), outline=OUTLINE)  # star
+    d.point((24, 20), fill=(255, 255, 210, 255))
+    d.polygon([(20, 40), (28, 40), (24, 44)], fill=(200, 170, 90, 255))  # upward arrow tail
+
+def ec_dangerous(d):
+    d.ellipse([14, 10, 34, 30], fill=(228, 228, 214, 255), outline=OUTLINE)  # skull
+    d.rectangle([18, 18, 21, 23], fill=(20, 16, 20, 255))
+    d.rectangle([27, 18, 30, 23], fill=(20, 16, 20, 255))
+    d.line([(20, 30), (28, 30)], fill=(60, 56, 60, 255), width=1)  # teeth
+    d.line([(12, 36), (36, 44)], fill=(200, 60, 55, 255), width=2)  # hazard slash
+    d.line([(36, 36), (12, 44)], fill=(200, 60, 55, 255), width=2)
+
+def ec_unknown(d):
+    d.ellipse([12, 12, 36, 36], fill=(40, 30, 60, 255), outline=(120, 100, 160, 255))
+    # a big drawn "?" using rectangles
+    d.arc([17, 14, 31, 26], 150, 400, fill=(210, 200, 240, 255), width=3)
+    d.line([(24, 26), (24, 30)], fill=(210, 200, 240, 255), width=3)
+    d.rectangle([22, 33, 26, 37], fill=(210, 200, 240, 255))
+
+EVENT_CATS = {
+    'combat': ec_combat, 'mystery': ec_mystery, 'merchant': ec_merchant, 'recovery': ec_recovery,
+    'training': ec_training, 'appraisal': ec_appraisal, 'equipment': ec_equipment, 'social': ec_social,
+    'advancement': ec_advancement, 'dangerous': ec_dangerous, 'unknown': ec_unknown,
+}
+for cid, painter in EVENT_CATS.items():
+    ev_icon(painter, cid)
+
+# ============ 6c. TRAVEL-MAP BACKDROP (1280x720 night ascent) ============
+_rnd = random.Random(90210)
+tm = Image.new('RGB', (1280, 720), (8, 6, 18))
+td = ImageDraw.Draw(tm)
+# vertical night gradient, deep indigo -> near black
+for y in range(720):
+    t = y / 720
+    c = (int(20 - 14 * t + 8 * (1 - t)), int(14 - 8 * t + 6 * (1 - t)), int(44 - 30 * t))
+    td.line([(0, y), (1280, y)], fill=c)
+# star field
+for _ in range(320):
+    x, y = _rnd.randint(0, 1279), _rnd.randint(0, 520)
+    b = _rnd.randint(90, 235)
+    s = 1 if _rnd.random() < 0.85 else 2
+    td.rectangle([x, y, x + s - 1, y + s - 1], fill=(b, b, min(255, b + 20)))
+# a couple of brighter "constellation" stars with faint cross-glow
+for _ in range(14):
+    x, y = _rnd.randint(80, 1200), _rnd.randint(40, 420)
+    td.line([(x - 3, y), (x + 3, y)], fill=(220, 210, 255))
+    td.line([(x, y - 3), (x, y + 3)], fill=(220, 210, 255))
+    td.point((x, y), fill=(255, 255, 255))
+# distant moon
+td.ellipse([980, 70, 1080, 170], fill=(210, 205, 230))
+td.ellipse([1000, 82, 1082, 164], fill=(228, 224, 244))
+# the tower — a tall dark silhouette rising through the centre-lower frame
+tx = 560
+for i, (w, h0, h1) in enumerate([(160, 720, 360), (120, 720, 300), (88, 720, 250)]):
+    shade = (16 + i * 5, 12 + i * 4, 30 + i * 6)
+    td.polygon([(tx + 80 - w // 2, 720), (tx + 80 - w // 2 + 8, h1), (tx + 80 + w // 2 - 8, h1), (tx + 80 + w // 2, 720)], fill=shade)
+# tower battlement crown + window lights
+td.rectangle([tx + 30, 250, tx + 130, 262], fill=(24, 18, 40))
+for wx in range(tx + 44, tx + 120, 22):
+    for wy in range(300, 700, 90):
+        if _rnd.random() < 0.6:
+            td.rectangle([wx, wy, wx + 5, wy + 8], fill=(230, 180, 90))
+# ground mist band
+for y in range(640, 720):
+    a = (y - 640) / 80
+    td.line([(0, y), (1280, y)], fill=(int(20 * a + 8), int(16 * a + 6), int(30 * a + 12)))
+tm.save(os.path.join(OUT, 'img/bg', 'travelmap.png'))
+artmap['bg']['travelmap'] = 'assets/img/bg/travelmap.png'
+
 # ============ 7. emit js/data/artmap.js ============
 with open(os.path.join(ROOT, 'js', 'data', 'artmap.js'), 'w', encoding='utf-8') as f:
     f.write('// GENERATED by tools/build_assets.py — do not edit by hand.\n')
     f.write('// Sprites: PixelFlush Mega Packs (user-licensed). Music: xDeviruchi,\n')
     f.write('// CC-BY-SA 4.0. Generated art: this repo. See CREDITS.md.\n\n')
+    f.write('export const RACE_ART = ' + json.dumps(artmap['races'], indent=1) + ';\n\n')
+    f.write('export const ORIGIN_ART = ' + json.dumps(artmap['origins'], indent=1) + ';\n\n')
+    f.write('export const EVENT_CAT_ART = ' + json.dumps(artmap['events'], indent=1) + ';\n\n')
     f.write('export const ENEMY_ART = ' + json.dumps(artmap['enemies'], indent=1) + ';\n\n')
     f.write('export const ITEM_ART = ' + json.dumps(artmap['items'], indent=1) + ';\n\n')
     f.write('export const HERO_ART = ' + json.dumps(artmap['heroes'], indent=1) + ';\n\n')

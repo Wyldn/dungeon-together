@@ -2,6 +2,36 @@
 // Sprites: PixelFlush Mega Packs (user-licensed). Music: xDeviruchi,
 // CC-BY-SA 4.0. Generated art: this repo. See CREDITS.md.
 
+export const RACE_ART = {
+ "human": "assets/img/races/human.png",
+ "elf": "assets/img/races/elf.png",
+ "orc": "assets/img/races/orc.png",
+ "dwarf": "assets/img/races/dwarf.png"
+};
+
+export const ORIGIN_ART = {
+ "mage_academy": "assets/img/origins/mage_academy.png",
+ "sword_academy": "assets/img/origins/sword_academy.png",
+ "mercenary": "assets/img/origins/mercenary.png",
+ "guild": "assets/img/origins/guild.png",
+ "temple": "assets/img/origins/temple.png",
+ "streets": "assets/img/origins/streets.png"
+};
+
+export const EVENT_CAT_ART = {
+ "combat": "assets/img/events/cat_combat.png",
+ "mystery": "assets/img/events/cat_mystery.png",
+ "merchant": "assets/img/events/cat_merchant.png",
+ "recovery": "assets/img/events/cat_recovery.png",
+ "training": "assets/img/events/cat_training.png",
+ "appraisal": "assets/img/events/cat_appraisal.png",
+ "equipment": "assets/img/events/cat_equipment.png",
+ "social": "assets/img/events/cat_social.png",
+ "advancement": "assets/img/events/cat_advancement.png",
+ "dangerous": "assets/img/events/cat_dangerous.png",
+ "unknown": "assets/img/events/cat_unknown.png"
+};
+
 export const ENEMY_ART = {
  "wolf": {
   "f": "assets/img/enemies/wolf.png",
@@ -305,7 +335,8 @@ export const BIOME_BG = {
  "swamp": "assets/img/bg/swamp.png",
  "hell": "assets/img/bg/hell.png",
  "throne": "assets/img/bg/throne.png",
- "title": "assets/img/bg/title.png"
+ "title": "assets/img/bg/title.png",
+ "travelmap": "assets/img/bg/travelmap.png"
 };
 
 export const MUSIC_TRACKS = {

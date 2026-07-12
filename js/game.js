@@ -23,7 +23,7 @@ import { makeRng, randomSeed } from './rng.js';
 import { defaultServerUrl, isMixedContentBlocked, PUBLIC_GAME_URL } from './net.js';
 import { CoopSession, connectCoop } from './coop.js';
 import { Music } from './music.js';
-import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl } from './art.js';
+import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl, raceArtHtml, originArtHtml, raceIconUrl, originIconUrl, eventCatUrl } from './art.js';
 
 let meta = loadMeta();
 let run = null;
@@ -248,12 +248,16 @@ function creationFlow(coopContext = null) {
       const accentOf = it => isClass ? it.accent : isOrigin ? '#8fd8cc' : '#e8b64a';
       const tagOf = it => isClass ? it.resource.name.toUpperCase() : isOrigin ? (ORIGIN_TAG[it.id] || 'ORIGIN') : (RACE_TAG[it.id] || 'CLIMBER');
       const blurbOf = it => isClass ? it.epithet : it.blurb;
-      const emblemOf = it => isOrigin ? (it.name.replace(/^The\s+/i, '')[0] || it.name[0]) : it.name[0];
+      const railArtOf = it => isClass
+        ? heroSpriteHtml(it.id, 40)
+        : isOrigin ? (originIconUrl(it.id) && `<img class="px-icon" src="${originIconUrl(it.id)}" style="width:40px;height:40px" alt="">`)
+        : (raceIconUrl(it.id) && `<img class="px-icon" src="${raceIconUrl(it.id)}" style="width:40px;height:40px" alt="">`);
+      const emblemOf = it => railArtOf(it) || (isOrigin ? (it.name.replace(/^The\s+/i, '')[0] || it.name[0]) : it.name[0]);
       const artOf = it => isClass
         ? (heroSpriteHtml(it.id, 220) || `<div class="class-icon" style="width:170px;height:170px">${ICONS[it.id]}</div>`)
         : isOrigin
-          ? `<div style="font-size:130px;line-height:1">${it.glyph}</div>`
-          : `<div class="showcase-ph">PLACEHOLDER</div>`;
+          ? (originArtHtml(it.id, 168) || `<div style="font-size:130px;line-height:1">${it.glyph}</div>`)
+          : (raceArtHtml(it.id, 200) || `<div style="font-size:130px;line-height:1">${it.glyph}</div>`);
 
       body.innerHTML = `
         <div class="creation-stage">
@@ -335,7 +339,8 @@ function creationFlow(coopContext = null) {
         <div style="text-align:center">
           <div class="mono-title">THE MONOLITH OF MEASURE</div>
           <div style="display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;margin:6px 0 4px">
-            <span style="font-size:28px">${RACES[pick.raceId].glyph}</span>
+            ${heroSpriteHtml(pick.classId, 40) || `<span style="font-size:28px">${RACES[pick.raceId].glyph}</span>`}
+            ${raceIconUrl(pick.raceId) ? `<img class="px-icon" src="${raceIconUrl(pick.raceId)}" style="width:40px;height:40px" alt="">` : ''}
             <div style="font-family:var(--font-display);font-size:12px;color:var(--ink-dim)">${RACES[pick.raceId].name} ${CLASSES[pick.classId].name} · ${originById(pick.originId).name}</div>
           </div>
           <canvas id="crystal" style="width:320px;height:400px;cursor:pointer;touch-action:none;user-select:none"></canvas>
@@ -556,14 +561,14 @@ function coopLobby(myName) {
   function openPicker(kind) {
     if (myReady) return;
     const defs = {
-      race: { title: 'Bloodline', items: Object.values(RACES).map(r => ({ id: r.id, glyph: r.glyph, name: r.name, desc: r.hint })) },
+      race: { title: 'Bloodline', items: Object.values(RACES).map(r => ({ id: r.id, glyph: r.glyph, icon: raceIconUrl(r.id) && `<img class="px-icon" src="${raceIconUrl(r.id)}" style="width:40px;height:40px" alt="">`, name: r.name, desc: r.hint })) },
       class: {
         title: 'Calling',
         items: Object.values(CLASSES)
           .filter(c => !c.hidden || c.unlockCond?.(meta))
-          .map(c => ({ id: c.id, glyph: null, icon: ICONS[c.id], accent: c.accent, name: c.name, desc: `${c.resource.name} · ${c.weapons.join(', ')}` })),
+          .map(c => ({ id: c.id, glyph: null, icon: heroSpriteHtml(c.id, 40) || ICONS[c.id], accent: c.accent, name: c.name, desc: `${c.resource.name} · ${c.weapons.join(', ')}` })),
       },
-      origin: { title: 'Origin', items: ORIGINS.map(o => ({ id: o.id, glyph: o.glyph, name: o.name, desc: o.blurb })) },
+      origin: { title: 'Origin', items: ORIGINS.map(o => ({ id: o.id, glyph: o.glyph, icon: originIconUrl(o.id) && `<img class="px-icon" src="${originIconUrl(o.id)}" style="width:40px;height:40px" alt="">`, name: o.name, desc: o.blurb })) },
     };
     const def = defs[kind];
     modalCustom((m, close) => {
@@ -587,9 +592,9 @@ function coopLobby(myName) {
 
   function pickTilesHtml() {
     return `
-      <div class="panel pick-tile" id="pick-race"><div style="font-size:32px">${RACES[myPick.raceId].glyph}</div><b>${RACES[myPick.raceId].name}</b><div class="pt-hint">change race</div></div>
-      <div class="panel pick-tile" id="pick-class"><div class="class-icon" style="width:40px;height:40px;margin:0 auto;color:${CLASSES[myPick.classId].accent}">${ICONS[myPick.classId]}</div><b>${CLASSES[myPick.classId].name}</b><div class="pt-hint">change class</div></div>
-      <div class="panel pick-tile" id="pick-origin"><div style="font-size:32px">${originById(myPick.originId).glyph}</div><b style="font-size:13px">${originById(myPick.originId).name}</b><div class="pt-hint">change origin</div></div>`;
+      <div class="panel pick-tile" id="pick-race"><div class="pt-art">${raceIconUrl(myPick.raceId) ? `<img class="px-icon" src="${raceIconUrl(myPick.raceId)}" style="width:44px;height:44px" alt="">` : `<span style="font-size:32px">${RACES[myPick.raceId].glyph}</span>`}</div><b>${RACES[myPick.raceId].name}</b><div class="pt-hint">change race</div></div>
+      <div class="panel pick-tile" id="pick-class"><div class="pt-art">${heroSpriteHtml(myPick.classId, 44) || `<div class="class-icon" style="width:40px;height:40px;margin:0 auto;color:${CLASSES[myPick.classId].accent}">${ICONS[myPick.classId]}</div>`}</div><b>${CLASSES[myPick.classId].name}</b><div class="pt-hint">change class</div></div>
+      <div class="panel pick-tile" id="pick-origin"><div class="pt-art">${originIconUrl(myPick.originId) ? `<img class="px-icon" src="${originIconUrl(myPick.originId)}" style="width:44px;height:44px" alt="">` : `<span style="font-size:32px">${originById(myPick.originId).glyph}</span>`}</div><b style="font-size:13px">${originById(myPick.originId).name}</b><div class="pt-hint">change origin</div></div>`;
   }
 
   function updatePickTiles() {
@@ -1533,9 +1538,10 @@ function renderEventCard(stage, ev, { originIntro = false } = {}) {
   if (ev.type === 'rest') Music.play('rest');
   else if (MINIGAME_EVENTS.includes(ev.id)) Music.play('minigame');
 
+  const evArt = eventCatUrl(ev.category);
   stage.innerHTML = `
     <div class="card-stage"><div class="panel event-card">
-      <div class="card-art"><div class="card-glyph">${ev.glyph}</div>
+      <div class="card-art"><div class="card-glyph">${evArt ? `<img class="ev-emblem" src="${evArt}" alt=""><span class="ev-glyph-mini">${ev.glyph}</span>` : ev.glyph}</div>
         <span class="tag card-type-tag">${originIntro ? 'ORIGIN' : TYPE_LABEL[ev.type] || 'EVENT'}</span>
         <span class="tag card-floor-tag">${originIntro ? 'THE DAY BEFORE' : `FLOOR ${run.floor}`}</span></div>
       <div class="card-body">

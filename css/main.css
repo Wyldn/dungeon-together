@@ -657,6 +657,12 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
   50%, 100% { background-position: 100% 0; }
 }
 .px-icon { image-rendering: pixelated; object-fit: contain; vertical-align: middle; flex-shrink: 0; }
+.px-portrait { image-rendering: pixelated; object-fit: contain; display: block; margin: 0 auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,.55)); }
+.pick-tile .pt-art { height: 46px; display: grid; place-items: center; margin-bottom: 2px; }
+.pick-tile .pt-art .px-sprite { margin: 0; }
+/* event card-art emblem: pixel graphic with the emoji as a small corner tag */
+.card-art .ev-emblem { image-rendering: pixelated; width: 92px; height: 92px; filter: drop-shadow(0 6px 16px rgba(0,0,0,.6)); }
+.card-art .ev-glyph-mini { position: absolute; bottom: 8px; right: 12px; font-size: 26px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.8)); z-index: 3; }
 .fighter-sprite:has(.px-sprite) { background: none; border: none; font-size: 0; width: auto; height: auto; min-width: 96px; min-height: 96px; display: grid; place-items: center; }
 .combatant.boss .fighter-sprite:has(.px-sprite) { min-width: 130px; min-height: 120px; }
 .card-art.has-bg { background-size: cover; background-position: center 62%; image-rendering: pixelated; }

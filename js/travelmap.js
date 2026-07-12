@@ -4,6 +4,7 @@
 // Co-op vote/lock contract is preserved verbatim (picks / renderVotes / bind).
 
 import { CATEGORY_META } from './data/events.js';
+import { travelMapBgUrl } from './art.js';
 
 // module-persistent trail + layout across floors
 const trail = { history: [], layout: 'A' };
@@ -116,7 +117,7 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
 
   const cm = CATEGORY_META;
   stage.innerHTML = `
-    <div class="tm-root">
+    <div class="tm-root" ${travelMapBgUrl() ? `style="background-image:linear-gradient(rgba(8,5,20,.55),rgba(6,4,14,.82)),url('${travelMapBgUrl()}');background-size:cover;background-position:center"` : ''}>
       <div class="tm-header">
         <div class="tm-biome">${biome.name.toUpperCase()}</div>
         <div class="tm-sub">Choose your path, Awakened — step ${run.floor}</div>
