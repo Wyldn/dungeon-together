@@ -86,6 +86,11 @@ function titleScreen() {
         <button class="btn" id="btn-coop">⚔ Play Together</button>
         <button class="btn" id="btn-sanctum">The Sanctum ◈ ${meta.shards}</button>
         <button class="btn ghost" id="btn-mute">${isMuted() ? '🔇 Sound Off' : '🔊 Sound On'}</button>
+        <div class="audio-row">
+          <span id="vol-icon">🎵</span>
+          <input type="range" id="vol-slider" class="vol-slider" min="0" max="100" value="${Math.round(Music.getVolume() * 100)}" aria-label="Music volume" />
+          <span id="vol-val" class="vol-val">${Math.round(Music.getVolume() * 100)}</span>
+        </div>
       </div>
       <div class="title-stats">
         <span>Runs: <b>${meta.totalRuns}</b></span>
@@ -105,7 +110,22 @@ function titleScreen() {
   document.getElementById('btn-coop').onclick = () => { SFX.click(); coopMenu(); };
   document.getElementById('btn-sanctum').onclick = () => { SFX.click(); sanctumScreen(); };
   document.getElementById('btn-mute').onclick = e => { const m = toggleMute(); Music.syncMute(); e.target.textContent = m ? '🔇 Sound Off' : '🔊 Sound On'; };
+  wireVolumeSlider(document.getElementById('vol-slider'), document.getElementById('vol-val'));
   Music.play('title');
+}
+
+// Shared music-volume slider wiring (title + pause). Live-updates the playing
+// track and persists via Music.setVolume.
+function wireVolumeSlider(slider, valEl) {
+  if (!slider) return;
+  const paint = () => slider.style.setProperty('--vp', slider.value + '%');
+  paint();
+  slider.oninput = () => {
+    const v = +slider.value;
+    Music.setVolume(v / 100);
+    if (valEl) valEl.textContent = v;
+    paint();
+  };
 }
 
 /* ============================================================
@@ -738,13 +758,24 @@ function renderHud() {
   hud.querySelector('#hud-sheet').onclick = () => { SFX.click(); characterSheet(); };
   hud.querySelector('#hud-quit').onclick = async () => {
     SFX.click();
-    const v = await modal(`
+    const p = modal(`
       <h3>Pause</h3>
+      <div class="audio-row pause-audio">
+        <span>🎵 Music</span>
+        <input type="range" id="pause-vol" class="vol-slider" min="0" max="100" value="${Math.round(Music.getVolume() * 100)}" aria-label="Music volume" />
+        <span id="pause-vol-val" class="vol-val">${Math.round(Music.getVolume() * 100)}</span>
+        <button class="btn small ghost" id="pause-mute">${isMuted() ? '🔇' : '🔊'}</button>
+      </div>
       <div class="pick-grid">
         <button class="pick-option" data-close="resume"><span class="po-name">Resume the climb</span></button>
         ${coopS ? '' : `<button class="pick-option" data-close="save"><span class="po-name">Save &amp; return to title</span><span class="po-desc">Your climb waits where you left it.</span></button>`}
         <button class="pick-option" data-close="abandon"><span class="po-name" style="color:var(--blood)">${coopS ? 'Leave the party & abandon run' : 'Abandon run'}</span><span class="po-desc">The tower claims another. Shards are still awarded.</span></button>
       </div>`, { dismissible: true });
+    // modal() appends synchronously — wire the audio controls before awaiting
+    wireVolumeSlider(document.getElementById('pause-vol'), document.getElementById('pause-vol-val'));
+    const mb = document.getElementById('pause-mute');
+    if (mb) mb.onclick = () => { const m = toggleMute(); Music.syncMute(); mb.textContent = m ? '🔇' : '🔊'; };
+    const v = await p;
     if (v === 'save') { saveRun(run); titleScreen(); }
     if (v === 'abandon') endRun('abandon');
   };
@@ -763,7 +794,7 @@ function floorStrip() {
 
 function floorChrome() {
   app.innerHTML = `
-    <div class="screen" style="padding-top:0">
+    <div class="screen chrome" style="padding-top:0">
       <div class="hud panel"></div>
       ${partnerStrip()}
       ${run.floor > 0 ? floorStrip() : ''}
@@ -869,8 +900,11 @@ function generateCards(rng, forParty = null) {
   const cards = [];
   const usedEvents = [];
   const n = CONFIG.events.cardsPerDraw;
-  // one slot is combat-weighted; others draw distinct events
-  const combatSlot = rng.chance(0.75) ? rng.int(0, n - 1) : -1;
+  // one slot is combat-weighted; others draw distinct events.
+  // early floors lean toward events so a fresh climber can build tools before
+  // the tower gets serious (combat stays deadly — you're meant to prepare for it)
+  const combatChance = run.floor <= 3 ? 0.35 : run.floor <= 6 ? 0.6 : 0.75;
+  const combatSlot = rng.chance(combatChance) ? rng.int(0, n - 1) : -1;
   for (let i = 0; i < n; i++) {
     if (i === combatSlot) {
       const group = pickEnemyGroup(rng, biome, forParty?.partySize || 1);
@@ -1624,6 +1658,21 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
     lines.push({ text: 'Power settles into you — you couldn\'t say where.', cls: 'good' });
     SFX.levelup();
   }
+  // directed growth: train the class's own governing stat (build-enabling)
+  if (o.statUpMain) {
+    const main = CLASSES[run.classId].growthBias[0];
+    run.stats[main] += o.statUpMain;
+    lines.push({ text: 'You lean into what you already are — and it answers.', cls: 'good' });
+    SFX.levelup();
+  }
+  // scaling growth: deeper floors give a bigger permanent gain (build-directed)
+  if (o.statUpScaled) {
+    const amt = o.statUpScaled + Math.floor(run.floor / 12);
+    const stat = rng.pick(CLASSES[run.classId].growthBias.slice(0, 2));
+    run.stats[stat] += amt;
+    lines.push({ text: 'A surge of growth takes root — stronger for how far you\'ve climbed.', cls: 'good' });
+    SFX.levelup();
+  }
 
   if (o.appraisal) {
     appraiseRun(rng, run, { partial: o.appraisal === 'partial', location: ev.title });
@@ -1676,8 +1725,9 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
     }
   }
   if (o.upgradeWeapon) {
-    run.weaponBonus += 4;
-    lines.push({ text: 'Your weapon sings a new, sharper note. (+4 damage, permanent)', cls: 'item' });
+    const bonus = o.upgradeScaled ? 4 + Math.floor(run.floor / 8) : 4;
+    run.weaponBonus += bonus;
+    lines.push({ text: `Your weapon sings a new, sharper note. (+${bonus} damage, permanent)`, cls: 'item' });
     SFX.unlock();
   }
 

@@ -228,7 +228,26 @@ export const ITEM_ART = {
  "calming_tea": "assets/img/items/calming_tea.png",
  "bomb": "assets/img/items/bomb.png",
  "smelling_salts": "assets/img/items/smelling_salts.png",
- "appraisal_scroll": "assets/img/items/appraisal_scroll.png"
+ "appraisal_scroll": "assets/img/items/appraisal_scroll.png",
+ "ember_heart": "assets/img/items/ember_heart.png",
+ "frozen_tear": "assets/img/items/frozen_tear.png",
+ "whetstone": "assets/img/items/whetstone.png",
+ "tortoise_shell": "assets/img/items/tortoise_shell.png",
+ "moon_dial": "assets/img/items/moon_dial.png",
+ "blood_chalice": "assets/img/items/blood_chalice.png",
+ "golden_idol": "assets/img/items/golden_idol.png",
+ "renown_lantern": "assets/img/items/renown_lantern.png",
+ "xp_tome": "assets/img/items/xp_tome.png",
+ "boss_bane": "assets/img/items/boss_bane.png",
+ "heros_ashes": "assets/img/items/heros_ashes.png",
+ "gamblers_die": "assets/img/items/gamblers_die.png",
+ "greed": "assets/img/items/greed.png",
+ "hourglass": "assets/img/items/hourglass.png",
+ "war_drum": "assets/img/items/war_drum.png",
+ "mimic_tooth": "assets/img/items/mimic_tooth.png",
+ "second_wind": "assets/img/items/second_wind.png",
+ "demon_pact": "assets/img/items/demon_pact.png",
+ "sanity_lantern": "assets/img/items/sanity_lantern.png"
 };
 
 export const HERO_ART = {

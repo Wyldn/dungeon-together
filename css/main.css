@@ -103,6 +103,11 @@ body::before { /* biome atmosphere */
   animation: screen-in .45s cubic-bezier(.2,.9,.3,1);
 }
 @keyframes screen-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+/* floor chrome is persistent-feeling — don't replay the entry fade each floor,
+   it reads as a loading delay. The stage content brings its own quick transition. */
+.screen.chrome { animation: none; }
+.tm-root { animation: tm-in .22s ease both; }
+@keyframes tm-in { from { opacity: 0; } to { opacity: 1; } }
 
 h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 
@@ -668,6 +673,18 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 .gear-card .px-icon { display: block; margin: 0 auto 8px; }
 .hud-portrait:has(.px-sprite) { background: radial-gradient(circle at 35% 30%, #221d33, #12101a); overflow: hidden; }
 .hud-portrait .px-sprite { transform: scale(1.15); }
+
+/* music volume slider (title + pause) */
+.audio-row { display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 4px; }
+.audio-row.pause-audio { margin: 0 0 14px; padding: 10px 14px; border: 1px solid var(--panel-edge); border-radius: 10px; background: rgba(0,0,0,.25); }
+.vol-slider {
+  -webkit-appearance: none; appearance: none; height: 6px; width: 150px; border-radius: 4px;
+  background: linear-gradient(90deg, var(--gold) 0%, var(--gold) var(--vp,50%), #2c2838 var(--vp,50%));
+  cursor: pointer; outline: none;
+}
+.vol-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--gold-bright); border: 1px solid #2a1c0b; box-shadow: 0 0 6px rgba(217,165,63,.5); cursor: pointer; }
+.vol-slider::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--gold-bright); border: 1px solid #2a1c0b; cursor: pointer; }
+.vol-val { font-family: var(--font-mono); font-size: 12px; color: var(--ink-dim); min-width: 24px; text-align: right; }
 
 /* lobby pick tiles + picker modal grid */
 .pick-tile { padding: 12px; text-align: center; cursor: pointer; transition: border-color .15s, transform .12s; }

@@ -28,6 +28,24 @@ for d in ['img/enemies', 'img/items', 'img/heroes', 'img/bg', 'music']:
 
 artmap = {'enemies': {}, 'items': {}, 'heroes': {}, 'bg': {}, 'music': {}}
 
+# Incremental builds: preserve entries from the existing artmap.js so a rebuild
+# with only SOME source packs staged (e.g. just the Raven icons) doesn't drop
+# enemy/music/background art whose original packs are no longer available.
+_existing_map = os.path.join(ROOT, 'js', 'data', 'artmap.js')
+if os.path.exists(_existing_map):
+    import re as _re
+    _txt = open(_existing_map, encoding='utf-8').read()
+    for key, var in [('enemies', 'ENEMY_ART'), ('items', 'ITEM_ART'), ('heroes', 'HERO_ART'), ('bg', 'BIOME_BG'), ('music', 'MUSIC_TRACKS')]:
+        m = _re.search(r'export const ' + var + r' = (\{.*?\});', _txt, _re.S)
+        if m:
+            try:
+                artmap[key] = json.loads(m.group(1))
+            except Exception:
+                pass
+
+def have(path):
+    return path and os.path.isdir(path)
+
 # ============ 1. ENEMIES (2-frame idle strips from the monsters pack) ============
 ENEMY_MAP = {
     # forest
@@ -53,7 +71,7 @@ ENEMY_MAP = {
     'mimic': 'Suspicious Blob.png',
 }
 
-if MON:
+if have(MON):
     for eid, src in ENEMY_MAP.items():
         p = os.path.join(MON, src)
         im = Image.open(p)
@@ -71,7 +89,7 @@ WEAPON_MAP = {
     'sun_mace': 'Blessed Sword.png', 'void_scepter': 'Oasis Dark Wand.png',
     'dragonfang': 'Crimson Battle Sword.png', 'excalibur': 'Heroes Rapier.png',
 }
-if WEP:
+if have(WEP):
     for iid, src in WEAPON_MAP.items():
         shutil.copy(os.path.join(WEP, src), os.path.join(OUT, 'img/items', f'{iid}.png'))
         artmap['items'][iid] = f'assets/img/items/{iid}.png'
@@ -209,6 +227,54 @@ GEN_ICONS = {
 for iid, painter in GEN_ICONS.items():
     save_icon(icon24(painter), iid, scale=2)
 
+# ---- Raven Fantasy Icons: high-quality 32x32 tiles override the generated
+# placeholders where a good match exists (grid is 16 cols wide). Indexes read
+# off the contact sheets in tools; each is item_id -> flat tile index. ----
+RAVEN_MAP = {
+    # armor (torso rows ~1856-1900)
+    'cloth_garb': 1857, 'leather_jerkin': 1858, 'chainmail': 1873, 'wardweave': 1969,
+    'frostplate': 1875, 'shadow_shroud': 1888, 'aegis': 2081,
+    # helmets (row ~1904)
+    'leather_cap': 1953, 'iron_helm': 1904, 'scholars_hood': 1965, 'dragonbone_helm': 1906,
+    # legs (row ~1936) + boots (row ~1984)
+    'cloth_trousers': 1936, 'chain_leggings': 1937, 'windstriders': 1938,
+    'worn_boots': 1984, 'scouts_boots': 1985, 'stoneroot_sabatons': 1986, 'seven_league': 1987,
+    # accessories: rings (row ~1840) + amulets (row ~2064) + gems (row ~160)
+    'lucky_coin': 128, 'iron_ring': 1840, 'hawk_charm': 2064, 'herald_ribbon': 2065,
+    'seer_monocle': 706, 'vampire_fang': 224, 'greed_band': 1841, 'kings_eye': 2113,
+    'phoenix_feather': 992,
+    # consumables: potions (row ~272) + scroll (row ~304) + bomb (row ~368)
+    'potion_s': 272, 'potion_l': 273, 'mana_vial': 288, 'calming_tea': 259,
+    'bomb': 368, 'smelling_salts': 274, 'appraisal_scroll': 304,
+    # relics get flavorful symbols
+    'ember_heart': 656, 'frozen_tear': 160, 'whetstone': 208, 'tortoise_shell': 112,
+    'moon_dial': 688, 'blood_chalice': 128, 'golden_idol': 496, 'renown_lantern': 80,
+    'xp_tome': 288, 'boss_bane': 656, 'heros_ashes': 224, 'gamblers_die': 704,
+    'greed': 496, 'hourglass': 320, 'war_drum': 496, 'mimic_tooth': 224,
+    'second_wind': 592, 'demon_pact': 672, 'sanity_lantern': 80,
+}
+# the Raven sheet may live in this staging dir OR a sibling assets2 dir
+_raven_png = None
+if STAGE:
+    for cand in [
+        os.path.join(STAGE, 'RavenIcons', 'Free - Raven Fantasy Icons', 'Full Spritesheet', '32x32.png'),
+        os.path.join(os.path.dirname(STAGE), 'assets2', 'RavenIcons', 'Free - Raven Fantasy Icons', 'Full Spritesheet', '32x32.png'),
+    ]:
+        if os.path.exists(cand):
+            _raven_png = cand
+            break
+if _raven_png:
+    rav = Image.open(_raven_png).convert('RGBA')
+    RCOLS = rav.width // 32
+    for iid, idx in RAVEN_MAP.items():
+        c, r = idx % RCOLS, idx // RCOLS
+        tile = rav.crop((c * 32, r * 32, c * 32 + 32, r * 32 + 32))
+        if tile.getbbox() is None:
+            continue  # blank tile — keep the generated fallback
+        tile.save(os.path.join(OUT, 'img/items', f'{iid}.png'))
+        artmap['items'][iid] = f'assets/img/items/{iid}.png'
+    print('raven icons applied:', sum(1 for i in RAVEN_MAP if os.path.exists(os.path.join(OUT, 'img/items', f'{i}.png'))))
+
 # ============ 4. CLASS HERO SPRITES (generated 2-frame idle strips) ============
 HERO_PAL = {
     'warrior': ((178, 96, 46), (120, 60, 30), (170, 175, 185)),
@@ -222,30 +288,131 @@ HERO_PAL = {
     'necromancer': ((116, 150, 104), (76, 104, 66), (200, 230, 190)),
 }
 
-def draw_hero(main, dark, trim, bob=0):
+# Each class gets a genuinely DIFFERENT silhouette — distinct body, headgear,
+# and weapon — not just a recolor. 32x32, drawn twice for a 2-frame idle bob.
+SKIN = (224, 190, 158, 255)
+STEEL = (176, 182, 196, 255)
+STEEL_D = (120, 126, 140, 255)
+WOOD = (140, 100, 58, 255)
+
+def _base(d, y, m, dk, cloak=True):
+    # legs
+    d.rectangle([13, 24, 15, 30], fill=dk, outline=OUTLINE)
+    d.rectangle([17, 24, 19, 30], fill=dk, outline=OUTLINE)
+    if cloak:
+        d.polygon([(10, 13 + y), (22, 13 + y), (24, 27), (8, 27)], fill=m, outline=OUTLINE)
+    else:
+        d.polygon([(11, 13 + y), (21, 13 + y), (22, 25), (10, 25)], fill=m, outline=OUTLINE)
+
+def _head(d, y, hood=None, skin=SKIN):
+    d.ellipse([12, 5 + y, 20, 14 + y], fill=skin, outline=OUTLINE)
+    d.point((14, 9 + y), fill=(30, 24, 34, 255)); d.point((18, 9 + y), fill=(30, 24, 34, 255))
+    if hood:
+        d.polygon([(11, 4 + y), (21, 4 + y), (22, 11 + y), (10, 11 + y)], fill=hood, outline=OUTLINE)
+        d.ellipse([13, 8 + y, 19, 14 + y], fill=(26, 20, 32, 210))
+        d.point((14, 11 + y), fill=(220, 90, 90, 255)); d.point((18, 11 + y), fill=(220, 90, 90, 255))
+
+def hero_warrior(d, y, m, dk, tr):
+    _base(d, y, m, dk, cloak=False)
+    d.rectangle([10, 13 + y, 22, 24], fill=STEEL, outline=OUTLINE)  # plate torso
+    d.line([(16, 14 + y), (16, 23)], fill=STEEL_D, width=1)
+    _head(d, y, skin=SKIN)
+    d.arc([12, 4 + y, 20, 10 + y], 180, 360, fill=STEEL_D, width=2)  # helm brow
+    d.line([(6, 9 + y), (6, 27)], fill=STEEL, width=2)  # sword blade left
+    d.line([(4, 17), (8, 17)], fill=tr, width=1)  # crossguard
+    d.rectangle([23, 12 + y, 27, 24], fill=m, outline=OUTLINE)  # shield right
+    d.point((25, 18), fill=tr)
+
+def hero_mage(d, y, m, dk, tr):
+    _base(d, y, m, dk)
+    _head(d, y, skin=SKIN)
+    d.polygon([(11, 6 + y), (21, 6 + y), (16, -6 + y)], fill=m, outline=OUTLINE)  # tall pointed hat
+    d.point((16, -5 + y), fill=tr)
+    d.line([(6, 4 + y), (6, 30)], fill=WOOD, width=2)  # staff
+    d.ellipse([3, 1 + y, 9, 7 + y], fill=tr, outline=OUTLINE)  # orb
+    d.point((6, 4 + y), fill=(255, 255, 255, 255))
+
+def hero_archer(d, y, m, dk, tr):
+    _base(d, y, m, dk)
+    _head(d, y, hood=dk)
+    d.arc([22, 6 + y, 30, 28], 270, 90, fill=WOOD, width=2)  # bow curve right
+    d.line([(26, 7 + y), (26, 27)], fill=(230, 230, 210, 255), width=1)  # string
+    d.line([(14, 16), (26, 16)], fill=tr, width=1)  # nocked arrow
+    d.polygon([(9, 12 + y), (11, 8 + y), (12, 13 + y)], fill=(120, 160, 90, 255))  # quiver feather
+
+def hero_rogue(d, y, m, dk, tr):
+    _base(d, y, m, dk)
+    _head(d, y, hood=m)
+    d.polygon([(10, 12 + y), (13, 12 + y), (12, 26)], fill=dk)  # cape swish
+    d.line([(6, 20), (10, 16 + y)], fill=STEEL, width=2)  # dagger L
+    d.line([(22, 16 + y), (26, 20)], fill=STEEL, width=2)  # dagger R
+    d.point((6, 20), fill=tr); d.point((26, 20), fill=tr)
+
+def hero_priest(d, y, m, dk, tr):
+    _base(d, y, m, dk)
+    d.line([(9, 26), (23, 26)], fill=tr, width=1)  # robe hem trim
+    _head(d, y, skin=SKIN)
+    d.ellipse([11, 1 + y, 21, 5 + y], outline=(255, 240, 180, 255), width=1)  # halo
+    d.line([(24, 8 + y), (24, 26)], fill=(210, 190, 120, 255), width=2)  # mace/staff
+    d.rectangle([22, 6 + y, 26, 10 + y], fill=tr, outline=OUTLINE)  # mace head
+    d.line([(15, 15), (17, 15)], fill=tr, width=1); d.line([(16, 14), (16, 17)], fill=tr, width=1)  # chest cross
+
+def hero_monk(d, y, m, dk, tr):
+    _base(d, y, m, dk, cloak=False)
+    d.polygon([(11, 13 + y), (21, 13 + y), (20, 25), (12, 25)], fill=m, outline=OUTLINE)  # simple gi
+    d.line([(11, 18 + y), (21, 20 + y)], fill=dk, width=1)  # sash
+    _head(d, y, skin=SKIN)  # bald
+    d.point((16, 6 + y), fill=dk)
+    d.ellipse([7, 17, 11, 21], fill=SKIN, outline=OUTLINE)  # raised fist L
+    d.ellipse([21, 17, 25, 21], fill=SKIN, outline=OUTLINE)  # raised fist R
+    d.line([(9, 14 + y), (9, 24)], fill=WOOD, width=1)  # bo staff faint
+
+def hero_warlock(d, y, m, dk, tr):
+    _base(d, y, m, dk)
+    _head(d, y, hood=dk)
+    d.polygon([(11, 6 + y), (9, 1 + y), (13, 5 + y)], fill=STEEL_D)  # horn L
+    d.polygon([(21, 6 + y), (23, 1 + y), (19, 5 + y)], fill=STEEL_D)  # horn R
+    d.ellipse([4, 14, 12, 22], fill=tr, outline=OUTLINE)  # eldritch orb in hand
+    d.point((8, 18), fill=(255, 255, 255, 255))
+    d.line([(8, 18), (12, 15 + y)], fill=(180, 120, 240, 200), width=1)
+
+def hero_bard(d, y, m, dk, tr):
+    _base(d, y, m, dk)
+    _head(d, y, skin=SKIN)
+    d.polygon([(10, 6 + y), (22, 6 + y), (16, 2 + y)], fill=dk, outline=OUTLINE)  # feathered cap
+    d.polygon([(21, 5 + y), (28, -1 + y), (22, 6 + y)], fill=tr)  # feather plume
+    d.ellipse([3, 16, 13, 28], fill=WOOD, outline=OUTLINE)  # lute body L
+    d.line([(11, 20), (16, 12 + y)], fill=WOOD, width=1)  # lute neck
+    d.point((7, 22), fill=(30, 20, 16, 255))  # sound hole
+
+def hero_necromancer(d, y, m, dk, tr):
+    _base(d, y, m, dk)
+    d.polygon([(10, 12 + y), (13, 12 + y), (11, 27)], fill=dk)  # tattered cloak
+    d.polygon([(22, 12 + y), (19, 12 + y), (21, 27)], fill=dk)
+    # skull mask
+    d.ellipse([12, 5 + y, 20, 14 + y], fill=(228, 228, 214, 255), outline=OUTLINE)
+    d.point((14, 9 + y), fill=(20, 16, 20, 255)); d.point((18, 9 + y), fill=(20, 16, 20, 255))
+    d.line([(15, 12 + y), (17, 12 + y)], fill=(60, 56, 60, 255), width=1)  # teeth
+    d.line([(6, 2 + y), (6, 30)], fill=(90, 90, 96, 255), width=1)  # scythe snath
+    d.arc([2, 1 + y, 12, 9 + y], 180, 300, fill=STEEL, width=2)  # scythe blade
+    d.point((7, 20), fill=(120, 220, 140, 255))  # essence wisp
+
+HERO_DRAW = {
+    'warrior': hero_warrior, 'mage': hero_mage, 'archer': hero_archer, 'rogue': hero_rogue,
+    'priest': hero_priest, 'monk': hero_monk, 'warlock': hero_warlock, 'bard': hero_bard,
+    'necromancer': hero_necromancer,
+}
+
+def draw_hero(cid, main, dark, trim, bob=0):
     im = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
-    y = bob
-    m = main + (255,); dk = dark + (255,); tr = trim + (255,)
-    # cloak body
-    d.polygon([(10, 12 + y), (22, 12 + y), (24, 28), (8, 28)], fill=m, outline=OUTLINE)
-    d.polygon([(10, 12 + y), (13, 12 + y), (12, 28), (8, 28)], fill=dk)
-    # hood + face shadow
-    d.ellipse([10, 4 + y, 22, 16 + y], fill=m, outline=OUTLINE)
-    d.ellipse([12, 7 + y, 20, 15 + y], fill=(26, 20, 32, 255))
-    d.point((14, 10 + y), fill=tr); d.point((18, 10 + y), fill=tr)  # eyes
-    # trim + belt
-    d.line([(9, 27), (23, 27)], fill=tr, width=1)
-    d.line([(10, 19 + y), (22, 19 + y)], fill=tr, width=1)
-    # weapon hint at the side
-    d.line([(24, 10 + y), (24, 24)], fill=(190, 195, 205, 255), width=2)
-    d.point((24, 9 + y), fill=tr)
+    HERO_DRAW[cid](d, bob, main + (255,), dark + (255,), trim + (255,))
     return im
 
 for cid, (main, dark, trim) in HERO_PAL.items():
     strip = Image.new('RGBA', (64, 32), (0, 0, 0, 0))
-    strip.paste(draw_hero(main, dark, trim, 0), (0, 0))
-    strip.paste(draw_hero(main, dark, trim, 1), (32, 0))
+    strip.paste(draw_hero(cid, main, dark, trim, 0), (0, 0))
+    strip.paste(draw_hero(cid, main, dark, trim, 1), (32, 0))
     strip.save(os.path.join(OUT, 'img/heroes', f'{cid}.png'))
     artmap['heroes'][cid] = {'f': f'assets/img/heroes/{cid}.png', 'w': 32, 'h': 32}
 
@@ -329,7 +496,7 @@ for bid, S in BIOME_SCENES.items():
     artmap['bg'][bid] = f'assets/img/bg/{bid}.png'
 
 # title backdrop from the forest pack mockup
-if FOREST:
+if have(FOREST):
     shutil.copy(os.path.join(FOREST, 'Mockup1.png'), os.path.join(OUT, 'img/bg', 'title.png'))
     artmap['bg']['title'] = 'assets/img/bg/title.png'
 
@@ -347,7 +514,7 @@ TRACKS = {
     'minigame': ('xDeviruchi - Minigame .wav', 5.467, 73.500),
     'victory': ('xDeviruchi - The Final of The Fantasy.wav', 0.0, 0.0),
 }
-if MUS:
+if have(MUS):
     try:
         import imageio_ffmpeg
         FF = imageio_ffmpeg.get_ffmpeg_exe()

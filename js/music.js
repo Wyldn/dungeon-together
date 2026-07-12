@@ -12,7 +12,11 @@ let pendingKey = null;
 let unlocked = false;
 let muted = JSON.parse(localStorage.getItem('dt_muted') || 'false');
 
-const VOLUME = 0.32;
+// user-adjustable music volume (0..1), persisted
+let volume = (() => {
+  const v = parseFloat(localStorage.getItem('dt_music_vol'));
+  return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0.32;
+})();
 
 function ensureCtx() {
   if (!ctx) {
@@ -29,6 +33,7 @@ document.addEventListener('pointerdown', () => {
   unlocked = true;
   if (ctx?.state === 'suspended') ctx.resume();
   if (pendingKey) { const k = pendingKey; pendingKey = null; play(k); }
+  preloadAll();
 }, { capture: true });
 
 async function loadBuffer(key) {
@@ -65,7 +70,7 @@ export async function play(key) {
   }
   const gain = ctx.createGain();
   gain.gain.setValueAtTime(0, ctx.currentTime);
-  gain.gain.linearRampToValueAtTime(VOLUME, ctx.currentTime + 0.8);
+  gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.8);
   node.connect(gain).connect(master);
   node.start();
   current = { key, node, gain };
@@ -89,4 +94,30 @@ export function syncMute() {
   if (master) master.gain.value = muted ? 0 : 1;
 }
 
-export const Music = { play, stop, syncMute };
+export function setVolume(v) {
+  volume = Math.max(0, Math.min(1, v));
+  localStorage.setItem('dt_music_vol', String(volume));
+  if (current.gain && ctx) {
+    current.gain.gain.cancelScheduledValues(ctx.currentTime);
+    current.gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.15);
+  }
+}
+
+export function getVolume() { return volume; }
+
+// warm every track in the background so scene changes never hitch on
+// fetch + decode (the source of load-stutter on the live server)
+let preloaded = false;
+export function preloadAll() {
+  if (preloaded || !unlocked) return;
+  preloaded = true;
+  const keys = [...new Set(Object.keys(MUSIC_TRACKS))];
+  let i = 0;
+  const next = () => {
+    if (i >= keys.length) return;
+    loadBuffer(keys[i++]).finally(() => setTimeout(next, 400));
+  };
+  setTimeout(next, 1500); // let the first requested track win the race
+}
+
+export const Music = { play, stop, syncMute, setVolume, getVolume, preloadAll };
