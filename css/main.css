@@ -1282,6 +1282,17 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 .showcase-tag { font-family: var(--font-display); font-size: 10px; letter-spacing: 1px; }
 .showcase-blurb { font-size: 21px; line-height: 1.25; color: #e0d3b4; margin-top: 10px; }
 .creation-rail { position: absolute; bottom: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: center; gap: 26px; }
+.fate-row {
+  display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap;
+  margin-top: 10px; padding: 0 16px; text-align: center;
+}
+.fate-hint { font-size: 14px; color: var(--ink-dim); line-height: 1.35; max-width: 420px; }
+.fate-badge {
+  display: inline-block; font-family: var(--font-display); font-size: 11px; letter-spacing: .12em;
+  color: #1a1030; background: var(--gold-bright); border: 1px solid var(--gold); padding: 2px 7px;
+  vertical-align: middle; margin-right: 4px;
+}
+.fate-mini { margin-top: 8px; width: 100%; font-size: 12px; padding: 6px 8px; }
 .rail-arrow {
   cursor: pointer; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center;
   font-family: var(--font-display); font-size: 14px; color: var(--gold); border: 2px solid #6a5528; background: rgba(28,20,48,.7);

@@ -112,6 +112,9 @@ export const CONFIG = {
     awakenHp: 3,
     awakenMp: 2,
     awakenStatPicks: 2,         // +1 to this many distinct combat stats
+    // Trusting fate on race/class: slight hidden level-up growth (1.03 one / 1.05 both)
+    randomIdentityGrowthOne: 0.03,
+    randomIdentityGrowthBoth: 0.05,
   },
 
   /* ---- fame ---- */

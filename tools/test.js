@@ -4,7 +4,7 @@
 // scripted playtest bot; everything testable headlessly lives here.
 
 import { CLASSES, SUBCLASSES, subclassOptions } from '../js/data/classes.js';
-import { ACHIEVEMENTS, rollStart, awakenMonolith } from '../js/state.js';
+import { ACHIEVEMENTS, rollStart, awakenMonolith, fateGrowthBoost, randomRaceId, randomClassId } from '../js/state.js';
 import { RACES } from '../js/data/races.js';
 import { ORIGINS } from '../js/data/origins.js';
 import { SKILLS } from '../js/data/skills.js';
@@ -111,6 +111,15 @@ t('eight starting races', Object.keys(RACES).length === 8);
 for (const r of Object.values(RACES)) {
   t(`${r.id}: has promotion`, !!r.promotion?.to);
   t(`${r.id}: has hint text`, !!r.hint);
+}
+t('fate growth none', fateGrowthBoost(false, false) === 1);
+t('fate growth race only', Math.abs(fateGrowthBoost(true, false) - (1 + CONFIG.chargen.randomIdentityGrowthOne)) < 1e-9);
+t('fate growth both', Math.abs(fateGrowthBoost(true, true) - (1 + CONFIG.chargen.randomIdentityGrowthBoth)) < 1e-9);
+{
+  const rid = randomRaceId(makeRng(1));
+  t('random race is known', !!RACES[rid]);
+  const cid = randomClassId({ bestFloor: 0 }, makeRng(2));
+  t('random class is playable', !!CLASSES[cid] && !CLASSES[cid].hidden);
 }
 
 console.log('— origins (handoff §23) —');

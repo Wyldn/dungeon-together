@@ -89,6 +89,39 @@ export function award(meta, achId) {
 
 /* ------------------------- CHARACTER GENERATION ------------------------- */
 
+/** Level-up growth multiplier from fate-picked race/class (1.0 = none). */
+export function fateGrowthBoost(fateRace, fateClass) {
+  const n = (fateRace ? 1 : 0) + (fateClass ? 1 : 0);
+  if (n <= 0) return 1;
+  if (n === 1) return 1 + (CONFIG.chargen.randomIdentityGrowthOne || 0.03);
+  return 1 + (CONFIG.chargen.randomIdentityGrowthBoth || 0.05);
+}
+
+/** Display percent for a single fate pick (race or class). */
+export function fateGrowthPctOne() {
+  return Math.round((CONFIG.chargen.randomIdentityGrowthOne || 0.03) * 100);
+}
+
+/** Display percent for the current fate selection. */
+export function fateGrowthPct(fateRace, fateClass) {
+  return Math.round((fateGrowthBoost(fateRace, fateClass) - 1) * 100);
+}
+
+/** Unlocked class ids for the current meta (chargen / lobby randomize). */
+export function playableClassIds(meta) {
+  return Object.values(CLASSES)
+    .filter(c => !c.hidden || c.unlockCond?.(meta))
+    .map(c => c.id);
+}
+
+export function randomRaceId(rng = makeRng(randomSeed())) {
+  return rng.pick(Object.keys(RACES));
+}
+
+export function randomClassId(meta, rng = makeRng(randomSeed())) {
+  return rng.pick(playableClassIds(meta));
+}
+
 // Roll hidden starting stats for a class+race. Returns {stats..., percentile}
 export function rollStart(classId, raceId, seed = randomSeed()) {
   const cls = CLASSES[classId];
@@ -137,7 +170,8 @@ export function awakenMonolith(gen, seed = randomSeed()) {
 
 /* ------------------------- RUN (per-climb) ------------------------- */
 
-export function newRun(meta, { classId, raceId = 'human', originId = null, name, seed = randomSeed(), gen: providedGen = null }) {
+export function newRun(meta, { classId, raceId = 'human', originId = null, name, seed = randomSeed(), gen: providedGen = null, fateRace = false, fateClass = false } = {}) {
+  const opts = { fateRace, fateClass };
   const cls = CLASSES[classId];
   const up = id => upgradeRank(meta, id);
   const gen = providedGen || rollStart(classId, raceId, randomSeed());
@@ -168,6 +202,9 @@ export function newRun(meta, { classId, raceId = 'human', originId = null, name,
     xpNext: 32,
     // hidden values — never rendered directly (handoff §5)
     growthRank: gen.growthRank,
+    growthBoost: fateGrowthBoost(opts.fateRace, opts.fateClass),
+    fateRace: !!opts.fateRace,
+    fateClass: !!opts.fateClass,
     startPercentile: gen.percentile,
     underdog: gen.percentile <= CONFIG.chargen.underdogPercentile,
     appraisal: null,
@@ -238,6 +275,7 @@ function migrateRun(run) {
   run.seenEventTags = run.seenEventTags || [];
   run.fame = run.fame ?? CONFIG.fame.start;
   run.growthRank = run.growthRank || 'C';
+  run.growthBoost = run.growthBoost || 1;
   run.guardCount = run.guardCount || 0;
   run.appraisal = run.appraisal || null;
   run.recentCategories = run.recentCategories || [];

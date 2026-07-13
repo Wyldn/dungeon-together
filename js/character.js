@@ -201,7 +201,7 @@ export function applySubclass(run, sub) {
 export function gainXp(run, amount, rng) {
   run.xp += amount;
   const ups = [];
-  const gMult = growthMult(run.growthRank || 'C');
+  const gMult = growthMult(run.growthRank || 'C') * (run.growthBoost || 1);
   while (run.xp >= run.xpNext) {
     run.xp -= run.xpNext;
     run.level++;
