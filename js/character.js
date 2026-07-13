@@ -30,6 +30,17 @@ function gearMult(run, prop) {
 export function gearHas(run, prop) {
   return [...equippedItems(run), ...relicItems(run)].some(it => it[prop]);
 }
+// Largest value of a prop across gear+relics (for "best wins" effects like thorns).
+function gearMaxNum(run, prop, base = 0) {
+  let m = base;
+  for (const it of [...equippedItems(run), ...relicItems(run)]) if (it[prop] != null) m = Math.max(m, it[prop]);
+  return m;
+}
+
+// Techniques you can carry into battle: 4, plus any +slot relics (§15).
+export function skillCapacity(run) {
+  return 4 + gearSum(run, 'extraSkillSlots');
+}
 
 /* ---------------- weapon compatibility (handoff §20) ---------------- */
 export function allowedWeaponTypes(run) {
@@ -80,12 +91,18 @@ export function derived(run) {
     enemyCrit: 4 + gearSum(run, 'enemyCrit'),
     burn: gearSum(run, 'burn'),
     freeze: gearSum(run, 'freeze'),
-    manaRegen: 4 + Math.floor(run.stats.wis / 6) + gearSum(run, 'manaRegen'),
+    manaRegen: 3 + Math.floor(run.stats.wis / 8) + gearSum(run, 'manaRegen'),
     initiative: (race.initiative || 0) + gearSum(run, 'initiative'),
     fameGainMult: (race.fameGainMult || 1) * gearMult(run, 'fameGainMult'),
     startCharge: gearSum(run, 'startCharge'),
     poisonResist: race.poisonResist || 0,
     chargeOnHit: !!race.chargeOnHit,
+    // wild relic effects (§15)
+    doubleDmgRound: gearMaxNum(run, 'doubleDmgRound', 0),
+    confuseChance: gearMaxNum(run, 'confuseChance', 0),
+    echoChance: gearMaxNum(run, 'echoChance', 0),
+    thorns: gearMaxNum(run, 'thorns', 0),
+    lifestealCapMult: gearMaxNum(run, 'lifestealCapMult', 1),
   };
 }
 

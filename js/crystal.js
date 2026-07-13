@@ -21,6 +21,7 @@ export function mountCrystal(canvas, { onComplete } = {}) {
     else if (!done) charge = Math.max(0, charge - 1.6);
     if (charge >= 100 && !done && holding) {
       done = true; charge = 100;
+      document.body.classList.remove('crystal-holding');
       onComplete && onComplete();
     }
 
@@ -65,8 +66,10 @@ export function mountCrystal(canvas, { onComplete } = {}) {
   }
   raf = requestAnimationFrame(draw);
 
-  const start = () => { if (!done) holding = true; };
-  const end = () => { holding = false; };
+  // §3: while charging, the screen contracts and stops scrolling — the whole
+  // world holds its breath around the Monolith.
+  const start = () => { if (!done) { holding = true; document.body.classList.add('crystal-holding'); } };
+  const end = () => { holding = false; document.body.classList.remove('crystal-holding'); };
   canvas.addEventListener('pointerdown', start);
   canvas.addEventListener('pointerup', end);
   canvas.addEventListener('pointerleave', end);
@@ -74,6 +77,7 @@ export function mountCrystal(canvas, { onComplete } = {}) {
   return {
     destroy() {
       cancelAnimationFrame(raf);
+      document.body.classList.remove('crystal-holding');
       canvas.removeEventListener('pointerdown', start);
       canvas.removeEventListener('pointerup', end);
       canvas.removeEventListener('pointerleave', end);

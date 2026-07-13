@@ -38,8 +38,8 @@ export const CLASSES = {
   },
   archer: {
     id: 'archer',
-    name: 'Archer',
-    epithet: 'Never misses twice. Rarely misses once.',
+    name: 'Ranger',
+    epithet: 'Never misses twice. Rarely misses once. The wilds are home.',
     accent: '#7fd95a',
     resource: { name: 'Focus', color: '#5ac98f' },
     weapons: ['bow', 'dagger'],
@@ -223,7 +223,7 @@ export const SUBCLASSES = {
 
   /* ---- Archer ---- */
   ranger: {
-    id: 'ranger', name: 'Ranger', parent: 'archer', tier: 1,
+    id: 'ranger', name: 'Warden', parent: 'archer', tier: 1,
     blurb: 'The wilds whisper the wind\'s secrets to you.',
     hint: 'The wild-road: poisons, patience, and pathfinding.',
     bonus: { dex: 3, wis: 2, hp: 10 }, skill: 'serpent_arrow',

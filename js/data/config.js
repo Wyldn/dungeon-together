@@ -33,6 +33,20 @@ export const CONFIG = {
     gainOnCrit: 1,
   },
 
+  /* ---- defensive techniques (§6) ---- */
+  // Non-basic wards/dodges last this many turns. Universal Guard is exempt
+  // (it is a single-turn brace, refreshed every turn).
+  defense: {
+    wardTurns: 3,
+    dodgeTurns: 3,
+  },
+
+  /* ---- boss discipline (§12) ---- */
+  boss: {
+    cleanseEvery: 3,        // a boss shrugs off all player statuses every N of its turns
+    chargeDamageScale: 0.14, // heavy telegraphed hits gain +14% damage per charge segment banked
+  },
+
   /* ---- combat: initiative ---- */
   initiative: {
     die: 6,                          // + random roll 1..die
@@ -46,7 +60,13 @@ export const CONFIG = {
     victoryHealPct: 0.05,        // % max hp after any combat win
     bossVictoryHealPct: 0.2,     // gate blessing after bosses
     floorHealPct: 0.04,          // catching your breath between floors
-    floorManaPct: 0.12,
+    floorManaPct: 0.07,          // class resource is deliberately scarce (§5)
+  },
+
+  /* ---- economy (§13: gold was too abundant) ---- */
+  economy: {
+    combatGoldMult: 0.7,   // combat purses trimmed — the tower is not an ATM
+    merchantWeightBonus: 6, // shops appear a little more often (added to merchant event weight)
   },
 
   /* ---- multiplayer death ---- */

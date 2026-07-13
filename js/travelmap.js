@@ -102,7 +102,13 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
   const lines = pos.map((p, i) => `<line x1="${CURX}" y1="${CURY - 6}" x2="${p.cx.toFixed(1)}" y2="${p.cy.toFixed(1)}" stroke="${nodeMeta(cards[i].category).color}" stroke-opacity="0.34" stroke-width="2" stroke-dasharray="2 8" stroke-linecap="round"></line>`).join('');
   const hintLines = hintPos.map((h, i) => `<line x1="${pos[i % n].cx.toFixed(1)}" y1="${pos[i % n].cy.toFixed(1)}" x2="${h.cx.toFixed(1)}" y2="${h.cy.toFixed(1)}" stroke="rgba(160,143,102,.22)" stroke-width="1.5" stroke-dasharray="3 7"></line>`).join('');
 
-  const hintsHtml = hintPos.map((h, i) => `<div class="tm-hint" style="left:${(h.cx - 22).toFixed(0)}px;top:${(h.cy - 26).toFixed(0)}px">${hintGlyphs[(run.floor + i) % hintGlyphs.length]}</div>`).join('');
+  // §2: each hint mirrors one of the ACTUAL paths on offer (its category glyph),
+  // so a hint is an honest teaser of a possible event — not a random symbol.
+  const hintsHtml = hintPos.map((h, i) => {
+    const src = cards[i % n];
+    const m = CATEGORY_META[src.category] || CATEGORY_META.unknown;
+    return `<div class="tm-hint" title="a path like this lies ahead" style="left:${(h.cx - 22).toFixed(0)}px;top:${(h.cy - 26).toFixed(0)}px">${m.glyph}</div>`;
+  }).join('');
 
   // history trail (last 7)
   const hist = trail.history.slice(-7);
@@ -130,13 +136,13 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
       ${hintsHtml}
       ${histHtml}
       <div class="tm-current" style="left:${CURX}px;top:${CURY}px">
-        <div class="tm-here">◆ YOU ARE HERE ◆</div>
         <div class="tm-cur-art"><span>🧭</span></div>
         <div class="tm-cur-body">
           <div class="tm-cur-tag">FLOOR ${run.floor} / 51</div>
           <div class="tm-cur-name">${biome.name}</div>
           <div class="tm-cur-flavor">${coopCtx ? (coopCtx.mode === 'first' ? 'First pick decides the party\'s road.' : 'The party votes on the road ahead.') : 'The paths ahead show only their nature — never their contents. Choose.'}</div>
         </div>
+        <div class="tm-here">◆ YOU ARE HERE ◆</div>
       </div>
       <div class="tm-choice-layer">
         ${cards.map((c, i) => nodeHtml(c, i, pos[i].cx, pos[i].cy)).join('')}

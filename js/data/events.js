@@ -47,14 +47,14 @@ export const EVENTS = [
     choices: [
       { label: 'Sleep', hint: 'recover health',
         outcome: { text: 'You dream of the surface. In the dream, everyone is proud of you. You wake with embers in your hair and strength in your limbs.', hpPct: 0.4 } },
-      { label: 'Meditate', hint: 'recover resource',
-        outcome: { text: 'You sort your thoughts into neat rows, sweep the dread into a corner, and lock the door on it.', manaPct: 0.7, hpPct: 0.1 } },
+      { label: 'Meditate', hint: 'restore resource — and sharpen',
+        outcome: { text: 'You sort your thoughts into neat rows, sweep the dread into a corner, and lock the door on it. When you rise, your reserves are full and your focus is a blade\'s edge — sharper for how far you\'ve climbed.', fullMana: true, xpScaled: 12 } },
       { label: 'Train', hint: 'grow, at a cost',
-        outcome: { text: 'You drill forms until your muscles file formal complaints. Growth is just pain with good bookkeeping.', xp: 30, hp: -8 } },
+        outcome: { text: 'You drill forms until your muscles file formal complaints. Growth is just pain with good bookkeeping — and it compounds the higher you go.', xpScaled: 24, hp: -8 } },
     ],
   },
   {
-    id: 'merchant', biome: 'any', category: 'merchant', type: 'shop', glyph: '🧳', w: 9,
+    id: 'merchant', biome: 'any', category: 'merchant', type: 'shop', glyph: '🧳', w: 14,
     title: 'The Hooded Merchant',
     text: 'A figure in a patchwork cloak has set up shop in a place no shop should exist. "Climbers! My favorite kind of customer. Repeat business is rare, but the margins are excellent."',
     shop: true,
@@ -149,8 +149,8 @@ export const EVENTS = [
     title: 'The Mad Cartographer',
     text: 'A man surrounded by hundreds of maps, all of the same tower, all different. "It MOVES," he hisses. "Every run, every climber, a different history! But I\'m close. I\'m so close to mapping the WHY."',
     choices: [
-      { label: 'Buy a map (35g)', req: { gold: 35 }, hint: 'reveal what\'s ahead',
-        outcome: { text: 'The map shows the next three floors — probably. "No refunds if the tower disagrees," he calls after you.', gold: -35, revealFloors: 3 } },
+      { label: 'Commission a waypoint (45g)', req: { gold: 45 }, hint: 'SET the next floor\'s path',
+        outcome: { text: 'He unrolls a blank vellum. "Don\'t READ the tower, climber — WRITE it. Tell me what you want the next floor to hold, and I\'ll bribe the right flagstones."', gold: -45, setFuture: true } },
       { label: 'Share your route', hint: 'trade knowledge',
         outcome: { text: 'You describe your climb. He cross-references furiously, then goes pale. "You\'re on one of the GOOD timelines. Don\'t waste it."', xp: 35 } },
       { label: 'Back away slowly', hint: 'safe',
@@ -464,14 +464,110 @@ export const EVENTS = [
     title: 'The Clearwater Font',
     text: 'A spring so clear it looks like nothing at all, ringed with the packs of climbers who stopped to drink and lingered too long. The water, they say, shows you your own edges — and files them.',
     choices: [
-      { label: 'Drink deeply and meditate', hint: 'resource + a little growth',
-        outcome: { text: 'The water tastes of held breath and morning. Your reserves refill; your focus narrows to something you could thread a needle with.', fullMana: true, hpPct: 0.2, statUp: { stat: 'wis', amt: 1 } } },
+      { label: 'Drink deeply and meditate', hint: 'resource + real, lasting growth',
+        outcome: { text: 'The water tastes of held breath and morning. Your reserves refill; your focus narrows to something you could thread a needle with — and the edge stays.', fullMana: true, hpPct: 0.2, statUpMain: 2 } },
       { label: 'Stare into your reflection', hint: 'risk for insight',
         outcome: { roll: { stat: 'wis', dc: 12 },
           success: { text: 'You hold your own gaze until the reflection blinks first. In that flinch: a true and useful thing about yourself. Two things, actually.', statUpRandom: 2, xp: 20 },
           fail: { text: 'You hold your own gaze too long and the water shows you a floor you won\'t survive. You look away, shaken but wiser about the stakes.', hp: -8, xp: 25 } } },
       { label: 'Fill a flask and move on', hint: 'safe, portable',
         outcome: { text: 'You bottle a measure of the clearwater. It sloshes in your pack, faintly luminous — a small mercy saved for later.', consumable: 'potion_s', hpPct: 0.1 } },
+    ],
+  },
+
+  /* ---------- optional NPC duels: exclusive spoils (§16) ---------- */
+  {
+    id: 'crimson_stranger', biome: 'any', category: 'dangerous', type: 'risk', glyph: '🧛', w: 5, once: true, cond: s => s.floor >= 4,
+    title: 'The Crimson Stranger',
+    text: 'A figure in a high collar leans against the wall as though it has all the centuries in the world. "You have good blood," it observes, not unkindly. "I do not NEED it. But I would enjoy earning it. One duel — and if you win, you may take something of mine that suits you."',
+    choices: [
+      { label: 'Accept the duel', hint: 'a hard fight — rare, exclusive spoils',
+        outcome: { combat: { enemies: ['vampire'], text: 'It bares its fangs — almost politely.',
+          reward: { chooseLabel: 'The vampire yields its due. Take one:', options: [
+            { kind: 'item', id: 'vampire_cloak' },
+            { kind: 'skill', id: 'vampire_bite' },
+          ] } } } },
+      { label: 'Offer a vial of your blood freely', req: { gold: 60 }, hint: '-60g, it lets you pass',
+        outcome: { text: 'You nick your thumb over a cup and it drinks with the manners of old nobility. "Generous. Rare." It waves you on, and pays for the courtesy.', gold: -60, fame: 3 } },
+      { label: 'Refuse and keep walking', hint: 'safe',
+        outcome: { text: '"Another century, then." It melts back into the dark, and you feel watched pleasantly for the rest of the floor.' } },
+    ],
+  },
+  {
+    id: 'frost_revenant', biome: 'any', category: 'dangerous', type: 'risk', glyph: '👹', w: 4, once: true, cond: s => s.floor >= 18,
+    title: 'The Challenger in the Cold',
+    text: 'Something enormous and patient blocks the stair, breath steaming. "PROVE IT," it rumbles, and does not elaborate. The meaning is clear enough. Beat it, and its power is yours to keep.',
+    choices: [
+      { label: 'Prove it', hint: 'a brutal fight — an exclusive technique',
+        outcome: { combat: { enemies: ['yeti'], text: 'It roars, and the cold roars with it.',
+          reward: { chooseLabel: 'You have earned a killing art. Take one:', options: [
+            { kind: 'skill', id: 'frost_nova' },
+            { kind: 'item', id: 'frostwalkers' },
+          ] } } } },
+      { label: 'Decline the challenge', hint: 'safe',
+        outcome: { text: 'You lower your eyes and edge past. It lets you — this time — with something like disappointment.', fame: -1 } },
+    ],
+  },
+
+  /* ---------- fame economy: the tower talks (§14) ---------- */
+  {
+    id: 'famed_patron', biome: 'any', category: 'social', type: 'blessing', glyph: '🎖️', w: 6, cond: s => s.fame >= 25,
+    title: 'The Patron of Renown',
+    text: 'A patron in fine clothes has been WAITING for you — specifically you, by name. "I only back climbers the tower is already whispering about," they explain. "You qualify. Handsomely."',
+    choices: [
+      { label: 'Accept their patronage', hint: 'a gift that scales with your fame',
+        outcome: { fameReward: true } },
+      { label: 'Trade on your name (spend 15 Fame)', req: { fame: 15 }, hint: '-15 Fame → rare gear + gold',
+        outcome: { text: 'You spend a measure of your reputation like currency, because here, it is. The patron makes calls. Gear appears.', fame: -15, itemRoll: true, gold: 50 } },
+      { label: 'Decline graciously', hint: 'humility has its own returns',
+        outcome: { text: '"Modest, too. The stories will LOVE that." Your legend grows precisely because you refused to cash it in.', fame: 3 } },
+    ],
+  },
+  {
+    id: 'renown_court', biome: 'any', category: 'merchant', type: 'story', glyph: '👑', w: 5, cond: s => s.fame >= 40,
+    title: 'The Court of Renown',
+    text: 'A door of white marble opens for you and only you — the guard checks a ledger of famous names and finds yours near the top. Inside, the tower keeps rewards it hands only to legends.',
+    choices: [
+      { label: 'Commission a relic (spend 20 Fame)', req: { fame: 20 }, hint: '-20 Fame → a relic',
+        outcome: { text: 'They forge your reputation into something you can carry. Fame, it turns out, is convertible.', fame: -20, relicRoll: true } },
+      { label: 'Demand a boon (spend 30 Fame)', req: { fame: 30 }, hint: '-30 Fame → raw power + full heal',
+        outcome: { text: 'You cash in a legend\'s worth of goodwill all at once. The court obliges — it can hardly refuse someone this storied.', fame: -30, statUpRandom: 3, fullHeal: true } },
+      { label: 'Simply be seen here', hint: 'the recognition restores you',
+        outcome: { text: 'You walk the hall of honored climbers and let the recognition sink in. It is, unexpectedly, healing.', hpPct: 0.25, fullMana: true } },
+    ],
+  },
+
+  /* ---------- gold sinks: the tower is not an ATM (§13) ---------- */
+  {
+    id: 'under_market', biome: 'any', category: 'merchant', type: 'story', glyph: '🕳️', w: 7, cond: s => s.floor >= 6,
+    title: 'The Under-Market',
+    text: 'A hooded fixer runs a black market out of a hole in the floor. "No questions, no refunds, no warranties. But if you\'ve got coin BURNING a hole — I can turn it into something that\'ll keep you alive."',
+    choices: [
+      { label: 'Buy raw power (120g)', req: { gold: 120 }, hint: '-120g → real growth',
+        outcome: { text: 'Whatever\'s in the vial, it works. Your coin was never going to climb the tower for you.', gold: -120, statUpRandom: 3 } },
+      { label: 'Buy a mystery crate (80g)', req: { gold: 80 }, hint: '-80g → gear',
+        outcome: { text: 'The crate rattles promisingly. The fixer looks away, whistling, which is either honesty or excellent theater.', gold: -80, itemRoll: true } },
+      { label: 'Buy a relic, no questions (220g)', req: { gold: 220 }, hint: '-220g → a relic',
+        outcome: { text: 'It costs a fortune and comes wrapped in someone else\'s bad decision. It hums with power all the same.', gold: -220, relicRoll: true } },
+      { label: 'Just browse', hint: 'safe',
+        outcome: { text: '"Window shoppers," the fixer sighs, "keeping the lights off since the tower was built."' } },
+    ],
+  },
+  {
+    id: 'gilded_fountain', biome: 'any', category: 'mystery', type: 'story', glyph: '⛲', w: 5, cond: s => s.floor >= 5,
+    title: 'The Wishing Fountain',
+    text: 'A fountain of black water, its basin already glittering with the coins of hopeful climbers. A worn inscription: "THE TOWER GRANTS IN PROPORTION TO WHAT YOU CAN BEAR TO LOSE."',
+    choices: [
+      { label: 'Throw in a fortune (100g)', req: { gold: 100 }, hint: '-100g, generous boon',
+        outcome: { roll: { stat: 'lk', dc: 8 },
+          success: { text: 'The water swallows your coin and gives back interest — in power, in luck, in the feeling of being owed one by the universe.', gold: -100, statUpRandom: 2, fame: 3, hpPct: 0.25 },
+          fail: { text: 'The water swallows your coin and burps. Somewhere, the tower adds a line to a ledger titled "SUCKERS."', gold: -100, xp: 30 } } },
+      { label: 'Toss a modest coin (30g)', req: { gold: 30 }, hint: '-30g, small boon',
+        outcome: { text: 'A reasonable wish, reasonably granted. The fountain appreciates a realist.', gold: -30, hpPct: 0.2, fame: 1 } },
+      { label: 'Take coins OUT instead', hint: 'greedy — risky',
+        outcome: { roll: { stat: 'lk', dc: 13 },
+          success: { text: 'You scoop a double handful of other people\'s wishes and nothing terrible happens. Nothing terrible YET.', gold: 70, fame: -3 },
+          fail: { text: 'The water grabs your wrist. You keep the hand. You do not keep your dignity, or the coins.', hp: -14, fame: -4 } } },
     ],
   },
 

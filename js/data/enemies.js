@@ -58,6 +58,10 @@ export const ENEMIES = {
       specials: [{ at: 4, name: 'Rootquake', mult: 1.3, aoe: true, desc: 'roots coil beneath everyone' }] },
     { id: 'spider', name: 'Widow Spider', glyph: '🕷️', hp: 26, atk: 6, def: 1, spd: 9, gold: [6, 13], xp: 10, poison: 0.4,
       specials: [{ at: 4, name: 'Venom Flood', mult: 1.3, poisonSure: true, desc: 'fangs drip freely' }] },
+    { id: 'myconid', name: 'Sporeback Myconid', glyph: '🍄', hp: 34, atk: 6, def: 2, spd: 5, gold: [7, 15], xp: 11, poison: 0.5,
+      specials: [{ at: 4, name: 'Spore Bloom', mult: 1.2, aoe: true, poisonSure: true, desc: 'caps swell with spores' }] },
+    { id: 'vampire', name: 'Pale Wanderer', glyph: '🧛', hp: 44, atk: 9, def: 2, spd: 9, gold: [18, 34], xp: 18, lifesteal: 0.4, intelligent: true, elite: true,
+      specials: [{ at: 3, name: 'Crimson Draught', mult: 1.5, heal: 0.1, desc: 'bares a red smile' }, { at: 6, name: 'Night\'s Embrace', mult: 1.9, heal: 0.15, desc: 'the shadows lean in hungrily' }] },
   ],
   ruins: [
     { id: 'skeleton', name: 'Restless Skeleton', glyph: '💀', hp: 34, atk: 10, def: 3, spd: 6, gold: [12, 22], xp: 14, pack: true,
@@ -71,6 +75,8 @@ export const ENEMIES = {
       specials: [{ at: 4, name: 'Grindstone Fist', mult: 1.8, desc: 'gears shriek inside it' }] },
     { id: 'acolyte', name: 'Hollow Acolyte', glyph: '🕯️', hp: 32, atk: 12, def: 2, spd: 7, gold: [14, 26], xp: 16, caster: true, intelligent: true,
       specials: [{ at: 3, name: 'Hollow Litany', mult: 1.5, desc: 'chants in a dead tongue' }] },
+    { id: 'wight', name: 'Barrow Wight', glyph: '🧟', hp: 46, atk: 11, def: 4, spd: 5, gold: [16, 28], xp: 18, lifesteal: 0.25,
+      specials: [{ at: 4, name: 'Grave Grip', mult: 1.5, desc: 'cold fingers find your throat' }] },
   ],
   frost: [
     { id: 'wraith', name: 'Ice Wraith', glyph: '❄️', hp: 44, atk: 14, def: 4, spd: 10, gold: [16, 30], xp: 20, freeze: 0.3,
@@ -82,6 +88,8 @@ export const ENEMIES = {
     { id: 'ice_maiden', name: 'Court Ice-Maiden', glyph: '👑', hp: 46, atk: 16, def: 4, spd: 9, gold: [22, 38], xp: 24, caster: true, freeze: 0.35, intelligent: true,
       specials: [{ at: 3, name: 'Courtly Spite', mult: 1.5, freezeSure: true, desc: 'smiles with December behind it' }] },
     { id: 'frozen_soldier', name: 'Frozen Soldier', glyph: '🛡️', hp: 60, atk: 14, def: 9, spd: 3, gold: [18, 32], xp: 22, pack: true },
+    { id: 'yeti', name: 'Glacial Yeti', glyph: '🦍', hp: 84, atk: 16, def: 6, spd: 4, gold: [24, 40], xp: 28, elite: true, freeze: 0.25,
+      specials: [{ at: 4, name: 'Avalanche Slam', mult: 1.6, freezeSure: true, desc: 'raises both fists overhead' }] },
   ],
   swamp: [
     { id: 'hag', name: 'Mire Hag', glyph: '🧙', hp: 58, atk: 19, def: 5, spd: 7, gold: [24, 42], xp: 30, caster: true, intelligent: true,
@@ -105,6 +113,8 @@ export const ENEMIES = {
       specials: [{ at: 4, name: 'Brimstone Sermon', mult: 1.5, aoe: true, burnSure: true, desc: 'opens a book that screams' }] },
     { id: 'brute', name: 'Obsidian Brute', glyph: '🌋', hp: 130, atk: 28, def: 12, spd: 3, gold: [38, 64], xp: 50, elite: true,
       specials: [{ at: 5, name: 'Magma Haymaker', mult: 1.9, desc: 'knuckles glow white-hot' }] },
+    { id: 'sin_eater', name: 'Sin-Eater', glyph: '👄', hp: 88, atk: 27, def: 7, spd: 9, gold: [34, 58], xp: 46, lifesteal: 0.35, intelligent: true,
+      specials: [{ at: 3, name: 'Devour', mult: 1.6, heal: 0.08, desc: 'unhinges a doorway of a mouth' }] },
   ],
 };
 

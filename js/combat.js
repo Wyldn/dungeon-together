@@ -126,6 +126,37 @@ class Fight {
   enemyByUid(uid) { return this.enemies.find(e => e.uid === uid); }
   sprite(uid) { return this.el.querySelector(`#sprite-${uid}`); }
 
+  // §12: has the boss picked up any player-applied affliction?
+  hasDebuff(st) { return !!(st.poison || st.burn || st.frozen || st.stunned || st.hexed); }
+  // §12: bosses periodically shrug off crowd-control so it can't be cheesed.
+  cleanseBoss(e) {
+    delete e.statuses.poison; delete e.statuses.burn; delete e.statuses.frozen;
+    delete e.statuses.stunned; delete e.statuses.hexed;
+    this.log(`${e.name} draws a breath of pure spite — every affliction sloughs away.`, 'log-hit');
+    SFX.bossIntro();
+    this.renderEnemies();
+  }
+
+  // §15 Prism of Discord: a bewildered enemy strikes one of its own instead.
+  async enemyConfusedStrike(e) {
+    const others = this.aliveEnemies().filter(x => x.uid !== e.uid);
+    if (!others.length) return false;
+    const victim = this.rng.pick(others);
+    this.log(`${e.name} is bewildered and turns on ${victim.name}!`, 'log-good');
+    const es = this.sprite(e.uid);
+    if (es) { es.classList.add('attack'); setTimeout(() => es.classList.remove('attack'), 420); }
+    await sleep(220);
+    let dmg = Math.max(1, Math.round(e.atk * CONFIG.combat.enemyAtkMult * (0.85 + this.rng.next() * 0.3) - victim.def));
+    victim.hp = Math.max(0, victim.hp - dmg);
+    const vs = this.sprite(victim.uid);
+    if (vs) { vs.classList.add('hit'); setTimeout(() => vs.classList.remove('hit'), 360); this.float(vs.parentElement, `${dmg}`, 'dmg'); }
+    SFX.hit();
+    if (victim.hp <= 0) this.log(`${victim.name} is cut down by its own ally!`, 'log-sys');
+    this.renderEnemies();
+    await sleep(360);
+    return true;
+  }
+
   // click a companion (or yourself) to receive the mend
   pickHealTarget() {
     return new Promise(res => {
@@ -381,6 +412,19 @@ class Fight {
     }
   }
 
+  // Estimated damage for a power skill against current stats (§4). No variance,
+  // no crit — the honest baseline the formula tooltip promises.
+  estimateSkill(sk) {
+    if (!sk.power) return null;
+    const d = this.d();
+    const statVal = sk.stat === 'best' ? Math.max(d.str, d.dex, d.int, d.wis) : (d[sk.stat] || d.str);
+    const C = CONFIG.combat;
+    const base = (statVal * C.playerStatWeight + d.atk * C.playerAtkWeight + this.run.level * C.playerLevelWeight + C.playerFlat)
+      * (sk.power / 100) * this.buffValue('str').mult;
+    const label = sk.stat === 'best' ? 'best stat' : sk.stat.toUpperCase();
+    return { avg: Math.max(1, Math.round(base)), label, stat: sk.stat };
+  }
+
   renderSkillMode(enabled) {
     this.actionBar.className = 'action-bar mode-skills';
     this.utilBar.appendChild(this.backChip());
@@ -396,13 +440,20 @@ class Fight {
       const chargeCost = sk.charge || 0;
       const isUsable = usable.includes(id);
       const affordable = canAfford({ cost, charge: chargeCost }, this.run.mp, this.charge);
+      const est = this.estimateSkill(sk);
+      // damage-formula hint (§4): "≈42 dmg · 130% DEX + weapon"
+      const formula = est
+        ? `≈${est.avg}${sk.target === 'all' ? ' ea' : ''} dmg · ${sk.power}% ${est.label} + gear`
+        : '';
       const btn = document.createElement('button');
       btn.className = `skill-btn ${sk.class === 'universal' ? 'universal' : ''} ${!isUsable ? 'incompatible' : ''}`;
       btn.disabled = !enabled || !isUsable || !affordable;
+      btn.title = isUsable ? `${sk.name}\n${sk.desc}${formula ? '\n\n' + formula : ''}` : 'Incompatible weapon — only Strike and Guard are available.';
       btn.innerHTML = `
         <div class="sk-name"><span>${sk.name}</span>
           <span class="sk-cost">${cost ? `${cost} ${resName}` : ''}${cost && chargeCost ? ' + ' : ''}${chargeCost ? `${chargeCost}⚡` : ''}${!cost && !chargeCost ? 'FREE' : ''}</span></div>
-        <div class="sk-desc">${!isUsable ? '⚠ Your weapon cannot channel this — class techniques need a compatible weapon.' : sk.desc}</div>`;
+        <div class="sk-desc">${!isUsable ? '⚠ Your weapon cannot channel this — class techniques need a compatible weapon.' : sk.desc}</div>
+        ${isUsable && formula ? `<div class="sk-formula">⚔ ${formula}</div>` : ''}`;
       btn.onclick = () => { if (!this.locked) this.useSkill(sk, cost); };
       this.actionBar.appendChild(btn);
     }
@@ -475,6 +526,14 @@ class Fight {
           this.renderTurnOrder('player');
           await this.playerTurn();
           if (this.checkEndSolo()) return;
+          // §15 The Echoing Stone: a chance to take the turn twice
+          const de = this.d();
+          if (de.echoChance && !this.ended && this.aliveEnemies().length && this.rng.chance(de.echoChance)) {
+            this.log('The Echoing Stone stutters — time folds, and you act again!', 'log-sys');
+            SFX.unlock();
+            await this.playerTurn();
+            if (this.checkEndSolo()) return;
+          }
         } else {
           const e = this.enemyByUid(entry.key);
           if (!e || e.hp <= 0) continue;
@@ -535,6 +594,13 @@ class Fight {
       this.renderPlayers(this._actingKey);
     }));
     this._pendingActs = [];
+    // §9: a companion reports the ACTUAL damage they took (post guard/shield)
+    this.offs.push(this.coop.net.on('chit', (d, from) => {
+      const a = this.allies.get(from);
+      if (!a) return;
+      this.float(this.sprite(from), `-${d.dmg}${d.guarded ? ' 🛡' : ''}`, 'dmg');
+      this.renderPlayers(this._actingKey);
+    }));
     // ally healing (e.g. a Priest's Mend cast on a companion)
     this.offs.push(this.coop.net.on('cheal', (d, from) => {
       const healer = this.allies.get(from)?.name || 'A companion';
@@ -705,14 +771,27 @@ class Fight {
       e.charge = addCharge(e.charge || 0, (e.chargeGain || 1), this.mod.chargeMult || 1);
       ops.push({ type: 'echarge', uid: e.uid, charge: e.charge });
 
+      // §12: bosses shrug off crowd-control on a cadence
+      if (e.boss && e.turnCount % CONFIG.boss.cleanseEvery === 0 && this.hasDebuff(e.statuses)) {
+        delete e.statuses.poison; delete e.statuses.burn; delete e.statuses.frozen;
+        delete e.statuses.stunned; delete e.statuses.hexed;
+        ops.push({ type: 'cleanse', uid: e.uid });
+        this.log(`${e.name} draws a breath of pure spite — every affliction sloughs away.`, 'log-hit');
+        this.renderEnemies();
+        await sleep(300);
+      }
+
       if (e.summons && e.turnCount % 3 === 0 && this.enemies.filter(x => x.hp > 0).length < 3) {
         const minion = buildEnemy(
           { id: 'skeleton', name: 'Risen Skeleton', glyph: '💀', hp: 30, atk: 9, def: 2, spd: 6, gold: [0, 0], xp: 5 },
           this.run.floor, this.run.floor);
         this.enemies.push(minion);
+        // §9: summoned minions join the shared turn order for every client
+        this.order.push({ key: minion.uid, name: minion.name, glyph: minion.glyph, spdStat: minion.spd, isPlayer: false, stableId: minion.uid, init: 0 });
         ops.push({ type: 'summon', spec: { ...minion, statuses: {} } });
         this.log(`${e.name} drags a servant up from the dust!`, 'log-hit');
         this.renderEnemies();
+        this.renderTurnOrder();
         await sleep(400);
         continue;
       }
@@ -734,7 +813,10 @@ class Fight {
       if (!targets.length) break;
 
       const hitTargets = special?.aoe ? targets : [this.rng.pick(targets)];
+      // §12: heavy boss telegraphs scale with the charge they banked
+      let chargeScale = 1;
       if (special) {
+        if (e.boss) chargeScale = 1 + CONFIG.boss.chargeDamageScale * (e.charge || 0);
         e.charge = 0;
         ops.push({ type: 'echarge', uid: e.uid, charge: 0 });
         this.log(`${e.name} unleashes ${special.name}!`, 'log-sys');
@@ -753,7 +835,7 @@ class Fight {
           this.applyHitOp(op, e);
           continue;
         }
-        let dmg = e.atk * CONFIG.combat.enemyAtkMult * (0.85 + this.rng.next() * 0.3) * (this.mod.dmgMult || 1) * (special?.mult || 1);
+        let dmg = e.atk * CONFIG.combat.enemyAtkMult * (0.85 + this.rng.next() * 0.3) * (this.mod.dmgMult || 1) * (special?.mult || 1) * chargeScale;
         if (this.rng.chance(this.d().enemyCrit / 100)) dmg *= 1.5;
         if (e.caster && !special && e.turnCount % 2 === 0) dmg *= 1.4;
         dmg = Math.max(1, Math.round(dmg - target.def));
@@ -818,6 +900,9 @@ class Fight {
       this.float(this.el.querySelector('#sprite-player'), `-${dmg}`, 'dmg');
       SFX.hit();
       this.log(`${e?.name || 'The enemy'}${op.special ? ` (${op.special})` : ''} hits you for ${dmg}${this.player.guarding ? ' (guarded)' : ''}.`, 'log-hit');
+      // §9: tell the party the ACTUAL damage taken (after guard/shield/armor),
+      // so companions render the blocked number, not the host's raw estimate.
+      this.coop.net.send({ k: 'chit', dmg, guarded: this.player.guarding });
       const r = op.riders || {};
       if (r.poison && !this.rng.chance(this.d().poisonResist)) { this.player.statuses.poison = r.poison; this.log('You are poisoned!', 'log-hit'); }
       if (r.burn) { this.player.statuses.burn = r.burn; this.log('You are set ablaze!', 'log-hit'); }
@@ -827,12 +912,11 @@ class Fight {
       this.coop.broadcastStatus(this.runStatus(), 'fighting');
       this.onHud();
     } else {
+      // §9: don't render the host's raw estimate — the target owns its true HP
+      // and broadcasts the real (post-guard) number via 'chit' + authoritative
+      // 'status'. We just note that a companion was struck.
       const a = this.allies.get(op.target);
-      if (a) {
-        a.hp = Math.max(0, a.hp - op.dmg);
-        this.float(this.sprite(op.target), `-${op.dmg}`, 'dmg');
-        this.log(`${e?.name || 'The enemy'} hits ${a.name} for ~${op.dmg}.`, 'log-hit');
-      }
+      if (a) this.log(`${e?.name || 'The enemy'} strikes ${a.name}.`, 'log-hit');
     }
     this.renderPlayers(this._actingKey);
   }
@@ -850,8 +934,19 @@ class Fight {
       if (this.ended) return;
       await sleep(280);
       if (op.type === 'summon') {
-        this.enemies.push({ ...op.spec, statuses: op.spec.statuses || {} });
+        const minion = { ...op.spec, statuses: op.spec.statuses || {} };
+        this.enemies.push(minion);
+        // §9: keep the shared turn order in sync on every client
+        if (!this.order.some(o => o.key === minion.uid)) {
+          this.order.push({ key: minion.uid, name: minion.name, glyph: minion.glyph, spdStat: minion.spd, isPlayer: false, stableId: minion.uid, init: 0 });
+        }
         this.log('Reinforcements claw their way in!', 'log-hit');
+        this.renderEnemies();
+        this.renderTurnOrder();
+      } else if (op.type === 'cleanse') {
+        const e = this.enemyByUid(op.uid);
+        if (e) { delete e.statuses.poison; delete e.statuses.burn; delete e.statuses.frozen; delete e.statuses.stunned; delete e.statuses.hexed; }
+        this.log(`${e?.name || 'The boss'} sloughs off every affliction.`, 'log-hit');
         this.renderEnemies();
       } else if (op.type === 'echarge') {
         const e = this.enemyByUid(op.uid);
@@ -908,7 +1003,7 @@ class Fight {
         gold += this.rng.int(e.gold?.[0] ?? 0, e.gold?.[1] ?? 0);
         xp += e.xp || 0;
       }
-      gold = Math.round(gold * (this.mod.goldMult || 1));
+      gold = Math.round(gold * (this.mod.goldMult || 1) * CONFIG.economy.combatGoldMult);
       xp = Math.round(xp * 1.45);
       this.coop.net.send({ k: 'cend', result: 'win', gold, xp });
       this.finishShared({ result: 'win', gold, xp });
@@ -1009,8 +1104,8 @@ class Fight {
   applySelfSkill(sk, d) {
     this.spawnFx(this.el.querySelector('#sprite-player'), sk.fx || (sk.healPct ? 'heal' : 'buff'));
     if (sk.shield) {
-      this.player.statuses.shield = { mult: sk.shield, turns: 2 };
-      this.log(`You raise a ward — ${Math.round(sk.shield * 100)}% damage blocked.`, 'log-good');
+      this.player.statuses.shield = { mult: sk.shield, turns: CONFIG.defense.wardTurns };
+      this.log(`You raise a ward — ${Math.round(sk.shield * 100)}% damage blocked for ${CONFIG.defense.wardTurns} turns.`, 'log-good');
     }
     if (sk.healPct) {
       const amt = heal(this.run, this.run.maxHp * sk.healPct);
@@ -1043,6 +1138,8 @@ class Fight {
     dmg *= d.dmgMult * (this.mod.dmgMult || 1);
     if (e.boss) dmg *= d.bossDmgMult;
     if (e.statuses.hexed) dmg *= C.hexTakenMult;
+    // The Berserker's Heart: on its chosen round, everything doubles (§15)
+    if (d.doubleDmgRound && this.round === d.doubleDmgRound) dmg *= 2;
     if (!sk.ignoreDef) dmg -= e.def;
     dmg = Math.max(1, Math.round(dmg));
     this.spawnFx(this.sprite(e.uid), sk.fx);
@@ -1083,7 +1180,7 @@ class Fight {
     // lifesteal is capped hard: no single hit may heal more than a sliver (patch)
     const ls = (sk.lifesteal || 0) + d.lifesteal;
     if (ls > 0) {
-      const capped = Math.min(dmg * ls, this.run.maxHp * CONFIG.combat.lifestealCapPct);
+      const capped = Math.min(dmg * ls, this.run.maxHp * CONFIG.combat.lifestealCapPct * (d.lifestealCapMult || 1));
       const amt = heal(this.run, capped);
       if (amt > 0) this.float(this.el.querySelector('#sprite-player'), `+${amt}`, 'heal');
     }
@@ -1143,6 +1240,12 @@ class Fight {
     e.charge = addCharge(e.charge || 0, (e.chargeGain || 1), this.mod.chargeMult || 1);
     this.renderEnemies();
 
+    // §12: bosses cleanse crowd-control on a fixed cadence
+    if (e.boss && e.turnCount % CONFIG.boss.cleanseEvery === 0 && this.hasDebuff(e.statuses)) {
+      this.cleanseBoss(e);
+      await sleep(300);
+    }
+
     if (e.summons && e.turnCount % 3 === 0 && this.enemies.filter(x => x.hp > 0).length < 3) {
       const minion = buildEnemy(
         { id: 'skeleton', name: 'Risen Skeleton', glyph: '💀', hp: 30, atk: 9, def: 2, spd: 6, gold: [0, 0], xp: 5 },
@@ -1165,10 +1268,19 @@ class Fight {
       return;
     }
 
+    // §15 Prism of Discord: the enemy may turn on its own kind
+    const dConf = this.d();
+    if (dConf.confuseChance && this.aliveEnemies().length > 1 && this.rng.chance(dConf.confuseChance)) {
+      if (await this.enemyConfusedStrike(e)) return;
+    }
+
     const special = pickEnemySpecial(e);
+    // §12: a boss's heavy telegraphed hit scales with the charge it banked
+    let chargeScale = 1;
     if (special) {
+      if (e.boss) chargeScale = 1 + CONFIG.boss.chargeDamageScale * (e.charge || 0);
       e.charge = 0;
-      this.log(`${e.name} unleashes ${special.name}!`, 'log-sys');
+      this.log(`${e.name} unleashes ${special.name}!${e.boss && chargeScale > 1.2 ? ' The air screams with pent-up force.' : ''}`, 'log-sys');
       SFX.bossIntro();
     }
 
@@ -1187,7 +1299,7 @@ class Fight {
       return;
     }
 
-    let dmg = e.atk * CONFIG.combat.enemyAtkMult * (0.85 + this.rng.next() * 0.3) * (this.mod.dmgMult || 1) * (special?.mult || 1);
+    let dmg = e.atk * CONFIG.combat.enemyAtkMult * (0.85 + this.rng.next() * 0.3) * (this.mod.dmgMult || 1) * (special?.mult || 1) * chargeScale;
     if (this.rng.chance(d.enemyCrit / 100)) dmg *= 1.5;
     dmg -= d.def;
     if (e.caster && !special && e.turnCount % 2 === 0) { dmg *= 1.4; this.log(`${e.name} channels a darker spell!`, 'log-hit'); }
@@ -1201,6 +1313,16 @@ class Fight {
     this.float(this.el.querySelector('#sprite-player'), `-${dmg}`, 'dmg');
     SFX.hit();
     this.log(`${e.name}${special ? ` (${special.name})` : ''} hits you for ${dmg}${this.player.guarding ? ' (guarded)' : ''}.`, 'log-hit');
+
+    // §15 Coat of Thorns: attackers pay for the privilege
+    if (d.thorns && e.hp > 0 && dmg > 0) {
+      const back = Math.max(1, Math.round(dmg * d.thorns));
+      e.hp = Math.max(0, e.hp - back);
+      const es2 = this.sprite(e.uid);
+      if (es2) { es2.classList.add('hit'); setTimeout(() => es2.classList.remove('hit'), 360); this.float(es2.parentElement, `${back}`, 'dmg'); }
+      this.log(`Thorns bite back — ${e.name} takes ${back}.`, 'log-good');
+      if (e.hp <= 0) this.log(`${e.name} is defeated by its own violence!`, 'log-sys');
+    }
 
     if (e.lifesteal || special?.heal) {
       e.hp = Math.min(e.maxHp, e.hp + Math.round(dmg * (e.lifesteal || 0)) + Math.round(e.maxHp * (special?.heal || 0)));
@@ -1334,7 +1456,7 @@ class Fight {
         gold += this.rng.int(e.gold[0], e.gold[1]);
         xp += e.xp;
       }
-      gold = Math.round(gold * d.goldMult * d.combatGoldMult * (this.mod.goldMult || 1));
+      gold = Math.round(gold * d.goldMult * d.combatGoldMult * (this.mod.goldMult || 1) * CONFIG.economy.combatGoldMult);
       xp = Math.round(xp * 1.45 * d.xpMult);
       this.finishSolo('win', { gold, xp });
       return true;

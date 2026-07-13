@@ -42,7 +42,7 @@ export const SKILLS = {
   iron_will: {
     id: 'iron_will', fx: 'buff', name: 'Iron Will', class: 'warrior', cost: 12, charge: 1, target: 'self', tier: 2,
     shield: 0.35, healPct: 0.12,
-    desc: 'Steel yourself: heal 12% HP and block 35% of damage for 2 turns.',
+    desc: 'Steel yourself: heal 12% HP and block 35% of damage for 3 turns.',
   },
   rampage: {
     id: 'rampage', fx: 'slash', name: 'Rampage', class: 'warrior', cost: 14, charge: 3, target: 'one', tier: 2,
@@ -79,7 +79,7 @@ export const SKILLS = {
   arcane_ward: {
     id: 'arcane_ward', fx: 'buff', name: 'Arcane Ward', class: 'mage', cost: 12, charge: 0, target: 'self',
     shield: 0.5,
-    desc: 'A shimmering barrier blocks 50% of damage for 2 turns.',
+    desc: 'A shimmering barrier blocks 50% of damage for 3 turns.',
   },
   mana_storm: {
     id: 'mana_storm', fx: 'arcane', name: 'Mana Storm', class: 'mage', cost: 18, charge: 3, target: 'all',
@@ -130,8 +130,8 @@ export const SKILLS = {
   },
   evasive_roll: {
     id: 'evasive_roll', fx: 'wind', name: 'Evasive Roll', class: 'archer', cost: 8, charge: 0, target: 'self',
-    buff: { stat: 'dodge', add: 35, turns: 2 },
-    desc: 'Tumble aside. +35% dodge for 2 turns.',
+    buff: { stat: 'dodge', add: 35, turns: 3 },
+    desc: 'Tumble aside and keep moving. +35% dodge for 3 turns.',
   },
   volley: {
     id: 'volley', fx: 'pierce', name: 'Volley', class: 'archer', cost: 15, charge: 3, target: 'all',
@@ -182,8 +182,8 @@ export const SKILLS = {
   },
   smoke_bomb: {
     id: 'smoke_bomb', fx: 'wind', name: 'Smoke Bomb', class: 'rogue', cost: 10, charge: 0, target: 'self',
-    buff: { stat: 'dodge', add: 45, turns: 2 },
-    desc: 'Vanish in smoke. +45% dodge for 2 turns.',
+    buff: { stat: 'dodge', add: 45, turns: 3 },
+    desc: 'Vanish in a cloud of smoke. +45% dodge for 3 turns.',
   },
   fan_of_knives: {
     id: 'fan_of_knives', fx: 'slash', name: 'Fan of Knives', class: 'rogue', cost: 14, charge: 3, target: 'all',
@@ -235,7 +235,7 @@ export const SKILLS = {
   radiant_ward: {
     id: 'radiant_ward', fx: 'buff', name: 'Radiant Ward', class: 'priest', cost: 10, charge: 0, target: 'self',
     shield: 0.5,
-    desc: 'A halo of light blocks 50% of damage for 2 turns.',
+    desc: 'A halo of light blocks 50% of damage for 3 turns.',
   },
   judgement: {
     id: 'judgement', fx: 'holy', name: 'Judgement', class: 'priest', cost: 18, charge: 3, target: 'all',
@@ -250,7 +250,7 @@ export const SKILLS = {
   sanctuary: {
     id: 'sanctuary', fx: 'heal', name: 'Sanctuary', class: 'priest', cost: 16, charge: 2, target: 'self', tier: 2,
     shield: 0.6, healPct: 0.18,
-    desc: 'Declare holy ground. Heal 18% HP and block 60% for 2 turns.',
+    desc: 'Declare holy ground. Heal 18% HP and block 60% for 3 turns.',
   },
   profane_mercy: {
     id: 'profane_mercy', fx: 'shadow', name: 'Profane Mercy', class: 'priest', cost: 15, charge: 3, target: 'one', tier: 2,
@@ -282,7 +282,7 @@ export const SKILLS = {
   iron_stance: {
     id: 'iron_stance', fx: 'buff', name: 'Iron Stance', class: 'monk', cost: 10, charge: 0, target: 'self',
     shield: 0.45, healPct: 0.08,
-    desc: 'Root like a mountain: heal 8% and block 45% for 2 turns.',
+    desc: 'Root like a mountain: heal 8% and block 45% for 3 turns.',
   },
   hurricane_kick: {
     id: 'hurricane_kick', fx: 'wind', name: 'Hurricane Kick', class: 'monk', cost: 16, charge: 3, target: 'all',
@@ -297,7 +297,7 @@ export const SKILLS = {
   immovable: {
     id: 'immovable', fx: 'buff', name: 'Immovable', class: 'monk', cost: 14, charge: 2, target: 'self', tier: 2,
     shield: 0.65, healPct: 0.12,
-    desc: 'Become terrain. Heal 12% and block 65% for 2 turns.',
+    desc: 'Become terrain. Heal 12% and block 65% for 3 turns.',
   },
   gale_palm: {
     id: 'gale_palm', fx: 'wind', name: 'Gale Palm', class: 'monk', cost: 13, charge: 2, target: 'one', tier: 2,
@@ -366,7 +366,7 @@ export const SKILLS = {
   shadow_ward: {
     id: 'shadow_ward', fx: 'buff', name: 'Shadow Ward', class: 'warlock', cost: 11, charge: 0, target: 'self',
     shield: 0.45,
-    desc: 'Wrap yourself in borrowed dark. Block 45% for 2 turns.',
+    desc: 'Wrap yourself in borrowed dark. Block 45% for 3 turns.',
   },
   dark_pact: {
     id: 'dark_pact', fx: 'shadow', name: 'Dark Pact', class: 'warlock', cost: 0, charge: 0, target: 'self',
@@ -480,7 +480,7 @@ export const SKILLS = {
   corpse_ward: {
     id: 'corpse_ward', fx: 'buff', name: 'Corpse Ward', class: 'necromancer', cost: 11, charge: 0, target: 'self',
     shield: 0.5,
-    desc: 'The dead stand between you and harm. Block 50% for 2 turns.',
+    desc: 'The dead stand between you and harm. Block 50% for 3 turns.',
   },
   siphon_life: {
     id: 'siphon_life', fx: 'shadow', name: 'Siphon Life', class: 'necromancer', cost: 12, charge: 1, target: 'one',
@@ -531,6 +531,68 @@ export const SKILLS = {
     id: 'phylactery_pulse', fx: 'shadow', name: 'Phylactery Pulse', class: 'necromancer', cost: 18, charge: 4, target: 'one', tier: 2,
     power: 170, stat: 'int', healPct: 0.1,
     desc: 'Beat the heart you keep elsewhere. Heavy damage, heals you 10%.',
+  },
+
+  /* ============ EXTRA CLASS TECHNIQUES (§10 — richer per-class offers) ============ */
+  sunder: {
+    id: 'sunder', fx: 'slash', name: 'Sunder', class: 'warrior', cost: 11, charge: 2, target: 'one', tier: 2,
+    power: 150, stat: 'str', ignoreDef: true,
+    desc: 'Split shield and bone alike — this blow ignores their defense.',
+  },
+  bulwark: {
+    id: 'bulwark', fx: 'buff', name: 'Bulwark', class: 'warrior', cost: 10, charge: 1, target: 'self', tier: 2,
+    shield: 0.5, buff: { stat: 'str', mult: 1.25, turns: 3 },
+    desc: 'Plant your feet: block 50% for 3 turns and hit 25% harder while braced.',
+  },
+  scorch: {
+    id: 'scorch', fx: 'fire', name: 'Scorch', class: 'mage', cost: 13, charge: 2, target: 'one', tier: 2,
+    power: 135, stat: 'int', burn: 0.7,
+    desc: 'A clinging gout of flame. Heavy damage, 70% chance to burn.',
+  },
+  time_slip: {
+    id: 'time_slip', fx: 'arcane', name: 'Time Slip', class: 'mage', cost: 16, charge: 2, target: 'self', tier: 2,
+    buff: { stat: 'dodge', add: 40, turns: 3 }, gainCharge: 1,
+    desc: 'Step half a second out of the moment. +40% dodge for 3 turns, +1 charge.',
+  },
+  hunters_mark: {
+    id: 'hunters_mark', fx: 'pierce', name: 'Hunter\'s Mark', class: 'archer', cost: 12, charge: 2, target: 'one', tier: 2,
+    power: 120, stat: 'dex', hex: 0.9,
+    desc: 'Mark the quarry — a marked foe takes +25% damage from everything. 90% chance.',
+  },
+  caltrops: {
+    id: 'caltrops', fx: 'poison', name: 'Caltrops', class: 'rogue', cost: 13, charge: 3, target: 'all', tier: 2,
+    power: 65, stat: 'dex', poison: 0.6,
+    desc: 'Scatter iron thorns across the floor. Hits all enemies, 60% poison.',
+  },
+  benediction: {
+    id: 'benediction', fx: 'heal', name: 'Benediction', class: 'priest', cost: 15, charge: 2, target: 'self', tier: 2, allyTarget: true,
+    healPct: 0.3, buff: { stat: 'str', mult: 1.2, turns: 3 },
+    desc: 'A blessing with teeth. Restore 30% HP — yours or a companion\'s — and steel their strikes.',
+  },
+  flowing_form: {
+    id: 'flowing_form', fx: 'wind', name: 'Flowing Form', class: 'monk', cost: 12, charge: 2, target: 'self', tier: 2,
+    buff: { stat: 'dodge', add: 35, turns: 3 }, healPct: 0.08,
+    desc: 'Water has no shape to strike. +35% dodge for 3 turns, mend 8%.',
+  },
+
+  /* ============ EXCLUSIVE / DROP-ONLY TECHNIQUES (§10, §16) ============
+     class 'special' → never appears in a class\'s learnable pool; only granted
+     by specific encounters, relics, or events. Scales on your best stat so any
+     class can wield the spoils of a strange kill. */
+  vampire_bite: {
+    id: 'vampire_bite', fx: 'shadow', name: 'Vampiric Bite', class: 'special', cost: 8, charge: 1, target: 'one',
+    power: 130, stat: 'best', lifesteal: 0.6,
+    desc: 'The gift of the thing you killed in the dark. Heavy damage, and you drink deep (healing capped).',
+  },
+  frost_nova: {
+    id: 'frost_nova', fx: 'ice', name: 'Frost Nova', class: 'special', cost: 16, charge: 3, target: 'all',
+    power: 90, stat: 'best', freeze: 0.45,
+    desc: 'A ring of killing cold, torn from a wraith. Hits all enemies, 45% freeze.',
+  },
+  dragon_breath: {
+    id: 'dragon_breath', fx: 'fire', name: 'Dragon\'s Breath', class: 'special', cost: 18, charge: 3, target: 'all',
+    power: 110, stat: 'best', burn: 0.6,
+    desc: 'Borrowed from something with scales. Devastates all enemies, 60% burn.',
   },
 };
 

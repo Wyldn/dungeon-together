@@ -9,9 +9,9 @@ import { BIOMES, biomeForFloor, ENEMIES, BOSSES, MODIFIERS } from './data/enemie
 import { EVENTS, CATEGORY_META, drawEvent } from './data/events.js';
 import { CONFIG } from './data/config.js';
 import { rankFor } from './data/ranks.js';
-import { CONSUMABLES, itemById, rollEquipment, rollRelic, EQUIP_SLOTS } from './data/items.js';
+import { CONSUMABLES, itemById, rollEquipment, rollRelic, EQUIP_SLOTS, RELICS, ALL_EQUIPMENT, WEAPONS } from './data/items.js';
 import { loadMeta, saveMeta, upgradeRank, award, UPGRADES, ACHIEVEMENTS, newRun, saveRun, loadRun, clearRun, runRng, rollStart, startDescriptor } from './state.js';
-import { derived, classTitle, skillTier, gainXp, learnableSkills, heal, restoreMana, relicItems, equippedItems, changeFame, resourceName, appraiseRun, revealLevel, applySubclass as applySubclassFn, APPRAISABLE, allowedWeaponTypes, weaponCompatible } from './character.js';
+import { derived, classTitle, skillTier, gainXp, learnableSkills, heal, restoreMana, relicItems, equippedItems, changeFame, resourceName, appraiseRun, revealLevel, applySubclass as applySubclassFn, APPRAISABLE, allowedWeaponTypes, weaponCompatible, skillCapacity } from './character.js';
 import { startCombat, buildEnemy } from './combat.js';
 import { ICONS } from './icons.js';
 import { SFX, toggleMute, isMuted } from './audio.js';
@@ -23,7 +23,7 @@ import { makeRng, randomSeed } from './rng.js';
 import { defaultServerUrl, isMixedContentBlocked, PUBLIC_GAME_URL } from './net.js';
 import { CoopSession, connectCoop } from './coop.js';
 import { Music } from './music.js';
-import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl, raceArtHtml, originArtHtml, raceIconUrl, originIconUrl, eventCatUrl } from './art.js';
+import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl, raceArtHtml, originArtHtml, raceIconUrl, originIconUrl, eventCatUrl, enemySpriteHtml } from './art.js';
 
 let meta = loadMeta();
 let run = null;
@@ -69,7 +69,90 @@ function devJump() {
     return true;
   }
   if (p === 'map') { enterFloorScreen(true); return true; }
+  if (p === 'debug') { debugScreen(); return true; }
   return false;
+}
+
+/* ============================================================
+   DEBUG / COMPENDIUM SCREEN (§17) — every class, subclass, skill,
+   relic, equipment piece, enemy and boss, with their sprites.
+   ============================================================ */
+function debugScreen() {
+  setBiomeGlow('#3f3a58'); setParticles('dust');
+  const spriteMini = html => `<div class="dbg-sprite">${html || '—'}</div>`;
+
+  // classes + their subclass trees
+  const classCards = Object.values(CLASSES).map(c => {
+    const subs = Object.values(SUBCLASSES).filter(s => s.parent === c.id || SUBCLASSES[s.parent]?.parent === c.id);
+    const t1 = Object.values(SUBCLASSES).filter(s => s.parent === c.id);
+    const subHtml = t1.map(s => {
+      const deeper = s.next ? SUBCLASSES[s.next] : null;
+      return `<div class="dbg-sub ${s.secret ? 'secret' : ''}">
+        <b>${s.name}</b>${s.secret ? ' <span class="tag">hidden</span>' : ''} <span class="dbg-skill">↳ ${SKILLS[s.skill]?.name || s.skill}</span>
+        ${deeper ? `<div class="dbg-sub2">→ ${deeper.name} <span class="dbg-skill">↳ ${SKILLS[deeper.skill]?.name || deeper.skill}</span></div>` : ''}
+      </div>`;
+    }).join('');
+    return `<div class="dbg-card" style="--accent:${c.accent}">
+      <div class="dbg-head">${spriteMini(heroSpriteHtml(c.id, 48) || ICONS[c.id])}<div><b>${c.name}</b>${c.hidden ? ' <span class="tag">hidden</span>' : ''}<div class="dbg-dim">${c.resource.name} · ${c.weapons.join(', ')}</div></div></div>
+      <div class="dbg-subs">${subHtml}</div>
+    </div>`;
+  }).join('');
+
+  // skills grouped by class
+  const skillClasses = [...new Set(Object.values(SKILLS).map(s => s.class))];
+  const skillHtml = skillClasses.map(cls => {
+    const list = Object.values(SKILLS).filter(s => s.class === cls);
+    const label = CLASSES[cls]?.name || (cls === 'universal' ? 'Universal' : cls === 'special' ? 'Exclusive / Drop' : cls);
+    return `<div class="dbg-group"><h4>${label} <span class="dbg-dim">(${list.length})</span></h4>
+      ${list.map(s => `<div class="dbg-row"><b>${s.name}</b> <span class="tag">${s.cost || 0}${s.charge ? ' +' + s.charge + '⚡' : ''}</span> <span class="tag">${s.target}</span>${s.power ? ` <span class="dbg-dim">${s.power}% ${s.stat}</span>` : ''}<div class="dbg-dim">${s.desc}</div></div>`).join('')}
+    </div>`;
+  }).join('');
+
+  // equipment by slot (+ class/exclusive tags)
+  const slots = ['weapon', 'helmet', 'chest', 'legs', 'boots', 'accessory'];
+  const equipHtml = slots.map(sl => {
+    const list = ALL_EQUIPMENT.filter(i => i.slot === sl);
+    return `<div class="dbg-group"><h4>${sl} <span class="dbg-dim">(${list.length})</span></h4>
+      ${list.map(i => `<div class="dbg-row">${itemIconHtml(i.id, 26)}<b class="${rarityClass(i.rarity)}">${i.name}</b> <span class="tag ${rarityClass(i.rarity)}">${i.rarity}</span>${i.wtype ? ` <span class="tag">${i.wtype}</span>` : ''}${i.exclusive ? ' <span class="tag" style="color:var(--gold)">exclusive</span>' : ''}${i.unique ? ' <span class="tag">unique</span>' : ''}<div class="dbg-dim">${i.desc}</div></div>`).join('')}
+    </div>`;
+  }).join('');
+
+  const relicHtml = RELICS.map(r => `<div class="dbg-row"><b class="${rarityClass(r.rarity)}">${r.name}</b> <span class="tag ${rarityClass(r.rarity)}">${r.rarity}</span><div class="dbg-dim">${r.desc}</div></div>`).join('');
+  const consHtml = CONSUMABLES.map(c => `<div class="dbg-row">${itemIconHtml(c.id, 24)}<b>${c.name}</b> <span class="tag ${rarityClass(c.rarity)}">${c.rarity}</span><div class="dbg-dim">${c.desc}</div></div>`).join('');
+
+  // enemies by biome + bosses, with sprites
+  const enemyHtml = Object.entries(ENEMIES).map(([biome, list]) => `<div class="dbg-group"><h4>${biome} <span class="dbg-dim">(${list.length})</span></h4>
+    <div class="dbg-enemy-grid">${list.map(e => `<div class="dbg-enemy">${spriteMini(enemySpriteHtml(e.id, { elite: e.elite }) || `<span style="font-size:30px">${e.glyph}</span>`)}<div><b>${e.name}</b><div class="dbg-dim">hp ${e.hp} · atk ${e.atk} · def ${e.def}${e.elite ? ' · elite' : ''}${e.intelligent ? ' · bribable' : ''}</div></div></div>`).join('')}</div>
+  </div>`).join('');
+  const bossHtml = `<div class="dbg-group"><h4>Bosses <span class="dbg-dim">(${Object.keys(BOSSES).length})</span></h4>
+    <div class="dbg-enemy-grid">${Object.entries(BOSSES).map(([f, b]) => `<div class="dbg-enemy">${spriteMini(enemySpriteHtml(b.id, { boss: true }) || `<span style="font-size:34px">${b.glyph}</span>`)}<div><b>${b.name}</b><div class="dbg-dim">F${f} · hp ${b.hp} · atk ${b.atk}</div></div></div>`).join('')}</div>
+  </div>`;
+
+  app.innerHTML = '';
+  const scr = el(`<div class="screen dbg-screen">
+    <div class="select-header"><h2>Compendium / Debug</h2><p>Every class, technique, relic, item, enemy and boss in the tower.</p></div>
+    <div style="text-align:center;margin-bottom:12px"><button class="btn small" id="dbg-back">← Title</button></div>
+    <div class="dbg-tabs">
+      <button class="btn small primary" data-tab="classes">Classes</button>
+      <button class="btn small" data-tab="skills">Techniques</button>
+      <button class="btn small" data-tab="equip">Equipment</button>
+      <button class="btn small" data-tab="relics">Relics &amp; Items</button>
+      <button class="btn small" data-tab="enemies">Bestiary</button>
+    </div>
+    <div class="dbg-panel" id="dbg-classes"><div class="dbg-grid">${classCards}</div></div>
+    <div class="dbg-panel" id="dbg-skills" style="display:none">${skillHtml}</div>
+    <div class="dbg-panel" id="dbg-equip" style="display:none">${equipHtml}</div>
+    <div class="dbg-panel" id="dbg-relics" style="display:none"><div class="dbg-group"><h4>Relics (${RELICS.length})</h4>${relicHtml}</div><div class="dbg-group"><h4>Consumables (${CONSUMABLES.length})</h4>${consHtml}</div></div>
+    <div class="dbg-panel" id="dbg-enemies" style="display:none">${enemyHtml}${bossHtml}</div>
+  </div>`);
+  app.appendChild(scr);
+  const panels = { classes: 'dbg-classes', skills: 'dbg-skills', equip: 'dbg-equip', relics: 'dbg-relics', enemies: 'dbg-enemies' };
+  scr.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => {
+    SFX.click();
+    scr.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('primary', x === b));
+    for (const [tab, id] of Object.entries(panels)) document.getElementById(id).style.display = tab === b.dataset.tab ? '' : 'none';
+  });
+  scr.querySelector('#dbg-back').onclick = () => { SFX.click(); titleScreen(); };
 }
 
 function titleScreen() {
@@ -86,6 +169,7 @@ function titleScreen() {
         <button class="btn" id="btn-coop">⚔ Play Together</button>
         <button class="btn" id="btn-sanctum">The Sanctum ◈ ${meta.shards}</button>
         <button class="btn ghost" id="btn-mute">${isMuted() ? '🔇 Sound Off' : '🔊 Sound On'}</button>
+        <button class="btn ghost" id="btn-debug">📖 Compendium</button>
         <div class="audio-row">
           <span id="vol-icon">🎵</span>
           <input type="range" id="vol-slider" class="vol-slider" min="0" max="100" value="${Math.round(Music.getVolume() * 100)}" aria-label="Music volume" />
@@ -110,6 +194,7 @@ function titleScreen() {
   document.getElementById('btn-coop').onclick = () => { SFX.click(); coopMenu(); };
   document.getElementById('btn-sanctum').onclick = () => { SFX.click(); sanctumScreen(); };
   document.getElementById('btn-mute').onclick = e => { const m = toggleMute(); Music.syncMute(); e.target.textContent = m ? '🔇 Sound Off' : '🔊 Sound On'; };
+  document.getElementById('btn-debug').onclick = () => { SFX.click(); debugScreen(); };
   wireVolumeSlider(document.getElementById('vol-slider'), document.getElementById('vol-val'));
   Music.play('title');
 }
@@ -928,6 +1013,20 @@ function generateCards(rng, forParty = null) {
     }
     cards.push({ kind: 'event', category: ev.category || 'unknown', eventId: ev.id, sparkle: affine && rng.chance(CONFIG.events.sparkleChance) });
   }
+  // §2: honor a waypoint the player set at a cartographer — force one path to
+  // the requested category, then consume the waypoint.
+  if (run.forcedNextCategory) {
+    const cat = run.forcedNextCategory;
+    const pool = EVENTS.filter(e => (e.biome === 'any' || e.biome === run.biomeId)
+      && e.category === cat && !(e.once && run.seenEvents.includes(e.id))
+      && (!e.cond || e.cond(run)) && !usedEvents.includes(e.id) && !e.shop);
+    const slot = cards.findIndex(c => c.kind === 'event');
+    if (pool.length && slot > -1) {
+      const ev = rng.pick(pool);
+      cards[slot] = { kind: 'event', category: ev.category || cat, eventId: ev.id, sparkle: true };
+    }
+    delete run.forcedNextCategory;
+  }
   rng.advance();
   return cards;
 }
@@ -1106,7 +1205,7 @@ async function encounterFloor(stage, prebuiltGroup = null) {
   });
 }
 
-async function fightGroup(stage, specs, { text = null, modifier = null, prebuilt = null } = {}) {
+async function fightGroup(stage, specs, { text = null, modifier = null, prebuilt = null, reward = null } = {}) {
   Music.play('battle');
   const biome = biomeForFloor(run.floor);
   const rng = runRng(run);
@@ -1136,10 +1235,10 @@ async function fightGroup(stage, specs, { text = null, modifier = null, prebuilt
     return showOutcomePanel(stage, [{ text: 'You live to climb another floor. The tower notes your pragmatism.', cls: 'good' }]);
   }
 
-  await afterVictory(stage, enemies, gold, xp);
+  await afterVictory(stage, enemies, gold, xp, { reward });
 }
 
-async function afterVictory(stage, enemies, gold, xp, { boss = null } = {}) {
+async function afterVictory(stage, enemies, gold, xp, { boss = null, reward = null } = {}) {
   run.kills += enemies.length;
   run.gold += gold;
   run.goldEarned += gold;
@@ -1167,9 +1266,56 @@ async function afterVictory(stage, enemies, gold, xp, { boss = null } = {}) {
   }
   SFX.victory();
   const ups = gainXp(run, xp, runRng(run));
+  // §16: exclusive spoils from an optional NPC duel
+  if (reward) await grantReward(reward, lines);
   saveRun(run);
   await showOutcomePanel(stage, lines, ups, boss ? { continueLabel: 'Claim your prize', advance: false } : {});
   if (boss) await bossRelicPick(stage);
+}
+
+/* ---------- §16: exclusive rewards from optional encounters ---------- */
+async function applyRewardOption(opt, lines) {
+  if (!opt) return;
+  const itemId = opt.kind === 'item' ? opt.id : opt.item;
+  const skillId = opt.kind === 'skill' ? opt.id : opt.skill;
+  const relicId = opt.kind === 'relic' ? opt.id : opt.relic;
+  if (itemId) {
+    const it = itemById(itemId);
+    if (it && it.slot) await offerEquipment(it, lines);
+    else if (it) { run.consumables.push(it.id); lines.push({ text: `Received: ${it.name}`, cls: 'item' }); }
+  }
+  if (skillId && SKILLS[skillId]) {
+    if (!run.knownSkills.includes(skillId)) run.knownSkills.push(skillId);
+    lines.push({ text: `Technique learned: ${SKILLS[skillId].name} — ${SKILLS[skillId].desc}`, cls: 'item' });
+    await maybeEquipSkill(SKILLS[skillId]);
+    SFX.evolve();
+  }
+  if (relicId) {
+    const r = itemById(relicId) || rollRelic(runRng(run), run.relics);
+    if (r && !run.relics.includes(r.id)) { run.relics.push(r.id); lines.push({ text: `Relic: ${r.name}`, cls: 'item' }); SFX.unlock(); }
+  }
+}
+
+async function grantReward(reward, lines) {
+  if (!reward) return;
+  if (reward.gold) { run.gold += reward.gold; run.goldEarned += reward.gold; lines.push({ text: `+${reward.gold} gold`, cls: 'gold' }); }
+  if (reward.fame) { const a = changeFame(run, reward.fame); lines.push({ text: `+${a} Fame`, cls: 'good' }); }
+  if (reward.options?.length) {
+    let chosen = reward.options[0];
+    await modalCustom((m, close) => {
+      m.innerHTML = `<h3>Spoils of the Duel</h3><p class="modal-sub">${reward.chooseLabel || 'Take one:'}</p>
+        <div class="pick-grid">${reward.options.map((op, i) => {
+          const nm = op.kind === 'skill' ? SKILLS[op.id]?.name : itemById(op.id)?.name;
+          const desc = op.kind === 'skill' ? SKILLS[op.id]?.desc : itemById(op.id)?.desc;
+          return `<button class="pick-option" data-i="${i}"><span class="po-tag tag">${op.kind}</span><div class="po-name">${nm || op.id}</div><div class="po-desc">${desc || ''}</div></button>`;
+        }).join('')}</div>`;
+      m.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { chosen = reward.options[+b.dataset.i]; close(); });
+    });
+    await applyRewardOption(chosen, lines);
+  } else {
+    await applyRewardOption(reward, lines);
+  }
+  renderHud();
 }
 
 async function bossRelicPick(stage) {
@@ -1196,6 +1342,17 @@ async function bossRelicPick(stage) {
         close();
       });
     });
+  }
+  // §1: the hoard yields gear too — rolled a tier high, luck-weighted toward rarity
+  {
+    const rng3 = runRng(run);
+    const item = rollEquipment(rng3, biomeTier() + 1, 4 + Math.floor(derived(run).lk / 2));
+    rng3.advance(); saveRun(run);
+    if (item) {
+      const lines = [];
+      await offerEquipment(item, lines);
+      if (lines.length) toast(lines[0].text, 'info');
+    }
   }
   // bosses teach: claim a technique from your class pool (AOE often lives here)
   await offerSkillChoice();
@@ -1685,6 +1842,22 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
     unlock('assessed');
     lines.push({ text: '📜 The reading is complete. Your character page now carries the appraisal.', cls: 'item' });
     SFX.unlock();
+    // §15: a deep reading can shake a relic loose — better odds for a full workup
+    const relicChance = (o.appraisal === 'full' ? 0.22 : 0.1) + Math.floor(run.floor / 15) * 0.05;
+    if (rng.chance(relicChance)) {
+      const r = rollRelic(rng, run.relics, Math.floor(d.lk / 3));
+      if (r) { run.relics.push(r.id); lines.push({ text: `The reading stirs something loose in the tower — Relic: ${r.name} (${r.desc})`, cls: 'item' }); SFX.evolve(); }
+    }
+  }
+  // §14: a reward scaled to how famous you are
+  if (o.fameReward) {
+    const goldR = Math.round((30 + Math.floor(run.fame / 10) * 22) * d.goldMult);
+    run.gold += goldR; run.goldEarned += goldR;
+    const statR = 1 + Math.floor(run.fame / 40);
+    for (let i = 0; i < statR; i++) run.stats[rng.pick(APPRAISABLE)]++;
+    heal(run, run.maxHp * 0.2);
+    lines.push({ text: `Your renown pays out — +${goldR} gold, real growth, and a patron's care. The tower rewards a known name.`, cls: 'gold' });
+    SFX.gold();
   }
   if (o.promoteRace) {
     const p = applyRacePromotion(run);
@@ -1751,11 +1924,26 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
     }
     lines.push({ text: `The map shows: ${upcoming.join(' · ')}`, cls: 'item' });
   }
+  // §2: SET a future path instead of previewing it
+  if (o.setFuture) {
+    const chosen = await pickFutureCategory();
+    if (chosen) {
+      run.forcedNextCategory = chosen;
+      lines.push({ text: `Waypoint marked — the next branching floor will offer a ${CATEGORY_META[chosen].label} path.`, cls: 'item' });
+      SFX.unlock();
+    }
+  }
 
   let ups = [];
   if (o.xp) {
     const amt = Math.round(o.xp * d.xpMult);
     ups = gainXp(run, amt, rng);
+    lines.push({ text: `+${amt} XP`, cls: 'good' });
+  }
+  // §5: scaling XP — the reward grows with how far you've climbed
+  if (o.xpScaled) {
+    const amt = Math.round((o.xpScaled + run.floor) * d.xpMult);
+    ups.push(...gainXp(run, amt, rng));
     lines.push({ text: `+${amt} XP`, cls: 'good' });
   }
 
@@ -1774,7 +1962,7 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
       return ENEMIES[biome.id][0];
     });
     if (lines.length) await showOutcomePanel(stage, lines, ups, { continueLabel: 'Steel yourself', advance: false });
-    return fightGroup(stage, specs, { text: o.combat.text });
+    return fightGroup(stage, specs, { text: o.combat.text, reward: o.combat.reward });
   }
 
   if (run.hp <= 0) {
@@ -1799,6 +1987,21 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
 
 function biomeTier() {
   return { forest: 1, ruins: 2, frost: 3, swamp: 4, hell: 5, throne: 5 }[run.biomeId] || 1;
+}
+
+// §2: let the player choose which kind of path to guarantee on the next floor.
+function pickFutureCategory() {
+  const cats = ['recovery', 'merchant', 'equipment', 'training', 'appraisal', 'mystery'];
+  return new Promise(resolve => {
+    modalCustom((m, close) => {
+      m.innerHTML = `<h3>Write the Road Ahead</h3><p class="modal-sub">Choose the kind of path to bribe onto the next branching floor.</p>
+        <div class="pick-grid">${cats.map(c => {
+          const meta = CATEGORY_META[c];
+          return `<button class="pick-option" data-c="${c}"><span class="po-tag tag">${meta.glyph}</span><div class="po-name">${meta.label}</div><div class="po-desc">${meta.blurb}</div></button>`;
+        }).join('')}</div>`;
+      m.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { const c = b.dataset.c; close(); resolve(c); });
+    });
+  });
 }
 
 /* ---------- co-op death penalty: lose a few lesser items (handoff §16) ---------- */
@@ -1975,7 +2178,7 @@ async function levelUpModal(up) {
       m.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
         const sub = up.evolutionChoice[+b.dataset.i];
         applySubclassFn(run, sub);
-        if (sub.secret) unlock('secret_class');
+        if (sub.secret) { unlock('secret_class'); glitchScreen(1500); }
         SFX.evolve();
         close();
         modal(`
@@ -2043,7 +2246,8 @@ async function offerSkillChoice() {
 async function maybeEquipSkill(sk) {
   if (!sk) return;
   if (!run.knownSkills.includes(sk.id)) run.knownSkills.push(sk.id);
-  if (run.skills.length < 4) {
+  if (run.skills.includes(sk.id)) return; // never carry duplicates (§10)
+  if (run.skills.length < skillCapacity(run)) {
     run.skills.push(sk.id);
     toast(`Learned ${sk.name}`, 'info');
   } else {
@@ -2053,7 +2257,7 @@ async function maybeEquipSkill(sk) {
 
 async function swapSkillModal(newSkill) {
   await modalCustom((m, close) => {
-    m.innerHTML = `<h3>Equip ${newSkill.name}?</h3><p class="modal-sub">You can carry four techniques into battle (plus Strike and Guard, always). Replace one, or keep it in reserve.</p>
+    m.innerHTML = `<h3>Equip ${newSkill.name}?</h3><p class="modal-sub">You can carry ${skillCapacity(run)} techniques into battle (plus Strike and Guard, always). Replace one, or keep it in reserve.</p>
       <div class="pick-grid">
         ${run.skills.map((id, i) => `<button class="pick-option" data-i="${i}">
           <div class="po-name">Replace ${SKILLS[id].name}</div><div class="po-desc">${SKILLS[id].desc}</div>
@@ -2214,7 +2418,7 @@ function characterSheet() {
             ${run.weaponBonus ? `<div style="font-size:13px;color:var(--ink-dim)">Forge-honed: +${run.weaponBonus} weapon damage</div>` : ''}
           </div>
           <div class="sheet-section">
-            <h4>Techniques (4 + Strike &amp; Guard)</h4>
+            <h4>Techniques (${skillCapacity(run)} + Strike &amp; Guard)</h4>
             ${run.skills.map(id => `<div class="inv-item"><div><div class="item-name">${SKILLS[id].name}${SKILLS[id].charge ? ` <span class="tag">${SKILLS[id].charge}⚡</span>` : ''}</div><div class="item-desc">${SKILLS[id].desc}</div></div></div>`).join('')}
             ${run.knownSkills.filter(id => !run.skills.includes(id)).length ? `
               <h4 style="margin-top:12px">Reserve</h4>
@@ -2496,6 +2700,16 @@ async function endRun(cause) {
     </div>`));
   document.getElementById('btn-again').onclick = () => { meta = loadMeta(); creationFlow(); };
   document.getElementById('btn-title').onclick = () => { meta = loadMeta(); titleScreen(); };
+}
+
+/* ---------- §11: hidden-path screen glitch ---------- */
+function glitchScreen(ms = 1400) {
+  const host = document.getElementById('frame') || document.body;
+  const g = el('<div class="glitch-overlay"><div class="glitch-bars"></div><div class="glitch-scan"></div></div>');
+  host.appendChild(g);
+  host.classList.add('glitching');
+  SFX.bad?.();
+  setTimeout(() => { g.remove(); host.classList.remove('glitching'); }, ms);
 }
 
 /* ---------- achievements ---------- */
