@@ -748,7 +748,7 @@ export const EVENTS = [
   /* ---------- race promotion events (handoff §22) ---------- */
   {
     id: 'awakening_shrine', biome: 'any', category: 'unknown', type: 'story', glyph: '🧬', w: 3, once: true,
-    cond: s => !s.promoted && s.floor >= 15 && (s.raceId === 'human' || s.raceId === 'orc'),
+    cond: s => !s.promoted && s.floor >= 15 && ['human', 'orc', 'beastfolk', 'dragonkin'].includes(s.raceId),
     title: 'The Bloodfire Font',
     text: 'A basin of liquid light set into the floor, older than the tower around it. Your reflection in it is... more. Taller. Brighter-eyed. The you that the bloodline has been saving up for.',
     choices: [
@@ -764,7 +764,7 @@ export const EVENTS = [
   },
   {
     id: 'ancestral_echo', biome: 'any', category: 'unknown', type: 'story', glyph: '🌌', w: 3, once: true,
-    cond: s => !s.promoted && s.floor >= 15 && (s.raceId === 'elf' || s.raceId === 'dwarf'),
+    cond: s => !s.promoted && s.floor >= 15 && ['elf', 'dwarf', 'halfling', 'tiefling'].includes(s.raceId),
     title: 'The Ancestor\'s Echo',
     text: 'The wall ahead holds a memory that isn\'t yours: a first-forest older than kingdoms, a forge-hall deeper than roots. An ancestor stands in it, waiting, translucent — and offers you their hands.',
     choices: [
@@ -872,7 +872,7 @@ export const EVENTS = [
   },
   {
     id: 'fey_bargain', biome: 'forest', category: 'dangerous', type: 'risk', glyph: '🧚', w: 6,
-    affinity: { races: ['elf'] },
+    affinity: { races: ['elf', 'halfling'] },
     title: 'A Fey Bargain',
     text: 'A creature of twilight and bad intentions perches on a mushroom. "Trade, mortal? I collect things people don\'t know they\'ll miss." Its smile has too many angles.',
     choices: [
@@ -918,6 +918,7 @@ export const EVENTS = [
   },
   {
     id: 'ancient_tree', biome: 'forest', category: 'mystery', type: 'story', glyph: '🌳', w: 5, once: true,
+    affinity: { races: ['beastfolk', 'elf'] },
     title: 'The Tree That Speaks',
     text: 'The great oak\'s bark shifts into something like a face. "CLIMBER." Its voice is centuries rubbing together. "I HAVE STOOD SINCE THE FIRST FLOOR WAS LAID. ASK. ONE. QUESTION."',
     choices: [
@@ -988,7 +989,7 @@ export const EVENTS = [
   },
   {
     id: 'forgotten_forge', biome: 'ruins', category: 'equipment', type: 'story', glyph: '⚒️', w: 5, once: true,
-    affinity: { classes: ['warrior'], races: ['dwarf'] },
+    affinity: { classes: ['warrior'], races: ['dwarf', 'dragonkin'] },
     title: 'The Forgotten Forge',
     text: 'A dwarven forge, still lit after centuries — the coals refuse to die out of professional pride. The anvil is warm. Tools hang ready, as if the smith just stepped out for six hundred years.',
     choices: [
@@ -1174,6 +1175,7 @@ export const EVENTS = [
   /* ==================== HELL (41–50) ==================== */
   {
     id: 'devils_contract', biome: 'hell', category: 'dangerous', type: 'risk', glyph: '📜', w: 6,
+    affinity: { races: ['tiefling'], classes: ['warlock'] },
     title: 'The Standard Agreement',
     text: 'A devil in an immaculate suit materializes with a contract and a fountain pen full of something red. "Standard climber\'s package! Power now, payment later. I\'m REQUIRED to tell you clause seven is load-bearing. I am NOT required to explain it."',
     choices: [

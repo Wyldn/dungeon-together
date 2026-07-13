@@ -482,7 +482,66 @@ def race_dwarf(d):
     d.ellipse([13, 27, 15, 29], fill=(200, 170, 90, 255))  # braid bead
     d.ellipse([17, 27, 19, 29], fill=(200, 170, 90, 255))
 
-RACE_DRAW = {'human': race_human, 'elf': race_elf, 'orc': race_orc, 'dwarf': race_dwarf}
+def race_halfling(d):
+    # slightly smaller face, curly hair, round cheeks
+    skin = (236, 198, 164, 255)
+    d.polygon([(7, 30), (10, 23), (22, 23), (25, 30)], fill=(70, 92, 58, 255), outline=OUTLINE)  # cloak
+    d.rectangle([14, 18, 18, 23], fill=skin)
+    d.ellipse([10, 7, 22, 21], fill=skin, outline=OUTLINE)
+    d.rectangle([12, 13, 13, 14], fill=(30, 24, 34, 255))
+    d.rectangle([18, 13, 19, 14], fill=(30, 24, 34, 255))
+    d.ellipse([9, 4, 23, 12], fill=(180, 120, 70, 255), outline=OUTLINE)  # curly mop
+    d.point((12, 7), fill=(150, 96, 52, 255)); d.point((16, 5), fill=(150, 96, 52, 255)); d.point((20, 7), fill=(150, 96, 52, 255))
+    d.ellipse([11, 16, 13, 18], fill=(220, 150, 130, 255))  # rosy cheek
+    d.ellipse([19, 16, 21, 18], fill=(220, 150, 130, 255))
+    d.point((16, 3), fill=(90, 200, 110, 255))  # lucky clover fleck
+
+def race_tiefling(d):
+    _portrait_base(d, (188, 110, 118, 255), (40, 28, 48, 255), (28, 18, 34, 255))
+    d.polygon([(8, 8), (16, 2), (24, 8), (23, 11), (9, 11)], fill=(40, 28, 48, 255), outline=OUTLINE)
+    # horns
+    d.polygon([(10, 8), (7, 1), (12, 7)], fill=(70, 48, 58, 255), outline=OUTLINE)
+    d.polygon([(22, 8), (25, 1), (20, 7)], fill=(70, 48, 58, 255), outline=OUTLINE)
+    d.rectangle([12, 12, 13, 13], fill=(255, 170, 80, 255))  # ember eyes
+    d.rectangle([19, 12, 20, 13], fill=(255, 170, 80, 255))
+    d.line([(15, 18), (17, 18)], fill=(120, 60, 70, 255), width=1)
+    d.point((16, 4), fill=(255, 120, 60, 255))
+
+def race_beastfolk(d):
+    fur = (168, 120, 78, 255)
+    d.polygon([(6, 30), (9, 22), (23, 22), (26, 30)], fill=(58, 48, 42, 255), outline=OUTLINE)
+    d.rectangle([14, 18, 18, 23], fill=fur)
+    d.ellipse([9, 6, 23, 21], fill=fur, outline=OUTLINE)
+    # ears
+    d.polygon([(10, 8), (8, 1), (14, 7)], fill=fur, outline=OUTLINE)
+    d.polygon([(22, 8), (24, 1), (18, 7)], fill=fur, outline=OUTLINE)
+    d.polygon([(10, 8), (9, 3), (12, 7)], fill=(210, 160, 120, 255))  # inner ear
+    d.polygon([(22, 8), (23, 3), (20, 7)], fill=(210, 160, 120, 255))
+    d.rectangle([12, 12, 13, 14], fill=(40, 180, 90, 255))  # predator eyes
+    d.rectangle([19, 12, 20, 14], fill=(40, 180, 90, 255))
+    d.polygon([(14, 16), (16, 19), (18, 16)], fill=(90, 60, 40, 255))  # snout tip
+    d.line([(11, 10), (14, 11)], fill=(120, 80, 50, 255), width=1)
+    d.line([(18, 11), (21, 10)], fill=(120, 80, 50, 255), width=1)
+
+def race_dragonkin(d):
+    scale = (72, 140, 110, 255)
+    d.polygon([(6, 30), (9, 22), (23, 22), (26, 30)], fill=(48, 70, 90, 255), outline=OUTLINE)
+    d.rectangle([14, 18, 18, 23], fill=scale)
+    d.ellipse([9, 5, 23, 21], fill=scale, outline=OUTLINE)
+    # crest / horns
+    d.polygon([(12, 7), (11, 1), (15, 6)], fill=(50, 100, 80, 255), outline=OUTLINE)
+    d.polygon([(20, 7), (21, 1), (17, 6)], fill=(50, 100, 80, 255), outline=OUTLINE)
+    d.polygon([(16, 5), (16, 0), (18, 5)], fill=(40, 90, 70, 255), outline=OUTLINE)
+    d.rectangle([12, 12, 13, 13], fill=(255, 210, 80, 255))  # gold eyes
+    d.rectangle([19, 12, 20, 13], fill=(255, 210, 80, 255))
+    # snout plate
+    d.polygon([(13, 16), (16, 20), (19, 16)], fill=(90, 170, 130, 255), outline=OUTLINE)
+    d.point((14, 9), fill=(40, 80, 65, 255)); d.point((18, 9), fill=(40, 80, 65, 255))  # scale marks
+
+RACE_DRAW = {
+    'human': race_human, 'elf': race_elf, 'orc': race_orc, 'dwarf': race_dwarf,
+    'halfling': race_halfling, 'tiefling': race_tiefling, 'beastfolk': race_beastfolk, 'dragonkin': race_dragonkin,
+}
 for rid, painter in RACE_DRAW.items():
     im = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
     painter(ImageDraw.Draw(im))

@@ -6,7 +6,11 @@ export const RACE_ART = {
  "human": "assets/img/races/human.png",
  "elf": "assets/img/races/elf.png",
  "orc": "assets/img/races/orc.png",
- "dwarf": "assets/img/races/dwarf.png"
+ "dwarf": "assets/img/races/dwarf.png",
+ "halfling": "assets/img/races/halfling.png",
+ "tiefling": "assets/img/races/tiefling.png",
+ "beastfolk": "assets/img/races/beastfolk.png",
+ "dragonkin": "assets/img/races/dragonkin.png"
 };
 
 export const ORIGIN_ART = {

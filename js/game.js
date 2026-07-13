@@ -482,8 +482,11 @@ function creationFlow(coopContext = null) {
         ? 'Six callings. What you\'re truly made of, you\'ll discover on the way up.'
         : isOrigin
           ? 'Where were you, the day before the tower? Origins are lived, not listed — yours plays out at the gate.'
-          : 'Four peoples climb. The tower does not care which — but the tower is often wrong about what matters.';
-      const RACE_TAG = { human: 'ADAPTABLE', elf: 'ARCANE', orc: 'BRUTAL', dwarf: 'ENDURING' };
+          : 'Eight peoples climb. The tower does not care which — but the tower is often wrong about what matters.';
+      const RACE_TAG = {
+        human: 'ADAPTABLE', elf: 'ARCANE', orc: 'BRUTAL', dwarf: 'ENDURING',
+        halfling: 'FORTUNATE', tiefling: 'INFERNAL', beastfolk: 'FERAL', dragonkin: 'SCALED',
+      };
       const ORIGIN_TAG = {
         mage_academy: 'SCHOLAR', sword_academy: 'DUELIST', mercenary: 'SELLSWORD', guild: 'LICENSED',
         temple: 'DEVOUT', streets: 'OUTLAW', ranger_lodge: 'WARDEN', circus: 'PERFORMER',
@@ -2240,7 +2243,7 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
   if (o.promoteRace) {
     const p = applyRacePromotion(run);
     if (p) {
-      lines.push({ text: `🧬 ${p.blurb}\n\nYou are ${run.raceName === 'Awakened Human' ? 'an' : 'a'} ${run.raceName} now.`, cls: 'item' });
+      lines.push({ text: `🧬 ${p.blurb}\n\nYou are ${/^[aeiou]/i.test(run.raceName) ? 'an' : 'a'} ${run.raceName} now.`, cls: 'item' });
       unlock('promoted');
       SFX.evolve();
     }

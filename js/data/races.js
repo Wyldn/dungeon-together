@@ -1,4 +1,4 @@
-// Four starting races (handoff §22). Descriptions suggest affinities without
+// Starting races (handoff §22). Descriptions suggest affinities without
 // forcing a build. Promotions are rare, run-specific transformations.
 
 export const RACES = {
@@ -67,6 +67,68 @@ export const RACES = {
       to: 'Runeforged Dwarf', glyph: '⚒️',
       blurb: 'Old runes surface on your skin like the mountain remembering your name.',
       bonus: { str: 2, wis: 3, hp: 20, def: 2 },
+    },
+  },
+  halfling: {
+    id: 'halfling',
+    name: 'Halfling',
+    glyph: '🍀',
+    blurb: 'Small enough to duck under trouble and lucky enough that trouble often ducks first. Halflings treat the tower like a very tall pub crawl.',
+    hint: 'Affinity: scoundrels, storytellers, and sharpshooters. Fortune favors the light-footed.',
+    stats: { lk: 2, dex: 1 },
+    hp: -4, mp: 0,
+    initiative: 2,
+    fameGainMult: 1.1,
+    promotion: {
+      to: 'Fate-Touched Halfling', glyph: '🎲',
+      blurb: 'The tower\'s dice finally land on your name. Coincidence stops being coincidental.',
+      bonus: { lk: 4, dex: 2, hp: 12 },
+    },
+  },
+  tiefling: {
+    id: 'tiefling',
+    name: 'Tiefling',
+    glyph: '😈',
+    blurb: 'Infernal ink in the family tree. Horns catch lamplight; contracts catch everything else. The tower smells like home to them — which is concerning.',
+    hint: 'Affinity: pact-makers, scholars, and charming liars. Mind sharp, luck sharper.',
+    stats: { int: 2, lk: 1 },
+    hp: -5, mp: 8,
+    initiative: 0,
+    promotion: {
+      to: 'Infernal Heir', glyph: '☄️',
+      blurb: 'The old signature on your bloodline flares. Something downstairs sends congratulations — and expectations.',
+      bonus: { int: 3, lk: 2, mp: 22 },
+    },
+  },
+  beastfolk: {
+    id: 'beastfolk',
+    name: 'Beastfolk',
+    glyph: '🐺',
+    blurb: 'Claw, fang, and a spine that remembers the hunt. Beastfolk climb the tower the way wolves climb hills — low, fast, and hungry.',
+    hint: 'Affinity: brawlers, monks, stalkers, and rangers. Muscle that moves like a predator.',
+    stats: { str: 1, dex: 2 },
+    hp: 5, mp: -2,
+    initiative: 1,
+    promotion: {
+      to: 'Apex Kin', glyph: '🌕',
+      blurb: 'The pack-instinct goes quiet. You were never prey. The tower learns this the hard way.',
+      bonus: { str: 3, dex: 3, hp: 22 },
+    },
+  },
+  dragonkin: {
+    id: 'dragonkin',
+    name: 'Dragonkin',
+    glyph: '🐉',
+    blurb: 'Scaled and stubborn, with a furnace under the ribs. Dragonkin argue with the tower in the original dialect: heat, pride, and territorial hissing.',
+    hint: 'Affinity: vanguard steel and spellfire. Strength and intellect share the same blood.',
+    stats: { str: 2, int: 1 },
+    hp: 6, mp: 4,
+    def: 1,
+    initiative: -1,
+    promotion: {
+      to: 'Wyrmblooded', glyph: '🌋',
+      blurb: 'Ancestral fire wakes along your scales. The tower\'s cold floors suddenly feel optional.',
+      bonus: { str: 3, int: 3, hp: 16, mp: 16, def: 1 },
     },
   },
 };

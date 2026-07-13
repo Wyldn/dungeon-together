@@ -107,7 +107,7 @@ for (const cls of Object.values(CLASSES)) {
 }
 
 console.log('— races (handoff §22) —');
-t('four starting races', Object.keys(RACES).length === 4);
+t('eight starting races', Object.keys(RACES).length === 8);
 for (const r of Object.values(RACES)) {
   t(`${r.id}: has promotion`, !!r.promotion?.to);
   t(`${r.id}: has hint text`, !!r.hint);
