@@ -23,6 +23,14 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const LAST_FLOOR = 51;
 
+/** Whether this enemy hit should freeze the player. `freezeEvery` = once per N turns. */
+function enemyHitFreezes(e, special, rng) {
+  if (e.freezeEvery) {
+    return e.turnCount > 0 && e.turnCount % e.freezeEvery === 0;
+  }
+  return (e.freeze && rng.chance(e.freeze)) || !!special?.freezeSure;
+}
+
 export function buildEnemy(spec, floor, biomeStart, { boss = false, hpMult = 1 } = {}) {
   const isBoss = boss || !!spec.boss;
   const biome = biomeForFloor(floor);
@@ -111,24 +119,75 @@ class Fight {
   }
 
   log(msg, cls = '') {
+    if (!this.logEl) return;
     const div = document.createElement('div');
     if (cls) div.className = cls;
     div.textContent = msg;
-    this.logEl.prepend(div);
-    while (this.logEl.children.length > 8) this.logEl.lastChild.remove();
-    // wake the log, then fade it out after a spell of quiet
-    this.logEl.style.opacity = '1';
+    this.logEl.appendChild(div);
+    while (this.logEl.children.length > 60) this.logEl.firstChild.remove();
+
+    // New action → wake the log and snap to the latest (bottom) line
+    this._wakeCombatLog();
+    this.logEl.scrollTop = this.logEl.scrollHeight;
+  }
+
+  _wakeCombatLog() {
+    if (!this.logEl) return;
+    this.logEl.classList.add('log-awake');
+    this.logEl.classList.remove('log-idle');
     clearTimeout(this._logFade);
-    this._logFade = setTimeout(() => { if (this.logEl) this.logEl.style.opacity = '0'; }, 6000);
+    // Stay readable while hovered; otherwise drift to translucent after a quiet stretch
+    if (!this.logEl.matches(':hover')) {
+      this._logFade = setTimeout(() => {
+        if (!this.logEl || this.logEl.matches(':hover')) return;
+        this.logEl.classList.remove('log-awake');
+        this.logEl.classList.add('log-idle');
+      }, 4500);
+    }
+  }
+
+  _bindCombatLog() {
+    if (!this.logEl || this._logBound) return;
+    this._logBound = true;
+    this.logEl.classList.add('log-awake');
+    this.logEl.addEventListener('mouseenter', () => {
+      clearTimeout(this._logFade);
+      this.logEl.classList.add('log-awake');
+      this.logEl.classList.remove('log-idle');
+    });
+    this.logEl.addEventListener('mouseleave', () => {
+      clearTimeout(this._logFade);
+      this._logFade = setTimeout(() => {
+        if (!this.logEl || this.logEl.matches(':hover')) return;
+        this.logEl.classList.remove('log-awake');
+        this.logEl.classList.add('log-idle');
+      }, 1800);
+    });
+    // If the player was reading older lines, a new move still resumes to latest (handled in log())
   }
 
   float(hostEl, text, cls) {
     if (!hostEl) return;
+    const layer = this.fxLayer || this.el;
+    const isCrit = cls === 'crit';
     const f = document.createElement('div');
-    f.className = `float-text ${cls}`;
-    f.textContent = text;
-    hostEl.appendChild(f);
-    setTimeout(() => f.remove(), 1000);
+    f.className = `float-text ${cls || 'dmg'}`;
+    if (isCrit) {
+      f.innerHTML = `<span class="float-crit-tag">CRIT</span><span class="float-crit-num">${text}</span>`;
+    } else {
+      f.textContent = text;
+    }
+    layer.appendChild(f);
+    const hr = hostEl.getBoundingClientRect();
+    const lr = layer.getBoundingClientRect();
+    // Slight horizontal jitter so multi-hits / stacked floats don't fully overlap
+    const jitter = (Math.random() * 18) - 9;
+    f.style.left = `${hr.left + hr.width / 2 - lr.left + jitter}px`;
+    f.style.top = `${hr.top + hr.height * 0.1 - lr.top}px`;
+    const ms = isCrit
+      ? Math.round((CONFIG.combat.floatMs || 1200) * 1.35)
+      : (CONFIG.combat.floatMs || 1200);
+    setTimeout(() => f.remove(), ms);
   }
 
   enemyByUid(uid) { return this.enemies.find(e => e.uid === uid); }
@@ -136,6 +195,37 @@ class Fight {
 
   // §12: has the boss picked up any player-applied affliction?
   hasDebuff(st) { return !!(st.poison || st.burn || st.frozen || st.stunned || st.hexed); }
+  hasHardCC(st) { return !!(st.frozen || st.stunned); }
+
+  // §12: bosses shrug afflictions on a slow cadence, or burn Battle Charge to break freeze/stun.
+  // Returns 'broke' | 'cleansed' | null. Call after charge tick, before the skip check.
+  resolveBossAntiCC(e, ops = null) {
+    if (!e.boss) return null;
+    const every = e.cleanseEvery ?? CONFIG.boss.cleanseEvery;
+    const cost = e.cleanseCost ?? CONFIG.boss.cleanseCost;
+
+    // Spend FOC to tear free of hard CC and keep acting this turn
+    if (this.hasHardCC(e.statuses) && cost > 0 && (e.charge || 0) >= cost) {
+      e.charge -= cost;
+      delete e.statuses.frozen;
+      delete e.statuses.stunned;
+      this.log(`${e.name} burns ${cost} Battle Charge and tears free of the binding!`, 'log-hit');
+      SFX.bossIntro();
+      ops?.push({ type: 'echarge', uid: e.uid, charge: e.charge });
+      ops?.push({ type: 'breakcc', uid: e.uid, cost });
+      this.renderEnemies();
+      return 'broke';
+    }
+
+    // Periodic full cleanse (DoTs + any leftover hard CC)
+    if (e.turnCount > 0 && e.turnCount % every === 0 && this.hasDebuff(e.statuses)) {
+      this.cleanseBoss(e);
+      ops?.push({ type: 'cleanse', uid: e.uid });
+      return 'cleansed';
+    }
+    return null;
+  }
+
   // §12: bosses periodically shrug off crowd-control so it can't be cheesed.
   cleanseBoss(e) {
     delete e.statuses.poison; delete e.statuses.burn; delete e.statuses.frozen;
@@ -267,6 +357,7 @@ class Fight {
           <div class="turn-banner cx-banner" id="turn-banner" style="display:none">⚔ YOUR TURN</div>
           <div class="enemy-row cx-monsters"></div>
           <div class="player-row cx-party"></div>
+          <div class="combat-fx-layer" id="combat-fx"></div>
           <div class="combat-log cx-log"></div>
           <div class="combat-actions">
             <div class="combat-utility"></div>
@@ -281,11 +372,13 @@ class Fight {
     if (charBtn) charBtn.onclick = () => { SFX.click(); this.onCharacter?.(); };
     this.enemyRow = this.el.querySelector('.enemy-row');
     this.playerRow = this.el.querySelector('.player-row');
+    this.fxLayer = this.el.querySelector('#combat-fx');
     this.turnOrderEl = this.el.querySelector('#turn-order');
     this.chargeTray = this.el.querySelector('#charge-tray');
     this.logEl = this.el.querySelector('.combat-log');
     this.actionBar = this.el.querySelector('.action-bar');
     this.utilBar = this.el.querySelector('.combat-utility');
+    this._bindCombatLog();
 
     this.rollBattleOrder();
     this.renderEnemies();
@@ -325,35 +418,92 @@ class Fight {
   renderTurnOrder(activeKey = null) {
     if (!this.turnOrderEl) return;
     this.turnOrderEl.innerHTML = `<div class="to-title">TURN ORDER</div>` + this.order
-      .filter(o => o.isPlayer || (this.enemyByUid(o.key)?.hp > 0))
+      .filter(o => o.isPlayer || (this.enemyByUid(o.key)?.hp > 0 && !this.enemyByUid(o.key)?.cleared))
       .map(o => `<div class="to-entry ${o.key === activeKey ? 'active' : ''} ${o.isPlayer ? 'to-player' : ''}">
         <span class="to-glyph">${o.glyph || '🛡'}</span><span class="to-name">${o.name}</span>
       </div>`).join('');
   }
 
+  /** Play death anim, then pull corpses off the board while the fight continues. */
+  scheduleClearFallen() {
+    for (const e of this.enemies) {
+      if (e.hp > 0 || e.cleared || e._clearing) continue;
+      e._clearing = true;
+      const uid = e.uid;
+      setTimeout(() => {
+        if (this.ended) return;
+        const foe = this.enemyByUid(uid);
+        if (!foe || foe.hp > 0 || foe.cleared) return;
+        // Only remove while other foes remain — last kill settles as a corpse for the victory beat
+        if (this.aliveEnemies().length > 0) {
+          foe.cleared = true;
+          foe._clearing = false;
+          this.renderEnemies();
+          this.renderTurnOrder(this._actingKey);
+        } else {
+          foe._clearing = false;
+          const card = this.el.querySelector(`#sprite-${uid}`)?.closest('.combatant');
+          if (card) { card.classList.remove('dying'); card.classList.add('dead'); }
+        }
+      }, 580);
+    }
+  }
+
   renderEnemies() {
+    // Fix target before paint so we don't rebuild mid-death-anim
+    if (this.enemies[this.target]?.hp <= 0 || this.enemies[this.target]?.cleared) {
+      this.target = this.enemies.findIndex(e => e.hp > 0 && !e.cleared);
+    }
+    this.scheduleClearFallen();
+
+    // Keep in-progress death cards so re-renders don't restart the anim
+    const keepDying = new Map();
+    for (const child of [...this.enemyRow.children]) {
+      const sid = child.querySelector('.fighter-sprite')?.id || '';
+      const uid = sid.startsWith('sprite-') ? sid.slice(7) : '';
+      const foe = uid ? this.enemyByUid(uid) : null;
+      if (foe && foe._clearing && !foe.cleared && foe.hp <= 0) keepDying.set(uid, child);
+    }
+
     this.enemyRow.innerHTML = '';
     this.enemies.forEach((e, i) => {
+      if (e.cleared) return;
+      if (keepDying.has(e.uid)) {
+        this.enemyRow.appendChild(keepDying.get(e.uid));
+        return;
+      }
       const tel = e.hp > 0 ? enemyTelegraph(e) : null;
+      const dying = e.hp <= 0 && e._clearing;
+      const spawn = !!e.spawnIn && e.hp > 0;
       const div = document.createElement('div');
-      div.className = `combatant enemy ${e.elite ? 'elite' : ''} ${e.boss ? 'boss' : ''} ${e.hp <= 0 ? 'dead' : 'targetable'} ${i === this.target ? 'target' : ''}`;
+      div.className = [
+        'combatant', 'enemy',
+        e.elite ? 'elite' : '',
+        e.boss ? 'boss' : '',
+        e.hp <= 0 ? (dying ? 'dying' : 'dead') : 'targetable',
+        spawn ? 'summon-in' : '',
+        i === this.target ? 'target' : '',
+      ].filter(Boolean).join(' ');
       const art = enemySpriteHtml(e.id, { boss: e.boss, elite: e.elite });
       div.innerHTML = `
         ${tel ? `<div class="telegraph ${tel.ready ? 'ready' : ''}">${tel.ready ? '⚠ ' + tel.name + '!' : '… ' + tel.desc}</div>` : ''}
         <div class="fighter-sprite" id="sprite-${e.uid}">${art || e.glyph}</div>
         <div class="cx-info">
           <div class="cx-head"><span class="fighter-name">${e.name}</span><span class="cx-lv">Lv.${this.run.floor}</span></div>
-          <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${clamp(e.hp / e.maxHp * 100, 0, 100)}%"></div></div></div>
+          <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${clamp(e.hp / e.maxHp * 100, 0, 100)}%"></div><span class="cx-bar-num">${Math.max(0, Math.round(e.hp))}/${Math.round(e.maxHp)}</span></div></div>
           <div class="cx-bar-row"><span class="cx-blabel foc">FOC</span>${this.focPips(e.charge || 0)}</div>
         </div>
         <div class="fighter-statuses">${this.statusPips(e.statuses)}</div>`;
       div.onclick = () => { if (e.hp > 0) { this.target = i; this.renderEnemies(); SFX.click(); } };
       this.enemyRow.appendChild(div);
+      if (spawn) {
+        const uid = e.uid;
+        setTimeout(() => {
+          const foe = this.enemyByUid(uid);
+          if (foe) foe.spawnIn = false;
+        }, 560);
+      }
     });
-    if (this.enemies[this.target]?.hp <= 0) {
-      this.target = this.enemies.findIndex(e => e.hp > 0);
-      if (this.target > -1) this.renderEnemies();
-    }
   }
 
   renderPlayers(actingKey = null) {
@@ -387,7 +537,7 @@ class Fight {
         </div>`;
     }
     this.playerRow.innerHTML = html;
-    this.onHud();
+    this.onHud?.();
   }
 
   statusPips(st) {
@@ -477,7 +627,7 @@ class Fight {
       const est = this.estimateSkill(sk);
       // damage-formula hint (§4): "≈42 dmg · 130% DEX + weapon"
       const formula = est
-        ? `≈${est.avg}${sk.target === 'all' ? ' ea' : ''} dmg · ${sk.power}% ${est.label} + gear`
+        ? `≈${est.avg}${sk.target === 'all' ? ' ea' : ''} dmg · ${sk.power}% ${est.label}`
         : '';
       const btn = document.createElement('button');
       btn.className = `skill-btn ${sk.class === 'universal' ? 'universal' : ''} ${!isUsable ? 'incompatible' : ''}`;
@@ -650,7 +800,7 @@ class Fight {
         this.spawnFx(this.el.querySelector('#sprite-player'), 'heal');
         this.log(`${healer} mends you with ${d.label}. (+${amt} HP)`, 'log-good');
         this.coop.broadcastStatus(this.runStatus(), 'fighting');
-        this.onHud();
+        this.onHud?.();
       } else {
         const a = this.allies.get(d.to);
         if (a) {
@@ -763,7 +913,7 @@ class Fight {
     for (const t of act.targets || []) {
       const e = this.enemyByUid(t.uid);
       if (!e) continue;
-      await sleep(140);
+      await sleep(CONFIG.combat.hitPauseMs || 340);
       e.hp = clamp(t.hpAfter, 0, e.maxHp);
       if (t.statuses) Object.assign(e.statuses, t.statuses);
       const es = this.sprite(e.uid);
@@ -777,7 +927,7 @@ class Fight {
       if (e.hp <= 0) this.log(`${e.name} is defeated!`, 'log-sys');
     }
     this.renderEnemies();
-    await sleep(400);
+    await sleep(CONFIG.combat.skillResolveMs || 950);
   }
 
   /* ---- host-computed enemy phase (shared) ---- */
@@ -792,24 +942,19 @@ class Fight {
       e.charge = tickEnemyCharge(e, this.mod.chargeMult || 1);
       ops.push({ type: 'echarge', uid: e.uid, charge: e.charge });
 
-      // §12: bosses shrug off crowd-control on a cadence
-      if (e.boss && e.turnCount % CONFIG.boss.cleanseEvery === 0 && this.hasDebuff(e.statuses)) {
-        delete e.statuses.poison; delete e.statuses.burn; delete e.statuses.frozen;
-        delete e.statuses.stunned; delete e.statuses.hexed;
-        ops.push({ type: 'cleanse', uid: e.uid });
-        this.log(`${e.name} draws a breath of pure spite — every affliction sloughs away.`, 'log-hit');
-        this.renderEnemies();
-        await sleep(300);
-      }
+      // §12: burn FOC to break hard CC, or shrug everything on cadence
+      const anti = this.resolveBossAntiCC(e, ops);
+      if (anti) await sleep(300);
 
       if (e.summons && e.turnCount % 3 === 0 && this.enemies.filter(x => x.hp > 0).length < 3) {
         const minion = buildEnemy(
           { id: 'skeleton', name: 'Risen Skeleton', glyph: '💀', hp: 30, atk: 9, def: 2, spd: 6, gold: [0, 0], xp: 5 },
           this.run.floor, this.run.floor);
         this.enemies.push(minion);
+        minion.spawnIn = true;
         // §9: summoned minions join the shared turn order for every client
         this.order.push({ key: minion.uid, name: minion.name, glyph: minion.glyph, spdStat: minion.spd, isPlayer: false, stableId: minion.uid, init: 0 });
-        ops.push({ type: 'summon', spec: { ...minion, statuses: {} } });
+        ops.push({ type: 'summon', spec: { ...minion, statuses: {}, spawnIn: true } });
         this.log(`${e.name} drags a servant up from the dust!`, 'log-hit');
         this.renderEnemies();
         this.renderTurnOrder();
@@ -863,7 +1008,7 @@ class Fight {
         const riders = {};
         if ((e.poison && this.rng.chance(e.poison)) || special?.poisonSure) riders.poison = 3;
         if ((e.burn && this.rng.chance(e.burn)) || special?.burnSure) riders.burn = 2;
-        if ((e.freeze && this.rng.chance(e.freeze)) || special?.freezeSure) riders.freeze = 1;
+        if (enemyHitFreezes(e, special, this.rng)) riders.freeze = 1;
         if (e.lifesteal || special?.heal) e.hp = Math.min(e.maxHp, e.hp + Math.round(e.maxHp * (special?.heal || 0)) + Math.round(dmg * (e.lifesteal || 0)));
         const op = { type: 'hit', uid: e.uid, target: target.id, dmg, riders, special: special?.name };
         ops.push(op);
@@ -931,7 +1076,7 @@ class Fight {
       if (this.run.hp <= 0) this.deathSaves();
       if (this.run.hp <= 0) this.goDown();
       this.coop.broadcastStatus(this.runStatus(), 'fighting');
-      this.onHud();
+      this.onHud?.();
     } else {
       // §9: don't render the host's raw estimate — the target owns its true HP
       // and broadcasts the real (post-guard) number via 'chit' + authoritative
@@ -955,7 +1100,7 @@ class Fight {
       if (this.ended) return;
       await sleep(280);
       if (op.type === 'summon') {
-        const minion = { ...op.spec, statuses: op.spec.statuses || {} };
+        const minion = { ...op.spec, statuses: op.spec.statuses || {}, spawnIn: true };
         this.enemies.push(minion);
         // §9: keep the shared turn order in sync on every client
         if (!this.order.some(o => o.key === minion.uid)) {
@@ -968,6 +1113,12 @@ class Fight {
         const e = this.enemyByUid(op.uid);
         if (e) { delete e.statuses.poison; delete e.statuses.burn; delete e.statuses.frozen; delete e.statuses.stunned; delete e.statuses.hexed; }
         this.log(`${e?.name || 'The boss'} sloughs off every affliction.`, 'log-hit');
+        this.renderEnemies();
+      } else if (op.type === 'breakcc') {
+        const e = this.enemyByUid(op.uid);
+        if (e) { delete e.statuses.frozen; delete e.statuses.stunned; }
+        this.log(`${e?.name || 'The boss'} burns ${op.cost || '?'} Battle Charge and tears free!`, 'log-hit');
+        SFX.bossIntro();
         this.renderEnemies();
       } else if (op.type === 'echarge') {
         const e = this.enemyByUid(op.uid);
@@ -1107,7 +1258,7 @@ class Fight {
       this.applySelfSkill(sk, d);
     } else {
       for (const e of targets) {
-        await sleep(120);
+        await sleep(CONFIG.combat.hitPauseMs || 340);
         const res = this.hitEnemy(e, sk, d);
         actOps.targets.push(res);
       }
@@ -1118,7 +1269,7 @@ class Fight {
     }
     this.renderEnemies();
     this.renderPlayers(this._actingKey);
-    await sleep(650);
+    await sleep(CONFIG.combat.skillResolveMs || 950);
     this.endPlayerAction();
   }
 
@@ -1261,17 +1412,16 @@ class Fight {
     e.charge = tickEnemyCharge(e, this.mod.chargeMult || 1);
     this.renderEnemies();
 
-    // §12: bosses cleanse crowd-control on a fixed cadence
-    if (e.boss && e.turnCount % CONFIG.boss.cleanseEvery === 0 && this.hasDebuff(e.statuses)) {
-      this.cleanseBoss(e);
-      await sleep(300);
-    }
+    // §12: burn FOC to break hard CC, or shrug everything on cadence
+    const anti = this.resolveBossAntiCC(e);
+    if (anti) await sleep(300);
 
     if (e.summons && e.turnCount % 3 === 0 && this.enemies.filter(x => x.hp > 0).length < 3) {
       const minion = buildEnemy(
         { id: 'skeleton', name: 'Risen Skeleton', glyph: '💀', hp: 30, atk: 9, def: 2, spd: 6, gold: [0, 0], xp: 5 },
         this.run.floor, this.run.floor);
       this.enemies.push(minion);
+      minion.spawnIn = true;
       this.order.push({ key: minion.uid, name: minion.name, glyph: minion.glyph, spdStat: minion.spd, isPlayer: false, stableId: minion.uid, init: 0 });
       this.log(`${e.name} drags a servant up from the dust!`, 'log-hit');
       this.renderEnemies();
@@ -1351,7 +1501,7 @@ class Fight {
     }
     if (((e.poison && this.rng.chance(e.poison)) || special?.poisonSure) && !this.rng.chance(d.poisonResist)) { this.player.statuses.poison = 3; this.log('You are poisoned!', 'log-hit'); }
     if ((e.burn && this.rng.chance(e.burn)) || special?.burnSure) { this.player.statuses.burn = 2; this.log('You are set ablaze!', 'log-hit'); }
-    if ((e.freeze && this.rng.chance(e.freeze)) || special?.freezeSure) { this.player.statuses.frozen = 1; this.log('You are frozen!', 'log-hit'); SFX.freeze(); }
+    if (enemyHitFreezes(e, special, this.rng)) { this.player.statuses.frozen = 1; this.log('You are frozen!', 'log-hit'); SFX.freeze(); }
 
     if (this.run.hp <= 0) this.deathSaves();
 

@@ -29,7 +29,7 @@ export const WEAPON_AFFIXES = [
   { id: 'rime', name: 'Rime', pools: ['weapon'], props: { freeze: 0.07 }, weight: 5 },
   { id: 'spellblade', name: 'Spellblade', pools: ['weapon'], props: { int: 1, atk: 1 }, weight: 4 },
   { id: 'berserker', name: 'Berserker', pools: ['weapon'], props: { str: 1, dmgMult: 1.05 }, weight: 4 },
-  { id: 'siphoning', name: 'Siphoning', pools: ['weapon'], props: { manaRegen: 1 }, weight: 5 },
+  { id: 'siphoning', name: 'Siphoning', pools: ['weapon'], props: { manaRegen: 1 }, weight: 2, minRarity: 'epic' },
 ];
 
 export const ARMOR_AFFIXES = [
@@ -45,8 +45,8 @@ export const ARMOR_AFFIXES = [
   { id: 'fleet', name: 'Fleet', pools: ['armor'], props: { initiative: 2 }, weight: 3 },
   { id: 'renowned', name: 'Renowned', pools: ['armor'], props: { fameGainMult: 1.12 }, weight: 5 },
   { id: 'famous', name: 'Famous', pools: ['armor'], props: { fameGainMult: 1.2 }, weight: 2 },
-  { id: 'focused', name: 'Focused', pools: ['armor'], props: { manaRegen: 1 }, weight: 7 },
-  { id: 'meditative', name: 'Meditative', pools: ['armor'], props: { manaRegen: 2 }, weight: 4 },
+  { id: 'focused', name: 'Focused', pools: ['armor'], props: { manaRegen: 1 }, weight: 2, minRarity: 'epic' },
+  { id: 'meditative', name: 'Meditative', pools: ['armor'], props: { manaRegen: 2 }, weight: 1, minRarity: 'epic' },
   { id: 'of_iron', name: 'of Iron', pools: ['armor'], props: { str: 1, def: 1 }, weight: 6 },
   { id: 'of_shadows', name: 'of Shadows', pools: ['armor'], props: { dex: 1, dodge: 3 }, weight: 6 },
   { id: 'of_lore', name: 'of Lore', pools: ['armor'], props: { int: 1, mp: 6 }, weight: 6 },
@@ -63,7 +63,7 @@ export const ACCESSORY_AFFIXES = [
   { id: 'bloodied', name: 'Bloodied', pools: ['accessory'], props: { lifesteal: 0.04 }, weight: 5 },
   { id: 'razor', name: 'Razor', pools: ['accessory'], props: { crit: 4 }, weight: 7 },
   { id: 'anchored', name: 'Anchored', pools: ['accessory'], props: { def: 1, hp: 6 }, weight: 7 },
-  { id: 'arcane', name: 'Arcane', pools: ['accessory'], props: { mp: 8, manaRegen: 1 }, weight: 6 },
+  { id: 'arcane', name: 'Arcane', pools: ['accessory'], props: { mp: 10 }, weight: 6 },
   { id: 'heraldic', name: 'Heraldic', pools: ['accessory'], props: { fameGainMult: 1.15 }, weight: 4 },
   { id: 'warlike', name: 'Warlike', pools: ['accessory'], props: { atk: 1, str: 1 }, weight: 5 },
   { id: 'quick', name: 'Quick', pools: ['accessory'], props: { initiative: 1, dodge: 2 }, weight: 6 },
@@ -127,6 +127,7 @@ function formatAffixLine(affix, props) {
     else if (k === 'goldMult') bits.push(`+${Math.round((v - 1) * 100)}% gold`);
     else if (k === 'xpMult') bits.push(`+${Math.round((v - 1) * 100)}% XP`);
     else if (k === 'fameGainMult') bits.push(`+${Math.round((v - 1) * 100)}% fame`);
+    else if (k === 'manaRegen') bits.push(`+${v} resource regen`);
     else if (k === 'lifesteal' || k === 'burn' || k === 'freeze') bits.push(`+${Math.round(v * 100)}% ${k}`);
     else if (k === 'crit' || k === 'dodge') bits.push(`+${v}% ${k}`);
     else bits.push(`+${v} ${k.toUpperCase()}`);
@@ -139,9 +140,17 @@ function powerBudget(base, floor = 1) {
   return { hardCap: cap };
 }
 
-function pickAffixes(rng, pool, count, usedIds) {
+function rarityRank(r) {
+  return { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4, unique: 5, wrld: 6 }[r] ?? 0;
+}
+
+function pickAffixes(rng, pool, count, usedIds, rarity = 'common') {
   const picked = [];
-  let available = pool.filter(a => !usedIds.has(a.id));
+  let available = pool.filter(a => {
+    if (usedIds.has(a.id)) return false;
+    if (a.minRarity && rarityRank(rarity) < rarityRank(a.minRarity)) return false;
+    return true;
+  });
   for (let i = 0; i < count && available.length; i++) {
     const weighted = available.map(a => ({ w: a.weight || 1, a }));
     const choice = rng.weighted(weighted).a;
@@ -158,7 +167,7 @@ function pickAffixes(rng, pool, count, usedIds) {
  */
 export function applyAffixes(base, rng, { floor = 1, force = false } = {}) {
   if (!base || base.slot == null) return base ? { ...base } : null;
-  if (!force && (base.exclusive || base.unique || base.noAffix)) {
+  if (!force && (base.exclusive || base.unique || base.wrld || base.rarity === 'unique' || base.rarity === 'wrld' || base.noAffix)) {
     return { ...base, baseId: base.id, affixes: [] };
   }
 
@@ -173,7 +182,7 @@ export function applyAffixes(base, rng, { floor = 1, force = false } = {}) {
   if (count <= 0) return item;
 
   const pool = poolForSlot(base.slot === 'accessory' ? 'accessory' : base.slot === 'weapon' ? 'weapon' : 'armor');
-  const chosen = pickAffixes(rng, pool, count, new Set());
+  const chosen = pickAffixes(rng, pool, count, new Set(), rarity);
   const { hardCap } = powerBudget(base, floor);
 
   for (const aff of chosen) {
@@ -201,10 +210,11 @@ export function applyAffixes(base, rng, { floor = 1, force = false } = {}) {
   if (item.affixes.length) {
     const prefix = item.affixes.filter(a => !a.name.startsWith('of '));
     const suffix = item.affixes.filter(a => a.name.startsWith('of '));
+    const hasWord = (name, word) => new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(name);
     const nameBits = [
-      ...prefix.map(a => a.name),
+      ...prefix.map(a => a.name).filter(n => !hasWord(base.name, n)),
       base.name,
-      ...suffix.map(a => a.name),
+      ...suffix.map(a => a.name).filter(n => !hasWord(base.name, n)),
     ];
     item.name = nameBits.join(' ');
     const lines = item.affixes.map(a => formatAffixLine(affixById(a.id) || a, a.props));

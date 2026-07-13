@@ -16,10 +16,14 @@
 // req: { stat:'dex', min:12 } | { class } | { gold } | { fame } | { flag } |
 //      { notFlag } | { item }
 // outcome effects: text, gold, goldPct, hp, hpPct, maxHp, mana, manaPct,
-//   fullHeal, fullMana, fame, xp, statUp, statUpRandom, itemRoll, relicRoll,
-//   consumable, item, useItem, flag, clearFlag, sigil, escape, combat, chest,
-//   upgradeWeapon, revealFloors, appraisal:'partial'|'full', promoteRace,
-//   subclassOffer
+//   fullHeal, fullMana, fame, xp, statUp, statUpRandom, itemRoll, classGear,
+//   relicRoll, consumable, item, uniqueItem, wrldItem, useItem, flag, clearFlag, sigil, escape,
+//   combat, chest, upgradeWeapon, revealFloors, appraisal:'partial'|'full',
+//   promoteRace, subclassOffer
+// itemRoll may be true OR { requireUseful?, slot?, wtype?, classGear?, minTier? }
+// uniqueItem → roll a UNIQUE (above legendary) from the hand-authored catalog
+// wrldItem → roll a WRLD (above UNIQUE; one of each per run/party). May be true or { kind:'equip'|'relic'|'weapon'|… }
+// classGear → force a class-usable find (often a weapon)
 
 import { CONFIG } from './config.js';
 import { historyCategoryWeight } from './balance.js';
@@ -35,11 +39,11 @@ export const EVENTS = [
     title: 'The Nameless Shrine',
     text: 'A shrine to a god whose name has been chiseled away. The offering bowl is empty, but the air hums with residual divinity. Someone, or something, still checks the mail here.',
     choices: [
-      { label: 'Pray sincerely', hint: 'blessing',
-        outcome: { text: 'Warmth settles over you like a borrowed coat. The chiseled-out name almost sounds familiar.', hpPct: 0.2, fame: 2 } },
+      { label: 'Pray sincerely', hint: 'blessing + trinket',
+        outcome: { text: 'Warmth settles over you like a borrowed coat. In the offering bowl: a charm that wasn\'t there a moment ago.', hpPct: 0.2, fame: 2, itemRoll: { slot: 'accessory', requireUseful: true } } },
       { label: 'Offer 30 gold', req: { gold: 30 }, hint: '-30g, roll for boon',
         outcome: { roll: { stat: 'lk', dc: 10 },
-          success: { text: 'The bowl swallows your coins. A sigil brands itself onto your wrist — a fair trade.', gold: -30, statUpRandom: 2 },
+          success: { text: 'The bowl swallows your coins and coughs up steel. A fair trade, for once.', gold: -30, classGear: true },
           fail: { text: 'The bowl swallows your coins. The shrine says nothing. Divinity, it turns out, keeps no receipts.', gold: -30, fame: -1 } } },
       { label: 'Deface the shrine', hint: 'gold? consequences?',
         outcome: { roll: { stat: 'lk', dc: 13 },
@@ -52,12 +56,12 @@ export const EVENTS = [
     title: 'A Moment of Peace',
     text: 'A sheltered alcove, dry wood, and — miraculously — no immediate threats. The tower allows rest the way a cat allows a mouse to catch its breath.',
     choices: [
-      { label: 'Sleep', hint: 'recover health',
-        outcome: { text: 'You dream of the surface. In the dream, everyone is proud of you. You wake with embers in your hair and strength in your limbs.', hpPct: 0.4 } },
+      { label: 'Sleep', hint: 'recover + supplies',
+        outcome: { text: 'You dream of the surface. In the dream, everyone is proud of you. You wake with embers in your hair, strength in your limbs, and a potion that rolled against your boot overnight.', hpPct: 0.4, consumable: 'potion_s' } },
       { label: 'Meditate', hint: 'restore resource — and sharpen',
-        outcome: { text: 'You sort your thoughts into neat rows, sweep the dread into a corner, and lock the door on it. When you rise, your reserves are full and your focus is a blade\'s edge — sharper for how far you\'ve climbed.', fullMana: true, xpScaled: 12 } },
+        outcome: { text: 'You sort your thoughts into neat rows. When you rise, your reserves are full — and a quiet charm rests in your palm, as if the alcove approved.', fullMana: true, xpScaled: 12, itemRoll: { slot: 'accessory' } } },
       { label: 'Train', hint: 'grow, at a cost',
-        outcome: { text: 'You drill forms until your muscles file formal complaints. Growth is just pain with good bookkeeping — and it compounds the higher you go.', xpScaled: 24, hp: -8 } },
+        outcome: { text: 'You drill forms until your muscles file formal complaints. Growth compounds — and so does the habit of keeping your gear ready.', xpScaled: 24, hp: -8, consumable: 'mana_vial' } },
     ],
   },
   {
@@ -68,6 +72,53 @@ export const EVENTS = [
     choices: [],
   },
   {
+    id: 'abandoned_armory', biome: 'any', category: 'equipment', type: 'treasure', glyph: '🗡️', w: 7,
+    title: 'The Abandoned Armory',
+    text: 'Racks of weapons, half-claimed by rust and half by intention. Someone stacked gear by calling — swords with swords, staves with staves — then never came back for any of it.',
+    choices: [
+      { label: 'Take what fits your hands', hint: 'class gear',
+        outcome: { text: 'You lift something that answers your grip like it was waiting. The rest of the room stays politely unused.', classGear: true, fame: 1 } },
+      { label: 'Scavenge for a charm', hint: 'accessory find',
+        outcome: { text: 'Belts, buckles, lockets — the small things climbers leave when they run. One of them still wants a wearer.', itemRoll: { slot: 'accessory', requireUseful: true }, gold: 15 } },
+      { label: 'Strip the racks thoroughly', hint: 'more gear, slower',
+        outcome: { text: 'You take time. Time takes a nick out of you. The haul is worth the nick.', hp: -6, itemRoll: true, consumable: 'potion_s' } },
+      { label: 'Leave it for the next desperate soul', hint: 'honor',
+        outcome: { text: 'You close the door on temptation. The tower, weirdly, seems to approve — and slips a minor blessing into your pack anyway.', fame: 2, consumable: 'mana_vial' } },
+    ],
+  },
+  {
+    id: 'pale_choir_cache', biome: 'any', category: 'mystery', type: 'story', glyph: '🦴', w: 4, once: true,
+    affinity: { classes: ['necromancer', 'warlock', 'mage'] },
+    cond: s => s.floor >= 8,
+    title: 'A Whisper From the Pale Choir',
+    text: 'Bones arranged in a circle hum a chord that isn\'t music. A note in chalk: "FOR THE ONES WHO LISTEN TO THE DEAD — AND PAY RENT." Three gifts wait inside the chord.',
+    choices: [
+      { label: 'Claim the rod', hint: 'exclusive staff',
+        outcome: { text: 'The rod fits your palm like a handshake across a grave. Names of the buried tickle the edge of hearing.', item: 'necro_rod', fame: 2 } },
+      { label: 'Claim the regalia', hint: 'exclusive coat',
+        outcome: { text: 'The coat settles on your shoulders with the weight of unfinished eulogies. Your resource wells deepen.', item: 'necro_regalia', fame: 2 } },
+      { label: 'Claim the phial', hint: 'exclusive charm',
+        outcome: { text: 'The phial is cold. The cold is useful. Something inside it counts for you.', item: 'necro_phial', fame: 2 } },
+      { label: 'Take a lesser bone-gift and leave', hint: 'safer scrap',
+        outcome: { text: 'You take a circlet of carved knuckle and back away before the chord resolves.', item: 'bone_circlet', xp: 20 } },
+    ],
+  },
+  {
+    id: 'discarded_kit', biome: 'any', category: 'equipment', type: 'treasure', glyph: '🎒', w: 8,
+    title: 'A Climber\'s Discarded Kit',
+    text: 'A pack slumped against the wall, still warm from recent panic. Inside: the kind of gear people drop when running matters more than packing.',
+    choices: [
+      { label: 'Claim a weapon that suits you', hint: 'class weapon',
+        outcome: { text: 'You find a piece meant for hands like yours. Whoever fled had your taste — and worse luck.', classGear: true } },
+      { label: 'Claim armor scraps', hint: 'armor roll',
+        outcome: { text: 'Padding, plates, straps — enough to make a difference between a bruise and a story.', itemRoll: { slot: 'chest' }, consumable: 'potion_s' } },
+      { label: 'Claim coin and a trinket', hint: 'gold + accessory',
+        outcome: { text: 'The coin pouch is light. The locket is not.', gold: 35, itemRoll: { slot: 'accessory' } } },
+      { label: 'Leave a note and move on', hint: 'kindness',
+        outcome: { text: 'You write: "Still climbing. Take what you need." The tower files it under rare.', fame: 2, xp: 15 } },
+    ],
+  },
+  {
     id: 'gambler', biome: 'any', category: 'dangerous', type: 'risk', glyph: '🎲', w: 6,
     affinity: { classes: ['rogue'] },
     title: 'The Bone Gambler',
@@ -75,11 +126,11 @@ export const EVENTS = [
     choices: [
       { label: 'Bet 40 gold', req: { gold: 40 }, hint: 'double or nothing',
         outcome: { roll: { stat: 'lk', dc: 11 },
-          success: { text: 'The dice land your way. The skeleton\'s jaw drops. Literally. He hands over your winnings and picks it back up.', gold: 40 },
+          success: { text: 'The dice land your way. The skeleton\'s jaw drops. Literally. He tosses you coin — and a trinket he "wasn\'t using."', gold: 40, itemRoll: { slot: 'accessory' } },
           fail: { text: '"House wins," says the house, the dice, and the skeleton, in unison.', gold: -40 } } },
       { label: 'Bet your HEALTH', hint: 'high stakes',
         outcome: { roll: { stat: 'lk', dc: 12 },
-          success: { text: 'You wager your own blood and the dice respect the commitment. Eighty gold, and he throws in a compliment.', gold: 80 },
+          success: { text: 'You wager your own blood and the dice respect the commitment. Coin, a compliment, and something sharp from under the table.', gold: 80, classGear: true },
           fail: { text: 'The dice come up skulls. All of them. Even the sides that shouldn\'t have skulls.', hpPct: -0.25 } } },
       { label: 'Walk away', hint: 'safe',
         outcome: { text: '"Smart," the skeleton sighs, "and boring. The two great flavors of survivor."' } },
@@ -90,10 +141,10 @@ export const EVENTS = [
     title: 'The Hungry Altar',
     text: 'An obsidian altar, stained the color of old rust. Carved into its base: "GIVE AND BE GIVEN UNTO." The tower\'s idea of a vending machine.',
     choices: [
-      { label: 'Offer blood', hint: 'health for gold',
-        outcome: { text: 'The altar drinks. Coins clatter up from a slot that was not there before. You decide not to think about the exchange rate.', hpPct: -0.2, gold: 70 } },
+      { label: 'Offer blood', hint: 'health for gold + scrap',
+        outcome: { text: 'The altar drinks. Coins clatter up — and a piece of gear follows, sticky with old rust.', hpPct: -0.2, gold: 70, itemRoll: true } },
       { label: 'Offer your name\'s weight', hint: 'fame for growth',
-        outcome: { text: 'You give it the sound of your name in other people\'s mouths. Somewhere, a story about you quietly un-happens.', fame: -5, xp: 55 } },
+        outcome: { text: 'You give it the sound of your name in other people\'s mouths. In return: power, and a charm that remembers what you spent.', fame: -5, xp: 55, itemRoll: { slot: 'accessory' } } },
       { label: 'Refuse', hint: 'safe',
         outcome: { text: 'The altar\'s disappointment is palpable, and honestly, a little dramatic.' } },
     ],
@@ -119,10 +170,10 @@ export const EVENTS = [
     choices: [
       { label: 'Knock politely', hint: 'a test of wisdom',
         outcome: { roll: { stat: 'wis', dc: 11 },
-          success: { text: 'The face wakes, yawns, and looks you over. "Mannered. Rare." The door opens onto a room full of gifts.', gold: 45, itemRoll: true },
+          success: { text: 'The face wakes, yawns, and looks you over. "Mannered. Rare." The door opens onto a room full of gifts — and one that fits your hands suspiciously well.', gold: 45, classGear: true },
           fail: { text: 'The face wakes up on the wrong side of existence. The door remains a door, but louder about it.', hp: -6 } } },
       { label: 'Pick the lock', req: { stat: 'dex', min: 12 }, hint: 'deft hands required',
-        outcome: { text: 'The lock surrenders to superior fingers. Inside: someone\'s stash, now yours by right of dexterity.', gold: 60, consumable: 'potion_s' } },
+        outcome: { text: 'The lock surrenders to superior fingers. Inside: someone\'s stash, now yours by right of dexterity.', gold: 60, consumable: 'potion_s', itemRoll: { slot: 'accessory' } } },
       { label: 'Ignore it', hint: 'safe',
         outcome: { text: 'You walk past. The snoring stops for exactly three seconds, then resumes. You do not look back.' } },
     ],
@@ -132,12 +183,12 @@ export const EVENTS = [
     title: 'The Bard Who Stayed',
     text: 'A bard sits cross-legged on a broken pillar, tuning a lute. "I came here for material," she says. "Forty floors of material later, I have simply decided to live here. Request?"',
     choices: [
-      { label: '"Something brave."', hint: 'inspiration',
-        outcome: { text: 'She plays a ballad of climbers who made it. You know it\'s statistically propaganda. It works anyway.', hpPct: 0.15, fame: 2 } },
+      { label: '"Something brave."', hint: 'inspiration + kit',
+        outcome: { text: 'She plays a ballad of climbers who made it. You know it\'s statistically propaganda. It works anyway — and she tosses you a spare charm "for the encore."', hpPct: 0.15, fame: 2, itemRoll: { slot: 'accessory' } } },
       { label: '"Something true."', hint: 'hard wisdom',
-        outcome: { text: 'She plays what actually happens to most climbers. It is beautiful, honest, and you wish you hadn\'t asked.', xp: 40 } },
+        outcome: { text: 'She plays what actually happens to most climbers. It is beautiful, honest, and you wish you hadn\'t asked. The honesty leaves you sharper.', xp: 40, consumable: 'calming_tea' } },
       { label: 'Tip her 20 gold', req: { gold: 20 }, hint: 'she remembers patrons',
-        outcome: { text: '"A patron of the arts! In HERE!" She scribbles your name into her song-book. Somewhere, in some future verse, you are now immortal.', gold: -20, fame: 6, flag: 'bard_friend' } },
+        outcome: { text: '"A patron of the arts! In HERE!" She scribbles your name into her song-book and presses a performer\'s keepsake into your hand.', gold: -20, fame: 6, flag: 'bard_friend', item: 'encore_medallion' } },
     ],
   },
   {
@@ -213,14 +264,14 @@ export const EVENTS = [
     title: 'The Abandoned Training Hall',
     text: 'Dummies, targets, and weight stones — a training hall left by some previous expedition. The equipment is battered but honest.',
     choices: [
-      { label: 'Drill your strengths', hint: 'training',
-        outcome: { text: 'You work what already works. By the end, it works considerably better.', xp: 40 } },
+      { label: 'Drill your strengths', hint: 'training + kit',
+        outcome: { text: 'You work what already works. By the end, it works considerably better — and a spare training piece finds your pack.', xp: 40, classGear: true } },
       { label: 'Attack your weaknesses', hint: 'harder training',
         outcome: { roll: { stat: 'wis', dc: 10 },
-          success: { text: 'Humbling, sweaty, worth it. Something that used to be a flaw is now merely a shortcoming.', statUpRandom: 2, hp: -6 },
+          success: { text: 'Humbling, sweaty, worth it. Something that used to be a flaw is now merely a shortcoming. The hall leaves you a charm for the effort.', statUpRandom: 2, hp: -6, itemRoll: { slot: 'accessory' } },
           fail: { text: 'You learn mostly that your weaknesses are load-bearing. Still — the bruises teach.', xp: 25, hp: -10 } } },
-      { label: 'Rest on the mats', hint: 'recovery',
-        outcome: { text: 'Somebody left decent bedding. You honor their memory by drooling on it.', hpPct: 0.3 } },
+      { label: 'Rest on the mats', hint: 'recovery + supplies',
+        outcome: { text: 'Somebody left decent bedding and a half-full kit. You honor their memory by drooling on one and taking the other.', hpPct: 0.3, consumable: 'potion_s' } },
     ],
   },
   {
@@ -230,10 +281,10 @@ export const EVENTS = [
     choices: [
       { label: 'Be measured', hint: 'advancement trial',
         outcome: { roll: { stat: 'str', dc: 11 },
-          success: { text: 'The plinth flares. The statues incline their heads a fraction — newcomer approved. Power and reputation both arrive at once.', xp: 60, fame: 6 },
-          fail: { text: 'The plinth considers you at length, like a bouncer. "PROMISING," it finally etches, which from a rock is generous.', xp: 40, fame: 2 } } },
+          success: { text: 'The plinth flares. The statues incline their heads a fraction — newcomer approved. Power, reputation, and a champion\'s spare kit arrive at once.', xp: 60, fame: 6, classGear: true },
+          fail: { text: 'The plinth considers you at length, like a bouncer. "PROMISING," it finally etches, which from a rock is generous.', xp: 40, fame: 2, itemRoll: { slot: 'accessory' } } } },
       { label: 'Study the champions', hint: 'learn from the best',
-        outcome: { text: 'Stances, grips, scars. The statues teach without moving. One of them, you notice, is posed mid-Guard — and the plaque calls it their finest moment.', xp: 30, flag: 'guard_trained' } },
+        outcome: { text: 'Stances, grips, scars. The statues teach without moving. One leaves a charm at your feet when you\'re not looking.', xp: 30, flag: 'guard_trained', itemRoll: { slot: 'accessory', requireUseful: true } } },
       { label: 'Leave unmeasured', hint: 'stay unknown',
         outcome: { text: 'Rankings are the tower\'s hobby, not yours. You leave the statues to their eternity of flexing.' } },
     ],
@@ -250,6 +301,8 @@ export const EVENTS = [
         outcome: { text: '"Footwork," the professor says, "is nine tenths of not dying." The tenth tenth is also footwork.', gold: -30, xp: 45 } },
       { label: 'Debate pedagogy instead', req: { stat: 'int', min: 12 }, hint: 'scholars only',
         outcome: { text: 'You argue teaching theory for an hour. The professor, delighted to meet a peer, refunds a lesson you never paid for.', xp: 30, gold: 25, fame: 2 } },
+      { label: 'Excuse yourself', hint: 'no lesson, no cost',
+        outcome: { text: 'The professor sighs the sigh of someone who has heard "I\'ll think about it" from a thousand broke climbers. "The academies will still be hoarding when you\'re flush. Or dead." A free pamphlet finds your pack; the lesson does not.' } },
     ],
   },
   {
@@ -484,6 +537,36 @@ export const EVENTS = [
 
   /* ---------- optional NPC duels: exclusive spoils (§16) ---------- */
   {
+    id: 'one_of_one_peddler', biome: 'any', category: 'merchant', type: 'story', glyph: '🪞', w: 2, once: true,
+    cond: s => s.floor >= 16,
+    title: 'The Peddler of One',
+    text: 'A stall with no second stock. A single wrapped shape sits on black cloth. The peddler does not haggle — they ask whether you are ready to own something the tower cannot duplicate.',
+    choices: [
+      { label: 'Pay the impossible price', req: { gold: 420 }, hint: '-420g · UNIQUE gear',
+        outcome: { text: 'The cloth falls. The peddler is already gone. What remains is UNIQUE — stronger than legend, and alone in the world.', gold: -420, uniqueItem: true, fame: 4 } },
+      { label: 'Offer fame instead of coin', req: { fame: 40 }, hint: '-12 Fame · UNIQUE gear',
+        outcome: { text: 'They write your name into a ledger that should not exist. The UNIQUE changes hands. Your reputation thins, briefly, in places that matter.', fame: -12, uniqueItem: true } },
+      { label: 'Walk away', hint: 'safe',
+        outcome: { text: '"Most do." The stall folds into the wall like a blink.' } },
+    ],
+  },
+  {
+    id: 'archive_of_one', biome: 'any', category: 'mystery', type: 'story', glyph: '🌍', w: 1, once: true,
+    cond: s => s.floor >= 28,
+    title: 'The Archive of One',
+    text: 'A door with no handle opens for a name the tower has not finished writing. Inside: pedestals. Each holds a single impossible thing — weapons that ended ages, relics that remember the plot. A curator in white gloves whispers: "One of each. Forever. Choose whether you are ready to be the protagonist."',
+    choices: [
+      { label: 'Claim a WRLD weapon', req: { gold: 900 }, hint: '-900g · WRLD weapon',
+        outcome: { text: 'The pedestal empties. Somewhere, a story updates its main character.', gold: -900, wrldItem: { kind: 'weapon' }, fame: 8 } },
+      { label: 'Claim a WRLD relic', req: { fame: 60 }, hint: '-20 Fame · WRLD relic',
+        outcome: { text: 'They write your name in the margin of the world. The relic is yours — and only yours.', fame: -20, wrldItem: { kind: 'relic' } } },
+      { label: 'Claim any WRLD piece', req: { gold: 750, fame: 45 }, hint: '-750g · -15 Fame · WRLD',
+        outcome: { text: 'You leave carrying something the universe refuses to duplicate.', gold: -750, fame: -15, wrldItem: true } },
+      { label: 'You are not ready', hint: 'safe',
+        outcome: { text: 'The curator nods. "Most protagonists arrive later." The door becomes wall again.' } },
+    ],
+  },
+  {
     id: 'crimson_stranger', biome: 'any', category: 'dangerous', type: 'risk', glyph: '🧛', w: 5, once: true, cond: s => s.floor >= 4,
     title: 'The Crimson Stranger',
     text: 'A figure in a high collar leans against the wall as though it has all the centuries in the world. "You have good blood," it observes, not unkindly. "I do not NEED it. But I would enjoy earning it. One duel — and if you win, you may take something of mine that suits you."',
@@ -515,6 +598,33 @@ export const EVENTS = [
         outcome: { text: 'You lower your eyes and edge past. It lets you — this time — with something like disappointment.', fame: -1 } },
     ],
   },
+  {
+    id: 'memory_of_a_king', biome: 'any', category: 'dangerous', type: 'risk', glyph: '👑', w: 2, once: true,
+    cond: s => s.floor >= 20,
+    title: 'Memory of a King',
+    text: 'A throne of fused iron waits in a room with no doors. On it sits a memory wearing a crown — not quite a ghost, not quite a man. "Win," it says, "and take what I could not keep."',
+    choices: [
+      { label: 'Challenge the memory', hint: 'a brutal fight — UNIQUE spoil',
+        outcome: { combat: { enemies: ['lich'], text: 'The crown flares. History tries to rewrite you.',
+          reward: { uniqueItem: true, fame: 5, chooseLabel: null } } } },
+      { label: 'Kneel and leave', hint: 'safe',
+        outcome: { text: 'You bow. The memory nods once, as if that was also a kind of courage, and the room forgets you were there.' } },
+    ],
+  },
+
+  {
+    id: 'world_witness', biome: 'any', category: 'dangerous', type: 'risk', glyph: '✦', w: 1, once: true,
+    cond: s => s.floor >= 42,
+    title: 'The World\'s Witness',
+    text: 'A figure made of narrative pressure blocks the stair — not quite a person, not quite a law. "Prove you are the one this climb is about," it says. Win, and the universe allows you a WRLD. Lose, and it edits you out of the interesting paragraphs."',
+    choices: [
+      { label: 'Accept the trial', hint: 'brutal fight — WRLD spoil',
+        outcome: { combat: { enemies: ['tormentor'], text: 'The Witness writes violence into the room.',
+          reward: { wrldItem: true, fame: 10 } } } },
+      { label: 'Refuse the role', hint: 'safe',
+        outcome: { text: '"Supporting cast, then." It steps aside without judgment — which somehow feels worse.', fame: -2 } },
+    ],
+  },
 
   /* ---------- fame economy: the tower talks (§14) ---------- */
   {
@@ -539,6 +649,8 @@ export const EVENTS = [
         outcome: { text: 'They forge your reputation into something you can carry. Fame, it turns out, is convertible.', fame: -20, relicRoll: true } },
       { label: 'Demand a boon (spend 30 Fame)', req: { fame: 30 }, hint: '-30 Fame → raw power + full heal',
         outcome: { text: 'You cash in a legend\'s worth of goodwill all at once. The court obliges — it can hardly refuse someone this storied.', fame: -30, statUpRandom: 3, fullHeal: true } },
+      { label: 'Claim a one-of-one (spend 55 Fame)', req: { fame: 55 }, hint: '-55 Fame → UNIQUE gear',
+        outcome: { text: 'The court opens a vault that has never held a second of anything. What they place in your hands is UNIQUE — above legend.', fame: -55, uniqueItem: true } },
       { label: 'Simply be seen here', hint: 'the recognition restores you',
         outcome: { text: 'You walk the hall of honored climbers and let the recognition sink in. It is, unexpectedly, healing.', hpPct: 0.25, fullMana: true } },
     ],
@@ -740,11 +852,11 @@ export const EVENTS = [
     text: 'A young climber slumps against a tree, clutching a gashed side. Her party left her — "the run matters more," they said. She looks up at you with the specific hope of someone who has stopped expecting it.',
     choices: [
       { label: 'Heal her', hint: 'costly kindness',
-        outcome: { text: '"Why?" she asks, as you bind the wound. You don\'t have a good answer. "Then I owe you one," she decides, and limps toward the descent gate.', hp: -25, fame: 5, flag: 'saved_climber', xp: 15 } },
+        outcome: { text: '"Why?" she asks, as you bind the wound. You don\'t have a good answer. "Then I owe you one," she decides, and presses a spare charm into your palm before limping toward the descent gate.', hp: -25, fame: 5, flag: 'saved_climber', xp: 15, itemRoll: { slot: 'accessory' } } },
       { label: 'Give her a potion', req: { item: 'potion_s' }, hint: 'uses 1 potion',
-        outcome: { text: 'She drinks, breathes, stands. "I\'ll remember this. People like me — we keep score of the good ones too."', useItem: 'potion_s', fame: 5, flag: 'saved_climber', xp: 15 } },
+        outcome: { text: 'She drinks, breathes, stands. "I\'ll remember this." She trades you a better vial from her own kit — climbers\' courtesy.', useItem: 'potion_s', fame: 5, flag: 'saved_climber', xp: 15, consumable: 'potion_l' } },
       { label: 'Loot her pack while she sleeps', hint: 'profit, infamy',
-        outcome: { text: 'She isn\'t asleep. She watches you take it all, saying nothing, which is infinitely worse.', gold: 65, fame: -8, flag: 'left_climber' } },
+        outcome: { text: 'She isn\'t asleep. She watches you take it all, saying nothing, which is infinitely worse.', gold: 65, fame: -8, flag: 'left_climber', itemRoll: true } },
       { label: 'Walk past', hint: 'the run matters more',
         outcome: { text: 'You tell yourself the tower makes these choices, not you. The tower, notably, declines to take the credit.', fame: -2 } },
     ],
@@ -754,8 +866,8 @@ export const EVENTS = [
     title: 'A Debt Repaid',
     text: 'A figure in mismatched armor drops from a ledge — the climber you saved, healed and re-equipped. "Told you I keep score." She presses a bundle into your hands. "Paid in full. Now go win, so the story was worth it."',
     choices: [
-      { label: 'Accept', hint: 'blessing',
-        outcome: { text: 'Inside: supplies, coin, and a note with an address on the surface. "Dinner. If we both make it." The tower suddenly feels beatable.', gold: 80, consumable: 'potion_l', fame: 4, itemRoll: true } },
+      { label: 'Accept', hint: 'blessing + gear',
+        outcome: { text: 'Inside: supplies, coin, and a note with an address on the surface. "Dinner. If we both make it." The tower suddenly feels beatable.', gold: 80, consumable: 'potion_l', fame: 4, classGear: true } },
     ],
   },
   {
@@ -764,12 +876,12 @@ export const EVENTS = [
     title: 'A Fey Bargain',
     text: 'A creature of twilight and bad intentions perches on a mushroom. "Trade, mortal? I collect things people don\'t know they\'ll miss." Its smile has too many angles.',
     choices: [
-      { label: 'Trade your luck', hint: 'fortune for gold',
-        outcome: { text: 'It plucks something silvery from behind your ear. Your coin purse grows heavier; the world grows subtly less kind.', statUp: { stat: 'lk', amt: -3 }, gold: 100 } },
-      { label: 'Trade your gold', req: { gold: 50 }, hint: 'gold for growth',
-        outcome: { text: '"Sensible! Coin is the thing mortals miss LOUDEST but need least." It breathes glitter on you and you feel... more.', gold: -50, statUpRandom: 2 } },
+      { label: 'Trade your luck', hint: 'fortune for gold + scrap',
+        outcome: { text: 'It plucks something silvery from behind your ear. Your coin purse grows heavier; the world grows subtly less kind — though the scrap it leaves is oddly useful.', statUp: { stat: 'lk', amt: -3 }, gold: 100, itemRoll: true } },
+      { label: 'Trade your gold', req: { gold: 50 }, hint: 'gold for growth + charm',
+        outcome: { text: '"Sensible!" It breathes glitter on you and presses a forest charm into your palm.', gold: -50, statUpRandom: 2, item: 'mire_totem' } },
       { label: 'Try to trick it', req: { stat: 'lk', min: 12 }, hint: 'a gambler\'s gambit',
-        outcome: { text: 'You offer it "the thing in your left boot," which is nothing. Fey law is fey law: it must pay for the nothing. It is furious. You are richer.', gold: 90, xp: 25, fame: 3 } },
+        outcome: { text: 'You offer it "the thing in your left boot," which is nothing. Fey law is fey law: it must pay for the nothing. It is furious. You are richer — in coin and kit.', gold: 90, xp: 25, fame: 3, classGear: true } },
       { label: 'Decline', hint: 'safe',
         outcome: { text: '"Pity," it says, and vanishes, leaving the scent of rain and missed opportunity.' } },
     ],
@@ -853,12 +965,12 @@ export const EVENTS = [
     choices: [
       { label: 'Rob the dead', hint: 'wealth, and maybe wrath',
         outcome: { roll: { stat: 'lk', dc: 12 },
-          success: { text: 'You liberate a fortune from people who have been dead for six hundred years. The sign was a bluff. Probably. You leave before finding out.', gold: 120, fame: -3 },
+          success: { text: 'You liberate a fortune from people who have been dead for six hundred years. The sign was a bluff. Probably. A burial blade comes free with the coin.', gold: 120, fame: -3, classGear: true },
           fail: { text: 'A marble hand closes on your wrist. "RUDE," says the sarcophagus.', gold: 40, combat: { enemies: ['skeleton', 'cursed_knight'], text: 'The management has been notified.' } } } },
       { label: 'Pay respects', hint: 'honor the dead',
-        outcome: { text: 'You bow to the forgotten monarchs. A whisper moves through the crypt: "one with MANNERS." Something cold and approving pats your shoulder.', fame: 4, relicRoll: true } },
+        outcome: { text: 'You bow to the forgotten monarchs. A whisper moves through the crypt: "one with MANNERS." Something cold and approving pats your shoulder — and leaves a gift.', fame: 4, relicRoll: true, itemRoll: { slot: 'accessory' } } },
       { label: 'Just take a little', req: { stat: 'dex', min: 12 }, hint: 'modest, careful theft',
-        outcome: { text: 'You take only from the king who, according to his epitaph, was "beloved by none." Even the other skeletons seem fine with it.', gold: 60 } },
+        outcome: { text: 'You take only from the king who, according to his epitaph, was "beloved by none." Even the other skeletons seem fine with it.', gold: 60, itemRoll: true } },
     ],
   },
   {
@@ -882,10 +994,10 @@ export const EVENTS = [
     choices: [
       { label: 'Reforge your weapon', req: { gold: 50 }, hint: 'permanent upgrade',
         outcome: { text: 'You work the bellows until your arms burn. The old forge remembers its craft even if no one else does — your weapon comes off the anvil singing.', gold: -50, upgradeWeapon: true } },
-      { label: 'Forge something new', req: { stat: 'str', min: 12 }, hint: 'craft gear',
-        outcome: { text: 'Sweat, sparks, and stubbornness. What emerges is not dwarven-masterwork, but it is YOURS, and the forge hums approval.', itemRoll: true, xp: 30 } },
-      { label: 'Warm yourself and move on', hint: 'rest',
-        outcome: { text: 'You sit by coals that outlived a kingdom. There\'s a lesson in that, and it soaks in with the warmth.', hpPct: 0.25 } },
+      { label: 'Forge something new', req: { stat: 'str', min: 12 }, hint: 'craft gear for your calling',
+        outcome: { text: 'Sweat, sparks, and stubbornness. What emerges is not dwarven-masterwork, but it is YOURS — and shaped for the way you fight.', classGear: true, xp: 30 } },
+      { label: 'Warm yourself and move on', hint: 'rest + scrap',
+        outcome: { text: 'You sit by coals that outlived a kingdom. A cooling blank on the anvil is also a kindness if you take it.', hpPct: 0.25, itemRoll: { slot: 'accessory' } } },
     ],
   },
   {
@@ -1053,9 +1165,9 @@ export const EVENTS = [
           success: { text: 'In, grip, OUT — faster than the mire can close its hand. The box is heavy with someone\'s unluckier ending.', gold: 90, itemRoll: true },
           fail: { text: 'The mire\'s hand is faster. You escape it; your boots, dignity, and some blood do not.', hp: -16, gold: 25 } } },
       { label: 'Fish it out with rope', req: { stat: 'int', min: 12 }, hint: 'physics wins',
-        outcome: { text: 'Rope, counterweight, patience. The mire surrenders the box to superior physics with a disappointed gurgle.', gold: 90, xp: 20 } },
+        outcome: { text: 'Rope, counterweight, patience. The mire surrenders the box to superior physics with a disappointed gurgle — coin and kit both.', gold: 90, xp: 20, classGear: true } },
       { label: 'Let it sink', hint: 'obvious bait is obvious',
-        outcome: { text: 'You watch it go under. The quicksand waits. You wait. Eventually a tentacle rises, feels around for the climber it was expecting, finds nothing, and slaps the surface in frustration.', xp: 15 } },
+        outcome: { text: 'You watch it go under. The quicksand waits. You wait. Eventually a tentacle rises, feels around, finds nothing, and leaves a discarded charm in its frustration.', xp: 15, itemRoll: { slot: 'accessory' } } },
     ],
   },
 

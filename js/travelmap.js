@@ -11,27 +11,63 @@ import { makeRng } from './rng.js';
 const trail = { history: [], layout: 'A' };
 export function resetTravelTrail() { trail.history = []; }
 
-// Faint "further ahead" teasers — one per path, branching off that choice.
-// Picking a path with a hint forces that category into the next floor's choices.
+// Faint "further ahead" teasers — branch sideways off a path, always shooting
+// further up the map (never back down toward you). ~20% of paths have no hint.
+// A hinted pick forces that category into the next floor's choices.
 const HINT_POOL = ['combat', 'merchant', 'mystery', 'recovery', 'dangerous', 'training', 'equipment', 'social'];
+const HINT_NONE_CHANCE = 0.20;
 
 function assignPathHints(run, cards) {
   // Seed from run identity + floor only — never advance run.rngState.
   const rng = makeRng(((run.seed >>> 0) ^ (run.floor * 2654435761) ^ 0xA11CE) >>> 0);
   return cards.map((c) => {
+    if (rng.chance(HINT_NONE_CHANCE)) return null;
     const pool = HINT_POOL.filter(cat => cat !== c.category);
-    return rng.pick(pool.length ? pool : HINT_POOL);
+    return {
+      category: rng.pick(pool.length ? pool : HINT_POOL),
+      // which way to branch (±1); slight angle jitter keeps siblings from stacking
+      side: rng.chance(0.5) ? 1 : -1,
+      angle: 0.55 + rng.next() * 0.45, // radians-ish blend weight toward sideways
+    };
   });
 }
 
-function hintBeyond(origin, target, extraPx = 118) {
+/** Stem from the choice node, shoot mostly perpendicular — always upward/ahead, never back down. */
+function hintBranch(origin, target, hint, dist = 124) {
   const dx = target.cx - origin.cx;
   const dy = target.cy - origin.cy;
   const len = Math.hypot(dx, dy) || 1;
-  return {
-    cx: Math.max(48, Math.min(1232, target.cx + (dx / len) * extraPx)),
-    cy: Math.max(40, Math.min(680, target.cy + (dy / len) * extraPx)),
+  const fx = dx / len;
+  const fy = dy / len;
+  const sideways = hint.angle ?? 0.75;
+  const side = hint.side || 1;
+
+  // Build a branch dir for a given perpendicular side (blend sideways + a little forward)
+  const dirFor = (s) => {
+    const px = -fy * s;
+    const py = fx * s;
+    let bx = px * sideways + fx * (1 - sideways);
+    let by = py * sideways + fy * (1 - sideways);
+    const bl = Math.hypot(bx, by) || 1;
+    return { bx: bx / bl, by: by / bl };
   };
+
+  // Prefer the random side, but flip if the other shoots more upward (negative Y)
+  let dir = dirFor(side);
+  const alt = dirFor(-side);
+  if (alt.by < dir.by) dir = alt;
+
+  // Extra upward lean so teasers always read as "further ahead"
+  let bx = dir.bx;
+  let by = dir.by - 0.35;
+  const bl = Math.hypot(bx, by) || 1;
+  bx /= bl;
+  by /= bl;
+
+  const cx = Math.max(48, Math.min(1232, target.cx + bx * dist));
+  // Keep hints above the choice node — never back toward the player
+  const cy = Math.max(36, Math.min(target.cy - 12, target.cy + by * dist));
+  return { cx, cy };
 }
 
 // game category → node visuals (real 11-category taxonomy, not the handoff's 8)
@@ -113,20 +149,25 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
     return { cx, cy };
   });
 
-  // One hint per path, branching further along that choice's line
+  // Hints branch sideways off each path (skip paths with no hint)
   const pathHints = assignPathHints(run, cards);
-  const hintPos = pos.map((p) => hintBeyond({ cx: CURX, cy: CURY }, p, A ? 112 : 128));
+  const hintPos = pos.map((p, i) => {
+    const h = pathHints[i];
+    return h ? hintBranch({ cx: CURX, cy: CURY }, p, h, A ? 118 : 130) : null;
+  });
 
-  // connectors: you → choices, then each choice → its hint
+  // connectors: you → choices, then each choice → its hint (when present)
   const lines = pos.map((p, i) => `<line x1="${CURX}" y1="${CURY - 6}" x2="${p.cx.toFixed(1)}" y2="${p.cy.toFixed(1)}" stroke="${nodeMeta(cards[i].category).color}" stroke-opacity="0.34" stroke-width="2" stroke-dasharray="2 8" stroke-linecap="round"></line>`).join('');
   const hintLines = hintPos.map((h, i) => {
+    if (!h || !pathHints[i]) return '';
     const p = pos[i];
-    const col = nodeMeta(pathHints[i]).color;
+    const col = nodeMeta(pathHints[i].category).color;
     return `<line x1="${p.cx.toFixed(1)}" y1="${p.cy.toFixed(1)}" x2="${h.cx.toFixed(1)}" y2="${h.cy.toFixed(1)}" stroke="${col}" stroke-opacity="0.28" stroke-width="1.5" stroke-dasharray="3 7" stroke-linecap="round"></line>`;
   }).join('');
 
   const hintsHtml = hintPos.map((h, i) => {
-    const cat = pathHints[i];
+    if (!h || !pathHints[i]) return '';
+    const cat = pathHints[i].category;
     const m = CATEGORY_META[cat] || CATEGORY_META.unknown;
     const nm = nodeMeta(cat);
     return `<div class="tm-hint" title="If you take this path, something like this may wait ahead" style="left:${(h.cx - 22).toFixed(0)}px;top:${(h.cy - 26).toFixed(0)}px;border-color:${nm.color}66;color:${nm.color}99">${m.glyph}</div>`;
@@ -153,8 +194,11 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
         <div class="tm-biome">${biome.name.toUpperCase()}</div>
         <div class="tm-sub">Choose your path, Awakened — step ${r.floor}</div>
       </div>
-      <div class="tm-status" id="tm-status" title="Open character sheet">
-        <div class="tm-st-name">${r.name}</div>
+      <div class="tm-status" id="tm-status" role="button" tabindex="0" title="Open character sheet" aria-label="Open character sheet">
+        <div class="tm-st-head">
+          <div class="tm-st-name">${r.name}</div>
+          <div class="tm-st-open">◈ CHARACTER</div>
+        </div>
         <div class="tm-st-meta">Lv.${r.level} ${r.raceName || ''} ${ctx.classTitle || r.className || ''} · 🪙 ${r.gold} · ★ ${r.fame}</div>
         <div class="tm-st-bars">
           <div class="tm-st-bar hp"><i style="width:${Math.max(0, Math.min(100, r.hp / r.maxHp * 100))}%"></i><span>HP ${Math.round(r.hp)}/${Math.round(r.maxHp)}</span></div>
@@ -179,8 +223,15 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
       </div>
     </div>`;
 
-  stage.querySelector('#tm-status')?.addEventListener('click', () => {
+  const openSheet = (ev) => {
+    ev?.preventDefault?.();
+    ev?.stopPropagation?.();
     ctx.onCharacter?.();
+  };
+  const statusEl = stage.querySelector('#tm-status');
+  statusEl?.addEventListener('click', openSheet);
+  statusEl?.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openSheet(ev); }
   });
 
   // Keep both map layouts available via keyboard only (hidden from the busy HUD).
@@ -210,7 +261,7 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
     const m = CATEGORY_META[cards[i].category] || CATEGORY_META.unknown;
     trail.history.push({ glyph: m.glyph, color: nm.color });
     // The hint branching off this path becomes a promised category next floor
-    if (pathHints[i]) run.mapHintCategory = pathHints[i];
+    if (pathHints[i]?.category) run.mapHintCategory = pathHints[i].category;
     // battle nodes get the radial flash; others resolve in place
     const isBattle = cards[i].category === 'combat' || cards[i].category === 'dangerous';
     if (isBattle && flash) flash(() => resolveCard(stage, cards[i]));

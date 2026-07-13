@@ -34,7 +34,9 @@ export const ACHIEVEMENTS = [
   { id: 'escape', icon: '🌀', name: 'Survivor', desc: 'Take the Coward\'s Gate. The tower counts survivors too.' },
   { id: 'secret', icon: '🜏', name: 'The Interesting Kind', desc: 'Discover the tower\'s truth.' },
   { id: 'rich', icon: '💰', name: 'Dragon Hoard', desc: 'Hold 500 gold at once.' },
-  { id: 'legendary', icon: '✨', name: 'One of One', desc: 'Wield a legendary item.' },
+  { id: 'legendary', icon: '✨', name: 'One of One', desc: 'Wield a legendary or UNIQUE item.' },
+  { id: 'unique_gear', icon: '💠', name: 'Above Legend', desc: 'Claim a UNIQUE — rarer than legendary.' },
+  { id: 'wrld_gear', icon: '🌍', name: 'World\'s Only', desc: 'Claim a WRLD item — one of each in the climb.' },
   { id: 'mimic', icon: '🦷', name: 'It Bit First', desc: 'Slay a mimic.' },
   { id: 'famous', icon: '🌟', name: 'Local Legend', desc: 'Reach 50 Fame in a single run.' },
   { id: 'promoted', icon: '🧬', name: 'More Than Blood', desc: 'Achieve a race promotion.' },
@@ -118,6 +120,21 @@ export function startDescriptor(percentile) {
   return { word: 'Exceptional', flavor: 'Even standing still, this one looks like trouble. Potential is another question.' };
 }
 
+/** Flat awakening applied once when the player commits to a roll (enter gate / start run).
+ *  Idempotent — safe to call from applyGen after an earlier commit-site call. */
+export function awakenMonolith(gen, seed = randomSeed()) {
+  if (!gen || gen.monolithAwakened) return gen;
+  const cfg = CONFIG.chargen;
+  const rng = makeRng(seed);
+  gen.stats.hp += cfg.awakenHp || 0;
+  gen.stats.mp += cfg.awakenMp || 0;
+  const pool = rng.shuffle(['str', 'dex', 'int', 'wis', 'lk']);
+  const n = Math.min(cfg.awakenStatPicks || 0, pool.length);
+  for (let i = 0; i < n; i++) gen.stats[pool[i]] += 1;
+  gen.monolithAwakened = true;
+  return gen;
+}
+
 /* ------------------------- RUN (per-climb) ------------------------- */
 
 export function newRun(meta, { classId, raceId = 'human', originId = null, name, seed = randomSeed(), gen: providedGen = null }) {
@@ -173,6 +190,7 @@ export function newRun(meta, { classId, raceId = 'human', originId = null, name,
     },
     inventory: [],
     gearBag: {},
+    claimedWrld: [],
     seenEventTags: [],
     relics: [],
     consumables: ['potion_s'],

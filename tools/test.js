@@ -4,12 +4,12 @@
 // scripted playtest bot; everything testable headlessly lives here.
 
 import { CLASSES, SUBCLASSES, subclassOptions } from '../js/data/classes.js';
-import { ACHIEVEMENTS } from '../js/state.js';
+import { ACHIEVEMENTS, rollStart, awakenMonolith } from '../js/state.js';
 import { RACES } from '../js/data/races.js';
 import { ORIGINS } from '../js/data/origins.js';
 import { SKILLS } from '../js/data/skills.js';
 import { EVENTS, CATEGORY_META } from '../js/data/events.js';
-import { ENEMIES, BOSSES, MODIFIERS } from '../js/data/enemies.js';
+import { ENEMIES, BOSSES, MODIFIERS, biomeForFloor } from '../js/data/enemies.js';
 import { ALL_EQUIPMENT, RELICS, CONSUMABLES, itemById, EQUIP_SLOTS } from '../js/data/items.js';
 import { CONFIG } from '../js/data/config.js';
 import {
@@ -60,6 +60,19 @@ console.log('— growth inverse correlation —');
   let miracles = 0;
   for (let i = 0; i < 20000; i++) if (rankAtLeast(rollGrowthRank(rng, 0.95), 'S')) miracles++;
   t('strong-start high-growth is possible but rare (<3%)', miracles > 0 && miracles / 20000 < 0.03);
+}
+
+console.log('— monolith awakening —');
+{
+  const gen = rollStart('warrior', 'human', 42);
+  const before = { ...gen.stats };
+  awakenMonolith(gen, 99);
+  t('awakening raises HP', gen.stats.hp === before.hp + CONFIG.chargen.awakenHp);
+  t('awakening raises MP', gen.stats.mp === before.mp + CONFIG.chargen.awakenMp);
+  const bumps = ['str', 'dex', 'int', 'wis', 'lk'].filter(k => gen.stats[k] > before[k]).length;
+  t('awakening bumps distinct combat stats', bumps === CONFIG.chargen.awakenStatPicks);
+  t('awakening is idempotent', (() => { const hp = gen.stats.hp; awakenMonolith(gen, 7); return gen.stats.hp === hp; })());
+  t('awakening keeps percentile intact', gen.percentile === rollStart('warrior', 'human', 42).percentile);
 }
 
 console.log('— classes & subclasses (handoff §21) —');
@@ -115,11 +128,38 @@ for (const sk of Object.values(SKILLS)) {
 t('charge caps at six segments', addCharge(5, 4) === 6 && CONFIG.charge.max === 6);
 t('charge floors at zero', addCharge(1, -5) === 0);
 t('canAfford checks both pools', canAfford({ cost: 10, charge: 3 }, 10, 3) && !canAfford({ cost: 10, charge: 3 }, 9, 3) && !canAfford({ cost: 10, charge: 3 }, 10, 2));
+{
+  const starters = {
+    warrior: 'slash', mage: 'firebolt', archer: 'quick_shot', rogue: 'backstab',
+    priest: 'smite', monk: 'palm_strike', warlock: 'eldritch_bolt', bard: 'cutting_quip',
+    necromancer: 'soul_bolt',
+  };
+  const freeUpgrades = {
+    warrior: 'tempered_cut', mage: 'spark_lance', archer: 'steady_draw', rogue: 'quiet_cut',
+    priest: 'blessed_strike', monk: 'knuckle', warlock: 'pact_sting', bard: 'wry_note',
+    necromancer: 'chill_bolt',
+  };
+  for (const [cls, id] of Object.entries(freeUpgrades)) {
+    const sk = SKILLS[id];
+    const start = SKILLS[starters[cls]];
+    t(`${id}: free learnable`, sk && sk.cost === 0 && sk.charge === 0 && sk.class === cls);
+    t(`${id}: beats starter free hit`, sk.power > start.power);
+    t(`${id}: below high-cost finishers`, sk.power < 150);
+  }
+  const resourceOnly = ['bracing_blow', 'prism_shard', 'bodkin', 'shiv', 'lucent_bolt', 'jab_chain', 'bleak_dart', 'sting_verse', 'rib_shot'];
+  for (const id of resourceOnly) {
+    const sk = SKILLS[id];
+    t(`${id}: resource-only (no charge)`, sk && sk.cost > 0 && (sk.charge || 0) === 0 && sk.power > 0);
+  }
+  t('AOE skills still charge-gated', Object.values(SKILLS).filter(s => s.target === 'all' && (s.charge || 0) < 3 && s.class !== 'special').length === 0);
+}
 
 console.log('— Guard (handoff §10) —');
 t('guard blocks 30%', applyGuard(100, true) === 70);
 t('guard-piercing ignores guard', applyGuard(100, true, true) === 100);
 t('no guard, no reduction', applyGuard(100, false) === 100);
+t('bosses cleanse on a slow cadence', CONFIG.boss.cleanseEvery >= 3);
+t('bosses can burn charge to break hard CC', CONFIG.boss.cleanseCost >= 1);
 
 console.log('— enemy charge profiles (handoff §12) —');
 {
@@ -168,6 +208,8 @@ console.log('— events (handoff §4) —');
     t(`event ${e.id}: unique id`, !ids.has(e.id)); ids.add(e.id);
     t(`event ${e.id}: valid category`, !!CATEGORY_META[e.category]);
     t(`event ${e.id}: no sanity effects remain`, !JSON.stringify(e.choices).includes('"sanity"'));
+    // Shops use their own leave UI; every card event needs an ungated exit.
+    if (!e.shop) t(`event ${e.id}: has a free (no-req) choice`, e.choices.some(c => !c.req));
   }
   t('appraisal events exist (≥2)', EVENTS.filter(e => e.category === 'appraisal').length >= 2);
   t('comeback events exist (≥3)', EVENTS.filter(e => e.comeback).length >= 3);
@@ -183,7 +225,9 @@ console.log('— events (handoff §4) —');
         if (o.item) t(`${e.id}: item ${o.item} exists`, !!itemById(o.item));
         if (o.consumable) t(`${e.id}: consumable ${o.consumable} exists`, !!itemById(o.consumable));
         if (o.combat) for (const eid of o.combat.enemies) {
-          t(`${e.id}: combat enemy ${eid} exists`, Object.values(ENEMIES).flat().some(x => x.id === eid));
+          const inTrash = Object.values(ENEMIES).flat().some(x => x.id === eid);
+          const inBoss = Object.values(BOSSES).some(x => x.id === eid);
+          t(`${e.id}: combat enemy ${eid} exists`, inTrash || inBoss);
         }
       }
     }
@@ -200,6 +244,46 @@ t('eight equip slots', EQUIP_SLOTS.length === 8 && EQUIP_SLOTS.filter(s => s.sta
   }
   t('gear exists for every armor slot', ['helmet', 'chest', 'legs', 'boots'].every(s => ALL_EQUIPMENT.some(i => i.slot === s)));
   t('stat-reading items exist', ALL_EQUIPMENT.some(i => i.reveal === 'ranks') && ALL_EQUIPMENT.some(i => i.reveal === 'exact'));
+  t('UNIQUE rarity exists above legendary', ALL_EQUIPMENT.some(i => i.rarity === 'unique'));
+  t('legendary gear still exists', ALL_EQUIPMENT.some(i => i.rarity === 'legendary'));
+  t('UNIQUE catalog has several pieces', ALL_EQUIPMENT.filter(i => i.rarity === 'unique').length >= 5);
+  t('WRLD rarity exists above UNIQUE', ALL_EQUIPMENT.some(i => i.rarity === 'wrld') && RELICS.some(r => r.rarity === 'wrld'));
+  t('WRLD covers multiple weapon types', new Set(ALL_EQUIPMENT.filter(i => i.rarity === 'wrld' && i.slot === 'weapon').map(i => i.wtype)).size >= 5);
+  const { rollEquipment, rollUnique, rollWrld, claimedWrldIds, markWrldClaimed, wrldCatalog } = await import('../js/data/items.js');
+  t('rollUnique returns a unique', (() => {
+    const u = rollUnique(makeRng(42), null);
+    return !!u && u.rarity === 'unique';
+  })());
+  t('ordinary rolls never return UNIQUE or WRLD', (() => {
+    for (let i = 0; i < 80; i++) {
+      const it = rollEquipment(makeRng(9000 + i), 5, 8, { floor: 30 });
+      if (it && (it.rarity === 'unique' || it.unique || it.rarity === 'wrld' || it.wrld)) return false;
+    }
+    return true;
+  })());
+  t('rollWrld returns wrld and claims it', (() => {
+    const fakeRun = { claimedWrld: [], equipment: {}, inventory: [], relics: [], classId: 'warrior', gearBag: {} };
+    const w = rollWrld(makeRng(7), fakeRun, { claim: true });
+    return !!w && w.rarity === 'wrld' && claimedWrldIds(fakeRun).has(w.baseId || w.id);
+  })());
+  t('WRLD one-of-each excludes claimed ids', (() => {
+    const fakeRun = { claimedWrld: ['caladbolg'], equipment: {}, inventory: [], relics: [], classId: 'warrior', gearBag: {} };
+    for (let i = 0; i < 30; i++) {
+      const w = rollWrld(makeRng(100 + i), fakeRun, { kind: 'weapon', claim: true });
+      if (w && (w.baseId || w.id) === 'caladbolg') return false;
+    }
+    return true;
+  })());
+  t('WRLD catalog is sizable', wrldCatalog().length >= 10);
+  const regenLow = ALL_EQUIPMENT.filter(i => (i.manaRegen || 0) > 0 && !['epic', 'legendary', 'unique', 'wrld'].includes(i.rarity) && !i.exclusive);
+  t('manaRegen (resource regen) absent on low rarities', regenLow.length === 0);
+  const { ACCESSORY_AFFIXES, WEAPON_AFFIXES, ARMOR_AFFIXES } = await import('../js/data/affixes.js');
+  const regenAff = [...WEAPON_AFFIXES, ...ARMOR_AFFIXES, ...ACCESSORY_AFFIXES].filter(a => a.props?.manaRegen);
+  t('resource-regen affixes gated to epic+', regenAff.every(a => a.minRarity === 'epic' || a.minRarity === 'legendary' || a.minRarity === 'unique' || a.minRarity === 'wrld'));
+  t('unique earn event exists', EVENTS.some(e => JSON.stringify(e).includes('uniqueItem')));
+  t('wrld earn event exists', EVENTS.some(e => JSON.stringify(e).includes('wrldItem')));
+  t('unique achievement registered', ACHIEVEMENTS.some(a => a.id === 'unique_gear'));
+  t('wrld achievement registered', ACHIEVEMENTS.some(a => a.id === 'wrld_gear'));
 }
 
 console.log('— bribery (handoff §25) —');
@@ -217,11 +301,43 @@ console.log('— combat pacing (patch) —');
   const C = CONFIG.combat;
   const strongStart = 14; // near-max level-1 governing stat
   const maxHit = (strongStart * C.playerStatWeight + 2 * C.playerAtkWeight + 1 * C.playerLevelWeight + C.playerFlat) * 1.15; // 100-power skill, max variance
-  const weakestEnemy = Math.min(...Object.values(ENEMIES).flat().map(e => e.hp));
+  const weakestEnemy = Math.min(...Object.values(ENEMIES).flat().filter(e => !e.elite && !e.boss).map(e => {
+    const sc = enemyScale(1, 1, 'forest', { elite: !!e.elite });
+    return Math.round(e.hp * sc.hp);
+  }));
   t('no one-shots with free attacks', maxHit < weakestEnemy);
   t('basic enemies take 2-3 basic hits', weakestEnemy / (maxHit * 0.9) >= 1.3);
   t('lifesteal capped at a sliver', C.lifestealCapPct <= 0.05 && C.lifestealCapPct >= 0.01);
   t('victory healing is lean', CONFIG.recovery.victoryHealPct <= 0.06 && CONFIG.recovery.floorHealPct <= 0.04);
+
+  // Mid-climb: free/low-cost hits should not delete commons; elites last longer.
+  // Uses synthetic P60 climber + 100-power mid-variance hit (combat_sim model).
+  {
+    const { syntheticClimber, simBuildEnemy } = await import('./combat_sim.js');
+    const { softLevelDamage } = await import('../js/data/tdc.js');
+    const hit = (p, enemy, power = 100) => {
+      const base = (p.stats[p.classBias] * C.playerStatWeight + p.atk * C.playerAtkWeight
+        + softLevelDamage(p.level, C.playerLevelWeight) + C.playerFlat)
+        * (power / 100) * p.dmgMult;
+      return Math.max(1, Math.round(base - enemy.def));
+    };
+    const floor = 17;
+    const biome = biomeForFloor(floor);
+    const p = syntheticClimber(floor, 0.6);
+    const commons = ENEMIES[biome.id].filter(e => !e.elite);
+    const elites = ENEMIES[biome.id].filter(e => e.elite);
+    const commonHits = commons.map(s => {
+      const e = simBuildEnemy(s, floor, biome.floors[0]);
+      return e.hp / hit(p, e, 100);
+    });
+    const eliteHits = elites.map(s => {
+      const e = simBuildEnemy(s, floor, biome.floors[0]);
+      return e.hp / hit(p, e, 100);
+    });
+    t('F17 commons need ≥2 hits from a basic 100-power swing', Math.min(...commonHits) >= 2.0);
+    t('F17 commons typically 2–3+ hits', commonHits.sort((a, b) => a - b)[Math.floor(commonHits.length / 2)] >= 2.3);
+    t('F17 elites last longer than commons', Math.min(...eliteHits) >= 4.0);
+  }
 }
 
 console.log('— kits & AOE access (patch) —');

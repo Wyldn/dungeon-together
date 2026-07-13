@@ -25,7 +25,7 @@ export const TDC = {
 
   /* ---- encounter budgets (replaces stacked party HP + body count) ---- */
   budget: {
-    base: 1.35,              // solo F1 pack ≈ this × expectedPower
+    base: 1.48,              // solo F1 pack ≈ this × expectedPower (padded with tankier commons)
     perExtraPlayer: 0.88,    // each ally adds nearly a full solo budget of threat
     residualHpCap: 0.16,     // unused/overspend budget → at most ±16% HP
     residualHpFactor: 0.55,  // conversion rate |remaining|/budget → HP
@@ -47,17 +47,23 @@ export const TDC = {
     51: { rounds: [10, 16], hpLoss: [0.30, 0.70] },
   },
 
-  /* ---- enemy scaling (replaces ad-hoc depth * 0.045) ---- */
+  /* ---- enemy scaling (replaces ad-hoc depth * 0.045) ----
+     Commons/elites also take absolute floor pressure so a biome reset
+     (depth → 0) doesn't soft-reset toughness vs a geared climber.
+     Bosses stay hand-tuned via RTK sims + mild bossFloor* only. */
   enemy: {
-    depthHp: 0.048,
+    depthHp: 0.052,
     depthAtk: 0.045,
     depthDef: 0.02,
-    // Mild absolute-floor pressure — bosses are hand-tuned via RTK sims;
-    // heavy floor mults double-dip against encounter budgets.
+    // Absolute floor HP for non-bosses — keeps free/low-cost hits at 2–3
+    // swings on commons through mid-climb (verified vs combat_sim climbers).
+    floorHp: 0.030,
+    floorAtk: 0.006,
     bossFloorHp: 0.006,
     bossFloorAtk: 0.005,
     boss: { hp: 1.0, atk: 1.0, def: 1.0 }, // reserved; bases are hand-tuned
-    elite: { hp: 1.0, atk: 1.0, def: 1.0 },
+    common: { hp: 1.18, atk: 1.0, def: 1.0 },
+    elite: { hp: 1.42, atk: 1.05, def: 1.05 },
   },
 
   /* ---- biome multipliers (multiplicative flavor, not additive piles) ---- */
@@ -123,6 +129,8 @@ export const TDC = {
       rare: [1, 2],
       epic: [2, 2],
       legendary: [2, 3],
+      unique: [0, 0], // hand-authored — never randomly affixed
+      wrld: [0, 0],
     },
     // Soft preference for leaving affix room inside the item power cap
     budgetFrac: {
@@ -131,6 +139,8 @@ export const TDC = {
       rare: 0.75,
       epic: 0.85,
       legendary: 0.9,
+      unique: 1,
+      wrld: 1,
     },
     // Affix magnitude grows mildly with floor (props scale)
     floorScale: 0.012,
@@ -153,7 +163,11 @@ function biomeMods(biomeId) {
 export function enemyScale(floor, biomeStart, biomeId, { boss = false, elite = false } = {}) {
   const depth = Math.max(0, floor - biomeStart);
   const bio = biomeMods(biomeId);
-  const role = boss ? TDC.enemy.boss : elite ? TDC.enemy.elite : { hp: 1, atk: 1, def: 1 };
+  const role = boss
+    ? TDC.enemy.boss
+    : elite
+      ? TDC.enemy.elite
+      : (TDC.enemy.common || { hp: 1, atk: 1, def: 1 });
 
   let hp = (1 + depth * TDC.enemy.depthHp) * bio.hp * role.hp;
   let atk = (1 + depth * TDC.enemy.depthAtk) * bio.atk * role.atk;
@@ -164,6 +178,10 @@ export function enemyScale(floor, biomeStart, biomeId, { boss = false, elite = f
   if (boss) {
     hp *= 1 + (floor - 1) * TDC.enemy.bossFloorHp;
     atk *= 1 + (floor - 1) * TDC.enemy.bossFloorAtk;
+  } else {
+    // Absolute floor pressure — biome depth alone under-tanks mid-climb commons
+    hp *= 1 + (floor - 1) * (TDC.enemy.floorHp || 0);
+    if (TDC.enemy.floorAtk) atk *= 1 + (floor - 1) * TDC.enemy.floorAtk;
   }
 
   return { hp, atk, def, spd, chargeGain, depth };

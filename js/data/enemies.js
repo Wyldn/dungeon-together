@@ -6,6 +6,8 @@
 // specials: [{ at, name, mult, aoe?, stun?, burn?, freeze?, heal?, desc }]
 //   — used when charge >= at (highest affordable wins), then charge resets.
 //   Telegraphed in the UI one segment before it's ready.
+// freezeEvery: N → freeze only on every Nth turn (overrides per-hit freeze chance).
+// cleanseEvery / cleanseCost (bosses): periodic full shrug, or spend FOC to break freeze/stun.
 // spd doubles as the initiative stat. intelligent gates bribery (§25).
 
 export const BIOMES = [
@@ -49,7 +51,7 @@ export const ENEMIES = {
   forest: [
     { id: 'wolf', name: 'Dire Wolf', glyph: '🐺', hp: 28, atk: 6, def: 1, spd: 8, gold: [6, 14], xp: 10, pack: true,
       specials: [{ at: 4, name: 'Savage Pounce', mult: 1.6, desc: 'lunges for the throat' }] },
-    { id: 'sprite', name: 'Feral Sprite', glyph: '🧚', hp: 24, atk: 5, def: 0, spd: 11, gold: [8, 16], xp: 9, caster: true, intelligent: true,
+    { id: 'sprite', name: 'Feral Sprite', glyph: '🧚', hp: 28, atk: 5, def: 0, spd: 11, gold: [8, 16], xp: 9, caster: true, intelligent: true,
       specials: [{ at: 3, name: 'Glimmer Burst', mult: 1.5, desc: 'gathers stolen light' }] },
     { id: 'boar', name: 'Ironback Boar', glyph: '🐗', hp: 38, atk: 7, def: 2, spd: 4, gold: [7, 15], xp: 12,
       specials: [{ at: 5, name: 'Full Gore', mult: 1.8, desc: 'paws the ground' }] },
@@ -69,9 +71,9 @@ export const ENEMIES = {
       specials: [{ at: 5, name: 'Bone Shatter', mult: 1.5, desc: 'rattles ominously' }] },
     { id: 'cursed_knight', name: 'Cursed Knight', glyph: '⚔️', hp: 56, atk: 12, def: 6, spd: 5, gold: [18, 32], xp: 20, elite: true, intelligent: true,
       specials: [{ at: 3, name: 'Oathbreaker\'s Arc', mult: 1.5, desc: 'raises a blackened blade' }, { at: 6, name: 'Grave Oath', mult: 2.0, desc: 'the armor begins to weep' }] },
-    { id: 'shade', name: 'Weeping Shade', glyph: '👻', hp: 30, atk: 11, def: 1, spd: 10, gold: [10, 20], xp: 15,
+    { id: 'shade', name: 'Weeping Shade', glyph: '👻', hp: 36, atk: 11, def: 1, spd: 10, gold: [10, 20], xp: 15,
       specials: [{ at: 4, name: 'Wail', mult: 1.2, aoe: true, desc: 'draws a breath it doesn\'t need' }] },
-    { id: 'scarab', name: 'Tomb Scarab Swarm', glyph: '🪲', hp: 28, atk: 9, def: 2, spd: 8, gold: [8, 18], xp: 12, pack: true },
+    { id: 'scarab', name: 'Tomb Scarab Swarm', glyph: '🪲', hp: 34, atk: 9, def: 2, spd: 8, gold: [8, 18], xp: 12, pack: true },
     { id: 'golem', name: 'Broken Golem', glyph: '🗿', hp: 70, atk: 11, def: 8, spd: 1, gold: [20, 36], xp: 22, elite: true,
       specials: [{ at: 4, name: 'Grindstone Fist', mult: 1.8, desc: 'gears shriek inside it' }] },
     { id: 'acolyte', name: 'Hollow Acolyte', glyph: '🕯️', hp: 32, atk: 12, def: 2, spd: 7, gold: [14, 26], xp: 16, caster: true, intelligent: true,
@@ -147,11 +149,14 @@ export const BOSSES = {
   },
   30: {
     id: 'frost_queen', name: 'Queen Vessalia the Unmelting', glyph: '❄️', biome: 'frost',
-    hp: 270, atk: 13, def: 7, spd: 9, gold: [120, 170], xp: 130, freeze: 0.28, boss: true,
+    hp: 270, atk: 13, def: 7, spd: 9, gold: [120, 170], xp: 130, boss: true,
+    // Freeze is a court decree, not every swing — pulse every 4 of her turns.
+    freezeEvery: 4,
+    cleanseCost: 3, // harder to burn FOC out of ice than most bosses
     chargeGain: 1,
     specials: [
-      { at: 3, name: 'Glacial Decree', mult: 1.35, freezeSure: true, desc: 'the temperature plummets' },
-      { at: 6, name: 'ETERNAL WINTER', mult: 1.75, aoe: true, freezeSure: true, desc: 'the court\'s frozen betrayers turn their heads in unison' },
+      { at: 3, name: 'Glacial Decree', mult: 1.35, desc: 'the temperature plummets' },
+      { at: 6, name: 'ETERNAL WINTER', mult: 1.75, aoe: true, desc: 'the court\'s frozen betrayers turn their heads in unison' },
     ],
     intro: 'The Frost Queen does not rise from her throne. She merely opens her eyes,\nand the temperature of your blood becomes negotiable.',
     taunt: 'WINTER OUTLASTS EVERYTHING. EVEN HOPE.',
@@ -182,6 +187,7 @@ export const BOSSES = {
     id: 'demon_king', name: 'VORATH, THE DEMON KING', glyph: '🜏', biome: 'throne',
     hp: 510, atk: 15, def: 11, spd: 11, gold: [0, 0], xp: 0, phases: true, boss: true,
     chargeGain: 1, chargeOnPhase: 3, // enrage banks charge instantly
+    cleanseCost: 1, // the King breaks bindings cheaply
     specials: [
       { at: 3, name: 'Century\'s Edge', mult: 1.5, desc: 'his blade remembers every hero it has ended' },
       { at: 6, name: 'THE KING\'S QUESTION', mult: 2.0, aoe: true, desc: 'the air itself takes his side' },

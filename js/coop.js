@@ -35,6 +35,11 @@ export class CoopSession {
     this.offs.push(net.on('cardresult', d => this.cardResults.set(d.floor, d.idx)));
     this.throneMsg = null;
     this.offs.push(net.on('throne', d => { this.throneMsg = d; }));
+    // WRLD: one of each catalog id per climb across the whole party
+    this.claimedWrld = new Set();
+    this.offs.push(net.on('wrldclaim', (d) => {
+      if (d?.id) this.claimedWrld.add(d.id);
+    }));
     // Party requeue votes — buffered so a late end-screen still sees earlier votes
     this.requeueVotes = new Set();
     this.offs.push(net.on('requeue', (d, from) => {

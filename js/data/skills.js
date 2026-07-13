@@ -588,6 +588,201 @@ export const SKILLS = {
     desc: 'Water has no shape to strike. +35% dodge for 3 turns, mend 8%.',
   },
 
+  /* ============ CHEAP TECHNIQUES — free upgrades & resource-only
+     Philosophy: cost reflects power. Free learnables beat the class starter
+     free hit, but stay well below high charge/resource finishers. Resource-
+     only skills spend class pool and skip Battle Charge entirely. */
+  tempered_cut: composeSkill(
+    { id: 'tempered_cut', name: 'Tempered Cut', class: 'warrior', fx: 'slash', tier: 1,
+      desc: 'A practiced edge — free, and cleaner than a raw Slash. Still no substitute for a charged blow.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(118, 'str'),
+  ),
+  bracing_blow: composeSkill(
+    { id: 'bracing_blow', name: 'Bracing Blow', class: 'warrior', fx: 'blunt', tier: 1,
+      desc: 'Spend Vigor, keep your charge. Honest damage without banking segments.' },
+    COMP.cost(16), COMP.charge(0), COMP.target('one'), COMP.dmg(128, 'str'),
+  ),
+  second_wind: composeSkill(
+    { id: 'second_wind', name: 'Second Wind', class: 'warrior', fx: 'buff', tier: 1,
+      desc: 'Catch your breath mid-fight. Heal 12% — Vigor only, no charge.' },
+    COMP.cost(14), COMP.charge(0), COMP.target('self'), COMP.healPct(0.12),
+  ),
+
+  spark_lance: composeSkill(
+    { id: 'spark_lance', name: 'Spark Lance', class: 'mage', fx: 'fire', tier: 1,
+      desc: 'A hotter free bolt than Firebolt — still a cantrip next to a real storm.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(114, 'int'), COMP.burn(0.28),
+  ),
+  prism_shard: composeSkill(
+    { id: 'prism_shard', name: 'Prism Shard', class: 'mage', fx: 'arcane', tier: 1,
+      desc: 'Spend Mana, skip charge. Sharp, cheap, single-minded.' },
+    COMP.cost(14), COMP.charge(0), COMP.target('one'), COMP.dmg(126, 'int'),
+  ),
+  cantrip_focus: composeSkill(
+    { id: 'cantrip_focus', name: 'Cantrip Focus', class: 'mage', fx: 'buff', tier: 1,
+      desc: 'A thin ward woven from spare Mana. Block 30% for 3 turns — no charge spent.' },
+    COMP.cost(12), COMP.charge(0), COMP.target('self'), COMP.shield(0.3),
+  ),
+
+  steady_draw: composeSkill(
+    { id: 'steady_draw', name: 'Steady Draw', class: 'archer', fx: 'pierce', tier: 1,
+      desc: 'Quieter than Quick Shot, harder. Free — and still shy of a true Aimed Shot.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(112, 'dex'), COMP.critBonus(8),
+  ),
+  bodkin: composeSkill(
+    { id: 'bodkin', name: 'Bodkin', class: 'archer', fx: 'pierce', tier: 1,
+      desc: 'A narrow tip for a narrow budget. Resource only — no charge.' },
+    COMP.cost(14), COMP.charge(0), COMP.target('one'), COMP.dmg(124, 'dex'),
+  ),
+  windstep: composeSkill(
+    { id: 'windstep', name: 'Windstep', class: 'archer', fx: 'wind', tier: 1,
+      desc: 'Slip sideways on spent Focus. +28% dodge for 2 turns, no charge.' },
+    COMP.cost(12), COMP.charge(0), COMP.target('self'), COMP.buffAdd('dodge', 28, 2),
+  ),
+
+  quiet_cut: composeSkill(
+    { id: 'quiet_cut', name: 'Quiet Cut', class: 'rogue', fx: 'slash', tier: 1,
+      desc: 'A free cut that out-sharpens Backstab — still not an Assassinate.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(108, 'dex'), COMP.critBonus(18),
+  ),
+  shiv: composeSkill(
+    { id: 'shiv', name: 'Shiv', class: 'rogue', fx: 'poison', tier: 1,
+      desc: 'Spend Energy, keep your charge banked. 40% poison.' },
+    COMP.cost(12), COMP.charge(0), COMP.target('one'), COMP.dmg(118, 'dex'), COMP.poison(0.4),
+  ),
+  fade: composeSkill(
+    { id: 'fade', name: 'Fade', class: 'rogue', fx: 'shadow', tier: 1,
+      desc: 'A cheap vanishing act. +32% dodge for 2 turns — Energy only.' },
+    COMP.cost(14), COMP.charge(0), COMP.target('self'), COMP.buffAdd('dodge', 32, 2),
+  ),
+
+  blessed_strike: composeSkill(
+    { id: 'blessed_strike', name: 'Blessed Strike', class: 'priest', fx: 'holy', tier: 1,
+      desc: 'A free Smite with more conviction — still not a Verdict.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(112, 'wis'),
+  ),
+  lucent_bolt: composeSkill(
+    { id: 'lucent_bolt', name: 'Lucent Bolt', class: 'priest', fx: 'holy', tier: 1,
+      desc: 'Faith spent, charge spared. Solid single-target light.' },
+    COMP.cost(14), COMP.charge(0), COMP.target('one'), COMP.dmg(124, 'wis'),
+  ),
+  minor_mend: composeSkill(
+    { id: 'minor_mend', name: 'Minor Mend', class: 'priest', fx: 'heal', tier: 1, allyTarget: true,
+      desc: 'A smaller Mend — 16% HP, Faith only, no charge.' },
+    COMP.cost(14), COMP.charge(0), COMP.target('self'), COMP.healPct(0.16),
+  ),
+
+  knuckle: composeSkill(
+    { id: 'knuckle', name: 'Knuckle', class: 'monk', fx: 'blunt', tier: 1,
+      desc: 'A free fist better than Palm Strike — still no Flurry.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(114, 'dex'),
+  ),
+  jab_chain: composeSkill(
+    { id: 'jab_chain', name: 'Jab Chain', class: 'monk', fx: 'blunt', tier: 1,
+      desc: 'Spend Ki, keep charge. Quick links of knuckle, +8% crit.' },
+    COMP.cost(14), COMP.charge(0), COMP.target('one'), COMP.dmg(126, 'dex'), COMP.critBonus(8),
+  ),
+  breath_cycle: composeSkill(
+    { id: 'breath_cycle', name: 'Breath Cycle', class: 'monk', fx: 'buff', tier: 1,
+      desc: 'In, out, ready. Heal 8% and block 22% for 2 turns — Ki only.' },
+    COMP.cost(12), COMP.charge(0), COMP.target('self'), COMP.healPct(0.08), COMP.shield(0.22),
+  ),
+
+  pact_sting: composeSkill(
+    { id: 'pact_sting', name: 'Pact Sting', class: 'warlock', fx: 'shadow', tier: 1,
+      desc: 'A free sting the other side sharpens for you — better than Eldritch Bolt, shy of Ruin.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(114, 'int'),
+  ),
+  bleak_dart: composeSkill(
+    { id: 'bleak_dart', name: 'Bleak Dart', class: 'warlock', fx: 'shadow', tier: 1,
+      desc: 'Spend Pact, skip charge. 30% hex on a clean hit.' },
+    COMP.cost(14), COMP.charge(0), COMP.target('one'), COMP.dmg(122, 'int'), COMP.hex(0.3),
+  ),
+  sip_shade: composeSkill(
+    { id: 'sip_shade', name: 'Sip Shade', class: 'warlock', fx: 'shadow', tier: 1,
+      desc: 'A modest drain. Light damage, 30% lifesteal — Pact only.' },
+    COMP.cost(16), COMP.charge(0), COMP.target('one'), COMP.dmg(100, 'int'), COMP.lifesteal(0.3),
+  ),
+
+  wry_note: composeSkill(
+    { id: 'wry_note', name: 'Wry Note', class: 'bard', fx: 'luck', tier: 1,
+      desc: 'A free quip with more bite than Cutting Quip — still not a Crescendo.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(110, 'lk'), COMP.critBonus(10),
+  ),
+  sting_verse: composeSkill(
+    { id: 'sting_verse', name: 'Sting Verse', class: 'bard', fx: 'thunder', tier: 1,
+      desc: 'Spend Verve, bank your charge. A pointed couplet.' },
+    COMP.cost(14), COMP.charge(0), COMP.target('one'), COMP.dmg(122, 'lk'),
+  ),
+  soft_encore: composeSkill(
+    { id: 'soft_encore', name: 'Soft Encore', class: 'bard', fx: 'heal', tier: 1, allyTarget: true,
+      desc: 'A quiet recovery. Heal 14% — Verve only, no charge.' },
+    COMP.cost(14), COMP.charge(0), COMP.target('self'), COMP.healPct(0.14),
+  ),
+
+  chill_bolt: composeSkill(
+    { id: 'chill_bolt', name: 'Chill Bolt', class: 'necromancer', fx: 'ice', tier: 1,
+      desc: 'A free Soul Bolt with more frost in it — still not a Wither.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(114, 'int'), COMP.freeze(0.2),
+  ),
+  rib_shot: composeSkill(
+    { id: 'rib_shot', name: 'Rib Shot', class: 'necromancer', fx: 'pierce', tier: 1,
+      desc: 'Essence spent, charge kept. A borrowed bone, thrown hard.' },
+    COMP.cost(14), COMP.charge(0), COMP.target('one'), COMP.dmg(124, 'int'),
+  ),
+  leach_touch: composeSkill(
+    { id: 'leach_touch', name: 'Leach Touch', class: 'necromancer', fx: 'shadow', tier: 1,
+      desc: 'A light siphon. Modest damage, 35% lifesteal — Essence only.' },
+    COMP.cost(16), COMP.charge(0), COMP.target('one'), COMP.dmg(102, 'int'), COMP.lifesteal(0.35),
+  ),
+
+  /* Tier-2 cheap options — still no/low charge, a bit more punch */
+  measured_strike: composeSkill(
+    { id: 'measured_strike', name: 'Measured Strike', class: 'warrior', fx: 'slash', tier: 2,
+      desc: 'Free technique of a seasoned blade. Stronger than Tempered Cut — still no Rampage.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(128, 'str'),
+  ),
+  reserve_cast: composeSkill(
+    { id: 'reserve_cast', name: 'Reserve Cast', class: 'mage', fx: 'arcane', tier: 2,
+      desc: 'Mana only, no charge. Mid-weight bolt for climbers who save their storm.' },
+    COMP.cost(20), COMP.charge(0), COMP.target('one'), COMP.dmg(138, 'int'),
+  ),
+  pocket_sand: composeSkill(
+    { id: 'pocket_sand', name: 'Pocket Sand', class: 'rogue', fx: 'wind', tier: 2,
+      desc: 'Dishonorable and free. Light damage, 35% stun — no charge required.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(95, 'dex'), COMP.stun(0.35),
+  ),
+  hymn_snap: composeSkill(
+    { id: 'hymn_snap', name: 'Hymn Snap', class: 'priest', fx: 'holy', tier: 2,
+      desc: 'Faith-only censure. Solid damage without banking charge.' },
+    COMP.cost(18), COMP.charge(0), COMP.target('one'), COMP.dmg(136, 'wis'),
+  ),
+  open_palm: composeSkill(
+    { id: 'open_palm', name: 'Open Palm', class: 'monk', fx: 'blunt', tier: 2,
+      desc: 'Free, polished, still not a Pressure Point. Clean Ki-less strike.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(126, 'dex'),
+  ),
+  field_shot: composeSkill(
+    { id: 'field_shot', name: 'Field Shot', class: 'archer', fx: 'pierce', tier: 2,
+      desc: 'Focus spent in the field, charge saved for Volley. Reliable mid damage.' },
+    COMP.cost(18), COMP.charge(0), COMP.target('one'), COMP.dmg(136, 'dex'),
+  ),
+  spite_needle: composeSkill(
+    { id: 'spite_needle', name: 'Spite Needle', class: 'warlock', fx: 'shadow', tier: 2,
+      desc: 'Pact-only spite. Better than Bleak Dart, still shy of Soul Rend.' },
+    COMP.cost(18), COMP.charge(0), COMP.target('one'), COMP.dmg(134, 'int'), COMP.hex(0.25),
+  ),
+  aside: composeSkill(
+    { id: 'aside', name: 'Aside', class: 'bard', fx: 'luck', tier: 2,
+      desc: 'A free stage aside that stings. Luck-scaling, no charge.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(122, 'lk'), COMP.critBonus(12),
+  ),
+  grave_pinch: composeSkill(
+    { id: 'grave_pinch', name: 'Grave Pinch', class: 'necromancer', fx: 'shadow', tier: 2,
+      desc: 'Essence only. A pinched soul-thread — mid damage, 20% poison.' },
+    COMP.cost(18), COMP.charge(0), COMP.target('one'), COMP.dmg(132, 'int'), COMP.poison(0.2),
+  ),
+
   /* ============ EXCLUSIVE / DROP-ONLY TECHNIQUES (§10, §16) ============
      class 'special' → never appears in a class\'s learnable pool; only granted
      by specific encounters, relics, or events. Scales on your best stat so any

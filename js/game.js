@@ -10,9 +10,9 @@ import { EVENTS, CATEGORY_META, drawEvent } from './data/events.js';
 import { CONFIG } from './data/config.js';
 import { planEncounter, planBossEncounter, pushEventHistory } from './data/balance.js';
 import { rankFor } from './data/ranks.js';
-import { CONSUMABLES, itemById, resolveItem, rollEquipment, rollRelic, EQUIP_SLOTS, RELICS, ALL_EQUIPMENT, WEAPONS, itemUsefulForClass, itemIncompatibleForClass } from './data/items.js';
+import { CONSUMABLES, itemById, resolveItem, rollEquipment, rollRelic, rollUnique, rollWrld, markWrldClaimed, EQUIP_SLOTS, RELICS, ALL_EQUIPMENT, WEAPONS, itemUsefulForClass, itemIncompatibleForClass } from './data/items.js';
 import { applyTagOutcomeMods } from './data/eventtags.js';
-import { loadMeta, saveMeta, upgradeRank, award, UPGRADES, ACHIEVEMENTS, newRun, saveRun, loadRun, clearRun, runRng, rollStart, startDescriptor } from './state.js';
+import { loadMeta, saveMeta, upgradeRank, award, UPGRADES, ACHIEVEMENTS, newRun, saveRun, loadRun, clearRun, runRng, rollStart, startDescriptor, awakenMonolith } from './state.js';
 import { derived, classTitle, skillTier, gainXp, learnableSkills, heal, restoreMana, relicItems, equippedItems, changeFame, resourceName, appraiseRun, revealLevel, applySubclass as applySubclassFn, APPRAISABLE, allowedWeaponTypes, weaponCompatible, skillCapacity } from './character.js';
 import { startCombat, buildEnemy } from './combat.js';
 import { ICONS } from './icons.js';
@@ -115,7 +115,7 @@ function debugScreen() {
   const equipHtml = slots.map(sl => {
     const list = ALL_EQUIPMENT.filter(i => i.slot === sl);
     return `<div class="dbg-group"><h4>${sl} <span class="dbg-dim">(${list.length})</span></h4>
-      ${list.map(i => `<div class="dbg-row">${itemIconHtml(i.id, 26)}<b class="${rarityClass(i.rarity)}">${i.name}</b> <span class="tag ${rarityClass(i.rarity)}">${i.rarity}</span>${i.wtype ? ` <span class="tag">${i.wtype}</span>` : ''}${i.exclusive ? ' <span class="tag" style="color:var(--gold)">exclusive</span>' : ''}${i.unique ? ' <span class="tag">unique</span>' : ''}<div class="dbg-dim">${i.desc}</div></div>`).join('')}
+      ${list.map(i => `<div class="dbg-row">${itemIconHtml(i.id, 26)}<b class="${rarityClass(i.rarity)}">${i.name}</b> <span class="tag ${rarityClass(i.rarity)}">${i.rarity}</span>${i.wtype ? ` <span class="tag">${i.wtype}</span>` : ''}${i.exclusive ? ' <span class="tag" style="color:var(--gold)">exclusive</span>' : ''}${i.unique ? ' <span class="tag">unique</span>' : ''}${i.wrld ? ' <span class="tag">wrld</span>' : ''}<div class="dbg-dim">${i.desc}</div></div>`).join('')}
     </div>`;
   }).join('');
 
@@ -177,8 +177,11 @@ function debugScreen() {
     if (o.statUpRandom) parts.push(`+${o.statUpRandom} random stat${o.statUpRandom > 1 ? 's' : ''}`);
     if (o.statUpMain) parts.push(`+${o.statUpMain} main stat`);
     if (o.statUpScaled) parts.push(`+${o.statUpScaled}+floor/12 directed growth`);
-    if (o.itemRoll) parts.push('roll equipment');
+    if (o.itemRoll) parts.push(typeof o.itemRoll === 'object' ? 'roll equipment (filtered)' : 'roll equipment');
+    if (o.classGear) parts.push('class-flavored gear');
     if (o.relicRoll) parts.push('roll relic');
+    if (o.uniqueItem) parts.push('UNIQUE gear');
+    if (o.wrldItem) parts.push('WRLD gear');
     if (o.item) parts.push(`item: ${itemName(o.item)}`);
     if (o.consumable) parts.push(`consumable: ${itemName(o.consumable)}`);
     if (o.consumable2) parts.push(`consumable: ${itemName(o.consumable2)}`);
@@ -291,31 +294,48 @@ function debugScreen() {
 
 function titleScreen() {
   const saved = loadRun();
+  const vol = Math.round(Music.getVolume() * 100);
+  const vista = titleBgUrl();
   app.innerHTML = '';
   app.appendChild(el(`
     <div class="screen title-screen">
-      ${titleBgUrl() ? `<img class="title-vista" src="${titleBgUrl()}" alt="" />` : '<div class="title-tower">🗼</div>'}
-      <h1 class="game-title">DUNGEON<br/>TOGETHER</h1>
-      <p class="game-subtitle">Fifty-one floors. One throne. Every choice is a card, and the tower always deals first.</p>
-      <div class="title-menu">
-        ${saved ? `<button class="btn primary" id="btn-continue">Continue — Floor ${saved.floor} · ${saved.name}</button>` : ''}
-        <button class="btn ${saved ? '' : 'primary'}" id="btn-new">New Climb</button>
-        <button class="btn" id="btn-coop">⚔ Play Together</button>
-        <button class="btn" id="btn-sanctum">The Sanctum ◈ ${meta.shards}</button>
-        <button class="btn ghost" id="btn-mute">${isMuted() ? '🔇 Sound Off' : '🔊 Sound On'}</button>
-        <button class="btn ghost" id="btn-debug">📖 Compendium</button>
-        <div class="audio-row">
-          <span id="vol-icon">🎵</span>
-          <input type="range" id="vol-slider" class="vol-slider" min="0" max="100" value="${Math.round(Music.getVolume() * 100)}" aria-label="Music volume" />
-          <span id="vol-val" class="vol-val">${Math.round(Music.getVolume() * 100)}</span>
+      ${vista
+        ? `<img class="title-vista" src="${vista}" alt="" />`
+        : '<div class="title-vista title-vista-fallback" aria-hidden="true"><span class="title-tower">🗼</span></div>'}
+      <div class="title-veil" aria-hidden="true"></div>
+
+      <div class="title-hero">
+        <h1 class="game-title">DUNGEON<br/>TOGETHER</h1>
+        <p class="game-subtitle">Fifty-one floors. One throne. The tower deals first.</p>
+      </div>
+
+      <div class="title-stack">
+        <div class="title-actions">
+          ${saved ? `<button class="btn primary" id="btn-continue">Continue — Fl.${saved.floor} · ${saved.name}</button>` : ''}
+          <button class="btn ${saved ? '' : 'primary'}" id="btn-new">New Climb</button>
+          <button class="btn" id="btn-coop">Play Together</button>
+        </div>
+        <div class="title-rail">
+          <button class="btn ghost small" id="btn-sanctum">Sanctum ◈ ${meta.shards}</button>
+          <button class="btn ghost small" id="btn-debug">Compendium</button>
+          <div class="title-audio">
+            <button class="btn ghost small" id="btn-mute">${isMuted() ? 'Sound Off' : 'Sound On'}</button>
+            <div class="audio-row title-vol">
+              <input type="range" id="vol-slider" class="vol-slider" min="0" max="100" value="${vol}" aria-label="Music volume" />
+              <span id="vol-val" class="vol-val">${vol}</span>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="title-stats">
-        <span>Runs: <b>${meta.totalRuns}</b></span>
-        <span>Victories: <b>${meta.wins}</b></span>
-        <span>Best Floor: <b>${meta.bestFloor}</b></span>
+
+      <div class="title-meta">
+        <div class="title-stats">
+          <span>Runs <b>${meta.totalRuns}</b></span>
+          <span>Wins <b>${meta.wins}</b></span>
+          <span>Best <b>${meta.bestFloor}</b></span>
+        </div>
+        <div class="title-footer">CO-OP ROGUELIKE · MUSIC XDEVIRUCHI · ART PIXELFLUSH + ORIGINAL</div>
       </div>
-      <div class="title-footer">A CO-OP ROGUELIKE CARD-CRAWLER · MUSIC BY XDEVIRUCHI · ART: PIXELFLUSH + ORIGINAL</div>
     </div>`));
 
   document.getElementById('btn-new').onclick = () => {
@@ -327,7 +347,11 @@ function titleScreen() {
   if (saved) document.getElementById('btn-continue').onclick = () => { SFX.click(); run = saved; enterFloorScreen(); };
   document.getElementById('btn-coop').onclick = () => { SFX.click(); coopMenu(); };
   document.getElementById('btn-sanctum').onclick = () => { SFX.click(); sanctumScreen(); };
-  document.getElementById('btn-mute').onclick = e => { const m = toggleMute(); Music.syncMute(); e.target.textContent = m ? '🔇 Sound Off' : '🔊 Sound On'; };
+  document.getElementById('btn-mute').onclick = e => {
+    const m = toggleMute();
+    Music.syncMute();
+    e.target.textContent = m ? 'Sound Off' : 'Sound On';
+  };
   document.getElementById('btn-debug').onclick = () => { SFX.click(); debugScreen(); };
   wireVolumeSlider(document.getElementById('vol-slider'), document.getElementById('vol-val'));
   Music.play('title');
@@ -542,8 +566,8 @@ function creationFlow(coopContext = null) {
       if (!gen) gen = rollStart(pick.classId, pick.raceId);
       const desc = startDescriptor(gen.percentile);
       const band = apprBand || potentialBand(gen.percentile);
-      sub.textContent = appraised ? 'Awakening sealed. This is your beginning.' : 'Attune to the Monolith — press & hold to gauge your potential.';
-      const overlay = appraised ? `
+      sub.textContent = appraised ? 'Potential felt. Name yourself — or tempt fate once more.' : 'Attune to the Monolith — press & hold to gauge your potential.';
+      const caption = appraised ? `
         <div class="mono-reveal">
           <div class="mono-feel">"${desc.word}"</div>
           <div class="mono-range-label">POTENTIAL RANGE</div>
@@ -553,6 +577,7 @@ function creationFlow(coopContext = null) {
             <span style="color:var(--rk-${band.high})">${band.high}</span>
           </div>
           <div class="mono-earned">Your true rank is not given — it is earned within.</div>
+          <div class="mono-earned" style="opacity:.75;margin-top:6px">Approach the Gate to seal this roll — the Monolith awakens you then.</div>
         </div>` : `<div class="mono-hint">press &amp; hold the crystal to measure your potential</div>`;
       body.innerHTML = `
         <div class="mono-stage">
@@ -564,17 +589,23 @@ function creationFlow(coopContext = null) {
           </div>
           <div class="mono-crystal-wrap">
             <canvas id="crystal" width="320" height="400"></canvas>
-            <div class="mono-overlay ${appraised ? 'revealed' : ''}">${overlay}</div>
           </div>
+          <div class="mono-caption">${caption}</div>
           ${appraised ? `
           <div class="mono-actions">
             <input class="name-input" id="name" maxlength="16" placeholder="Name your climber..." />
             <button class="btn small" id="btn-reroll" ${rerolls >= maxRerolls() ? 'disabled' : ''}>🎲 Tempt fate (${maxRerolls() - rerolls} left)</button>
-          </div>` : ''}
+          </div>
+          <div style="font-size:13px;color:var(--ink-dim);margin-top:8px;max-width:360px;margin-left:auto;margin-right:auto;line-height:1.35">Tempt fate rerolls your hidden starting gifts — then attune again to feel the new roll.</div>` : ''}
         </div>`;
       const cv = body.querySelector('#crystal');
       if (!appraised) {
-        crystalCtl = mountCrystal(cv, { onComplete: () => { appraised = true; apprBand = potentialBand(gen.percentile); SFX.unlock(); render(); } });
+        crystalCtl = mountCrystal(cv, { onComplete: () => {
+          appraised = true;
+          apprBand = potentialBand(gen.percentile);
+          SFX.unlock();
+          render();
+        } });
       } else {
         const nameInput = body.querySelector('#name');
         nameInput.value = creationFlow._savedName || RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
@@ -597,6 +628,7 @@ function creationFlow(coopContext = null) {
       SFX.click();
       if (step < 3) { step++; render(); return; }
       const name = scr.querySelector('#name')?.value.trim() || 'The Nameless';
+      awakenMonolith(gen);
       if (coopContext) return coopContext.done({ ...pick, name, gen });
       run = newRun(meta, { classId: pick.classId, raceId: pick.raceId, originId: pick.originId, name });
       // creation already rolled; overwrite with the rolls the player "felt"
@@ -611,6 +643,8 @@ function creationFlow(coopContext = null) {
 }
 
 function applyGen(run, pick, gen) {
+  // Awaken once on commit — never during measure/reroll previews.
+  awakenMonolith(gen);
   const up = id => upgradeRank(meta, id);
   const prowess = up('prowess');
   run.stats = {
@@ -777,7 +811,7 @@ function coopLobby(myName) {
     coopS.requeueVotes = new Set();
     run = newRun(meta, {
       classId: myPick.classId, raceId: myPick.raceId, originId: myPick.originId,
-      name: myName, seed: coopS.seed, gen,
+      name: myName, seed: coopS.seed, gen: awakenMonolith(gen),
     });
     run.coopMode = true;
     if (coopS.partySize >= 4) unlock('party_of_four');
@@ -858,6 +892,7 @@ function coopLobby(myName) {
       <div style="font-family:var(--font-display);font-size:13px;letter-spacing:.08em;color:var(--ink-dim);margin-bottom:6px">STARTING POTENTIAL</div>
       <div style="font-size:18px;color:var(--gold-bright);font-family:var(--font-display)">${desc.word}</div>
       <div style="font-size:14px;color:var(--ink-dim);margin:6px 0 10px;line-height:1.4">${desc.flavor}</div>
+      <div style="font-size:13px;color:var(--ink-dim);margin:0 0 10px;line-height:1.35">Tempt fate to reroll. The Monolith awakens your gifts when the climb begins.</div>
       <button class="btn small" id="btn-reroll" ${myReady || rerolls >= maxRerolls() ? 'disabled' : ''}>🎲 Tempt fate (${Math.max(0, maxRerolls() - rerolls)} left)</button>`;
   }
 
@@ -1003,6 +1038,9 @@ function refreshPartnerStrip() {
 /* ============================================================
    HUD + FLOOR CHROME
    ============================================================ */
+/** When true, character sheet is read-only (no equip/sell/use). Set around combat. */
+let sheetCombatLock = false;
+
 function renderHud() {
   const hud = document.querySelector('.hud');
   if (!hud || !run) return;
@@ -1030,7 +1068,10 @@ function renderHud() {
       <button class="btn small" id="hud-sheet">🎒 Character</button>
       <button class="btn small ghost" id="hud-quit">☰</button>
     </div>`;
-  hud.querySelector('#hud-sheet').onclick = () => { SFX.click(); characterSheet(); };
+  hud.querySelector('#hud-sheet').onclick = () => {
+    SFX.click();
+    characterSheet({ locked: sheetCombatLock });
+  };
   hud.querySelector('#hud-quit').onclick = async () => {
     SFX.click();
     const p = modal(`
@@ -1176,12 +1217,21 @@ function travelCtx() {
   };
 }
 
-/* ---------- three-card generation ---------- */
+/* ---------- path-card generation ---------- */
+function rollCardsPerDraw(rng) {
+  const two = CONFIG.events.cardsPerDrawTwoChance ?? 0.1;
+  const four = CONFIG.events.cardsPerDrawFourChance ?? 0.1;
+  const r = rng.next();
+  if (r < two) return 2;
+  if (r < two + four) return 4;
+  return CONFIG.events.cardsPerDraw || 3;
+}
+
 function generateCards(rng, forParty = null) {
   const biome = biomeForFloor(run.floor);
   const cards = [];
   const usedEvents = [];
-  const n = CONFIG.events.cardsPerDraw;
+  const n = rollCardsPerDraw(rng);
   // one slot is combat-weighted; others draw distinct events.
   // early floors lean toward events so a fresh climber can build tools before
   // the tower gets serious (combat stays deadly — you're meant to prepare for it)
@@ -1442,10 +1492,13 @@ async function fightGroup(stage, specs, { text = null, modifier = null, prebuilt
   if (modifier?.extraEnemy) {
     enemies.push(buildEnemy(runRng(run).pick(ENEMIES[biome.id].filter(e => !e.elite)), run.floor, biome.floors[0], { hpMult: mult }));
   }
+  sheetCombatLock = true; renderHud();
   const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
     container: stage, run, rng, enemies, modifier,
-    introText: text, onHud: renderHud, onCharacter: () => characterSheet(),
+    onHud: renderHud,
+    onCharacter: () => characterSheet({ locked: true }),
   });
+  sheetCombatLock = false; renderHud();
   if (result === 'win') { if (noDamage) unlock('untouchable'); if (usedUltimate) unlock('overcharged'); }
 
   if (result === 'dead') {
@@ -1492,6 +1545,18 @@ async function afterVictory(stage, enemies, gold, xp, { boss = null, reward = nu
     run.mp = run.maxMp;
     changeFame(run, 6);
     lines.push({ text: 'The gate\'s blessing washes over you — wounds knit, strength returns, and the tower learns your name. (+Fame)', cls: 'good' });
+  } else if (enemies.some(e => e.elite)) {
+    // Tiny UNIQUE chance from elite packs on deep floors
+    const rngE = runRng(run);
+    const eliteChance = Math.min(0.06, 0.01 + Math.max(0, run.floor - 15) * 0.0015);
+    if (rngE.chance(eliteChance)) {
+      const u = rollUnique(rngE, run, { preferUseful: true });
+      if (u) {
+        lines.push({ text: 'Among the elite\'s effects, something older than the tower gleams.', cls: 'item' });
+        await offerEquipment(u, lines);
+      }
+    }
+    rngE.advance();
   }
   SFX.victory();
   const ups = gainXp(run, xp, runRng(run));
@@ -1503,6 +1568,24 @@ async function afterVictory(stage, enemies, gold, xp, { boss = null, reward = nu
 }
 
 /* ---------- §16: exclusive rewards from optional encounters ---------- */
+async function grantWrldFind(lines, { kind = 'any', preferUseful = true } = {}) {
+  const w = rollWrld(runRng(run), run, { preferUseful, kind, coop: coopS });
+  if (!w) {
+    lines.push({ text: 'The WRLD you sought has already been claimed — one of each exists in this climb.', cls: 'bad' });
+    return null;
+  }
+  unlock('wrld_gear');
+  unlock('legendary');
+  if (!w.slot) {
+    if (!run.relics.includes(w.id)) run.relics.push(w.id);
+    lines.push({ text: `WRLD Relic: ${w.name} — ${w.desc}`, cls: 'item' });
+    SFX.unlock();
+    return w;
+  }
+  await offerEquipment(w, lines);
+  return w;
+}
+
 async function applyRewardOption(opt, lines) {
   if (!opt) return;
   const itemId = opt.kind === 'item' ? opt.id : opt.item;
@@ -1529,6 +1612,12 @@ async function grantReward(reward, lines) {
   if (!reward) return;
   if (reward.gold) { run.gold += reward.gold; run.goldEarned += reward.gold; lines.push({ text: `+${reward.gold} gold`, cls: 'gold' }); }
   if (reward.fame) { const a = changeFame(run, reward.fame); lines.push({ text: `+${a} Fame`, cls: 'good' }); }
+  if (reward.uniqueItem) {
+    const u = rollUnique(runRng(run), run, { preferUseful: true });
+    if (u) await offerEquipment(u, lines);
+    else lines.push({ text: 'The UNIQUE prize has already been claimed by another climber.', cls: 'bad' });
+  }
+  if (reward.wrldItem) await grantWrldFind(lines, typeof reward.wrldItem === 'object' ? reward.wrldItem : {});
   if (reward.options?.length) {
     let chosen = reward.options[0];
     await modalCustom((m, close) => {
@@ -1575,12 +1664,32 @@ async function bossRelicPick(stage) {
   // §1: the hoard yields gear too — rolled a tier high, luck-weighted toward rarity
   {
     const rng3 = runRng(run);
-    const item = rollEquipment(rng3, biomeTier() + 1, 4 + Math.floor(derived(run).lk / 2), { floor: run.floor, run });
-    rng3.advance(); saveRun(run);
-    if (item) {
+    // Vanishingly rare WRLD from deep boss hoards (floor 40+)
+    const wrldChance = run.floor >= 40
+      ? Math.min(0.06, 0.015 + (run.floor - 40) * 0.002 + derived(run).lk * 0.0005)
+      : 0;
+    const uniqueChance = Math.min(0.14, 0.04 + run.floor * 0.0015 + derived(run).lk * 0.001);
+    if (wrldChance && rng3.chance(wrldChance)) {
       const lines = [];
-      await offerEquipment(item, lines);
+      await grantWrldFind(lines, { preferUseful: true });
       if (lines.length) toast(lines[0].text, 'info');
+      rng3.advance(); saveRun(run);
+    } else if (rng3.chance(uniqueChance)) {
+      const u = rollUnique(rng3, run, { preferUseful: true });
+      if (u) {
+        const lines = [];
+        await offerEquipment(u, lines);
+        if (lines.length) toast(lines[0].text, 'info');
+        rng3.advance(); saveRun(run);
+      }
+    } else {
+      const item = rollEquipment(rng3, biomeTier() + 1, 4 + Math.floor(derived(run).lk / 2), { floor: run.floor, run });
+      rng3.advance(); saveRun(run);
+      if (item) {
+        const lines = [];
+        await offerEquipment(item, lines);
+        if (lines.length) toast(lines[0].text, 'info');
+      }
     }
   }
   // bosses teach: claim a technique from your class pool (AOE often lives here)
@@ -1661,9 +1770,11 @@ async function bossFloor(stage) {
 async function fightGroupBoss(stage, enemies, boss) {
   Music.play('boss');
   const rng = runRng(run);
+  sheetCombatLock = true; renderHud();
   const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
-    container: stage, run, rng, enemies, introText: `${boss.name}: "${boss.taunt}"`, onHud: renderHud, onCharacter: () => characterSheet(),
+    container: stage, run, rng, enemies, introText: `${boss.name}: "${boss.taunt}"`, onHud: renderHud, onCharacter: () => characterSheet({ locked: true }),
   });
+  sheetCombatLock = false; renderHud();
   if (result === 'dead') return endRun('dead');
   if (noDamage) unlock('untouchable');
   if (usedUltimate) unlock('overcharged');
@@ -1866,13 +1977,15 @@ async function coopFightShared(stage, enemies, { boss = null, mod = null } = {})
   Music.play(boss ? 'boss' : 'battle');
   coopS.broadcastStatus(statusOf(run, 'fighting'), 'fighting');
   const rng = runRng(run);
+  sheetCombatLock = true; renderHud();
   const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
     container: stage, run, rng, enemies,
     modifier: mod ? { ...mod, goldMult: (mod.goldMult || 1) * 1.5 } : null,
     introText: boss ? `${boss.name}: "${boss.taunt}"` : 'Side by side, blades out.',
-    onHud: renderHud, onCharacter: () => characterSheet(),
+    onHud: renderHud, onCharacter: () => characterSheet({ locked: true }),
     coop: coopS,
   });
+  sheetCombatLock = false; renderHud();
 
   if (result === 'wipe') return endRun('dead');
   if (noDamage) unlock('untouchable');
@@ -1967,7 +2080,16 @@ function renderEventCard(stage, ev, { originIntro = false } = {}) {
   SFX.cardDeal();
 
   const box = document.getElementById('choices');
-  ev.choices.forEach(choice => {
+  const choices = [...ev.choices];
+  // Safety net: never soft-lock a run behind gold/stat/item gates.
+  if (choices.length && choices.every(c => !reqMet(c.req).ok)) {
+    choices.push({
+      label: 'Move on',
+      hint: 'leave empty-handed',
+      outcome: { text: 'Nothing here is for you today. The path continues whether the tower likes it or not.' },
+    });
+  }
+  choices.forEach(choice => {
     const r = reqMet(choice.req);
     const btn = el(`<button class="choice-btn ${r.ok ? '' : 'locked'}" ${r.ok ? '' : 'disabled'}>
       <span class="choice-label">${choice.label}</span>
@@ -2125,8 +2247,37 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
   }
 
   if (o.itemRoll) {
-    const item = rollEquipment(rng, biomeTier(), Math.floor(d.lk / 3), { floor: run.floor, run });
-    await offerEquipment(item, lines);
+    const spec = (o.itemRoll && typeof o.itemRoll === 'object') ? o.itemRoll : {};
+    const preferUseful = !!(spec.requireUseful || spec.classGear);
+    const item = rollEquipment(rng, Math.max(biomeTier(), spec.minTier || 1), Math.floor(d.lk / 3) + (spec.luck || 0), {
+      floor: run.floor,
+      run,
+      classId: run.classId,
+      usefulBias: preferUseful ? 8 : (spec.usefulBias ?? 4),
+      requireUseful: preferUseful,
+      slot: spec.slot || null,
+      wtype: spec.wtype || null,
+    });
+    if (item) await offerEquipment(item, lines);
+    else lines.push({ text: 'You rummage — and find only dust and almosts.', cls: 'bad' });
+  }
+  if (o.uniqueItem) {
+    const u = rollUnique(rng, run, { preferUseful: true });
+    if (u) await offerEquipment(u, lines);
+    else lines.push({ text: 'The UNIQUE you were promised has already chosen another climber.', cls: 'bad' });
+  }
+  if (o.wrldItem) {
+    await grantWrldFind(lines, typeof o.wrldItem === 'object' ? o.wrldItem : {});
+  }
+  if (o.classGear) {
+    // Class-flavored find: usually a usable weapon, else any useful piece
+    const wantWeapon = rng.chance(0.6);
+    const item = rollEquipment(rng, Math.max(biomeTier(), 2), Math.floor(d.lk / 3) + 1, {
+      floor: run.floor, run, classId: run.classId,
+      requireUseful: true, usefulBias: 10,
+      slot: wantWeapon ? 'weapon' : (rng.chance(0.5) ? 'accessory' : null),
+    });
+    if (item) await offerEquipment(item, lines);
   }
   if (o.item) {
     const item = resolveItem(run, o.item) || itemById(o.item);
@@ -2215,6 +2366,8 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
         const found = pool.find(e => e.id === id);
         if (found) return found;
       }
+      const boss = Object.values(BOSSES).find(e => e.id === id);
+      if (boss) return boss;
       return ENEMIES[biome.id][0];
     });
     if (lines.length) await showOutcomePanel(stage, lines, ups, { continueLabel: 'Steel yourself', advance: false });
@@ -2314,9 +2467,18 @@ function gearCard(item, label) {
 
 function slotFor(item) {
   if (item.slot !== 'accessory') return item.slot;
-  // accessories fill the first open ring, else replace accessory1
   for (const s of ['accessory1', 'accessory2', 'accessory3']) if (!run.equipment[s]) return s;
   return 'accessory1';
+}
+
+function slotLabel(slot) {
+  if (!slot) return '';
+  if (slot.startsWith('accessory')) return `RING ${slot.slice(-1)}`;
+  return String(slot).toUpperCase();
+}
+
+function accessorySlots() {
+  return ['accessory1', 'accessory2', 'accessory3'];
 }
 
 function equipItem(item, targetSlot = null) {
@@ -2326,32 +2488,98 @@ function equipItem(item, targetSlot = null) {
   const bagIdx = run.inventory.indexOf(item.id);
   if (bagIdx > -1) run.inventory.splice(bagIdx, 1);
   run.equipment[slot] = item.id;
-  if (item.rarity === 'legendary') unlock('legendary');
+  if (item.rarity === 'legendary' || item.rarity === 'unique' || item.rarity === 'wrld') unlock('legendary');
+  if (item.rarity === 'unique') unlock('unique_gear');
+  if (item.rarity === 'wrld') unlock('wrld_gear');
+}
+
+function unequipSlot(slot) {
+  const id = run.equipment[slot];
+  if (!id) return;
+  run.inventory.push(id);
+  run.equipment[slot] = null;
+}
+
+/** Ask which slot to fill/replace. Returns slot id, or null if cancelled. */
+async function chooseEquipSlot(item) {
+  const isAcc = item.slot === 'accessory';
+  const slots = isAcc ? accessorySlots() : [item.slot];
+  // Empty non-accessory slot — no choice needed
+  if (!isAcc && !run.equipment[item.slot]) return item.slot;
+
+  return await new Promise(resolve => {
+    modalCustom((m, close) => {
+      const rows = slots.map(s => {
+        const cur = run.equipment[s] ? resolveItem(run, run.equipment[s]) : null;
+        return `<button class="pick-option" data-slot="${s}">
+          <span class="po-name">${cur ? `Replace ${slotLabel(s)}` : `Equip to ${slotLabel(s)}`}</span>
+          <span class="po-desc">${cur ? `${cur.name} → pack` : 'Empty slot'}</span>
+        </button>`;
+      }).join('');
+      m.innerHTML = `<h3>Choose a slot</h3>
+        <p class="modal-sub">${item.name}</p>
+        <div class="pick-grid">
+          ${rows}
+          <button class="pick-option" data-cancel="1"><span class="po-name" style="color:var(--ink-dim)">Cancel</span></button>
+        </div>`;
+      m.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { close(); resolve(b.dataset.slot); });
+      m.querySelector('[data-cancel]').onclick = () => { close(); resolve(null); };
+    });
+  });
 }
 
 async function offerEquipment(item, lines) {
-  const compareSlot = slotFor(item);
-  const current = run.equipment[compareSlot] ? resolveItem(run, run.equipment[compareSlot]) : null;
   const sellPrice = Math.round(item.price * 0.6);
-  const v = await modal(`
-    <h3>Loot!</h3>
-    <div class="gear-compare">
-      ${gearCard(item, 'FOUND')}
-      <div class="gear-vs">vs</div>
-      ${gearCard(current, 'EQUIPPED')}
-    </div>
-    <div class="pick-grid">
-      <button class="pick-option" data-close="equip"><span class="po-name">Equip it</span><span class="po-desc">${current ? `${current.name} goes into your pack.` : ''}</span></button>
-      <button class="pick-option" data-close="stash"><span class="po-name">Stash it</span><span class="po-desc">Keep it in your pack — swap anytime from the Character screen.</span></button>
-      <button class="pick-option" data-close="sell"><span class="po-name">Sell it — ${sellPrice}g</span></button>
-    </div>`);
-  if (v === 'equip') {
-    equipItem(item);
-    lines.push({ text: `Equipped: ${item.name}`, cls: 'item' });
-  } else if (v === 'stash') {
+  const isAcc = item.slot === 'accessory';
+  const slots = isAcc ? accessorySlots() : [item.slot];
+
+  const v = await new Promise(resolve => {
+    modalCustom((m, close) => {
+      const finish = (act, slot = null) => { close(); resolve({ act, slot }); };
+      let slotBtns = '';
+      let compareRight = '';
+      if (isAcc) {
+        for (const s of slots) {
+          const cur = run.equipment[s] ? resolveItem(run, run.equipment[s]) : null;
+          slotBtns += `<button class="pick-option" data-act="equip" data-slot="${s}">
+            <span class="po-name">${cur ? `Replace ${slotLabel(s)}` : `Equip to ${slotLabel(s)}`}</span>
+            <span class="po-desc">${cur ? `${cur.name} → pack` : 'Empty slot'}</span>
+          </button>`;
+        }
+        compareRight = `<div class="gear-card equipped"><div class="gc-label">RINGS</div>
+          <div class="gc-desc" style="margin:0">Choose which ring slot to fill. Replaced gear goes into your pack.</div></div>`;
+      } else {
+        const s = item.slot;
+        const cur = run.equipment[s] ? resolveItem(run, run.equipment[s]) : null;
+        slotBtns = `<button class="pick-option" data-act="equip" data-slot="${s}">
+          <span class="po-name">${cur ? 'Replace it' : 'Equip it'}</span>
+          <span class="po-desc">${cur ? `${cur.name} → pack` : ''}</span>
+        </button>`;
+        compareRight = gearCard(cur, 'EQUIPPED');
+      }
+      m.innerHTML = `
+        <h3>Loot!</h3>
+        <div class="gear-compare">
+          ${gearCard(item, 'FOUND')}
+          <div class="gear-vs">vs</div>
+          ${compareRight}
+        </div>
+        <div class="pick-grid">
+          ${slotBtns}
+          <button class="pick-option" data-act="stash"><span class="po-name">Stash it</span><span class="po-desc">Keep it in your pack — swap anytime from the Character screen.</span></button>
+          <button class="pick-option" data-act="sell"><span class="po-name">Sell it — ${sellPrice}g</span></button>
+        </div>`;
+      m.querySelectorAll('[data-act]').forEach(b => b.onclick = () => finish(b.dataset.act, b.dataset.slot || null));
+    });
+  });
+
+  if (v.act === 'equip' && v.slot) {
+    equipItem(item, v.slot);
+    lines.push({ text: `Equipped: ${item.name} (${slotLabel(v.slot)})`, cls: 'item' });
+  } else if (v.act === 'stash') {
     run.inventory.push(item.id);
     lines.push({ text: `Stashed: ${item.name}`, cls: 'item' });
-  } else {
+  } else if (v.act === 'sell') {
     run.gold += sellPrice;
     run.goldEarned += sellPrice;
     if (run.gearBag && item.instanceId) delete run.gearBag[item.id];
@@ -2443,6 +2671,7 @@ async function levelUpModal(up) {
               ${s.secret ? '<span class="po-tag tag" style="border-color:var(--gold);color:var(--gold-bright)">✦ hidden path</span>' : ''}
               <div class="po-name">${s.name}</div>
               <div class="po-desc">${s.hint}</div>
+              ${subclassSkillGrantHtml(s)}
             </button>`).join('')}
         </div>`;
       m.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
@@ -2455,6 +2684,7 @@ async function levelUpModal(up) {
           <div class="levelup-burst">🌟</div>
           <h3 style="text-align:center">EVOLUTION — ${sub.name}!</h3>
           <p class="modal-sub" style="text-align:center">${sub.blurb}</p>
+          ${sub.skill && SKILLS[sub.skill] ? `<div class="panel" style="padding:12px 14px;margin:12px 0;border:1px solid rgba(232,182,74,.35);text-align:left">${skillPickHtml(SKILLS[sub.skill])}</div>` : ''}
           <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">Rise</span></button></div>`).then(async () => {
           if (sub.skill) await maybeEquipSkill(SKILLS[sub.skill]);
           saveRun(run);
@@ -2472,6 +2702,7 @@ async function levelUpModal(up) {
       <div class="levelup-burst">🌟</div>
       <h3 style="text-align:center">EVOLUTION — ${up.deeper.name}!</h3>
       <p class="modal-sub" style="text-align:center">${up.deeper.blurb}</p>
+      ${up.deeper.skill && SKILLS[up.deeper.skill] ? `<div class="panel" style="padding:12px 14px;margin:12px 0;border:1px solid rgba(232,182,74,.35);text-align:left">${skillPickHtml(SKILLS[up.deeper.skill])}</div>` : ''}
       <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">Rise</span></button></div>`);
     if (up.deeper.skill) await maybeEquipSkill(SKILLS[up.deeper.skill]);
     saveRun(run);
@@ -2483,19 +2714,49 @@ async function levelUpModal(up) {
   }
 }
 
-function skillPickHtml(s) {
+function skillCostTip(s) {
   const res = resourceName(run);
-  const costBits = [];
-  if (s.cost) costBits.push(`${s.cost} ${res}`);
-  if (s.charge) costBits.push(`${s.charge}⚡`);
-  const cost = costBits.length ? costBits.join(' + ') : 'FREE';
-  const tip = s.power
-    ? `≈${s.power}% ${s.stat === 'best' ? 'best stat' : (s.stat || 'str').toUpperCase()} + gear`
-    : (s.guard ? 'defensive' : s.healPct ? 'support' : 'utility');
-  return `<span class="po-tag tag">${cost}</span>
+  const bits = [];
+  if (s.cost) bits.push(`${s.cost} ${res}`);
+  if (s.charge) bits.push(`${s.charge}⚡`);
+  return bits.length ? bits.join(' + ') : 'FREE';
+}
+
+function skillEffectTip(s) {
+  if (s.power) {
+    const stat = s.stat === 'best' ? 'best' : (s.stat || 'str').toUpperCase();
+    const tgt = s.target === 'all' ? ' all' : '';
+    let tip = `≈${s.power}% ${stat}${tgt} dmg`;
+    if (s.lifesteal) tip += ` · ${Math.round(s.lifesteal * 100)}% lifesteal`;
+    if (s.stun) tip += ` · ${Math.round(s.stun * 100)}% stun`;
+    if (s.ignoreDef) tip += ' · ignores def';
+    return tip;
+  }
+  if (s.guard) return 'block 30% until next turn · +1⚡';
+  const bits = [];
+  if (s.shield) bits.push(`block ${Math.round(s.shield * 100)}%`);
+  if (s.healPct) bits.push(`heal ${Math.round(s.healPct * 100)}% HP`);
+  if (s.heal) bits.push(`heal ${s.heal}`);
+  if (s.buff) bits.push('self buff');
+  if (bits.length) return bits.join(' · ');
+  return 'utility';
+}
+
+function skillPickHtml(s) {
+  return `<span class="po-tag tag">${skillCostTip(s)}</span>
     <div class="po-name">${s.name}</div>
-    <div class="po-cost">${tip}</div>
+    <div class="po-cost">${skillEffectTip(s)}</div>
     <div class="po-desc">${s.desc}</div>`;
+}
+
+function subclassSkillGrantHtml(sub) {
+  const sk = sub.skill ? SKILLS[sub.skill] : null;
+  if (!sk) return '';
+  return `<div class="po-skill-grant">
+    <div class="po-skill-label">Learns · ${sk.name}</div>
+    <div class="po-cost">${skillCostTip(sk)} · ${skillEffectTip(sk)}</div>
+    <div class="po-desc">${sk.desc}</div>
+  </div>`;
 }
 
 // The climb teaches: pick one technique from your class pool (level-ups and
@@ -2550,7 +2811,7 @@ async function swapSkillModal(newSkill) {
           const s = SKILLS[id];
           return `<button class="pick-option" data-i="${i}">
             <div class="po-name">Replace ${s.name}</div>
-            <div class="po-cost">${s.cost ? s.cost + ' ' + resourceName(run) : 'FREE'}${s.charge ? ' + ' + s.charge + '⚡' : ''}</div>
+            <div class="po-cost">${skillCostTip(s)} · ${skillEffectTip(s)}</div>
             <div class="po-desc">${s.desc}</div>
           </button>`;
         }).join('')}
@@ -2597,6 +2858,16 @@ async function shopScreen(stage, ev) {
         else stock.push({ kind: 'equip', item: forced, price: forced.price });
       }
     }
+  }
+  // Vanishingly rare UNIQUE listing on deep floors
+  if (run.floor >= 18 && rng.chance(0.035 + Math.min(0.04, run.floor * 0.0008))) {
+    const u = rollUnique(rng, run, { preferUseful: true });
+    if (u) stock.push({ kind: 'equip', item: u, price: Math.round(u.price * 1.15) });
+  }
+  // Near-mythic WRLD listing — floor 35+, ~1%
+  if (run.floor >= 35 && rng.chance(0.01 + Math.min(0.015, (run.floor - 35) * 0.0005))) {
+    const w = rollWrld(rng, run, { preferUseful: true, kind: 'equip', coop: coopS, claim: false });
+    if (w) stock.push({ kind: 'equip', item: w, price: Math.round(w.price * 1.25) });
   }
   if (rng.chance(0.5)) {
     const r = rollRelic(rng, run.relics);
@@ -2662,7 +2933,14 @@ async function shopScreen(stage, ev) {
         }
       }
       if (s.kind === 'relic') { run.relics.push(s.item.id); toast(`Relic: ${s.item.name}`, 'info'); SFX.unlock(); }
-      if (s.kind === 'equip') { const lines = []; await offerEquipment(s.item, lines); }
+      if (s.kind === 'equip') {
+        if (s.item.rarity === 'wrld' || s.item.wrld) {
+          markWrldClaimed(run, s.item.baseId || s.item.id, coopS);
+          unlock('wrld_gear');
+        }
+        const lines = [];
+        await offerEquipment(s.item, lines);
+      }
       stock.splice(+btn.dataset.i, 1);
       saveRun(run); renderHud(); render();
     });
@@ -2701,15 +2979,19 @@ function statDisplay(stat) {
   return '<span style="color:var(--ink-faint)">?</span>';
 }
 
-function characterSheet() {
+function characterSheet({ locked = false } = {}) {
   modalCustom((m, close) => {
+    m.classList.add('sheet-modal');
     function render() {
       const eq = run.equipment;
       const compatible = weaponCompatible(run);
       const appr = run.appraisal;
+      const lockNote = locked
+        ? `<p class="modal-sub" style="color:var(--crit)">In combat — gear, pack swaps, and consumables are locked. Use ITEMS on your turn to drink potions.</p>`
+        : `<p class="modal-sub">Floor ${run.floor} · ${run.kills} kills · Origin: ${run.originId ? originById(run.originId)?.name : 'Unknown'}</p>`;
       m.innerHTML = `
         <h3>${run.name} — Lv ${run.level} ${run.raceName} ${classTitle(run)}</h3>
-        <p class="modal-sub">Floor ${run.floor} · ${run.kills} kills · Origin: ${run.originId ? originById(run.originId)?.name : 'Unknown'}</p>
+        ${lockNote}
         <div class="sheet-grid">
           <div class="sheet-section">
             <h4>Fame</h4>
@@ -2728,36 +3010,53 @@ function characterSheet() {
             <h4 style="margin-top:14px">Equipped ${!compatible ? '<span class="tag" style="color:var(--crit);border-color:var(--crit)">⚠ weapon incompatible</span>' : ''}</h4>
             ${EQUIP_SLOTS.map(slot => {
               const it = eq[slot] ? resolveItem(run, eq[slot]) : null;
-              const label = slot.startsWith('accessory') ? 'ring ' + slot.slice(-1) : slot;
+              const label = slotLabel(slot);
+              const packBtn = (!locked && it)
+                ? `<button class="btn small ghost" data-unequip="${slot}">To pack</button>`
+                : '';
               return `<div class="inv-item">${it ? itemIconHtml(it.baseId || it.id, 30) : ''}<div><div class="item-name ${it ? rarityClass(it.rarity) : ''}">${it ? it.name : `<span style="color:var(--ink-faint)">— empty —</span>`}</div>
                 ${it ? `<div class="item-desc">${it.desc}</div>` : ''}</div>
-                <span class="tag">${label}</span></div>`;
+                <div class="inv-actions">${packBtn}<span class="tag slot-tag">${label}</span></div></div>`;
             }).join('')}
             ${run.weaponBonus ? `<div style="font-size:13px;color:var(--ink-dim)">Forge-honed: +${run.weaponBonus} weapon damage</div>` : ''}
           </div>
           <div class="sheet-section">
             <h4>Techniques (${skillCapacity(run)} + Strike &amp; Guard)</h4>
-            ${run.skills.map(id => `<div class="inv-item"><div><div class="item-name">${SKILLS[id].name}${SKILLS[id].charge ? ` <span class="tag">${SKILLS[id].charge}⚡</span>` : ''}</div><div class="item-desc">${SKILLS[id].desc}</div></div></div>`).join('')}
-            ${run.knownSkills.filter(id => !run.skills.includes(id)).length ? `
+            ${run.skills.map(id => {
+              const s = SKILLS[id];
+              return `<div class="inv-item"><div><div class="item-name">${s.name}${s.charge ? ` <span class="tag">${s.charge}⚡</span>` : ''}</div>
+                <div class="po-cost" style="margin:2px 0">${skillCostTip(s)} · ${skillEffectTip(s)}</div>
+                <div class="item-desc">${s.desc}</div></div></div>`;
+            }).join('')}
+            ${!locked && run.knownSkills.filter(id => !run.skills.includes(id)).length ? `
               <h4 style="margin-top:12px">Reserve</h4>
-              ${run.knownSkills.filter(id => !run.skills.includes(id)).map(id => `
-                <div class="inv-item"><div><div class="item-name">${SKILLS[id].name}</div><div class="item-desc">${SKILLS[id].desc}</div></div>
-                <button class="btn small" data-swap="${id}">Equip</button></div>`).join('')}` : ''}
+              ${run.knownSkills.filter(id => !run.skills.includes(id)).map(id => {
+                const s = SKILLS[id];
+                return `
+                <div class="inv-item"><div><div class="item-name">${s.name}</div>
+                <div class="po-cost" style="margin:2px 0">${skillCostTip(s)} · ${skillEffectTip(s)}</div>
+                <div class="item-desc">${s.desc}</div></div>
+                <button class="btn small" data-swap="${id}">Equip</button></div>`;
+              }).join('')}` : ''}
             <h4 style="margin-top:14px">Pack</h4>
             ${run.inventory.length ? run.inventory.map((id, i) => {
               const it = resolveItem(run, id);
-              return `<div class="inv-item">${itemIconHtml(it.baseId || it.id, 30)}<div><div class="item-name ${rarityClass(it.rarity)}">${it.name}</div><div class="item-desc">${it.desc}</div></div>
-                <div style="display:flex;gap:6px">
+              const actions = locked
+                ? ''
+                : `<div class="inv-actions">
                   <button class="btn small" data-equip="${i}">Equip</button>
                   <button class="btn small ghost" data-sellinv="${i}">Sell ${Math.round(it.price * 0.5)}g</button>
-                </div></div>`;
+                </div>`;
+              return `<div class="inv-item">${itemIconHtml(it.baseId || it.id, 30)}<div><div class="item-name ${rarityClass(it.rarity)}">${it.name}</div><div class="item-desc">${it.desc}</div></div>
+                ${actions}</div>`;
             }).join('') : '<div style="color:var(--ink-faint);font-size:14px">No spare gear.</div>'}
             <h4 style="margin-top:14px">Consumables</h4>
             ${run.consumables.length ? [...new Set(run.consumables)].map(id => {
               const c = itemById(id);
               const n = run.consumables.filter(x => x === id).length;
+              const useBtn = locked ? '' : `<button class="btn small" data-use="${id}">Use</button>`;
               return `<div class="inv-item">${itemIconHtml(c.id, 28)}<div><div class="item-name">${c.name} ×${n}</div><div class="item-desc">${c.desc}</div></div>
-                <button class="btn small" data-use="${id}">Use</button></div>`;
+                ${useBtn}</div>`;
             }).join('') : '<div style="color:var(--ink-faint);font-size:14px">Empty pockets.</div>'}
             <h4 style="margin-top:14px">Relics</h4>
             <div class="relic-row">${run.relics.length ? relicItems(run).map(r => `<span class="relic-chip" title="${r.desc}">${r.name}</span>`).join('') : '<span style="color:var(--ink-faint);font-size:14px">None yet.</span>'}</div>
@@ -2768,6 +3067,8 @@ function characterSheet() {
         <div style="text-align:right"><button class="btn small" id="sheet-close">Close</button></div>`;
 
       m.querySelector('#sheet-close').onclick = () => close();
+      if (locked) return;
+
       m.querySelectorAll('[data-use]').forEach(b => b.onclick = () => {
         const c = itemById(b.dataset.use);
         const i = run.consumables.indexOf(c.id);
@@ -2788,10 +3089,19 @@ function characterSheet() {
         await swapSkillModal(SKILLS[b.dataset.swap]);
         saveRun(run);
       });
-      m.querySelectorAll('[data-equip]').forEach(b => b.onclick = () => {
+      m.querySelectorAll('[data-unequip]').forEach(b => b.onclick = () => {
+        unequipSlot(b.dataset.unequip);
+        SFX.click(); saveRun(run); renderHud(); render();
+      });
+      m.querySelectorAll('[data-equip]').forEach(b => b.onclick = async () => {
         const it = resolveItem(run, run.inventory[+b.dataset.equip]);
-        equipItem(it);
-        SFX.unlock(); saveRun(run); renderHud(); render();
+        if (!it) return;
+        close();
+        const slot = await chooseEquipSlot(it);
+        if (!slot) { characterSheet(); return; }
+        equipItem(it, slot);
+        SFX.unlock(); saveRun(run); renderHud();
+        characterSheet();
       });
       m.querySelectorAll('[data-sellinv]').forEach(b => b.onclick = () => {
         const idx = +b.dataset.sellinv;

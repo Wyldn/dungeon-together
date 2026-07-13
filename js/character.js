@@ -38,9 +38,33 @@ function gearMaxNum(run, prop, base = 0) {
   return m;
 }
 
-// Techniques you can carry into battle: 4, plus any +slot relics (§15).
+// Techniques you can carry into battle: 4 base, + relic/gear slots, + boss breakpoints.
 export function skillCapacity(run) {
-  return 4 + gearSum(run, 'extraSkillSlots');
+  let n = 4 + gearSum(run, 'extraSkillSlots');
+  for (const bp of CONFIG.skillBreakpoints || []) {
+    if (run.flags?.[bp.flag] || (run.floor > bp.floor)) n += bp.slots;
+  }
+  return n;
+}
+
+/** Apply any newly earned skill-slot breakpoints (call after boss wins). Returns unlock messages. */
+export function applySkillBreakpoints(run) {
+  const msgs = [];
+  for (const bp of CONFIG.skillBreakpoints || []) {
+    if (run.floor < bp.floor) continue;
+    if (run.flags?.[bp.flag]) continue;
+    // Only grant when this boss floor was just cleared (or already past for old saves)
+    if (run.floor === bp.floor || run.floor > bp.floor) {
+      if (!run.flags) run.flags = {};
+      run.flags[bp.flag] = true;
+      msgs.push({
+        text: `${bp.label} — your mind holds more. (+${bp.slots} technique slots; now ${skillCapacity(run)} into battle.)`,
+        cls: 'good',
+        slots: bp.slots,
+      });
+    }
+  }
+  return msgs;
 }
 
 /* ---------------- weapon compatibility (handoff §20) ---------------- */

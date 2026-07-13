@@ -22,6 +22,9 @@ export const CONFIG = {
     enemyAtkMult: 1.5,       // enemy atk → damage multiplier
     lifestealCapPct: 0.04,   // max heal per hit from any single lifesteal source
     hexTakenMult: 1.25,      // hexed targets take +25% damage
+    floatMs: 1200,           // how long hit/heal numbers linger
+    hitPauseMs: 340,         // pause after each skill hit so the number reads
+    skillResolveMs: 950,     // pause after a full skill before the turn advances
   },
 
   /* ---- combat: Battle Charge ---- */
@@ -45,7 +48,11 @@ export const CONFIG = {
 
   /* ---- boss discipline (§12) ---- */
   boss: {
-    cleanseEvery: 3,        // a boss shrugs off all player statuses every N of its turns
+    // Full shrug of afflictions every N of the boss's turns (not every swing).
+    cleanseEvery: 4,
+    // Spend this much Battle Charge to break freeze/stun early and still act.
+    // Per-boss override via `cleanseCost` on the enemy def.
+    cleanseCost: 2,
     chargeDamageScale: 0.14, // heavy telegraphed hits gain +14% damage per charge segment banked
   },
 
@@ -78,7 +85,7 @@ export const CONFIG = {
     respawnHpPct: 0.30,        // co-op: rejoin next floor at this % max HP
     respawnResourcePct: 0.30,  // co-op: class resource on revive
     itemsLost: 2,              // lesser items lost on death (co-op)
-    protectedRarities: ['epic', 'legendary'], // never lost
+    protectedRarities: ['epic', 'legendary', 'unique', 'wrld'], // never lost
   },
 
   /* ---- party-size (encounter budgets in js/data/balance.js own co-op threat) ----
@@ -101,6 +108,10 @@ export const CONFIG = {
     rerolls: 2,
     underdogPercentile: 0.32,   // bottom X of start-power rolls get comeback weighting
     comebackWeightMult: 3,
+    // Monolith attunement awakening (flat bumps on top of the hidden roll)
+    awakenHp: 3,
+    awakenMp: 2,
+    awakenStatPicks: 2,         // +1 to this many distinct combat stats
   },
 
   /* ---- fame ---- */
@@ -114,6 +125,9 @@ export const CONFIG = {
   /* ---- events ---- */
   events: {
     cardsPerDraw: 3,
+    // Rare alternate draws (~10% each); remainder uses cardsPerDraw
+    cardsPerDrawTwoChance: 0.10,
+    cardsPerDrawFourChance: 0.10,
     sparkleChance: 0.5,        // chance an affinity actually shows its shimmer
     encounterCategoryWeight: 34, // relative weight of Combat cards in draws
   },

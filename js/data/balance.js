@@ -162,18 +162,33 @@ export function residualHpMult(remaining, totalBudget) {
 /**
  * Fill an encounter from a pool under a threat budget.
  * Prefers additional bodies; leftover budget → mild HP mult only.
+ *
+ * Solo early tower (first two biomes) caps body count so a lone climber
+ * is not handed 1v4 trash packs before they have tools.
  */
+export function soloEarlyMaxEnemies(floor, partySize = 1) {
+  if ((partySize || 1) > 1) return null;
+  const f = floor | 0;
+  if (f <= 10) return 2;  // Whispering Forest
+  if (f <= 20) return 3;  // Sunken Ruins
+  return null;
+}
+
 export function planEncounter(rng, {
   floor,
   biomeStart,
   pool,
   partySize = 1,
   allowElite = true,
+  maxEnemies = null,
 } = {}) {
   const budget = encounterBudget(floor, partySize);
   let remaining = budget;
   const usable = allowElite ? [...pool] : pool.filter(e => !e.elite);
   if (!usable.length) return { specs: [], hpMult: 1, budget, spent: 0 };
+
+  const cap = maxEnemies ?? soloEarlyMaxEnemies(floor, partySize);
+  const roomFor = (n = 1) => !cap || specs.length + n <= cap;
 
   const lead = rng.pick(usable);
   const specs = [lead];
@@ -189,17 +204,25 @@ export function planEncounter(rng, {
     }, null);
   };
 
-  // Pack mates are identity, not optional budget luxuries — always bring them.
-  // Overspend is clawed back via residual HP (can go below 1.0).
-  if (lead.pack) {
+  // Pack mates are identity, not optional budget luxuries — always bring them
+  // when the cap allows. Overspend is clawed back via residual HP.
+  if (lead.pack && roomFor(1)) {
     const depth = Math.max(0, floor - biomeStart);
-    const extras = depth < 3 ? 1 : rng.int(1, 2);
+    let extras;
+    if (cap != null && (partySize || 1) <= 1) {
+      // Solo early: usually +1 mate, sometimes a lone pack leader
+      extras = depth < 4 && rng.chance(0.35) ? 0 : 1;
+      if (cap === 2) extras = Math.min(extras, 1);
+    } else {
+      extras = depth < 3 ? 1 : rng.int(1, 2);
+    }
+    if (cap != null) extras = Math.min(extras, Math.max(0, cap - specs.length));
     for (let i = 0; i < extras; i++) {
       const mate = rng.chance(0.7) ? lead : (rng.pick(nonElite()) || lead);
       specs.push(mate);
       remaining -= enemyThreatCost(mate, floor, biomeStart);
     }
-  } else if (!lead.elite && (floor - biomeStart) >= 2 && rng.chance(0.28)) {
+  } else if (!lead.elite && roomFor(1) && (floor - biomeStart) >= 2 && rng.chance(0.28)) {
     const mate = rng.pick(nonElite());
     if (mate) {
       specs.push(mate);
@@ -212,6 +235,7 @@ export function planEncounter(rng, {
   let guard = 0;
   const fillAt = TDC.budget.fillThreshold;
   while (guard++ < 8) {
+    if (cap != null && specs.length >= cap) break;
     const next = cheapest();
     if (!next) break;
     if (next.cost > remaining && next.cost * fillAt > remaining) break;
@@ -222,7 +246,7 @@ export function planEncounter(rng, {
 
   const spent = budget - remaining;
   const hpMult = residualHpMult(remaining, budget);
-  return { specs, hpMult, budget, spent, remaining };
+  return { specs, hpMult, budget, spent, remaining, maxEnemies: cap };
 }
 
 /**
@@ -263,6 +287,8 @@ const RARITY_CAP = {
   rare: 38,
   epic: 58,
   legendary: 85,
+  unique: 130,
+  wrld: 180,
 };
 
 const TIER_CAP_BONUS = { 1: 0, 2: 4, 3: 10, 4: 18, 5: 28 };
