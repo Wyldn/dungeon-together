@@ -8,23 +8,30 @@ function scaleFor(fh, target) {
   return Math.max(1, Math.round(target / fh));
 }
 
-// Two-frame idle strips animate via background-position (CSS .px-sprite).
+// Two-frame (or N-frame) idle strips animate via background-position (CSS .px-sprite).
 export function enemySpriteHtml(id, { boss = false, elite = false } = {}) {
   const a = ENEMY_ART[id];
   if (!a) return null;
+  const frames = a.frames || 2;
   const s = scaleFor(a.h, boss ? 108 : elite ? 84 : 68);
-  return `<div class="px-sprite" style="width:${a.w * s}px;height:${a.h * s}px;background-image:url('${a.f}')"></div>`;
+  const fw = a.w * s, fh = a.h * s;
+  const anim = frames > 1 ? '' : 'animation:none;';
+  return `<div class="px-sprite" style="width:${fw}px;height:${fh}px;--fw:${fw}px;--frames:${frames};background-image:url('${a.f}');background-size:${fw * frames}px ${fh}px;${anim}"></div>`;
 }
 
 export function heroSpriteHtml(classId, target = 68) {
   const a = HERO_ART[classId];
   if (!a) return null;
+  const frames = a.frames || 2;
   const s = scaleFor(a.h, target);
-  return `<div class="px-sprite" style="width:${a.w * s}px;height:${a.h * s}px;background-image:url('${a.f}')"></div>`;
+  const fw = a.w * s, fh = a.h * s;
+  return `<div class="px-sprite" style="width:${fw}px;height:${fh}px;--fw:${fw}px;--frames:${frames};background-image:url('${a.f}');background-size:${fw * frames}px ${fh}px"></div>`;
 }
 
 export function itemIconHtml(id, size = 34) {
-  const f = ITEM_ART[id];
+  // Affixed instances use `${baseId}__hex` — art is keyed by catalog id.
+  const base = typeof id === 'string' && id.includes('__') ? id.split('__')[0] : id;
+  const f = ITEM_ART[base] || ITEM_ART[id];
   if (!f) return '';
   return `<img class="px-icon" src="${f}" style="width:${size}px;height:${size}px" alt="" />`;
 }

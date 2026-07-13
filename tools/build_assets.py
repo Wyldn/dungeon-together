@@ -1,7 +1,7 @@
 """Asset pipeline: packs + generated pixel art -> assets/ + js/data/artmap.js
 
 Sources (user-provided packs, staged outside the repo):
-  - PixelFlush Pixel Monsters Mega Pack (enemy sprites, 2-frame strips)
+  - PixelFlush Pixel Monsters Mega Pack (enemy sprites, multi-frame idle strips)
   - PixelFlush Pixel Weapons Mega Pack (weapon icons, 32x64)
   - xDeviruchi 8-bit Fantasy & Adventure Music (10 loopable tracks, CC-BY-SA 4.0)
   - TopDownFantasy Forest (title backdrop mockup)
@@ -46,7 +46,7 @@ if os.path.exists(_existing_map):
 def have(path):
     return path and os.path.isdir(path)
 
-# ============ 1. ENEMIES (2-frame idle strips from the monsters pack) ============
+# ============ 1. ENEMIES (idle strips from the monsters pack; 2–4 frames) ============
 ENEMY_MAP = {
     # forest
     'wolf': 'Spectral Hound 2.png', 'sprite': 'Forest Nymph.png', 'boar': 'Phantom Bull.png',
@@ -75,9 +75,18 @@ if have(MON):
     for eid, src in ENEMY_MAP.items():
         p = os.path.join(MON, src)
         im = Image.open(p)
-        fw, fh = im.width // 2, im.height  # two horizontal idle frames
+        # Idle strips are usually square frames in a horizontal row (2, 3, or 4).
+        # Older code always used width//2, which doubled 4-frame sheets on screen.
+        if im.height > 0 and im.width % im.height == 0:
+            frames = max(1, im.width // im.height)
+        else:
+            frames = 2
+        fw, fh = im.width // frames, im.height
         shutil.copy(p, os.path.join(OUT, 'img/enemies', f'{eid}.png'))
-        artmap['enemies'][eid] = {'f': f'assets/img/enemies/{eid}.png', 'w': fw, 'h': fh}
+        artmap['enemies'][eid] = {
+            'f': f'assets/img/enemies/{eid}.png',
+            'w': fw, 'h': fh, 'frames': frames,
+        }
 
 # ============ 2. WEAPON ICONS from the weapons pack ============
 WEAPON_MAP = {
@@ -414,7 +423,7 @@ for cid, (main, dark, trim) in HERO_PAL.items():
     strip.paste(draw_hero(cid, main, dark, trim, 0), (0, 0))
     strip.paste(draw_hero(cid, main, dark, trim, 1), (32, 0))
     strip.save(os.path.join(OUT, 'img/heroes', f'{cid}.png'))
-    artmap['heroes'][cid] = {'f': f'assets/img/heroes/{cid}.png', 'w': 32, 'h': 32}
+    artmap['heroes'][cid] = {'f': f'assets/img/heroes/{cid}.png', 'w': 32, 'h': 32, 'frames': 2}
 
 # ============ 4b. RACE PORTRAITS (distinct 32x32 busts) ============
 for d in ['img/races', 'img/origins', 'img/events']:

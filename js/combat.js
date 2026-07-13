@@ -1,6 +1,6 @@
 // Turn-based combat engine (handoff §8–§14).
 //   - Initiative rolls at every battle; visible turn order on the left.
-//   - Universal Guard (70% block) and Basic Attack, regardless of weapon.
+//   - Universal Guard (30% block) and Basic Attack, regardless of weapon.
 //   - Six-segment Battle Charge for players AND enemies; AOE/heavy hits gated.
 //   - Enemy specials telegraphed one segment before they're ready.
 // Two drivers: solo (fully interleaved initiative) and shared co-op
@@ -10,8 +10,9 @@
 import { SKILLS } from './data/skills.js';
 import { CONSUMABLES } from './data/items.js';
 import { CONFIG } from './data/config.js';
+import { enemyScale, softLevelDamage, rewardMult } from './data/tdc.js';
 import { derived, gearHas, heal, restoreMana, usableSkillIds, resourceName, changeFame, classTitle } from './character.js';
-import { initiativeOrder, addCharge, canAfford, pickEnemySpecial, enemyTelegraph, applyGuard } from './systems.js';
+import { initiativeOrder, addCharge, tickEnemyCharge, canAfford, pickEnemySpecial, enemyTelegraph, applyGuard } from './systems.js';
 import { biomeForFloor } from './data/enemies.js';
 import { ICONS } from './icons.js';
 import { enemySpriteHtml, heroSpriteHtml, biomeBgUrl } from './art.js';
@@ -23,16 +24,20 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const LAST_FLOOR = 51;
 
 export function buildEnemy(spec, floor, biomeStart, { boss = false, hpMult = 1 } = {}) {
-  const depth = Math.max(0, floor - biomeStart);
-  const scale = 1 + depth * 0.045;
+  const isBoss = boss || !!spec.boss;
+  const biome = biomeForFloor(floor);
+  const sc = enemyScale(floor, biomeStart, biome.id, { boss: isBoss, elite: !!spec.elite });
+  const spd = Math.max(1, Math.round((spec.spd || 5) * sc.spd));
   return {
     ...spec,
-    boss: boss || !!spec.boss,
+    boss: isBoss,
     elite: !!spec.elite,
-    maxHp: Math.round(spec.hp * scale * hpMult),
-    hp: Math.round(spec.hp * scale * hpMult),
-    atk: Math.round(spec.atk * scale),
-    def: Math.round(spec.def * (1 + depth * 0.02)),
+    maxHp: Math.round(spec.hp * sc.hp * hpMult),
+    hp: Math.round(spec.hp * sc.hp * hpMult),
+    atk: Math.round(spec.atk * sc.atk),
+    def: Math.round(spec.def * sc.def),
+    spd,
+    chargeGain: (spec.chargeGain || 1) * sc.chargeGain,
     charge: 0,
     statuses: {},
     phaseTriggers: [],
@@ -81,6 +86,9 @@ class Fight {
           hp: p.status?.hp ?? 1, maxHp: p.status?.maxHp ?? 1,
           down: p.status?.down || false,
           def: p.status?.def ?? 0, dodge: p.status?.dodge ?? 5,
+          dex: p.status?.stats?.dex ?? p.status?.dex,
+          spdStat: p.status?.spdStat,
+          initiative: p.status?.initiative ?? 0,
         });
       }
     }
@@ -194,16 +202,40 @@ class Fight {
 
   /* ---------------- initiative ---------------- */
   rollBattleOrder() {
+    // Co-op: deterministic seat order for players (same on every client), then
+    // enemies by uid. Personal RNGs diverge across the party, so rolling
+    // initiative locally (or racing a corder packet) desyncs the turn strip.
+    if (this.shared) {
+      const d = this.d();
+      const seats = this.coop.seatOrder();
+      const players = seats.map(sid => {
+        if (sid === this.coop.you) {
+          return {
+            key: 'player', name: this.run.name, glyph: null,
+            spdStat: Math.round(4 + d.dex * 0.3), mod: d.initiative,
+            isPlayer: true, stableId: sid,
+          };
+        }
+        const a = this.allies.get(sid);
+        const spd = a?.spdStat ?? (a?.dex != null ? Math.round(4 + a.dex * 0.3) : 8);
+        return {
+          key: 'ally-' + sid, name: a?.name || 'Companion', glyph: null,
+          spdStat: spd, mod: a?.initiative || 0,
+          isPlayer: true, stableId: sid,
+        };
+      });
+      const foes = this.aliveEnemies()
+        .map(e => ({ key: e.uid, name: e.name, glyph: e.glyph, spdStat: e.spd, mod: 0, isPlayer: false, stableId: e.uid }))
+        .sort((a, b) => String(a.stableId).localeCompare(String(b.stableId)));
+      this.order = [...players, ...foes];
+      this.log('Turn order: ' + this.order.map(o => o.name).join(' → '), 'log-sys');
+      return;
+    }
     const d = this.d();
     const entities = [
-      { key: 'player', name: this.run.name, glyph: null, spdStat: Math.round(4 + d.dex * 0.3), mod: d.initiative + (this.mod.enemyFirst ? -100 : 0), isPlayer: true, stableId: 'p-' + (this.coop?.you || 'me') },
+      { key: 'player', name: this.run.name, glyph: null, spdStat: Math.round(4 + d.dex * 0.3), mod: d.initiative + (this.mod.enemyFirst ? -100 : 0), isPlayer: true, stableId: 'p-me' },
       ...this.aliveEnemies().map(e => ({ key: e.uid, name: e.name, glyph: e.glyph, spdStat: e.spd, mod: 0, isPlayer: false, stableId: e.uid })),
     ];
-    if (this.shared) {
-      for (const [id, a] of this.allies) {
-        entities.push({ key: 'ally-' + id, name: a.name, glyph: null, spdStat: 8, mod: 0, isPlayer: true, stableId: id });
-      }
-    }
     this.order = initiativeOrder(this.rng, entities, this.run.floor);
     this.log('Initiative: ' + this.order.map(o => o.name).join(' → '), 'log-sys');
   }
@@ -328,14 +360,16 @@ class Fight {
     const s = this.player.statuses;
     const hpW = clamp(this.run.hp / this.run.maxHp * 100, 0, 100);
     const mpW = clamp(this.run.mp / Math.max(1, this.run.maxMp) * 100, 0, 100);
+    const resName = resourceName(this.run);
+    const resShort = resName.length > 4 ? resName.slice(0, 3).toUpperCase() : resName.toUpperCase();
     let html = `
       <div class="combatant ${this.run.down ? 'downed' : ''} ${actingKey === 'player' ? 'acting' : ''}">
         <div class="fighter-sprite" id="sprite-player">${heroSpriteHtml(this.run.classId) || ICONS[this.run.classId]}</div>
         <div class="cx-info">
           <div class="cx-head"><span class="fighter-name">${this.run.name}${this.run.down ? ' (down)' : ''}</span></div>
-          <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${hpW}%"></div></div></div>
-          <div class="cx-bar-row"><span class="cx-blabel mp">MP</span><div class="bar cx-thin"><div class="bar-fill mp" style="width:${mpW}%"></div></div></div>
-          <div class="cx-bar-row"><span class="cx-blabel foc">FOC</span>${this.focPips(this.charge)}</div>
+          <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${hpW}%"></div><span class="cx-bar-num">${Math.round(this.run.hp)}/${Math.round(this.run.maxHp)}</span></div></div>
+          <div class="cx-bar-row"><span class="cx-blabel mp" title="${resName}">${resShort}</span><div class="bar cx-thin"><div class="bar-fill mp" style="width:${mpW}%"></div><span class="cx-bar-num">${Math.round(this.run.mp)}/${Math.round(this.run.maxMp)}</span></div></div>
+          <div class="cx-bar-row"><span class="cx-blabel foc">FOC</span>${this.focPips(this.charge)}<span class="cx-bar-num cx-foc-num">${this.charge}/${CONFIG.charge.max}</span></div>
         </div>
         <div class="fighter-statuses">
           ${this.player.guarding ? '<span class="status-pip guard-pip">🛡 GUARD</span>' : ''}
@@ -348,7 +382,7 @@ class Fight {
           <div class="fighter-sprite" id="sprite-${id}">${heroSpriteHtml(a.classId) || ICONS[a.classId] || ICONS.warrior}</div>
           <div class="cx-info">
             <div class="cx-head"><span class="fighter-name">${a.name}${a.down ? ' (down)' : ''}</span></div>
-            <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${clamp(a.hp / a.maxHp * 100, 0, 100)}%"></div></div></div>
+            <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${clamp(a.hp / a.maxHp * 100, 0, 100)}%"></div><span class="cx-bar-num">${Math.round(a.hp)}/${Math.round(a.maxHp)}</span></div></div>
           </div>
         </div>`;
     }
@@ -419,7 +453,7 @@ class Fight {
     const d = this.d();
     const statVal = sk.stat === 'best' ? Math.max(d.str, d.dex, d.int, d.wis) : (d[sk.stat] || d.str);
     const C = CONFIG.combat;
-    const base = (statVal * C.playerStatWeight + d.atk * C.playerAtkWeight + this.run.level * C.playerLevelWeight + C.playerFlat)
+    const base = (statVal * C.playerStatWeight + d.atk * C.playerAtkWeight + softLevelDamage(this.run.level, C.playerLevelWeight) + C.playerFlat)
       * (sk.power / 100) * this.buffValue('str').mult;
     const label = sk.stat === 'best' ? 'best stat' : sk.stat.toUpperCase();
     return { avg: Math.max(1, Math.round(base)), label, stat: sk.stat };
@@ -584,7 +618,13 @@ class Fight {
     this.offs.push(this.coop.net.on('cend', d => this.finishShared(d)));
     this.offs.push(this.coop.net.on('status', (d, from) => {
       const a = this.allies.get(from);
-      if (a) { a.hp = d.hp; a.maxHp = d.maxHp; a.down = d.down; a.def = d.def ?? a.def; a.dodge = d.dodge ?? a.dodge; }
+      if (a) {
+        a.hp = d.hp; a.maxHp = d.maxHp; a.down = d.down;
+        a.def = d.def ?? a.def; a.dodge = d.dodge ?? a.dodge;
+        if (d.spdStat != null) a.spdStat = d.spdStat;
+        if (d.initiative != null) a.initiative = d.initiative;
+        if (d.dex != null) a.dex = d.dex;
+      }
       this.renderPlayers(this._actingKey);
     }));
     this.offs.push(this.coop.net.sys('left', () => {
@@ -622,33 +662,10 @@ class Fight {
       this.renderPlayers(this._actingKey);
     }));
 
-    // ONE turn order for the whole party: the host rolls it and broadcasts;
-    // every client displays and iterates the same sequence (patch)
-    if (this.coop.isHost) {
-      this.coop.net.send({
-        k: 'corder',
-        order: this.order.map(o => ({ key: o.key, name: o.name, glyph: o.glyph, isPlayer: o.isPlayer, stableId: o.stableId })),
-      });
-    } else {
-      this.offs.push(this.coop.net.on('corder', d => { this._corder = d; this._corderResolve?.(); }));
-      if (!this._corder) {
-        await new Promise(r => {
-          this._corderResolve = r;
-          setTimeout(r, 4000); // never hang on a lost packet — fall back to local order
-        });
-      }
-      if (this._corder) {
-        // remap the host's keys to local ones (the host's own seat is our ally)
-        this.order = this._corder.order.map(o => {
-          if (!o.isPlayer) return o;
-          const seat = String(o.stableId).replace(/^p-/, '');
-          return { ...o, key: seat === this.coop.you ? 'player' : 'ally-' + seat, stableId: seat };
-        });
-        this.renderTurnOrder();
-      }
-    }
-    this.sharedSeats = this.order.filter(o => o.isPlayer).map(o => String(o.stableId).replace(/^p-/, ''));
+    // Seat order is already identical on every client (see rollBattleOrder).
+    this.sharedSeats = this.order.filter(o => o.isPlayer).map(o => String(o.stableId));
     if (!this.sharedSeats.length) this.sharedSeats = this.coop.seatOrder();
+    this.renderTurnOrder();
 
     await sleep(700);
     while (!this.ended) {
@@ -683,7 +700,11 @@ class Fight {
   runStatus() {
     const d = this.d();
     const r = this.run;
-    return { ...r, def: d.def, dodge: d.dodge };
+    return {
+      ...r, def: d.def, dodge: d.dodge,
+      spdStat: Math.round(4 + d.dex * 0.3),
+      initiative: d.initiative,
+    };
   }
 
   async localSharedTurn() {
@@ -768,7 +789,7 @@ class Fight {
     for (const e of this.aliveEnemies()) {
       if (this.ended) return;
       e.turnCount++;
-      e.charge = addCharge(e.charge || 0, (e.chargeGain || 1), this.mod.chargeMult || 1);
+      e.charge = tickEnemyCharge(e, this.mod.chargeMult || 1);
       ops.push({ type: 'echarge', uid: e.uid, charge: e.charge });
 
       // §12: bosses shrug off crowd-control on a cadence
@@ -1003,8 +1024,8 @@ class Fight {
         gold += this.rng.int(e.gold?.[0] ?? 0, e.gold?.[1] ?? 0);
         xp += e.xp || 0;
       }
-      gold = Math.round(gold * (this.mod.goldMult || 1) * CONFIG.economy.combatGoldMult);
-      xp = Math.round(xp * 1.45);
+      gold = Math.round(gold * (this.mod.goldMult || 1) * CONFIG.economy.combatGoldMult * rewardMult(this.run.floor).gold);
+      xp = Math.round(xp * 1.45 * rewardMult(this.run.floor).xp);
       this.coop.net.send({ k: 'cend', result: 'win', gold, xp });
       this.finishShared({ result: 'win', gold, xp });
       return true;
@@ -1129,7 +1150,7 @@ class Fight {
     const statVal = sk.stat === 'best' ? Math.max(d.str, d.dex, d.int, d.wis) : (d[sk.stat] || d.str);
     const buff = this.buffValue('str');
     const C = CONFIG.combat;
-    let base = (statVal * C.playerStatWeight + d.atk * C.playerAtkWeight + this.run.level * C.playerLevelWeight + C.playerFlat)
+    let base = (statVal * C.playerStatWeight + d.atk * C.playerAtkWeight + softLevelDamage(this.run.level, C.playerLevelWeight) + C.playerFlat)
       * (sk.power / 100) * buff.mult;
     let critChance = d.crit + (sk.critBonus || 0);
     const isCrit = this.rng.chance(clamp(critChance, 0, 85) / 100);
@@ -1237,7 +1258,7 @@ class Fight {
   /* ================= ENEMY TURN (solo) ================= */
   async enemyTurn(e) {
     e.turnCount++;
-    e.charge = addCharge(e.charge || 0, (e.chargeGain || 1), this.mod.chargeMult || 1);
+    e.charge = tickEnemyCharge(e, this.mod.chargeMult || 1);
     this.renderEnemies();
 
     // §12: bosses cleanse crowd-control on a fixed cadence
@@ -1432,7 +1453,7 @@ class Fight {
   deathSaves() {
     if (gearHas(this.run, 'revive') && !this.run.usedRevive) {
       this.run.usedRevive = true;
-      this.run.hp = Math.round(this.run.maxHp * 0.3);
+      this.run.hp = Math.round(this.run.maxHp * CONFIG.death.reviveHpPct);
       this.log('The Phoenix Feather ignites — you rise from the ashes!', 'log-sys');
       SFX.evolve();
       return;
@@ -1456,8 +1477,9 @@ class Fight {
         gold += this.rng.int(e.gold[0], e.gold[1]);
         xp += e.xp;
       }
-      gold = Math.round(gold * d.goldMult * d.combatGoldMult * (this.mod.goldMult || 1) * CONFIG.economy.combatGoldMult);
-      xp = Math.round(xp * 1.45 * d.xpMult);
+      const rw = rewardMult(this.run.floor);
+      gold = Math.round(gold * d.goldMult * d.combatGoldMult * (this.mod.goldMult || 1) * CONFIG.economy.combatGoldMult * rw.gold);
+      xp = Math.round(xp * 1.45 * d.xpMult * rw.xp);
       this.finishSolo('win', { gold, xp });
       return true;
     }

@@ -1,6 +1,8 @@
 // Origins (handoff §23): short PLAYABLE introductions. Each origin is an
 // event card resolved before Floor 1 — a choice, not a static menu bonus.
 // Effects use the same declarative outcome format as events.js.
+// House rule: never hand out starter-tier weapons. Gear rewards must be a
+// clear upgrade (tier 2+), or use upgradeWeapon / class-agnostic bonuses.
 
 export const ORIGINS = [
   {
@@ -12,11 +14,11 @@ export const ORIGINS = [
     text: 'The Arcanum\'s spire hums above you. Tomorrow you climb the tower; tonight, the Academy offers a graduate one parting gift. Professor Immel waits with three doors open.',
     choices: [
       { label: 'The library — take the sealed grimoire', hint: 'a wide-taught technique',
-        outcome: { text: 'The grimoire\'s lock clicks open at your touch — it was waiting for you. Its central chapter teaches the sweeping form: how to strike EVERYTHING at once.', learnAoe: true, flag: 'origin_arcane' } },
-      { label: 'The vault — take the focus crystal', hint: 'equipment',
-        outcome: { text: 'The crystal drinks the lamplight. "Sell it if you must," Immel sighs, "but it would rather be used."', item: 'oak_staff', gold: 30, flag: 'origin_arcane' } },
-      { label: 'The observatory — one reading of your stars', hint: 'appraisal',
-        outcome: { text: 'Immel charts your constellation and hands you the reading face-down. "The tower will confirm it. Or make a liar of the sky."', appraisal: 'partial', fame: 5 } },
+        outcome: { text: 'The grimoire\'s lock clicks open at your touch — it was waiting for you. Its central chapter teaches the sweeping form: how to strike EVERYTHING at once.', learnAoe: true, flag: 'origin_arcane', mana: 10 } },
+      { label: 'The vault — take the ashwood focus', hint: 'better staff + coin',
+        outcome: { text: 'The ashwood staff drinks the lamplight better than oak ever did. "Outclass your first year," Immel says, almost kindly.', item: 'ashwood_staff', gold: 40, flag: 'origin_arcane' } },
+      { label: 'The observatory — one reading of your stars', hint: 'appraisal + clarity',
+        outcome: { text: 'Immel charts your constellation and hands you the reading face-down. "The tower will confirm it. Or make a liar of the sky."', appraisal: 'partial', fame: 5, statUp: { stat: 'int', amt: 1 } } },
     ],
   },
   {
@@ -28,11 +30,11 @@ export const ORIGINS = [
     text: 'Master Ollen circles you on the sparring sand — your last lesson before the tower. "Show me what you leave with," she says, and attacks.',
     choices: [
       { label: 'Overpower her', hint: 'the sweeping form',
-        outcome: { text: 'You catch her blade on yours and PUSH. She lands on her back, laughing. "Good. Then you\'re ready for the Ninth Hall\'s last lesson — the form that answers MANY blades."', learnAoe: true } },
+        outcome: { text: 'You catch her blade on yours and PUSH. She lands on her back, laughing. "Good. Then you\'re ready for the Ninth Hall\'s last lesson — the form that answers MANY blades."', learnAoe: true, maxHp: 8 } },
       { label: 'Outlast her', hint: 'guard training',
-        outcome: { text: 'You give ground, guard high, until her arms tire first. "Better," she pants. "Walls win wars." Your Guard is drilled into instinct.', statUp: { stat: 'wis', amt: 2 }, maxHp: 10, flag: 'guard_trained' } },
-      { label: 'Trick her', hint: 'technique',
-        outcome: { text: 'You drop your sword — and take hers while she watches yours fall. Silence. Then: "The tower deserves you." It is not entirely a compliment.', statUp: { stat: 'dex', amt: 3 }, fame: 3 } },
+        outcome: { text: 'You give ground, guard high, until her arms tire first. "Better," she pants. "Walls win wars." Your Guard is drilled into instinct.', statUp: { stat: 'wis', amt: 2 }, maxHp: 12, flag: 'guard_trained' } },
+      { label: 'Earn the Hall blade', hint: 'steel upgrade',
+        outcome: { text: 'She yields and tosses you a bearded axe from the rack. "Rusty iron is for applicants. You\'re enrolled."', item: 'battle_axe', fame: 3 } },
     ],
   },
   {
@@ -44,11 +46,11 @@ export const ORIGINS = [
     text: 'Captain Vosk counts out your final pay in the rain. "Tower money is better than war money," he shrugs. "Take your cut and one thing from the wagon."',
     choices: [
       { label: 'Double pay, no gear', hint: 'gold',
-        outcome: { text: '"Smart. Steel breaks, coin doesn\'t." He pays you twice and keeps your name off the death-ledger, for luck.', gold: 90 } },
-      { label: 'The wagon\'s best blade', hint: 'equipment',
-        outcome: { text: 'Under the tarp: a sword that has outlived four owners. Vosk doesn\'t meet your eyes. "Fifth time\'s the charm."', item: 'steel_blade' } },
+        outcome: { text: '"Smart. Steel breaks, coin doesn\'t." He pays you twice and keeps your name off the death-ledger, for luck.', gold: 110, fame: 2 } },
+      { label: 'The wagon\'s best blade', hint: 'steel upgrade',
+        outcome: { text: 'Under the tarp: a sword that has outlived four owners — and outclasses anything issued to recruits. Vosk doesn\'t meet your eyes. "Fifth time\'s the charm."', item: 'steel_blade', gold: 15 } },
       { label: 'The company\'s letter of mark', hint: 'fame',
-        outcome: { text: 'A letter naming you a Banner in good standing. Doors open for the Banners — the ones that don\'t get kicked in.', fame: 12, gold: 20 } },
+        outcome: { text: 'A letter naming you a Banner in good standing. Doors open for the Banners — the ones that don\'t get kicked in.', fame: 14, gold: 35, consumable: 'potion_s' } },
     ],
   },
   {
@@ -59,12 +61,12 @@ export const ORIGINS = [
     title: 'License Day',
     text: 'The Guild clerk stamps your climbing license without looking up. "Benefits package," she recites. "Pick one. No refunds. Next."',
     choices: [
-      { label: 'The survival kit', hint: 'consumables',
-        outcome: { text: 'Two potions, a rope, and a pamphlet titled SO YOU\'RE GOING TO DIE IN A TOWER. The pamphlet is surprisingly moving.', consumable: 'potion_s', consumable2: 'calming_tea' } },
+      { label: 'The survival kit', hint: 'consumables + gold',
+        outcome: { text: 'Two potions, a rope, and a pamphlet titled SO YOU\'RE GOING TO DIE IN A TOWER. The pamphlet is surprisingly moving. So is the stipend.', consumable: 'potion_s', consumable2: 'calming_tea', gold: 45 } },
       { label: 'The assessor\'s hour', hint: 'appraisal',
-        outcome: { text: 'A bored Guild assessor reads your potential like a grocery list. The numbers are approximate. The boredom is exact.', appraisal: 'full' } },
+        outcome: { text: 'A bored Guild assessor reads your potential like a grocery list. The numbers are approximate. The boredom is exact.', appraisal: 'full', gold: 20 } },
       { label: 'The veteran\'s map notes', hint: 'knowledge',
-        outcome: { text: 'Margin-scrawled wisdom from climbers who came back. Half of it is warnings. The other half is apologies.', xp: 30, fame: 4, flag: 'guild_notes' } },
+        outcome: { text: 'Margin-scrawled wisdom from climbers who came back. Half of it is warnings. The other half is apologies.', xp: 40, fame: 5, flag: 'guild_notes', maxHp: 6 } },
     ],
   },
   {
@@ -76,13 +78,13 @@ export const ORIGINS = [
     text: 'Your final night of the novitiate. The abbot offers the traditional parting: one blessing, freely chosen, and the door unbarred at dawn.',
     choices: [
       { label: 'Blessing of the body', hint: 'vitality',
-        outcome: { text: 'Warmth pours down your spine like sunrise. Your body will remember this kindness on cold floors.', maxHp: 15, hp: 15 } },
+        outcome: { text: 'Warmth pours down your spine like sunrise. Your body will remember this kindness on cold floors.', maxHp: 18, hp: 18, consumable: 'potion_s' } },
       { label: 'Blessing of the mind', hint: 'clarity',
-        outcome: { text: 'The abbot touches your brow. The noise you have carried all your life goes quiet — not gone, just... seated.', statUp: { stat: 'wis', amt: 3 }, mana: 8 } },
+        outcome: { text: 'The abbot touches your brow. The noise you have carried all your life goes quiet — not gone, just... seated.', statUp: { stat: 'wis', amt: 3 }, mana: 12, fame: 3 } },
       { label: 'No blessing — donate your savings', hint: 'faith, rewarded?',
         outcome: { roll: { stat: 'lk', dc: 10 },
           success: { text: 'You give everything. At the gate, a beggar presses something into your hand: a relic older than the temple. The abbot, watching, smiles like he arranged it. He didn\'t.', gold: -25, relicRoll: true, fame: 6 },
-          fail: { text: 'You give everything and walk out lighter in every sense. Virtue, it turns out, pays in exposure.', gold: -25, fame: 8, xp: 20 } } },
+          fail: { text: 'You give everything and walk out lighter in every sense. Virtue, it turns out, pays in exposure — and a pilgrim\'s cudgel left as alms.', gold: -25, fame: 8, xp: 25, item: 'pilgrims_cudgel' } } },
     ],
   },
   {
@@ -94,15 +96,81 @@ export const ORIGINS = [
     text: 'The Rat Queen of the Undercity turns your debt-marker over in her fingers. "The tower, is it? Climbers\' corpses pay well." She names your exit price — or a favor.',
     choices: [
       { label: 'Pay the debt', hint: 'clean break',
-        outcome: { text: 'You slide your savings across the table. She burns the marker. "Die owing NOTHING," she says — the Undercity\'s only blessing.', gold: -20, fame: 2, statUpRandom: 1 } },
+        outcome: { text: 'You slide your savings across the table. She burns the marker. "Die owing NOTHING," she says — the Undercity\'s only blessing.', gold: -15, fame: 3, statUpRandom: 2, consumable: 'potion_s' } },
       { label: 'One last job', hint: 'risky',
         outcome: { roll: { stat: 'dex', dc: 11 },
-          success: { text: 'One rooftop, one lockbox, no witnesses. She keeps the contents; you keep the skills and a bonus for style.', statUp: { stat: 'dex', amt: 3 }, gold: 40, flag: 'undercity_ties' },
-          fail: { text: 'One rooftop, one loose tile, one very long fall into one very full canal. She laughs the debt away — the entertainment covered it.', hp: -10, statUp: { stat: 'dex', amt: 2 }, flag: 'undercity_ties' } } },
+          success: { text: 'One rooftop, one lockbox, no witnesses. She keeps most of it; you keep a runed dagger and a bonus for style.', statUp: { stat: 'dex', amt: 3 }, gold: 50, item: 'runed_dagger', flag: 'undercity_ties' },
+          fail: { text: 'One rooftop, one loose tile, one very long fall into one very full canal. She laughs the debt away — the entertainment covered it.', hp: -8, statUp: { stat: 'dex', amt: 2 }, gold: 25, flag: 'undercity_ties' } } },
       { label: 'Steal your own marker', hint: 'audacious',
         outcome: { roll: { stat: 'lk', dc: 13 },
-          success: { text: 'You lift it from her table while paying compliments. Halfway out, applause — she watched the whole time. "GO," she grins. "You\'re wasted down here."', fame: 8, statUp: { stat: 'lk', amt: 2 }, flag: 'undercity_ties' },
-          fail: { text: 'Her hand closes on your wrist mid-reach. The good news: she admires the attempt. The bad news is your wrist.', hp: -12, statUp: { stat: 'lk', amt: 1 } } } },
+          success: { text: 'You lift it from her table while paying compliments. Halfway out, applause — she watched the whole time. "GO," she grins. "You\'re wasted down here."', fame: 10, statUp: { stat: 'lk', amt: 2 }, gold: 30, flag: 'undercity_ties' },
+          fail: { text: 'Her hand closes on your wrist mid-reach. The good news: she admires the attempt. The bad news is your wrist — and a consolation purse.', hp: -10, statUp: { stat: 'lk', amt: 1 }, gold: 35 } } },
+    ],
+  },
+  {
+    id: 'ranger_lodge',
+    name: 'The Greenward Lodge',
+    glyph: '🏹',
+    blurb: 'Trail signs, quiet boots, and a long good-bye to the trees.',
+    title: 'The Last Mark',
+    text: 'Warden Pell taps a trail map with a scarred finger. "Tower\'s no forest. Still — pick your parting gift. We don\'t send pups up empty-handed."',
+    choices: [
+      { label: 'A stormcaller\'s practice bow', hint: 'bow upgrade',
+        outcome: { text: 'Not the Lodge\'s finest — but finer than hunting scrap. "Aim true. Miss once. Learn forever," Pell says.', item: 'storm_bow', gold: 20, flag: 'lodge_mark' } },
+      { label: 'Trail rations and a lesson', hint: 'dex + supplies',
+        outcome: { text: 'She drills footwork until dusk, then packs your bag herself. Your feet remember the rhythm.', statUp: { stat: 'dex', amt: 2 }, consumable: 'potion_s', consumable2: 'mana_vial', maxHp: 8 } },
+      { label: 'The Lodge\'s AOE drill', hint: 'wide technique',
+        outcome: { text: '"When the pack surrounds you," Pell says, "you do not pick favorites." The form sticks.', learnAoe: true, fame: 4 } },
+    ],
+  },
+  {
+    id: 'circus',
+    name: 'The Midnight Circus',
+    glyph: '🎪',
+    blurb: 'Applause is a currency. So is falling and getting back up.',
+    title: 'Curtain Call',
+    text: 'Ringmaster Vexa bows you off the sawdust. "The tower\'s a tougher audience. Take a souvenir — something that still smells like applause."',
+    choices: [
+      { label: 'The lucky coin act', hint: 'luck + gold',
+        outcome: { text: 'She presses a warm coin into your palm. "Don\'t spend it. Just... keep it nervous."', statUp: { stat: 'lk', amt: 3 }, gold: 55, fame: 5 } },
+      { label: 'The acrobat\'s wraps', hint: 'fist upgrade',
+        outcome: { text: 'Tigerhide wraps, still smelling of resin and triumph. "Your hands were always the show."', item: 'tiger_wraps', maxHp: 6 } },
+      { label: 'One more dangerous stunt', hint: 'risky power',
+        outcome: { roll: { stat: 'lk', dc: 12 },
+          success: { text: 'You stick the landing. The crowd that isn\'t there still cheers. Something in you grows louder.', statUpRandom: 2, xp: 35, fame: 6 },
+          fail: { text: 'You miss the landing. Vexa laughs until she cries, then heals you with a flask that tastes like victory diluted.', hp: -12, gold: 40, consumable: 'potion_l' } } },
+    ],
+  },
+  {
+    id: 'forge',
+    name: 'The Emberworks',
+    glyph: '🔨',
+    blurb: 'Sparks, oaths, and iron that remembers who held it.',
+    title: 'Quenching Day',
+    text: 'Master Brann pulls a piece from the quench and holds it up steaming. "Apprentice\'s last heat. Choose what leaves with you — and what stays in the fire."',
+    choices: [
+      { label: 'Take the tempered chestpiece', hint: 'armor upgrade',
+        outcome: { text: 'Still warm. Still honest. "Don\'t scratch it on the first goblin," Brann mutters, proud.', item: 'chainmail', maxHp: 10 } },
+      { label: 'Ask for a weapon worthy of the climb', hint: 'class upgrade',
+        outcome: { text: 'He studies your stance, then nods at the rack. "Not the scrap pile. That one."', upgradeWeapon: true, gold: 25, fame: 2 } },
+      { label: 'Work one more night for coin', hint: 'gold + strength',
+        outcome: { text: 'Dawn finds you soot-black and richer. Your arms hum with the rhythm of the hammer.', gold: 85, statUp: { stat: 'str', amt: 2 } } },
+    ],
+  },
+  {
+    id: 'archive',
+    name: 'The Silent Archive',
+    glyph: '📚',
+    blurb: 'Knowledge is heavy. So is leaving it behind.',
+    title: 'Checkout',
+    text: 'The archivist slides three ledgers across the desk. "No shouting. No running. One choice. The tower doesn\'t renew late fees — it collects them."',
+    choices: [
+      { label: 'A treatise on sweeping forms', hint: 'AOE technique',
+        outcome: { text: 'Diagrams of blades and sigils overlapping. Your mind sketches the motion before your hands do.', learnAoe: true, mana: 8, flag: 'archive_debt' } },
+      { label: 'A void-scribed focus', hint: 'epic staff (tempting)',
+        outcome: { text: 'The void scepter is sealed in wax. "Restricted," the archivist whispers. "Which is why you want it."', item: 'void_scepter', fame: -2, flag: 'archive_debt' } },
+      { label: 'Copy your own potential', hint: 'appraisal + wisdom',
+        outcome: { text: 'You transcribe what the tower might already know about you. The ink dries into something almost like courage.', appraisal: 'full', statUp: { stat: 'wis', amt: 2 }, xp: 20 } },
     ],
   },
 ];

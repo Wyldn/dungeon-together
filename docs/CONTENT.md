@@ -43,15 +43,53 @@ triggered by events with the `promoteRace: true` outcome effect.
 choices) resolved before Floor 1, plus a menu blurb. Choices use the standard
 outcome format.
 
+## Add equipment
+`js/data/items.js`. Slots: `weapon` (needs `wtype`), `helmet`, `chest`, `legs`,
+`boots`, `accessory` (three ring slots exist). Passive props are picked up by
+`character.js#derived` automatically (`str/dex/int/wis/lk, def, crit, dodge,
+lifesteal, goldMult, xpMult, dmgMult, dmgTakenMult, initiative, fameGainMult,
+startCharge, revive, deathward, reveal:'ranks'|'exact'`…).
+
+**Affixes:** Random loot/shops roll affixes from `js/data/affixes.js` (weapon /
+armor / accessory pools). Power is gated by `itemPowerCap` × TDC `itemSlack` —
+affixes that would breach the budget are skipped. Named `exclusive` / `unique`
+items never roll affixes. Affixed drops are stored as instances in
+`run.gearBag` (ids look like `steel_blade__a1b2c3`).
+
+## Add a skill
+`js/data/skills.js`. Prefer the component layer in `js/data/skillcomponents.js`:
+```js
+import { COMP, composeSkill } from './skillcomponents.js';
+my_skill: composeSkill(
+  { id: 'my_skill', name: 'My Skill', class: 'rogue', fx: 'slash', desc: '…' },
+  COMP.cost(16), COMP.charge(1), COMP.target('one'),
+  COMP.dmg(110, 'dex'), COMP.poison(0.4),
+),
+```
+`cost` (class resource) + `charge` (Battle Charge segments, 0–6). AOE
+(`target:'all'`) must cost ≥3 charge — the test suite enforces it.
+Effects: `power/stat` (or `stat:'best'`), `critBonus, ignoreDef, execute,
+poison/burn/freeze/stun, lifesteal, healPct, shield, buff, selfHpCost, guard`.
+
 ## Add an event
 `js/data/events.js`. Required: `id`, `biome` (`'any'` or a biome id),
 `category` (drives the face-down card: combat/mystery/merchant/recovery/
 training/appraisal/equipment/social/advancement/dangerous/unknown), `type`,
 `glyph`, `title`, `text`, `w` (draw weight), `choices`.
 
-Optional: `once`, `cond(state)`, `affinity: {classes, races, underdog}` (sparkle
-eligibility), `comeback: true` (weighted ×3 for underdog starts), `mimicChance`,
-`resolution: 'random'`.
+Optional: `tags` (see below), `once`, `cond(state)`,
+`affinity: {classes, races, underdog}` (sparkle eligibility), `comeback: true`
+(weighted ×3 for underdog starts), `mimicChance`, `resolution: 'random'`.
+
+**Event tags** (modifiers, not story generators): defaults live in
+`js/data/eventtagmap.js`; rules in `js/data/eventtags.js`. Tags nudge draw
+weight and lightly tint outcomes (e.g. `gamble` softens DCs for underdogs,
+`recovery` boosts heal % slightly). Author the card text by hand; attach tags
+like `mentor`, `curse`, `fame-test`, `class-specific`, `sigil`, `spark-for-player`.
+
+**Milestones:** reuse `js/data/milestones.js` (`Milestone.fame(25)`,
+`Milestone.flag('defiler')`, `Milestone.all(...)`) for secret gates and
+`secretCond` helpers.
 
 Outcome effects (composable): `text, gold, goldPct, hp, hpPct, maxHp, mana,
 manaPct, fullHeal, fullMana, fame, xp, statUp, statUpRandom, itemRoll,
@@ -81,21 +119,26 @@ Same shape in `BOSSES`, keyed by floor. Give it ≥2 specials (mid + max charge)
 fast dukes), and `intro`/`taunt` lines. Mechanics: `summons`, `heads`, `phases`,
 `chargeOnPhase`.
 
-## Add equipment
-`js/data/items.js`. Slots: `weapon` (needs `wtype`), `helmet`, `chest`, `legs`,
-`boots`, `accessory` (three ring slots exist). Passive props are picked up by
-`character.js#derived` automatically (`str/dex/int/wis/lk, def, crit, dodge,
-lifesteal, goldMult, xpMult, dmgMult, dmgTakenMult, initiative, fameGainMult,
-startCharge, revive, deathward, reveal:'ranks'|'exact'`…).
+## Balance — encounter-first
 
-## Add a skill
-`js/data/skills.js`. `cost` (class resource) + `charge` (Battle Charge segments,
-0–6). AOE (`target:'all'`) must cost ≥3 charge — the test suite enforces it.
-Effects: `power/stat` (or `stat:'best'`), `critBonus, ignoreDef, execute,
-poison/burn/freeze/stun, lifesteal, healPct, shield, buff, selfHpCost, guard`.
+Do **not** tune HP, enemy count, Guard, or revival independently. Balance complete
+encounters around action economy, expected rounds, damage taken, and resource spend.
+
+| Layer | File | Role |
+|-------|------|------|
+| Tension dials | [`js/data/config.js`](../js/data/config.js) | Guard (=30%), revival (=30%), recovery, economy |
+| Climb curve | [`js/data/tdc.js`](../js/data/tdc.js) | Floor power, biome scale, soft caps, budget knobs, boss RTK bands |
+| Encounter math | [`js/data/balance.js`](../js/data/balance.js) | Threat budgets, mechanic costs, item power, validators, event history weights |
+
+**Co-op:** party size increases an *encounter budget*. Bodies are bought first;
+leftover budget becomes a capped HP pad — never both large HP mults *and*
+guaranteed extras.
+
+**Validators** (in `tools/test.js`) reject over-budget items and stacked loadouts.
+Expand content only after `node tools/test.js` is green.
 
 ## Verify
 ```bash
-node tools/test.js   # 465+ data/logic assertions
-node tools/sim.js    # distribution + balance simulations (seeded)
+node tools/test.js   # data/logic + balance validators
+node tools/sim.js    # combat sims, P25/P50/P75 power, boss RTK
 ```

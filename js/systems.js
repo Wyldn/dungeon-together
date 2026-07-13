@@ -38,6 +38,17 @@ export function addCharge(current, amount, mult = 1) {
   return Math.max(0, Math.min(CONFIG.charge.max, current + Math.round(amount * mult)));
 }
 
+/** Apply fractional per-turn charge rates (biome TDC multipliers). */
+export function tickEnemyCharge(enemy, mod = 1) {
+  const rate = (enemy.chargeGain || 1) * mod;
+  enemy._chargeFrac = (enemy._chargeFrac || 0) + rate;
+  const gained = Math.floor(enemy._chargeFrac);
+  enemy._chargeFrac -= gained;
+  if (gained <= 0) return enemy.charge || 0;
+  enemy.charge = addCharge(enemy.charge || 0, gained);
+  return enemy.charge;
+}
+
 export function canAfford(skill, mp, charge) {
   return mp >= (skill.cost || 0) && charge >= (skill.charge || 0);
 }

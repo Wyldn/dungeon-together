@@ -2,6 +2,10 @@
 // Slots (handoff §19): weapon, helmet, chest, legs, boots, accessory ×3.
 // Weapons carry a wtype; classes define compatible types (§20). Equipping an
 // incompatible weapon disables everything except Strike and Guard.
+// Random loot applies affixes from js/data/affixes.js, gated by TDC power caps.
+
+import { applyAffixes, finalizeLootItem } from './affixes.js';
+import { CLASSES } from './classes.js';
 
 export const EQUIP_SLOTS = ['weapon', 'helmet', 'chest', 'legs', 'boots', 'accessory1', 'accessory2', 'accessory3'];
 
@@ -92,7 +96,7 @@ export const ACCESSORIES = [
   { id: 'berserker_totem', name: 'Berserker\'s Totem', slot: 'accessory', rarity: 'rare', tier: 3, dmgMult: 1.12, str: 2, desc: '+12% damage dealt, +2 STR.', price: 210 },
   { id: 'warding_charm', name: 'Warding Charm', slot: 'accessory', rarity: 'rare', tier: 3, def: 2, dmgTakenMult: 0.94, desc: '+2 defense, take 6% less damage.', price: 200 },
   { id: 'necro_phial', name: 'Phial of the Pale Choir', slot: 'accessory', rarity: 'epic', tier: 4, int: 4, mp: 12, manaRegen: 2, exclusive: true, desc: '+4 INT, +12 max resource, +2 resource regen. (event-exclusive)', price: 300 },
-  { id: 'phoenix_feather', name: 'Phoenix Feather', slot: 'accessory', rarity: 'epic', tier: 4, revive: true, desc: 'Once per run: survive a killing blow with 30% HP.', price: 350 },
+  { id: 'phoenix_feather', name: 'Phoenix Feather', slot: 'accessory', rarity: 'epic', tier: 4, revive: true, desc: 'Once per run: survive a killing blow with 30% HP (matches Guard / co-op revive).', price: 350 },
   { id: 'kings_eye', name: 'Eye of the Nameless King', slot: 'accessory', rarity: 'legendary', tier: 5, reveal: 'exact', int: 4, wis: 4, lk: 4, desc: 'While worn: see your EXACT live stats, and glimpse enemy strength. +4 INT/WIS/LK.', price: 800, unique: true },
 ];
 
@@ -128,7 +132,7 @@ export const RELICS = [
 export const CONSUMABLES = [
   { id: 'potion_s', name: 'Minor Healing Potion', rarity: 'common', desc: 'Restore 30 HP.', heal: 30, price: 25 },
   { id: 'potion_l', name: 'Greater Healing Potion', rarity: 'uncommon', desc: 'Restore 70 HP.', heal: 70, price: 60 },
-  { id: 'mana_vial', name: 'Essence Vial', rarity: 'common', desc: 'Restore 25 class resource.', mana: 25, price: 25 },
+  { id: 'mana_vial', name: 'Essence Vial', rarity: 'common', desc: 'Restore 40 class resource.', mana: 40, price: 35 },
   { id: 'calming_tea', name: 'Hero\'s Tonic', rarity: 'uncommon', desc: 'Restore 25 HP and steel your reputation (+2 Fame).', heal: 25, fame: 2, price: 45 },
   { id: 'bomb', name: 'Alchemist\'s Bomb', rarity: 'uncommon', desc: 'Deal 40 damage to all enemies.', bombDmg: 40, price: 55 },
   { id: 'smelling_salts', name: 'Smelling Salts', rarity: 'rare', desc: 'Cure all ailments and restore 20 HP.', cure: true, heal: 20, price: 70 },
@@ -137,20 +141,69 @@ export const CONSUMABLES = [
 
 export const ALL_EQUIPMENT = [...WEAPONS, ...HELMETS, ...CHEST_ARMOR, ...LEG_ARMOR, ...BOOTS, ...ACCESSORIES];
 
-export function itemById(id) {
-  return ALL_EQUIPMENT.find(i => i.id === id)
-    || RELICS.find(i => i.id === id)
-    || CONSUMABLES.find(i => i.id === id);
-}
-
-// Drop tables ------------------------------------------------------------
 const RARITY_W = { common: 50, uncommon: 30, rare: 14, epic: 5, legendary: 1 };
 
-export function rollEquipment(rng, tier, luckBonus = 0) {
+/**
+ * Resolve a catalog id OR a run-scoped affixed instance id.
+ * Prefer resolveItem(run, id) when a run is available.
+ */
+export function itemById(id, gearBag = null) {
+  if (!id) return null;
+  if (gearBag && gearBag[id]) return gearBag[id];
+  return ALL_EQUIPMENT.find(i => i.id === id)
+    || RELICS.find(i => i.id === id)
+    || CONSUMABLES.find(i => i.id === id)
+    || null;
+}
+
+/** Run-aware lookup (affixed loot lives in run.gearBag). */
+export function resolveItem(run, id) {
+  return itemById(id, run?.gearBag);
+}
+
+/** True if this item helps the class (compatible weapon, or any non-weapon). */
+export function itemUsefulForClass(item, classId) {
+  if (!item || !classId) return true;
+  if (item.slot !== 'weapon') return true;
+  const cls = CLASSES[classId];
+  if (!cls?.weapons?.length) return true;
+  return cls.weapons.includes(item.wtype);
+}
+
+/** True if equipping this weapon would lock out class techniques. */
+export function itemIncompatibleForClass(item, classId) {
+  if (!item || item.slot !== 'weapon') return false;
+  return !itemUsefulForClass(item, classId);
+}
+
+/**
+ * Roll a base template, apply TDC-gated affixes, and optionally register
+ * the instance on the run. Pass `{ floor, run, classId, usefulBias }` from
+ * gameplay callers. usefulBias ~3–4 ≈ 75–80% useful when the pool is mixed.
+ */
+export function rollEquipment(rng, tier, luckBonus = 0, opts = {}) {
+  const floor = opts.floor ?? 1;
+  const run = opts.run || null;
+  const classId = opts.classId || run?.classId || null;
+  const usefulBias = opts.usefulBias ?? (classId ? 3.5 : 1); // ~78% toward useful
+  const requireUseful = !!opts.requireUseful && classId;
   // event-exclusive gear never surfaces in random loot/shops (uniques still can, rarely)
-  const pool = ALL_EQUIPMENT.filter(i => !i.exclusive && i.tier <= tier && i.tier >= Math.max(1, tier - 1));
-  const weighted = pool.map(i => ({ w: (RARITY_W[i.rarity] || 1) + (i.rarity !== 'common' ? luckBonus : 0), item: i }));
-  return rng.weighted(weighted).item;
+  let pool = ALL_EQUIPMENT.filter(i => !i.exclusive && i.tier <= tier && i.tier >= Math.max(1, tier - 1));
+  if (requireUseful) {
+    const useful = pool.filter(i => itemUsefulForClass(i, classId));
+    if (useful.length) pool = useful;
+  }
+  if (!pool.length) return null;
+  const weighted = pool.map(i => {
+    let w = (RARITY_W[i.rarity] || 1) + (i.rarity !== 'common' ? luckBonus : 0);
+    if (classId && itemUsefulForClass(i, classId)) w *= usefulBias;
+    // Mild preference for items that out-tier a common starter feel
+    if ((i.tier || 1) >= Math.max(2, tier - 1)) w *= 1.15;
+    return { w, item: i };
+  });
+  const base = rng.weighted(weighted).item;
+  const affixed = applyAffixes(base, rng, { floor });
+  return finalizeLootItem(affixed, rng, run);
 }
 
 export function rollRelic(rng, owned = [], luckBonus = 0) {

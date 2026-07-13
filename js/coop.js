@@ -35,6 +35,14 @@ export class CoopSession {
     this.offs.push(net.on('cardresult', d => this.cardResults.set(d.floor, d.idx)));
     this.throneMsg = null;
     this.offs.push(net.on('throne', d => { this.throneMsg = d; }));
+    // Party requeue votes — buffered so a late end-screen still sees earlier votes
+    this.requeueVotes = new Set();
+    this.offs.push(net.on('requeue', (d, from) => {
+      if (!this.requeueVotes) this.requeueVotes = new Set();
+      if (d.yes) this.requeueVotes.add(from);
+      else this.requeueVotes.delete(from);
+      this.onRequeue?.();
+    }));
     this.offs.push(net.sys('roster', () => {
       this._syncRoster();
       this.onPartnerUpdate?.();
@@ -120,6 +128,8 @@ export class CoopSession {
       sanity: Math.round(run.sanity), maxSanity: run.maxSanity,
       gold: run.gold, floor: run.floor, down: !!run.down,
       def: run.def, dodge: run.dodge, // callers pass derived values via runStatus()
+      spdStat: run.spdStat, initiative: run.initiative,
+      dex: run.stats?.dex ?? run.dex,
     };
     const key = JSON.stringify(msg);
     if (key === this.lastStatus) return;

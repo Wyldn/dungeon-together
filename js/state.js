@@ -120,10 +120,10 @@ export function startDescriptor(percentile) {
 
 /* ------------------------- RUN (per-climb) ------------------------- */
 
-export function newRun(meta, { classId, raceId = 'human', originId = null, name, seed = randomSeed() }) {
+export function newRun(meta, { classId, raceId = 'human', originId = null, name, seed = randomSeed(), gen: providedGen = null }) {
   const cls = CLASSES[classId];
   const up = id => upgradeRank(meta, id);
-  const gen = rollStart(classId, raceId, randomSeed());
+  const gen = providedGen || rollStart(classId, raceId, randomSeed());
   // 3 fixed skills + 1 random from the class pool — rarely (15%), it's the AOE
   const kitRng = makeRng(randomSeed());
   const bonusSkill = cls.pool ? (kitRng.chance(0.15) ? cls.pool.rare : cls.pool.common) : cls.startSkills[0];
@@ -172,11 +172,14 @@ export function newRun(meta, { classId, raceId = 'human', originId = null, name,
       accessory1: null, accessory2: null, accessory3: null,
     },
     inventory: [],
+    gearBag: {},
+    seenEventTags: [],
     relics: [],
     consumables: ['potion_s'],
     weaponBonus: 0,
     flags: {},
     seenEvents: [],
+    recentCategories: [],
     sigils: [],
     kills: 0,
     guardCount: 0,
@@ -213,10 +216,13 @@ function migrateV1() {
 
 function migrateRun(run) {
   run.inventory = run.inventory || [];
+  run.gearBag = run.gearBag || {};
+  run.seenEventTags = run.seenEventTags || [];
   run.fame = run.fame ?? CONFIG.fame.start;
   run.growthRank = run.growthRank || 'C';
   run.guardCount = run.guardCount || 0;
   run.appraisal = run.appraisal || null;
+  run.recentCategories = run.recentCategories || [];
   run.equipment = {
     weapon: null, helmet: null, chest: null, legs: null, boots: null,
     accessory1: null, accessory2: null, accessory3: null,

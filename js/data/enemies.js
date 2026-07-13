@@ -1,5 +1,6 @@
 // Bestiary. Base stats are for the biome's first floor; the engine scales
-// them by floor depth (predefined curves — never by player power, §7).
+// them via the Tower Difficulty Curve in js/data/tdc.js (depth × biome
+// multipliers — never by live player power).
 //
 // Battle Charge (handoff §12): enemies share the player charge framework.
 // specials: [{ at, name, mult, aoe?, stun?, burn?, freeze?, heal?, desc }]
@@ -123,66 +124,67 @@ export const ENEMIES = {
 export const BOSSES = {
   10: {
     id: 'elderwood', name: 'The Elderwood Guardian', glyph: '🌲', biome: 'forest',
-    hp: 115, atk: 10, def: 5, spd: 3, gold: [60, 90], xp: 60, regen: 0.03, boss: true,
+    // Tuned for P50 RTK ~6–10 and ~20–35% HP loss (tools/sim.js §9).
+    hp: 125, atk: 8, def: 5, spd: 3, gold: [60, 90], xp: 60, regen: 0.03, boss: true,
     chargeGain: 1,
     specials: [
-      { at: 3, name: 'Limb Sweep', mult: 1.4, aoe: true, desc: 'branches groan overhead' },
-      { at: 6, name: 'FOREST\'S VERDICT', mult: 2.2, desc: 'ten thousand judged climbers watch through its rings' },
+      { at: 3, name: 'Limb Sweep', mult: 1.35, aoe: true, desc: 'branches groan overhead' },
+      { at: 6, name: 'FOREST\'S VERDICT', mult: 2.0, desc: 'ten thousand judged climbers watch through its rings' },
     ],
     intro: 'The oldest tree in the forest uproots itself. It has judged ten thousand climbers.\nIt has approved of none.',
     taunt: 'YOU BURN LIKE ALL THE REST.',
   },
   20: {
     id: 'lich', name: 'Lich of the Fallen King', glyph: '👑', biome: 'ruins',
-    hp: 175, atk: 15, def: 6, spd: 8, gold: [90, 130], xp: 90, caster: true, summons: 'skeleton', boss: true,
+    hp: 190, atk: 11, def: 5, spd: 8, gold: [90, 130], xp: 90, caster: true, summons: 'skeleton', boss: true,
     chargeGain: 1,
     specials: [
-      { at: 3, name: 'Soul Tithe', mult: 1.5, heal: 0.06, desc: 'the crown\'s lights burn colder' },
-      { at: 6, name: 'DYNASTY\'S END', mult: 1.8, aoe: true, desc: 'six hundred years of grievance condenses' },
+      { at: 3, name: 'Soul Tithe', mult: 1.4, heal: 0.06, desc: 'the crown\'s lights burn colder' },
+      { at: 6, name: 'DYNASTY\'S END', mult: 1.7, aoe: true, desc: 'six hundred years of grievance condenses' },
     ],
     intro: 'A crown floats above a throne of dust. Beneath it, two cold lights ignite.\n"Kneel. My kingdom needs subjects."',
     taunt: 'DEATH IS A DOOR. I AM THE KEY.',
   },
   30: {
     id: 'frost_queen', name: 'Queen Vessalia the Unmelting', glyph: '❄️', biome: 'frost',
-    hp: 255, atk: 20, def: 9, spd: 9, gold: [120, 170], xp: 130, freeze: 0.35, boss: true,
+    hp: 270, atk: 13, def: 7, spd: 9, gold: [120, 170], xp: 130, freeze: 0.28, boss: true,
     chargeGain: 1,
     specials: [
-      { at: 3, name: 'Glacial Decree', mult: 1.4, freezeSure: true, desc: 'the temperature plummets' },
-      { at: 6, name: 'ETERNAL WINTER', mult: 1.9, aoe: true, freezeSure: true, desc: 'the court\'s frozen betrayers turn their heads in unison' },
+      { at: 3, name: 'Glacial Decree', mult: 1.35, freezeSure: true, desc: 'the temperature plummets' },
+      { at: 6, name: 'ETERNAL WINTER', mult: 1.75, aoe: true, freezeSure: true, desc: 'the court\'s frozen betrayers turn their heads in unison' },
     ],
     intro: 'The Frost Queen does not rise from her throne. She merely opens her eyes,\nand the temperature of your blood becomes negotiable.',
     taunt: 'WINTER OUTLASTS EVERYTHING. EVEN HOPE.',
   },
   40: {
     id: 'hydra', name: 'The Grieving Hydra', glyph: '🐉', biome: 'swamp',
-    hp: 380, atk: 27, def: 10, spd: 4, gold: [160, 220], xp: 180, regen: 0.08, heads: true, boss: true,
+    hp: 330, atk: 14, def: 8, spd: 4, gold: [160, 220], xp: 180, regen: 0.04, heads: true, boss: true,
     chargeGain: 1,
     specials: [
-      { at: 3, name: 'Threefold Snap', mult: 1.5, desc: 'three heads inhale together' },
-      { at: 6, name: 'SORROW UNENDING', mult: 2.0, aoe: true, desc: 'the weeping head finally screams' },
+      { at: 3, name: 'Threefold Snap', mult: 1.4, desc: 'three heads inhale together' },
+      { at: 6, name: 'SORROW UNENDING', mult: 1.85, aoe: true, desc: 'the weeping head finally screams' },
     ],
     intro: 'Three heads surface from the black water. One weeps. One laughs.\nThe third simply opens its jaws.',
     taunt: 'CUT ONE SORROW DOWN. TWO MORE RISE.',
   },
   50: {
     id: 'infernal_duke', name: 'Duke Malgrimm, Gatekeeper of the Throne', glyph: '😈', biome: 'hell',
-    hp: 480, atk: 33, def: 13, spd: 11, gold: [220, 300], xp: 250, burn: 0.45, boss: true,
+    hp: 400, atk: 14, def: 10, spd: 10, gold: [220, 300], xp: 250, burn: 0.25, boss: true,
     chargeGain: 2, // the Duke is a duelist — he banks momentum fast
     specials: [
-      { at: 3, name: 'Sword of Swords', mult: 1.6, desc: 'the blades within his blade align' },
-      { at: 6, name: 'GATEKEEPER\'S TOLL', mult: 2.1, aoe: true, burnSure: true, desc: 'he stops being polite about it' },
+      { at: 3, name: 'Sword of Swords', mult: 1.5, desc: 'the blades within his blade align' },
+      { at: 6, name: 'GATEKEEPER\'S TOLL', mult: 1.9, aoe: true, burnSure: true, desc: 'he stops being polite about it' },
     ],
     intro: '"Fifty floors," the Duke muses, drawing a sword made of other swords.\n"Impressive. The King will want to kill you personally. Let\'s disappoint him."',
     taunt: 'THE THRONE IS A PRIVILEGE. DYING HERE IS FREE.',
   },
   51: {
     id: 'demon_king', name: 'VORATH, THE DEMON KING', glyph: '🜏', biome: 'throne',
-    hp: 650, atk: 38, def: 15, spd: 12, gold: [0, 0], xp: 0, phases: true, boss: true,
+    hp: 510, atk: 15, def: 11, spd: 11, gold: [0, 0], xp: 0, phases: true, boss: true,
     chargeGain: 1, chargeOnPhase: 3, // enrage banks charge instantly
     specials: [
-      { at: 3, name: 'Century\'s Edge', mult: 1.6, desc: 'his blade remembers every hero it has ended' },
-      { at: 6, name: 'THE KING\'S QUESTION', mult: 2.2, aoe: true, desc: 'the air itself takes his side' },
+      { at: 3, name: 'Century\'s Edge', mult: 1.5, desc: 'his blade remembers every hero it has ended' },
+      { at: 6, name: 'THE KING\'S QUESTION', mult: 2.0, aoe: true, desc: 'the air itself takes his side' },
     ],
     intro: 'The Demon King sets down a book, marks his page, and stands.\n"Every century, one of you reaches this room. Every century I ask the same question."\nHis blade ignites the air itself.\n"Are you the interesting kind?"',
     taunt: 'I HAVE KILLED HEROES WITH BETTER STATS THAN YOURS.',

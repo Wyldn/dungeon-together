@@ -12,9 +12,20 @@ import { EVENTS, CATEGORY_META } from '../js/data/events.js';
 import { ENEMIES, BOSSES, MODIFIERS } from '../js/data/enemies.js';
 import { ALL_EQUIPMENT, RELICS, CONSUMABLES, itemById, EQUIP_SLOTS } from '../js/data/items.js';
 import { CONFIG } from '../js/data/config.js';
+import {
+  TDC, expectedPower, enemyScale, partyHpMult, rewardMult,
+  softLevelDamage, softHpGain, cappedDmgTakenMult, resourceRegen,
+} from '../js/data/tdc.js';
+import {
+  guardReviveReconciled, floorBenchmark, encounterBudget, planEncounter,
+  enemyThreatCost, mechanicBudgetCost, residualHpMult,
+  itemPowerScore, validateItemPower, validateLoadout, estimatePlayerPower,
+  historyCategoryWeight, bossFightTargets, MECHANIC_COSTS,
+} from '../js/data/balance.js';
 import { RANK_ORDER, rankFor, rankAtLeast, appraisalRange, rollGrowthRank, growthMult } from '../js/data/ranks.js';
-import { rollInitiative, initiativeOrder, addCharge, canAfford, pickEnemySpecial, enemyTelegraph, applyGuard } from '../js/systems.js';
+import { rollInitiative, initiativeOrder, addCharge, tickEnemyCharge, canAfford, pickEnemySpecial, enemyTelegraph, applyGuard } from '../js/systems.js';
 import { makeRng } from '../js/rng.js';
+import { syntheticClimber, simulateFight } from './combat_sim.js';
 
 globalThis.localStorage = globalThis.localStorage || { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 
@@ -223,11 +234,172 @@ console.log('— kits & AOE access (patch) —');
 
 console.log('— config sanity —');
 t('level-up restores 50% of missing', CONFIG.recovery.levelUpMissingPct === 0.5);
-t('death respawn at 25%', CONFIG.death.respawnHpPct === 0.25 && CONFIG.death.respawnResourcePct === 0.25);
+t('death respawn at 30% (reconciled with Guard)', CONFIG.death.respawnHpPct === 0.3 && CONFIG.death.respawnResourcePct === 0.3);
+t('revive pct matches respawn', CONFIG.death.reviveHpPct === CONFIG.death.respawnHpPct);
 t('guard blocks 30% (config)', CONFIG.guard.blockPct === 0.3);
+t('Guard ↔ revival reconciled', guardReviveReconciled());
 t('charge display name configurable', typeof CONFIG.charge.displayName === 'string');
 t('modifiers have no sanity mechanics', !JSON.stringify(MODIFIERS).includes('sanity'));
 t('relics have no sanity mechanics', !JSON.stringify(RELICS).includes('anity'));
+
+console.log('— tower difficulty curve —');
+{
+  t('expected power rises with floor', expectedPower(1) < expectedPower(26) && expectedPower(26) < expectedPower(51));
+  const early = enemyScale(1, 1, 'forest');
+  const lateForest = enemyScale(10, 1, 'forest');
+  t('depth scales hp within biome', lateForest.hp > early.hp);
+  const hell = enemyScale(41, 41, 'hell');
+  t('hell biome hp mult above forest', hell.hp > early.hp);
+  t('legacy partyHpMult is flat (budgets own co-op)', partyHpMult(1) === 1 && partyHpMult(4) === 1);
+  t('reward mult grows with floor', rewardMult(40).gold > rewardMult(5).gold);
+  t('hp softcap after L10', softHpGain(11, 10) < 10 && softHpGain(5, 10) === 10);
+  t('level damage softcap after L15', softLevelDamage(20, 1) < 20 && softLevelDamage(10, 1) === 10);
+  t('mitigation capped at 65%', cappedDmgTakenMult(0.2) === 1 - TDC.player.mitigationCap);
+  t('resource regen uses TDC base', resourceRegen(0, 0) === TDC.resource.baseRegen);
+  const sc = enemyScale(5, 1, 'forest');
+  t('buildEnemy-equivalent scale above base', sc.hp > 1 && sc.atk > 1);
+  const e = { charge: 0, chargeGain: 1.5, _chargeFrac: 0 };
+  tickEnemyCharge(e);
+  t('fractional charge banks then grants', e.charge === 1 && e._chargeFrac > 0);
+  tickEnemyCharge(e);
+  t('fractional charge grants again', e.charge === 3);
+}
+
+console.log('— encounter budgets & floor benchmark —');
+{
+  const bm1 = floorBenchmark(1);
+  const bm51 = floorBenchmark(51);
+  t('floor benchmark power rises', bm1.power < bm51.power);
+  t('floor benchmark has combat RTK band', bm1.combat.rounds[0] < bm1.combat.rounds[1]);
+  t('encounter budget grows with party', encounterBudget(10, 1) < encounterBudget(10, 3));
+  t('encounter budget grows with floor', encounterBudget(5, 1) < encounterBudget(40, 1));
+  const rng = makeRng(99);
+  const plan1 = planEncounter(rng, { floor: 5, biomeStart: 1, pool: ENEMIES.forest, partySize: 1 });
+  const plan4 = planEncounter(makeRng(99), { floor: 5, biomeStart: 1, pool: ENEMIES.forest, partySize: 4 });
+  t('larger party spends more bodies or HP', plan4.specs.length > plan1.specs.length || plan4.hpMult >= plan1.hpMult);
+  t('residual HP capped', residualHpMult(1, 1) <= 1 + TDC.budget.residualHpCap + 1e-9);
+  t('overspend trims HP', residualHpMult(-1, 1) < 1 && residualHpMult(-1, 1) >= 1 - TDC.budget.residualHpCap - 1e-9);
+  t('wolf has positive threat', enemyThreatCost(ENEMIES.forest[0], 1, 1) > 0.5);
+  t('elite costs more than trash', mechanicBudgetCost({ elite: true }) > mechanicBudgetCost({}));
+  t('aoe special has mechanic cost', MECHANIC_COSTS.aoeSpecial > 0);
+  t('boss targets defined for all bosses', Object.keys(BOSSES).every(f => bossFightTargets(Number(f)).rounds.length === 2));
+}
+
+console.log('— item power + loadout validators —');
+{
+  let over = 0;
+  for (const it of ALL_EQUIPMENT) {
+    const v = validateItemPower(it);
+    if (!v.ok) { over++; console.error('  over-budget item:', it.id, v.score, '/', v.cap); }
+  }
+  t('no equipment exceeds power cap', over === 0);
+  t('item scores are positive for weapons', itemPowerScore(ALL_EQUIPMENT.find(i => i.slot === 'weapon')) > 0);
+  const stacked = validateLoadout([
+    { id: 'a', dmgMult: 1.5 },
+    { id: 'b', dmgMult: 1.5 },
+    { id: 'c', dmgTakenMult: 0.5 },
+  ], { floor: 1 });
+  t('validator rejects overpowered dmg stack', !stacked.ok);
+  const fair = validateLoadout([
+    ALL_EQUIPMENT.find(i => i.rarity === 'common'),
+  ], { floor: 1 });
+  t('validator accepts modest loadout', fair.ok);
+}
+
+console.log('— history-aware events —');
+{
+  t('repeat category penalized', historyCategoryWeight('merchant', ['merchant']) < 1);
+  t('triple streak heavily penalized', historyCategoryWeight('combat', ['combat', 'combat', 'combat']) <= 0.2);
+  t('fresh category unpenalized', historyCategoryWeight('appraisal', ['merchant', 'combat']) === 1);
+}
+
+console.log('— combat sim smoke + power percentiles —');
+{
+  const rng = makeRng(2026);
+  const climber = syntheticClimber(5, 0.5);
+  const r = simulateFight(rng, climber, [ENEMIES.forest[0]], { floor: 5, biomeStart: 1 });
+  t('sim produces finite rounds', r.rounds >= 1 && r.rounds < 40);
+  t('sim hp loss in 0..1', r.hpLossPct >= 0 && r.hpLossPct <= 1);
+  const p25 = estimatePlayerPower(syntheticClimber(20, 0.25));
+  const p50 = estimatePlayerPower(syntheticClimber(20, 0.5));
+  const p75 = estimatePlayerPower(syntheticClimber(20, 0.75));
+  t('P25 < P50 < P75 at floor 20', p25 < p50 && p50 < p75);
+  t('P50 tracks expectedPower order of magnitude', p50 > expectedPower(20) * 0.4 && p50 < expectedPower(20) * 2.5);
+  // Boss sim: P50 should usually clear elderwood under the RTK band
+  let wins = 0;
+  for (let i = 0; i < 40; i++) {
+    const br = simulateFight(makeRng(5000 + i), syntheticClimber(10, 0.5), [BOSSES[10]], {
+      floor: 10, biomeStart: 10, boss: true,
+    });
+    if (br.won) wins++;
+  }
+  t('P50 beats elderwood most of the time', wins >= 22);
+}
+
+console.log('— affixes (TDC-gated) —');
+{
+  const { applyAffixes, WEAPON_AFFIXES, ARMOR_AFFIXES, ACCESSORY_AFFIXES } = await import('../js/data/affixes.js');
+  const { rollEquipment } = await import('../js/data/items.js');
+  t('weapon affix pool non-empty', WEAPON_AFFIXES.length >= 10);
+  t('armor affix pool non-empty', ARMOR_AFFIXES.length >= 10);
+  t('accessory affix pool non-empty', ACCESSORY_AFFIXES.length >= 5);
+  t('TDC affix counts defined', !!TDC.affix?.counts?.rare);
+  const rng = makeRng(77);
+  const base = ALL_EQUIPMENT.find(i => i.id === 'steel_blade');
+  let over = 0;
+  for (let i = 0; i < 80; i++) {
+    const affixed = applyAffixes(base, makeRng(1000 + i), { floor: 20 });
+    const v = validateItemPower(affixed);
+    if (!v.ok) { over++; console.error('  over-budget affixed:', affixed.name, v.score, '/', v.cap); }
+  }
+  t('affixed steel blades stay under TDC power cap', over === 0);
+  const exclusive = applyAffixes(ALL_EQUIPMENT.find(i => i.exclusive), rng, { floor: 30 });
+  t('exclusive gear skips affixes', (exclusive.affixes || []).length === 0);
+  const rolled = rollEquipment(makeRng(9), 3, 5, { floor: 12 });
+  t('rollEquipment mints instance id', !!rolled.instanceId && rolled.id.includes('__'));
+  t('rollEquipment keeps baseId', !!rolled.baseId);
+}
+
+console.log('— event tags —');
+{
+  const { EVENT_TAG_MAP } = await import('../js/data/eventtagmap.js');
+  const { tagWeightMult, applyTagOutcomeMods, KNOWN_EVENT_TAGS } = await import('../js/data/eventtags.js');
+  const missing = EVENTS.filter(e => !(e.tags?.length) && !EVENT_TAG_MAP[e.id]);
+  t('every event has tags', missing.length === 0);
+  t('every event stamped with tags array', EVENTS.every(e => Array.isArray(e.tags) && e.tags.length > 0));
+  const unknown = [];
+  for (const e of EVENTS) {
+    for (const tag of e.tags) if (!KNOWN_EVENT_TAGS.includes(tag)) unknown.push(`${e.id}:${tag}`);
+  }
+  t('all event tags are known', unknown.length === 0);
+  const state = { underdog: true, fame: 50, gold: 100, hp: 20, maxHp: 100, stats: { lk: 14 }, classId: 'rogue', flags: {} };
+  const gambler = EVENTS.find(e => e.id === 'gambler');
+  t('tag weight mult is positive', tagWeightMult(gambler, state) > 0);
+  const mod = applyTagOutcomeMods({ fame: 2, roll: { stat: 'lk', dc: 12 } }, { tags: ['blessing', 'gamble'] }, state);
+  t('blessing bumps positive fame', mod.fame === 3);
+  t('gamble softens DC for underdog', mod.roll.dc === 11);
+}
+
+console.log('— skill components —');
+{
+  const { COMP, composeSkill } = await import('../js/data/skillcomponents.js');
+  const sk = composeSkill(
+    { id: 'test_combo', name: 'Test', class: 'rogue', desc: 'x' },
+    COMP.cost(10), COMP.charge(1), COMP.target('one'), COMP.dmg(100, 'dex'), COMP.poison(0.5),
+  );
+  t('composeSkill merges damage + status', sk.power === 100 && sk.poison === 0.5 && sk.cost === 10);
+  t('composed slash exists', SKILLS.slash?.power === 100 && SKILLS.slash?.stat === 'str');
+  t('shadow_step composed skill exists', !!SKILLS.shadow_step && SKILLS.shadow_step.gainCharge === 1);
+}
+
+console.log('— milestones —');
+{
+  const { Milestone, checkMilestone } = await import('../js/data/milestones.js');
+  const run = { level: 6, fame: 30, flags: { defiler: true }, sigils: ['truth'], raceId: 'human' };
+  t('milestone level', checkMilestone(run, Milestone.level(6)));
+  t('milestone all', checkMilestone(run, Milestone.all(Milestone.fame(25), Milestone.flag('defiler'))));
+  t('milestone rejects', !checkMilestone(run, Milestone.fame(99)));
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

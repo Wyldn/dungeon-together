@@ -5,10 +5,34 @@
 
 import { CATEGORY_META } from './data/events.js';
 import { travelMapBgUrl } from './art.js';
+import { makeRng } from './rng.js';
 
 // module-persistent trail + layout across floors
 const trail = { history: [], layout: 'A' };
 export function resetTravelTrail() { trail.history = []; }
+
+// Faint "further ahead" teasers — one per path, branching off that choice.
+// Picking a path with a hint forces that category into the next floor's choices.
+const HINT_POOL = ['combat', 'merchant', 'mystery', 'recovery', 'dangerous', 'training', 'equipment', 'social'];
+
+function assignPathHints(run, cards) {
+  // Seed from run identity + floor only — never advance run.rngState.
+  const rng = makeRng(((run.seed >>> 0) ^ (run.floor * 2654435761) ^ 0xA11CE) >>> 0);
+  return cards.map((c) => {
+    const pool = HINT_POOL.filter(cat => cat !== c.category);
+    return rng.pick(pool.length ? pool : HINT_POOL);
+  });
+}
+
+function hintBeyond(origin, target, extraPx = 118) {
+  const dx = target.cx - origin.cx;
+  const dy = target.cy - origin.cy;
+  const len = Math.hypot(dx, dy) || 1;
+  return {
+    cx: Math.max(48, Math.min(1232, target.cx + (dx / len) * extraPx)),
+    cy: Math.max(40, Math.min(680, target.cy + (dy / len) * extraPx)),
+  };
+}
 
 // game category → node visuals (real 11-category taxonomy, not the handoff's 8)
 const NODE = {
@@ -89,25 +113,23 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
     return { cx, cy };
   });
 
-  // hint teasers (2-3 faint nodes further ahead)
-  const hintCount = 2 + (run.floor % 2);
-  const hintPos = Array.from({ length: hintCount }, (_, i) => {
-    if (A) return { cx: 300 + 680 * (hintCount === 1 ? .5 : i / (hintCount - 1)), cy: 100 };
-    const R = 482, a = (hintCount === 1 ? -90 : (-124 + 68 * (i / (hintCount - 1)))) * Math.PI / 180;
-    return { cx: CURX + R * Math.cos(a), cy: CURY + R * Math.sin(a) };
-  });
-  const hintGlyphs = ['⚔️', '🪙', '❓', '🌿', '☠️', '✦'];
+  // One hint per path, branching further along that choice's line
+  const pathHints = assignPathHints(run, cards);
+  const hintPos = pos.map((p) => hintBeyond({ cx: CURX, cy: CURY }, p, A ? 112 : 128));
 
-  // connectors current → choices
+  // connectors: you → choices, then each choice → its hint
   const lines = pos.map((p, i) => `<line x1="${CURX}" y1="${CURY - 6}" x2="${p.cx.toFixed(1)}" y2="${p.cy.toFixed(1)}" stroke="${nodeMeta(cards[i].category).color}" stroke-opacity="0.34" stroke-width="2" stroke-dasharray="2 8" stroke-linecap="round"></line>`).join('');
-  const hintLines = hintPos.map((h, i) => `<line x1="${pos[i % n].cx.toFixed(1)}" y1="${pos[i % n].cy.toFixed(1)}" x2="${h.cx.toFixed(1)}" y2="${h.cy.toFixed(1)}" stroke="rgba(160,143,102,.22)" stroke-width="1.5" stroke-dasharray="3 7"></line>`).join('');
+  const hintLines = hintPos.map((h, i) => {
+    const p = pos[i];
+    const col = nodeMeta(pathHints[i]).color;
+    return `<line x1="${p.cx.toFixed(1)}" y1="${p.cy.toFixed(1)}" x2="${h.cx.toFixed(1)}" y2="${h.cy.toFixed(1)}" stroke="${col}" stroke-opacity="0.28" stroke-width="1.5" stroke-dasharray="3 7" stroke-linecap="round"></line>`;
+  }).join('');
 
-  // §2: each hint mirrors one of the ACTUAL paths on offer (its category glyph),
-  // so a hint is an honest teaser of a possible event — not a random symbol.
   const hintsHtml = hintPos.map((h, i) => {
-    const src = cards[i % n];
-    const m = CATEGORY_META[src.category] || CATEGORY_META.unknown;
-    return `<div class="tm-hint" title="a path like this lies ahead" style="left:${(h.cx - 22).toFixed(0)}px;top:${(h.cy - 26).toFixed(0)}px">${m.glyph}</div>`;
+    const cat = pathHints[i];
+    const m = CATEGORY_META[cat] || CATEGORY_META.unknown;
+    const nm = nodeMeta(cat);
+    return `<div class="tm-hint" title="If you take this path, something like this may wait ahead" style="left:${(h.cx - 22).toFixed(0)}px;top:${(h.cy - 26).toFixed(0)}px;border-color:${nm.color}66;color:${nm.color}99">${m.glyph}</div>`;
   }).join('');
 
   // history trail (last 7)
@@ -122,15 +144,23 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
   }).join('');
 
   const cm = CATEGORY_META;
+  const r = ctx.run;
+  const resLabel = ctx.resourceName || 'Resource';
+  const gearBits = (ctx.equippedSummary || []).slice(0, 4);
   stage.innerHTML = `
     <div class="tm-root" ${travelMapBgUrl() ? `style="background-image:linear-gradient(rgba(8,5,20,.55),rgba(6,4,14,.82)),url('${travelMapBgUrl()}');background-size:cover;background-position:center"` : ''}>
       <div class="tm-header">
         <div class="tm-biome">${biome.name.toUpperCase()}</div>
-        <div class="tm-sub">Choose your path, Awakened — step ${run.floor}</div>
+        <div class="tm-sub">Choose your path, Awakened — step ${r.floor}</div>
       </div>
-      <div class="tm-toggle">
-        <div class="tm-seg ${A ? 'on' : ''}" data-layout="A">CONSTELLATION</div>
-        <div class="tm-seg ${!A ? 'on' : ''}" data-layout="B">ASCENT</div>
+      <div class="tm-status" id="tm-status" title="Open character sheet">
+        <div class="tm-st-name">${r.name}</div>
+        <div class="tm-st-meta">Lv.${r.level} ${r.raceName || ''} ${ctx.classTitle || r.className || ''} · 🪙 ${r.gold} · ★ ${r.fame}</div>
+        <div class="tm-st-bars">
+          <div class="tm-st-bar hp"><i style="width:${Math.max(0, Math.min(100, r.hp / r.maxHp * 100))}%"></i><span>HP ${Math.round(r.hp)}/${Math.round(r.maxHp)}</span></div>
+          <div class="tm-st-bar mp"><i style="width:${Math.max(0, Math.min(100, r.mp / Math.max(1, r.maxMp) * 100))}%"></i><span>${resLabel} ${Math.round(r.mp)}/${Math.round(r.maxMp)}</span></div>
+        </div>
+        <div class="tm-st-gear">${gearBits.length ? gearBits.map(g => g).join(' · ') : 'No gear equipped yet'}</div>
       </div>
       <svg class="tm-svg" viewBox="0 0 1280 720" preserveAspectRatio="none">${hintLines}${lines}</svg>
       ${hintsHtml}
@@ -138,7 +168,7 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
       <div class="tm-current" style="left:${CURX}px;top:${CURY}px">
         <div class="tm-cur-art"><span>🧭</span></div>
         <div class="tm-cur-body">
-          <div class="tm-cur-tag">FLOOR ${run.floor} / 51</div>
+          <div class="tm-cur-tag">FLOOR ${r.floor} / 51</div>
           <div class="tm-cur-name">${biome.name}</div>
           <div class="tm-cur-flavor">${coopCtx ? (coopCtx.mode === 'first' ? 'First pick decides the party\'s road.' : 'The party votes on the road ahead.') : 'The paths ahead show only their nature — never their contents. Choose.'}</div>
         </div>
@@ -149,12 +179,17 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
       </div>
     </div>`;
 
-  // layout toggle (LOCAL view state only — never networked)
-  stage.querySelectorAll('.tm-seg').forEach(seg => seg.onclick = () => {
-    const L = seg.dataset.layout;
-    if (trail.layout === L) return;
-    trail.layout = L;
-    renderTravelMap(stage, cards, coopCtx, ctx);
+  stage.querySelector('#tm-status')?.addEventListener('click', () => {
+    ctx.onCharacter?.();
+  });
+
+  // Keep both map layouts available via keyboard only (hidden from the busy HUD).
+  // Default stays constellation; press "L" to flip ascent if someone wants it.
+  stage.querySelector('.tm-root')?.addEventListener('keydown', (ev) => {
+    if (ev.key === 'l' || ev.key === 'L') {
+      trail.layout = trail.layout === 'A' ? 'B' : 'A';
+      renderTravelMap(stage, cards, coopCtx, ctx);
+    }
   });
 
   function renderVotes() {
@@ -174,6 +209,8 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
     const nm = nodeMeta(cards[i].category);
     const m = CATEGORY_META[cards[i].category] || CATEGORY_META.unknown;
     trail.history.push({ glyph: m.glyph, color: nm.color });
+    // The hint branching off this path becomes a promised category next floor
+    if (pathHints[i]) run.mapHintCategory = pathHints[i];
     // battle nodes get the radial flash; others resolve in place
     const isBattle = cards[i].category === 'combat' || cards[i].category === 'dangerous';
     if (isBattle && flash) flash(() => resolveCard(stage, cards[i]));

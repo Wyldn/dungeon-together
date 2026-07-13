@@ -2,14 +2,15 @@
 
 import { CLASSES, SUBCLASSES, EVOLUTION_LEVELS, subclassOptions, deeperBranch } from './data/classes.js';
 import { RACES } from './data/races.js';
-import { itemById, RELICS, EQUIP_SLOTS } from './data/items.js';
+import { resolveItem, RELICS, EQUIP_SLOTS } from './data/items.js';
 import { SKILLS } from './data/skills.js';
 import { CONFIG } from './data/config.js';
 import { rankFor, appraisalRange, growthMult } from './data/ranks.js';
+import { cappedDmgTakenMult, softHpGain, resourceRegen } from './data/tdc.js';
 
 export function equippedItems(run) {
   return EQUIP_SLOTS
-    .map(slot => run.equipment[slot] && itemById(run.equipment[slot]))
+    .map(slot => run.equipment[slot] && resolveItem(run, run.equipment[slot]))
     .filter(Boolean);
 }
 
@@ -55,7 +56,7 @@ export function allowedWeaponTypes(run) {
 }
 
 export function weaponCompatible(run) {
-  const w = run.equipment.weapon ? itemById(run.equipment.weapon) : null;
+  const w = run.equipment.weapon ? resolveItem(run, run.equipment.weapon) : null;
   if (!w) return true; // bare hands never disable anything
   return allowedWeaponTypes(run).includes(w.wtype);
 }
@@ -70,7 +71,7 @@ export function usableSkillIds(run) {
 export function derived(run) {
   const s = run.stats;
   const race = RACES[run.raceId] || {};
-  const weapon = run.equipment.weapon ? itemById(run.equipment.weapon) : null;
+  const weapon = run.equipment.weapon ? resolveItem(run, run.equipment.weapon) : null;
   return {
     str: s.str + gearSum(run, 'str'),
     dex: s.dex + gearSum(run, 'dex'),
@@ -86,12 +87,12 @@ export function derived(run) {
     combatGoldMult: gearMult(run, 'combatGoldMult'),
     xpMult: gearMult(run, 'xpMult'),
     dmgMult: gearMult(run, 'dmgMult'),
-    dmgTakenMult: gearMult(run, 'dmgTakenMult'),
+    dmgTakenMult: cappedDmgTakenMult(gearMult(run, 'dmgTakenMult')),
     bossDmgMult: gearMult(run, 'bossDmgMult'),
     enemyCrit: 4 + gearSum(run, 'enemyCrit'),
     burn: gearSum(run, 'burn'),
     freeze: gearSum(run, 'freeze'),
-    manaRegen: 3 + Math.floor(run.stats.wis / 8) + gearSum(run, 'manaRegen'),
+    manaRegen: resourceRegen(run.stats.wis, gearSum(run, 'manaRegen')),
     initiative: (race.initiative || 0) + gearSum(run, 'initiative'),
     fameGainMult: (race.fameGainMult || 1) * gearMult(run, 'fameGainMult'),
     startCharge: gearSum(run, 'startCharge'),
@@ -182,8 +183,8 @@ export function gainXp(run, amount, rng) {
     run.level++;
     run.xpNext = xpForLevel(run.level);
 
-    const hpGain = Math.round((6 + rng.int(0, 4)) * gMult);
-    const mpGain = Math.round((3 + rng.int(0, 2)) * gMult);
+    const hpGain = softHpGain(run.level, Math.round((6 + rng.int(0, 4)) * gMult));
+    const mpGain = Math.round((3 + rng.int(0, 2)) * gMult); // resource pools stay linear
     const statPoints = Math.max(1, Math.round(2 * gMult + (rng.chance(0.3) ? 1 : 0)));
     const bias = CLASSES[run.classId].growthBias;
     for (let i = 0; i < statPoints; i++) {

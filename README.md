@@ -46,13 +46,13 @@ Port 3117/tcp is open in firewalld + the OCI security list. `server/test-bot.js`
 
 - **Build a climber**: pick a **bloodline** (Human/Elf/Orc/Dwarf), a **calling** (Warrior, Mage, Archer, Rogue, Priest, Monk — each with its own class resource: Vigor, Mana, Focus, Energy, Faith, Ki), and a **playable origin** (Academy, Mercenary Company, Temple, Undercity…). Your exact stats and growth potential stay **hidden** — you get a feeling and 2 rerolls, nothing more. Pay an **appraiser** mid-run for approximate ranks (F → E → D → C → B → A → S → EX → WRLD).
 - **The tower deals three cards per floor** — you see only their nature (Combat, Mystery, Merchant, Appraisal, Dangerous…), never their contents. Watch for the occasional ✦ sparkle: something behind that card suits someone in your party. It won't say what, or who.
-- **Combat is initiative-rolled and turn-based**: turn order on the left, your character on the right. Everyone always has **Strike** and **Guard** (70% block, builds charge). Big hits and AOE cost **Battle Charge** (6 segments) — and enemies charge up too, telegraphing their specials one segment early.
+- **Combat is initiative-rolled and turn-based**: turn order on the left, your character on the right. Everyone always has **Strike** and **Guard** (30% block, builds charge). Big hits and AOE cost **Battle Charge** (6 segments) — and enemies charge up too, telegraphing their specials one segment early.
 - **Weapon compatibility matters**: a Mage holding a sword keeps only Strike and Guard — unless they walk the Spellblade path.
 - **At level 6 the path divides**: every class chooses between two subclasses — and if you've earned it, a **secret third option** appears. Level 13 deepens the branch. Rare events can even **promote your race** (Elf → High Elf, Human → Awakened…).
 - **Fame is always visible** and always working: discounts bribes (only intelligent enemies take gold), unlocks merchant deals, opens doors.
 - **Weak starts fight back**: underdog climbers encounter rare mentors, hidden trainers, and awakenings more often. Strong starts usually grow slower. The tower evens out — eventually.
 - **Every 10th floor is a boss** with its own charge economy and initiative profile. Every 5th is a Trial. Biomes: Forest → Ruins → Frozen Citadel → Mire → the Scorch → the Throne (Floor 51).
-- **Death is permanent** (solo). In co-op you fall, lose a couple of lesser items, and rejoin next floor at 25%. Soul Shards flow back to the **Sanctum** either way.
+- **Death is permanent** (solo). In co-op you fall, lose a couple of lesser items, and rejoin next floor at 30%. Soul Shards flow back to the **Sanctum** either way.
 - **Three endings.** Slay the Demon King, take the Coward's Gate... or find the three hidden Sigils and learn what the tower actually is.
 
 ## 🗂️ Project structure

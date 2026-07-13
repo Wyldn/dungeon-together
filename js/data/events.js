@@ -2,12 +2,14 @@
 //
 // Card shape:
 //   { id, biome: 'any'|biomeId, category, type, glyph, title, text, w,
+//     tags?: string[],  // modifiers from eventtags.js (defaults in eventtagmap.js)
 //     cond?(state), once?: true, affinity?: {classes?, races?, underdog?},
 //     choices: [{ label, hint?, req?, outcome }] }
 //
 // category → what the face-down card shows (handoff §4): mystery, merchant,
 //   recovery, training, appraisal, equipment, social, dangerous, advancement,
 //   unknown. Never reveals exact rewards.
+// tags → rule modifiers (weight / light outcome tint). Never replace authored text.
 // affinity → eligible for the subtle sparkle hint (never explains itself).
 // comeback: true → weighted up for underdog starts (handoff §6).
 //
@@ -18,6 +20,11 @@
 //   consumable, item, useItem, flag, clearFlag, sigil, escape, combat, chest,
 //   upgradeWeapon, revealFloors, appraisal:'partial'|'full', promoteRace,
 //   subclassOffer
+
+import { CONFIG } from './config.js';
+import { historyCategoryWeight } from './balance.js';
+import { tagWeightMult } from './eventtags.js';
+import { tagsForEvent } from './eventtagmap.js';
 
 export const EVENTS = [
 
@@ -1138,6 +1145,11 @@ export const EVENTS = [
   },
 ];
 
+// Stamp default tags from EVENT_TAG_MAP (inline `tags` on a card wins).
+for (const e of EVENTS) {
+  e.tags = tagsForEvent(e);
+}
+
 export const CATEGORY_META = {
   combat: { glyph: '⚔️', label: 'Combat', blurb: 'Steel on the wind.' },
   mystery: { glyph: '🌫️', label: 'Mystery', blurb: 'Something unexplained waits.' },
@@ -1152,8 +1164,8 @@ export const CATEGORY_META = {
   unknown: { glyph: '❓', label: 'Unknown', blurb: 'Even the tower isn\'t telling.' },
 };
 
-// Weighted pick honoring biome, conditions, once-flags, and the underdog's
-// comeback weighting (handoff §6).
+// Weighted pick honoring biome, conditions, once-flags, underdog comeback
+// weighting, and recent-category history (anti-streak).
 export function drawEvent(rng, state, { exclude = [] } = {}) {
   const biome = state.biomeId;
   const pool = EVENTS.filter(e => {
@@ -1163,8 +1175,12 @@ export function drawEvent(rng, state, { exclude = [] } = {}) {
     if (e.cond && !e.cond(state)) return false;
     return true;
   });
+  const recent = state.recentCategories || [];
   const weighted = pool.map(e => ({
-    w: e.w * (e.comeback && state.underdog ? 3 : 1),
+    w: e.w
+      * (e.comeback && state.underdog ? CONFIG.chargen.comebackWeightMult : 1)
+      * historyCategoryWeight(e.category, recent)
+      * tagWeightMult(e, state),
     e,
   }));
   return rng.weighted(weighted).e;

@@ -2,9 +2,11 @@
 // hardcode these values in UI or engine code. (handoff §2, §38)
 
 export const CONFIG = {
-  /* ---- combat: Guard ---- */
+  /* ---- combat: Guard ----
+     Reconciled with death.reviveHpPct: Guard blocks 30%; revival restores 30%.
+     Do not retune one without the other — both are the same recovery fraction. */
   guard: {
-    blockPct: 0.30,        // damage blocked while guarding
+    blockPct: 0.30,        // damage blocked while guarding (= revive fraction)
     chargeGain: 1,         // bonus Battle Charge for guarding
   },
 
@@ -54,36 +56,45 @@ export const CONFIG = {
     beginnerPlayerBonus: 3,
   },
 
-  /* ---- recovery (lean: the tower is not a spa) ---- */
+  /* ---- recovery (lean: the tower is not a spa; TDC tension dial) ---- */
   recovery: {
     levelUpMissingPct: 0.5,      // restore 50% of MISSING hp/resource on level up
     victoryHealPct: 0.05,        // % max hp after any combat win
     bossVictoryHealPct: 0.2,     // gate blessing after bosses
     floorHealPct: 0.04,          // catching your breath between floors
-    floorManaPct: 0.07,          // class resource is deliberately scarce (§5)
+    floorManaPct: 0.06,          // class resource stays scarce between floors
   },
 
-  /* ---- economy (§13: gold was too abundant) ---- */
+  /* ---- economy (§13: gold was too abundant; TDC tension dial) ---- */
   economy: {
     combatGoldMult: 0.7,   // combat purses trimmed — the tower is not an ATM
     merchantWeightBonus: 6, // shops appear a little more often (added to merchant event weight)
+    merchantPriceMult: 1.05, // mild price pressure (used when shops price stock)
   },
 
-  /* ---- multiplayer death ---- */
+  /* ---- death / revival (reconciled with guard.blockPct = 0.30) ---- */
   death: {
-    respawnHpPct: 0.25,
-    respawnResourcePct: 0.25,
-    itemsLost: 2,                  // lesser items lost on death (co-op)
+    reviveHpPct: 0.30,         // Phoenix Feather + co-op floor revive (shared)
+    respawnHpPct: 0.30,        // co-op: rejoin next floor at this % max HP
+    respawnResourcePct: 0.30,  // co-op: class resource on revive
+    itemsLost: 2,              // lesser items lost on death (co-op)
     protectedRarities: ['epic', 'legendary'], // never lost
   },
 
-  /* ---- party-size scaling (independent from floor scaling) ---- */
+  /* ---- party-size (encounter budgets in js/data/balance.js own co-op threat) ----
+     Legacy count/HP levers removed: stacking +enemies AND +HP double-dipped.
+     Escort/minion decisions are budget leftovers, not a hard party-size gate. */
   partyScaling: {
-    hpMultPerExtra: 0.3,       // modest hp bump per extra player
-    extraEnemyAt: 2,           // party size that guarantees +1 enemy
-    moreEnemyChance: 0.35,     // per member beyond 2: chance of yet another enemy
-    bossMinionAt: 3,           // parties this large face bosses with an escort
+    // kept as no-ops so older tools/scripts importing these keys don't explode
+    hpMultPerExtra: 0,
+    extraEnemyAt: 99,
+    moreEnemyChance: 0,
+    bossMinionAt: 99,
   },
+
+  /* ---- Tower Difficulty Curve: see js/data/tdc.js ----
+     Enemy/boss/party/soft-cap math lives there. Recovery & economy below
+     are the primary tension dials when the climb feels too easy/hard. */
 
   /* ---- character generation ---- */
   chargen: {

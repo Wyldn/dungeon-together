@@ -36,172 +36,206 @@ export const ENEMY_ART = {
  "wolf": {
   "f": "assets/img/enemies/wolf.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "sprite": {
   "f": "assets/img/enemies/sprite.png",
-  "w": 128,
-  "h": 64
+  "w": 64,
+  "h": 64,
+  "frames": 4
  },
  "boar": {
   "f": "assets/img/enemies/boar.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "bandit": {
   "f": "assets/img/enemies/bandit.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "treant": {
   "f": "assets/img/enemies/treant.png",
-  "w": 64,
-  "h": 32
+  "w": 32,
+  "h": 32,
+  "frames": 4
  },
  "spider": {
   "f": "assets/img/enemies/spider.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "skeleton": {
   "f": "assets/img/enemies/skeleton.png",
-  "w": 48,
-  "h": 32
+  "w": 32,
+  "h": 32,
+  "frames": 3
  },
  "cursed_knight": {
   "f": "assets/img/enemies/cursed_knight.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "shade": {
   "f": "assets/img/enemies/shade.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "scarab": {
   "f": "assets/img/enemies/scarab.png",
-  "w": 64,
-  "h": 32
+  "w": 32,
+  "h": 32,
+  "frames": 4
  },
  "golem": {
   "f": "assets/img/enemies/golem.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "acolyte": {
   "f": "assets/img/enemies/acolyte.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "wraith": {
   "f": "assets/img/enemies/wraith.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "frost_giant": {
   "f": "assets/img/enemies/frost_giant.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "winter_wolf": {
   "f": "assets/img/enemies/winter_wolf.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "ice_maiden": {
   "f": "assets/img/enemies/ice_maiden.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "frozen_soldier": {
   "f": "assets/img/enemies/frozen_soldier.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "hag": {
   "f": "assets/img/enemies/hag.png",
-  "w": 96,
-  "h": 48
+  "w": 48,
+  "h": 48,
+  "frames": 4
  },
  "croc": {
   "f": "assets/img/enemies/croc.png",
-  "w": 32,
-  "h": 64
+  "w": 64,
+  "h": 64,
+  "frames": 1
  },
  "leech": {
   "f": "assets/img/enemies/leech.png",
-  "w": 64,
-  "h": 32
+  "w": 32,
+  "h": 32,
+  "frames": 4
  },
  "will_o_wisp": {
   "f": "assets/img/enemies/will_o_wisp.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "troll": {
   "f": "assets/img/enemies/troll.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "imp": {
   "f": "assets/img/enemies/imp.png",
-  "w": 48,
-  "h": 32
+  "w": 32,
+  "h": 32,
+  "frames": 3
  },
  "hellhound": {
   "f": "assets/img/enemies/hellhound.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "tormentor": {
   "f": "assets/img/enemies/tormentor.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "pit_mage": {
   "f": "assets/img/enemies/pit_mage.png",
-  "w": 48,
-  "h": 32
+  "w": 32,
+  "h": 32,
+  "frames": 3
  },
  "brute": {
   "f": "assets/img/enemies/brute.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "elderwood": {
   "f": "assets/img/enemies/elderwood.png",
-  "w": 72,
-  "h": 48
+  "w": 48,
+  "h": 48,
+  "frames": 3
  },
  "lich": {
   "f": "assets/img/enemies/lich.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "frost_queen": {
   "f": "assets/img/enemies/frost_queen.png",
-  "w": 128,
-  "h": 64
+  "w": 64,
+  "h": 64,
+  "frames": 4
  },
  "hydra": {
   "f": "assets/img/enemies/hydra.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "infernal_duke": {
   "f": "assets/img/enemies/infernal_duke.png",
-  "w": 168,
-  "h": 84
+  "w": 84,
+  "h": 84,
+  "frames": 4
  },
  "demon_king": {
   "f": "assets/img/enemies/demon_king.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "mimic": {
   "f": "assets/img/enemies/mimic.png",
-  "w": 64,
-  "h": 32
+  "w": 32,
+  "h": 32,
+  "frames": 4
  }
 };
 
@@ -284,47 +318,56 @@ export const HERO_ART = {
  "warrior": {
   "f": "assets/img/heroes/warrior.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "mage": {
   "f": "assets/img/heroes/mage.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "archer": {
   "f": "assets/img/heroes/archer.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "rogue": {
   "f": "assets/img/heroes/rogue.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "priest": {
   "f": "assets/img/heroes/priest.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "monk": {
   "f": "assets/img/heroes/monk.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "warlock": {
   "f": "assets/img/heroes/warlock.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "bard": {
   "f": "assets/img/heroes/bard.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  },
  "necromancer": {
   "f": "assets/img/heroes/necromancer.png",
   "w": 32,
-  "h": 32
+  "h": 32,
+  "frames": 2
  }
 };
 
