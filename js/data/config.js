@@ -134,4 +134,10 @@ export const CONFIG = {
     sparkleChance: 0.5,        // chance an affinity actually shows its shimmer
     encounterCategoryWeight: 34, // relative weight of Combat cards in draws
   },
+
+  /* ---- technique slots unlocked by clearing boss floors ----
+     Wired via applySkillBreakpoints() after boss victories. */
+  skillBreakpoints: [
+    { floor: 30, flag: 'slots_f30', slots: 2, label: 'The Frozen Citadel falls' },
+  ],
 };

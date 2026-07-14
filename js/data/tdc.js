@@ -59,11 +59,14 @@ export const TDC = {
     // swings on commons through mid-climb (verified vs combat_sim climbers).
     floorHp: 0.030,
     floorAtk: 0.006,
-    bossFloorHp: 0.006,
-    bossFloorAtk: 0.005,
-    boss: { hp: 1.0, atk: 1.0, def: 1.0 }, // reserved; bases are hand-tuned
-    common: { hp: 1.18, atk: 1.0, def: 1.0 },
-    elite: { hp: 1.42, atk: 1.05, def: 1.05 },
+    bossFloorHp: 0.010,
+    // Bosses must out-punch mimics; mild floor ATK was leaving late bosses
+    // in the single digits after player DEF grew.
+    bossFloorAtk: 0.014,
+    // Commons sit a notch under forced mimic fights; bosses punch harder.
+    boss: { hp: 1.08, atk: 1.35, def: 1.05 },
+    common: { hp: 1.12, atk: 0.92, def: 1.0 },
+    elite: { hp: 1.38, atk: 1.08, def: 1.05 },
   },
 
   /* ---- biome multipliers (multiplicative flavor, not additive piles) ---- */

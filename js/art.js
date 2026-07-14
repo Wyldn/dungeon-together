@@ -9,11 +9,14 @@ function scaleFor(fh, target) {
 }
 
 // Two-frame (or N-frame) idle strips animate via background-position (CSS .px-sprite).
-export function enemySpriteHtml(id, { boss = false, elite = false } = {}) {
+// Bosses read large on the field; elites mid-size; summons/commons stay compact.
+export function enemySpriteHtml(id, { boss = false, elite = false, summon = false } = {}) {
+  // `artId` (set on phase evolve) is looked up the same way as the enemy id.
   const a = ENEMY_ART[id];
   if (!a) return null;
   const frames = a.frames || 2;
-  const s = scaleFor(a.h, boss ? 108 : elite ? 84 : 68);
+  const target = boss ? 168 : summon ? 64 : elite ? 84 : 68;
+  const s = scaleFor(a.h, target);
   const fw = a.w * s, fh = a.h * s;
   const anim = frames > 1 ? '' : 'animation:none;';
   return `<div class="px-sprite" style="width:${fw}px;height:${fh}px;--fw:${fw}px;--frames:${frames};background-image:url('${a.f}');background-size:${fw * frames}px ${fh}px;${anim}"></div>`;

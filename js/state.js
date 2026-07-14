@@ -233,6 +233,7 @@ export function newRun(meta, { classId, raceId = 'human', originId = null, name,
     consumables: ['potion_s'],
     weaponBonus: 0,
     flags: {},
+    bossPicks: {},
     seenEvents: [],
     recentCategories: [],
     sigils: [],
@@ -279,6 +280,8 @@ function migrateRun(run) {
   run.guardCount = run.guardCount || 0;
   run.appraisal = run.appraisal || null;
   run.recentCategories = run.recentCategories || [];
+  run.flags = run.flags || {};
+  run.bossPicks = run.bossPicks || {};
   run.equipment = {
     weapon: null, helmet: null, chest: null, legs: null, boots: null,
     accessory1: null, accessory2: null, accessory3: null,

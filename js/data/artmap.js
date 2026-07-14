@@ -99,9 +99,9 @@ export const ENEMY_ART = {
  },
  "golem": {
   "f": "assets/img/enemies/golem.png",
-  "w": 32,
-  "h": 32,
-  "frames": 2
+  "w": 90,
+  "h": 64,
+  "frames": 8
  },
  "acolyte": {
   "f": "assets/img/enemies/acolyte.png",
@@ -135,9 +135,9 @@ export const ENEMY_ART = {
  },
  "frozen_soldier": {
   "f": "assets/img/enemies/frozen_soldier.png",
-  "w": 32,
-  "h": 32,
-  "frames": 2
+  "w": 96,
+  "h": 96,
+  "frames": 6
  },
  "hag": {
   "f": "assets/img/enemies/hag.png",
@@ -205,11 +205,23 @@ export const ENEMY_ART = {
   "h": 48,
   "frames": 3
  },
+ "heartwood": {
+  "f": "assets/img/enemies/thornbeast.png",
+  "w": 51,
+  "h": 86,
+  "frames": 1
+ },
  "lich": {
   "f": "assets/img/enemies/lich.png",
   "w": 32,
   "h": 32,
   "frames": 2
+ },
+ "ossuary_king": {
+  "f": "assets/img/enemies/void_eye.png",
+  "w": 56,
+  "h": 82,
+  "frames": 1
  },
  "frost_queen": {
   "f": "assets/img/enemies/frost_queen.png",
@@ -217,11 +229,23 @@ export const ENEMY_ART = {
   "h": 64,
   "frames": 4
  },
+ "jarl_whitegrave": {
+  "f": "assets/img/enemies/yeti.png",
+  "w": 64,
+  "h": 76,
+  "frames": 1
+ },
  "hydra": {
   "f": "assets/img/enemies/hydra.png",
   "w": 32,
   "h": 32,
   "frames": 2
+ },
+ "bogmother": {
+  "f": "assets/img/enemies/slime.png",
+  "w": 96,
+  "h": 96,
+  "frames": 6
  },
  "infernal_duke": {
   "f": "assets/img/enemies/infernal_duke.png",
@@ -229,17 +253,179 @@ export const ENEMY_ART = {
   "h": 84,
   "frames": 4
  },
+ "arch_tormentor": {
+  "f": "assets/img/enemies/flame_cyclops.png",
+  "w": 60,
+  "h": 81,
+  "frames": 1
+ },
  "demon_king": {
   "f": "assets/img/enemies/demon_king.png",
   "w": 32,
   "h": 32,
   "frames": 2
  },
+ "ashen_sovereign": {
+  "f": "assets/img/enemies/spike_sovereign.png",
+  "w": 56,
+  "h": 80,
+  "frames": 1
+ },
  "mimic": {
   "f": "assets/img/enemies/mimic.png",
+  "w": 102,
+  "h": 102,
+  "frames": 12
+ },
+ "rat": {
+  "f": "assets/img/enemies/rat.png",
   "w": 32,
   "h": 32,
-  "frames": 4
+  "frames": 6
+ },
+ "slime": {
+  "f": "assets/img/enemies/slime.png",
+  "w": 96,
+  "h": 96,
+  "frames": 6
+ },
+ "orc": {
+  "f": "assets/img/enemies/orc.png",
+  "w": 100,
+  "h": 100,
+  "frames": 6
+ },
+ "magma_golem": {
+  "f": "assets/img/enemies/magma_golem.png",
+  "w": 90,
+  "h": 64,
+  "frames": 8
+ },
+ "demon_slime": {
+  "f": "assets/img/enemies/demon_slime.png",
+  "w": 95,
+  "h": 110,
+  "frames": 6
+ },
+ "vampire": {
+  "f": "assets/img/enemies/vampire.png",
+  "w": 58,
+  "h": 91,
+  "frames": 1
+ },
+ "wight": {
+  "f": "assets/img/enemies/wight.png",
+  "w": 64,
+  "h": 89,
+  "frames": 1
+ },
+ "yeti": {
+  "f": "assets/img/enemies/yeti.png",
+  "w": 64,
+  "h": 76,
+  "frames": 1
+ },
+ "sin_eater": {
+  "f": "assets/img/enemies/sin_eater.png",
+  "w": 50,
+  "h": 77,
+  "frames": 1
+ },
+ "dusk_lurker": {
+  "f": "assets/img/enemies/dusk_lurker.png",
+  "w": 58,
+  "h": 88,
+  "frames": 1
+ },
+ "horned_stalker": {
+  "f": "assets/img/enemies/horned_stalker.png",
+  "w": 63,
+  "h": 92,
+  "frames": 1
+ },
+ "void_eye": {
+  "f": "assets/img/enemies/void_eye.png",
+  "w": 56,
+  "h": 82,
+  "frames": 1
+ },
+ "mire_abomination": {
+  "f": "assets/img/enemies/mire_abomination.png",
+  "w": 63,
+  "h": 88,
+  "frames": 1
+ },
+ "eye_horror": {
+  "f": "assets/img/enemies/eye_horror.png",
+  "w": 64,
+  "h": 67,
+  "frames": 1
+ },
+ "crimson_wretch": {
+  "f": "assets/img/enemies/crimson_wretch.png",
+  "w": 56,
+  "h": 93,
+  "frames": 1
+ },
+ "slag_knight": {
+  "f": "assets/img/enemies/slag_knight.png",
+  "w": 54,
+  "h": 83,
+  "frames": 1
+ },
+ "thornbeast": {
+  "f": "assets/img/enemies/thornbeast.png",
+  "w": 51,
+  "h": 86,
+  "frames": 1
+ },
+ "flame_cyclops": {
+  "f": "assets/img/enemies/flame_cyclops.png",
+  "w": 60,
+  "h": 81,
+  "frames": 1
+ },
+ "spike_sovereign": {
+  "f": "assets/img/enemies/spike_sovereign.png",
+  "w": 56,
+  "h": 80,
+  "frames": 1
+ },
+ "void_cultist": {
+  "f": "assets/img/enemies/void_cultist.png",
+  "w": 62,
+  "h": 85,
+  "frames": 1
+ },
+ "blood_fiend": {
+  "f": "assets/img/enemies/blood_fiend.png",
+  "w": 64,
+  "h": 95,
+  "frames": 1
+ },
+ "ash_beast": {
+  "f": "assets/img/enemies/ash_beast.png",
+  "w": 64,
+  "h": 79,
+  "frames": 1
+ },
+ "ember_maw": {
+  "f": "assets/img/enemies/ember_maw.png",
+  "w": 62,
+  "h": 89,
+  "frames": 1
+ },
+ "throne_guard": {
+  "f": "assets/img/enemies/throne_guard.png",
+  "w": 64,
+  "h": 86,
+  "frames": 1
+ },
+ "void_specter": {
+  "f": "assets/img/enemies/void_specter.png",
+  "w": 62,
+  "h": 82,
+  "frames": 1
  }
 };
 

@@ -61,6 +61,8 @@ export const EVENT_TAG_MAP = {
   oath_candle: ['spark-for-player', 'secret-flag', 'sigil'],
   oath_payoff: ['spark-for-player', 'secret-flag', 'blessing'],
   forked_galleries: ['spark-for-player', 'equipment', 'gamble'],
+  wayfarers_exchange: ['equipment', 'blessing', 'resource-test'],
+  mirrored_bargain: ['equipment', 'resource-test', 'fame-test'],
 
   /* ---- forest ---- */
   wounded_adventurer: ['blessing', 'secret-flag', 'resource-test', 'curse'],
@@ -70,8 +72,11 @@ export const EVENT_TAG_MAP = {
   beehive: ['combat-threat', 'gamble', 'resource-test'],
   ancient_tree: ['sigil', 'secret-flag', 'race-evolve', 'blessing'],
   wolf_ambush: ['combat-threat', 'secret-flag', 'curse'],
+  slime_crown: ['combat-threat', 'gamble', 'resource-test'],
+  orc_logging_camp: ['combat-threat', 'stat-test', 'gamble'],
 
   /* ---- ruins ---- */
+  void_stare: ['combat-threat', 'gamble', 'blessing'],
   buried_library: ['mentor', 'class-specific', 'secret-flag', 'sigil'],
   royal_crypt: ['equipment', 'curse', 'gamble', 'combat-threat'],
   cursed_statue: ['curse', 'stat-test', 'secret-flag'],
@@ -96,6 +101,7 @@ export const EVENT_TAG_MAP = {
   devils_contract: ['curse', 'gamble', 'secret-flag', 'resource-test'],
   chained_angel: ['sigil', 'secret-flag', 'blessing', 'curse'],
   demon_gambler: ['gamble', 'stat-test', 'class-specific', 'resource-test'],
+  slag_patrol: ['combat-threat', 'resource-test', 'secret-flag'],
   river_of_fire: ['stat-test', 'secret-flag', 'resource-test', 'curse'],
   cowards_gate: ['secret-flag', 'gamble'],
   last_rest: ['recovery', 'secret-flag', 'blessing'],

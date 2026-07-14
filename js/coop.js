@@ -129,12 +129,17 @@ export class CoopSession {
     const msg = {
       k: 'status', act,
       classId: run.classId, className: run.className, level: run.level,
+      name: run.name, raceName: run.raceName,
       hp: Math.round(run.hp), maxHp: run.maxHp,
+      mp: Math.round(run.mp ?? 0), maxMp: run.maxMp ?? 0,
       sanity: Math.round(run.sanity), maxSanity: run.maxSanity,
       gold: run.gold, floor: run.floor, down: !!run.down,
       def: run.def, dodge: run.dodge, // callers pass derived values via runStatus()
       spdStat: run.spdStat, initiative: run.initiative,
       dex: run.stats?.dex ?? run.dex,
+      gear: run.sheetGear || [],
+      pack: run.sheetPack || [],
+      appraisal: run.appraisal || null,
     };
     const key = JSON.stringify(msg);
     if (key === this.lastStatus) return;

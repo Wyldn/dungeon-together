@@ -188,12 +188,34 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
   const r = ctx.run;
   const resLabel = ctx.resourceName || 'Resource';
   const gearBits = (ctx.equippedSummary || []).slice(0, 4);
+  const partyHtml = (() => {
+    if (!coopS || coopS.alone) return '';
+    const chips = [...coopS.partners.entries()].map(([id, p]) => {
+      const s = p.status || {};
+      const resName = ({ fighter: 'Vigor', mage: 'Mana', ranger: 'Focus', rogue: 'Energy', priest: 'Faith', monk: 'Ki', warlock: 'Pact', bard: 'Verve', druid: 'Essence' })[s.classId || p.classId] || 'RES';
+      const hpPct = s.maxHp ? Math.max(0, Math.min(100, (s.hp / s.maxHp) * 100)) : 0;
+      const mpPct = s.maxMp ? Math.max(0, Math.min(100, ((s.mp || 0) / s.maxMp) * 100)) : 0;
+      return `<button type="button" class="tm-party-chip ${s.down ? 'downed' : ''}" data-partner="${id}" title="View ${p.name}'s appraisal &amp; gear">
+        <div class="tm-st-head">
+          <div class="tm-st-name">${p.name}</div>
+          <div class="tm-st-open">◈ VIEW</div>
+        </div>
+        <div class="tm-st-meta">Lv.${s.level || '?'} ${s.className || p.classId || ''}</div>
+        <div class="tm-st-bars">
+          <div class="tm-st-bar hp"><i style="width:${hpPct}%"></i><span>HP ${Math.round(s.hp || 0)}/${Math.round(s.maxHp || 0)}</span></div>
+          <div class="tm-st-bar mp"><i style="width:${mpPct}%"></i><span>${resName} ${Math.round(s.mp || 0)}/${Math.round(s.maxMp || 0)}</span></div>
+        </div>
+      </button>`;
+    }).join('');
+    return `<div class="tm-party" id="tm-party">${chips}</div>`;
+  })();
   stage.innerHTML = `
     <div class="tm-root" ${travelMapBgUrl() ? `style="background-image:linear-gradient(rgba(8,5,20,.55),rgba(6,4,14,.82)),url('${travelMapBgUrl()}');background-size:cover;background-position:center"` : ''}>
       <div class="tm-header">
         <div class="tm-biome">${biome.name.toUpperCase()}</div>
         <div class="tm-sub">Choose your path, Awakened — step ${r.floor}</div>
       </div>
+      ${partyHtml}
       <div class="tm-status" id="tm-status" role="button" tabindex="0" title="Open character sheet" aria-label="Open character sheet">
         <div class="tm-st-head">
           <div class="tm-st-name">${r.name}</div>
@@ -233,6 +255,39 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
   statusEl?.addEventListener('keydown', (ev) => {
     if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openSheet(ev); }
   });
+  stage.querySelectorAll('[data-partner]').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      ctx.onPartnerPeek?.(btn.dataset.partner);
+    });
+  });
+  // Live-refresh party vitals when partners broadcast status
+  if (coopS && !coopS.alone) {
+    const prev = coopS.onPartnerUpdate;
+    coopS.onPartnerUpdate = () => {
+      prev?.();
+      const root = stage.querySelector('#tm-party');
+      if (!root) return;
+      for (const [id, p] of coopS.partners) {
+        const chip = root.querySelector(`[data-partner="${id}"]`);
+        if (!chip) continue;
+        const s = p.status || {};
+        const resName = ({ fighter: 'Vigor', mage: 'Mana', ranger: 'Focus', rogue: 'Energy', priest: 'Faith', monk: 'Ki', warlock: 'Pact', bard: 'Verve', druid: 'Essence' })[s.classId || p.classId] || 'RES';
+        const hpPct = s.maxHp ? Math.max(0, Math.min(100, (s.hp / s.maxHp) * 100)) : 0;
+        const mpPct = s.maxMp ? Math.max(0, Math.min(100, ((s.mp || 0) / s.maxMp) * 100)) : 0;
+        chip.classList.toggle('downed', !!s.down);
+        const bars = chip.querySelector('.tm-st-bars');
+        if (bars) {
+          bars.innerHTML = `
+            <div class="tm-st-bar hp"><i style="width:${hpPct}%"></i><span>HP ${Math.round(s.hp || 0)}/${Math.round(s.maxHp || 0)}</span></div>
+            <div class="tm-st-bar mp"><i style="width:${mpPct}%"></i><span>${resName} ${Math.round(s.mp || 0)}/${Math.round(s.maxMp || 0)}</span></div>`;
+        }
+        const meta = chip.querySelector('.tm-st-meta');
+        if (meta) meta.textContent = `Lv.${s.level || '?'} ${s.className || p.classId || ''}`;
+      }
+    };
+  }
 
   // Keep both map layouts available via keyboard only (hidden from the busy HUD).
   // Default stays constellation; press "L" to flip ascent if someone wants it.

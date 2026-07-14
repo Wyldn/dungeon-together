@@ -5,7 +5,7 @@ import { CLASSES, SUBCLASSES, RANDOM_NAMES, subclassOptions } from './data/class
 import { RACES, applyRacePromotion } from './data/races.js';
 import { ORIGINS, originById } from './data/origins.js';
 import { SKILLS } from './data/skills.js';
-import { BIOMES, biomeForFloor, ENEMIES, BOSSES, MODIFIERS } from './data/enemies.js';
+import { BIOMES, biomeForFloor, ENEMIES, BOSSES, ALT_BOSSES, MODIFIERS, pickBossForFloor, bossById } from './data/enemies.js';
 import { EVENTS, CATEGORY_META, drawEvent } from './data/events.js';
 import { CONFIG } from './data/config.js';
 import { planEncounter, planBossEncounter, pushEventHistory } from './data/balance.js';
@@ -13,7 +13,7 @@ import { rankFor } from './data/ranks.js';
 import { CONSUMABLES, itemById, resolveItem, rollEquipment, rollRelic, rollUnique, rollWrld, markWrldClaimed, EQUIP_SLOTS, RELICS, ALL_EQUIPMENT, WEAPONS, itemUsefulForClass, itemIncompatibleForClass } from './data/items.js';
 import { applyTagOutcomeMods } from './data/eventtags.js';
 import { loadMeta, saveMeta, upgradeRank, award, UPGRADES, ACHIEVEMENTS, newRun, saveRun, loadRun, clearRun, runRng, rollStart, startDescriptor, awakenMonolith, fateGrowthBoost, fateGrowthPct, fateGrowthPctOne, randomRaceId, randomClassId } from './state.js';
-import { derived, classTitle, skillTier, gainXp, learnableSkills, heal, restoreMana, relicItems, equippedItems, changeFame, resourceName, appraiseRun, revealLevel, applySubclass as applySubclassFn, APPRAISABLE, allowedWeaponTypes, weaponCompatible, skillCapacity } from './character.js';
+import { derived, classTitle, skillTier, gainXp, learnableSkills, heal, restoreMana, relicItems, equippedItems, changeFame, resourceName, appraiseRun, revealLevel, applySubclass as applySubclassFn, APPRAISABLE, allowedWeaponTypes, weaponCompatible, skillCapacity, applySkillBreakpoints } from './character.js';
 import { startCombat, buildEnemy } from './combat.js';
 import { ICONS } from './icons.js';
 import { SFX, toggleMute, isMuted } from './audio.js';
@@ -126,8 +126,9 @@ function debugScreen() {
   const enemyHtml = Object.entries(ENEMIES).map(([biome, list]) => `<div class="dbg-group"><h4>${biome} <span class="dbg-dim">(${list.length})</span></h4>
     <div class="dbg-enemy-grid">${list.map(e => `<div class="dbg-enemy">${spriteMini(enemySpriteHtml(e.id, { elite: e.elite }) || `<span style="font-size:30px">${e.glyph}</span>`)}<div><b>${e.name}</b><div class="dbg-dim">hp ${e.hp} · atk ${e.atk} · def ${e.def}${e.elite ? ' · elite' : ''}${e.intelligent ? ' · bribable' : ''}</div></div></div>`).join('')}</div>
   </div>`).join('');
-  const bossHtml = `<div class="dbg-group"><h4>Bosses <span class="dbg-dim">(${Object.keys(BOSSES).length})</span></h4>
-    <div class="dbg-enemy-grid">${Object.entries(BOSSES).map(([f, b]) => `<div class="dbg-enemy">${spriteMini(enemySpriteHtml(b.id, { boss: true }) || `<span style="font-size:34px">${b.glyph}</span>`)}<div><b>${b.name}</b><div class="dbg-dim">F${f} · hp ${b.hp} · atk ${b.atk}</div></div></div>`).join('')}</div>
+  const bossHtml = `<div class="dbg-group"><h4>Bosses <span class="dbg-dim">(${Object.keys(BOSSES).length} + ${Object.keys(ALT_BOSSES).length} alts)</span></h4>
+    <div class="dbg-enemy-grid">${Object.entries(BOSSES).map(([f, b]) => `<div class="dbg-enemy">${spriteMini(enemySpriteHtml(b.id, { boss: true }) || `<span style="font-size:34px">${b.glyph}</span>`)}<div><b>${b.name}</b><div class="dbg-dim">F${f} · hp ${b.hp} · atk ${b.atk}</div></div></div>`).join('')}
+    ${Object.entries(ALT_BOSSES).map(([f, b]) => `<div class="dbg-enemy">${spriteMini(enemySpriteHtml(b.id, { boss: true }) || `<span style="font-size:34px">${b.glyph}</span>`)}<div><b>${b.name}</b><div class="dbg-dim">F${f} ALT · hp ${b.hp} · atk ${b.atk}</div></div></div>`).join('')}</div>
   </div>`;
 
   // events / NPC encounters grouped by category
@@ -1226,10 +1227,22 @@ function teardownCoop() {
 
 function statusOf(run, act) {
   const d = derived(run);
+  const gear = EQUIP_SLOTS.map(slot => {
+    const id = run.equipment?.[slot];
+    if (!id) return null;
+    const it = resolveItem(run, id);
+    return it ? { slot, id: it.id, name: it.name, rarity: it.rarity, desc: it.desc } : null;
+  }).filter(Boolean);
+  const pack = (run.inventory || []).slice(0, 12).map(id => {
+    const it = resolveItem(run, id);
+    return it ? { id: it.id, name: it.name, rarity: it.rarity, desc: it.desc } : { id, name: id, rarity: 'common', desc: '' };
+  });
   return {
     ...run, def: d.def, dodge: Math.round(d.dodge), act,
     spdStat: Math.round(4 + d.dex * 0.3),
     initiative: d.initiative,
+    sheetGear: gear,
+    sheetPack: pack,
   };
 }
 
@@ -1435,7 +1448,55 @@ function travelCtx() {
     classTitle: classTitle(run),
     equippedSummary: gear,
     onCharacter: () => { SFX.click(); characterSheet(); },
+    onPartnerPeek: (partnerId) => { SFX.click(); partnerSheetModal(partnerId); },
   };
+}
+
+function partnerSheetModal(partnerId) {
+  if (!coopS) return;
+  const p = coopS.partners.get(partnerId);
+  if (!p) return;
+  const s = p.status || {};
+  const gear = s.gear || [];
+  const pack = s.pack || [];
+  const appr = s.appraisal;
+  const resLabel = CLASSES[s.classId || p.classId]?.resource?.name || 'Resource';
+  modalCustom((m, close) => {
+    m.classList.add('sheet-modal');
+    const statRows = appr?.results
+      ? Object.entries(appr.results).map(([k, v]) => `<tr><td>${k.toUpperCase()}</td><td>${v}</td></tr>`).join('')
+      : '<tr><td colspan="2" style="color:var(--ink-faint)">No appraisal shared yet</td></tr>';
+    m.innerHTML = `
+      <h3>${s.name || p.name} — Lv ${s.level || '?'} ${s.raceName || ''} ${s.className || p.classId || ''}</h3>
+      <p class="modal-sub">Floor ${s.floor ?? '?'} · latest shared sheet (updates as they travel)</p>
+      <div class="sheet-grid">
+        <div class="sheet-section">
+          <h4>Vitals</h4>
+          <div class="tm-st-bars" style="margin:8px 0">
+            <div class="tm-st-bar hp"><i style="width:${s.maxHp ? Math.max(0, Math.min(100, s.hp / s.maxHp * 100)) : 0}%"></i><span>HP ${Math.round(s.hp || 0)}/${Math.round(s.maxHp || 0)}</span></div>
+            <div class="tm-st-bar mp"><i style="width:${s.maxMp ? Math.max(0, Math.min(100, (s.mp || 0) / s.maxMp * 100)) : 0}%"></i><span>${resLabel} ${Math.round(s.mp || 0)}/${Math.round(s.maxMp || 0)}</span></div>
+          </div>
+          <h4 style="margin-top:12px">Appraisal ${appr ? `<span class="tag">Floor ${appr.floor}</span>` : '<span class="tag">unappraised</span>'}</h4>
+          <table class="stat-table">${statRows}
+            ${appr?.overall ? `<tr><td>Overall</td><td><b>${appr.overall}</b></td></tr>` : ''}
+          </table>
+        </div>
+        <div class="sheet-section">
+          <h4>Equipped</h4>
+          ${gear.length ? gear.map(g => `
+            <div class="inv-item"><div><div class="item-name ${rarityClass(g.rarity)}">${g.name}</div>
+            <div class="item-desc">${g.desc || ''}</div></div>
+            <span class="tag slot-tag">${g.slot || ''}</span></div>`).join('') : '<div style="color:var(--ink-faint);font-size:14px">Nothing equipped.</div>'}
+          <h4 style="margin-top:14px">Pack (preview)</h4>
+          ${pack.length ? pack.map(g => `
+            <div class="inv-item"><div><div class="item-name ${rarityClass(g.rarity)}">${g.name}</div>
+            <div class="item-desc">${g.desc || ''}</div></div></div>`).join('') : '<div style="color:var(--ink-faint);font-size:14px">Empty pack.</div>'}
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div style="text-align:right"><button class="btn small" id="sheet-close">Close</button></div>`;
+    m.querySelector('#sheet-close').onclick = () => close();
+  });
 }
 
 /* ---------- path-card generation ---------- */
@@ -1766,6 +1827,7 @@ async function afterVictory(stage, enemies, gold, xp, { boss = null, reward = nu
     run.mp = run.maxMp;
     changeFame(run, 6);
     lines.push({ text: 'The gate\'s blessing washes over you — wounds knit, strength returns, and the tower learns your name. (+Fame)', cls: 'good' });
+    for (const msg of applySkillBreakpoints(run)) lines.push({ text: msg.text, cls: msg.cls || 'good' });
   } else if (enemies.some(e => e.elite)) {
     // Tiny UNIQUE chance from elite packs on deep floors
     const rngE = runRng(run);
@@ -1913,8 +1975,7 @@ async function bossRelicPick(stage) {
       }
     }
   }
-  // bosses teach: claim a technique from your class pool (AOE often lives here)
-  await offerSkillChoice();
+  // Relic + gear is the boss reward; techniques unlock on sparse level milestones.
   renderHud();
   nextFloorButton(document.getElementById('stage'));
 }
@@ -1953,7 +2014,9 @@ async function modifierFloor(stage) {
 }
 
 async function bossFloor(stage) {
-  const boss = BOSSES[run.floor];
+  const rngPick = runRng(run);
+  const boss = pickBossForFloor(run.floor, rngPick, run);
+  rngPick.advance(); saveRun(run);
   stage.innerHTML = `
     <div class="card-stage"><div class="panel event-card">
       <div class="card-art"><div class="card-glyph">${boss.glyph}</div>
@@ -2030,15 +2093,20 @@ function hostPublishFloorContent() {
   const biome = biomeForFloor(run.floor);
   let content;
   if (run.floor === LAST_FLOOR) {
-    content = { floor: run.floor, type: 'throne' };
+    const boss = pickBossForFloor(51, rng, run);
+    content = { floor: run.floor, type: 'throne', bossId: boss.id };
   } else if (BOSS_FLOORS.includes(run.floor)) {
+    const boss = pickBossForFloor(run.floor, rng, run);
     const plan = planBossEncounter(rng, {
       floor: run.floor,
-      boss: BOSSES[run.floor],
+      boss,
       pool: ENEMIES[biome.id] || ENEMIES.hell,
       partySize: coopS.partySize,
     });
-    content = { floor: run.floor, type: 'boss', enemies: buildSharedEnemies(plan.specs, { boss: true, hpMult: plan.hpMult }) };
+    content = {
+      floor: run.floor, type: 'boss', bossId: boss.id,
+      enemies: buildSharedEnemies(plan.specs, { boss: true, hpMult: plan.hpMult }),
+    };
   } else if (run.floor % 5 === 0) {
     const mod = rng.pick(MODIFIERS);
     const plan = pickEnemyPlan(rng, biome, coopS.partySize);
@@ -2064,7 +2132,13 @@ async function coopFloor(stage) {
   const content = await coopS.waitFloor(run.floor);
   saveRun(run);
 
-  if (content.type === 'throne') return throneRoomCoop(stage);
+  if (content.type === 'throne') {
+    if (content.bossId) {
+      run.bossPicks = run.bossPicks || {};
+      run.bossPicks[51] = content.bossId;
+    }
+    return throneRoomCoop(stage);
+  }
   if (content.type === 'boss' || content.type === 'trial') {
     return sharedFightCard(stage, content);
   }
@@ -2154,7 +2228,9 @@ function coopCardChoice(stage, cards) {
 
 async function sharedFightCard(stage, content) {
   const enemies = rehydrateEnemies(content.enemies);
-  const boss = content.type === 'boss' ? BOSSES[run.floor] : null;
+  const boss = content.type === 'boss'
+    ? (bossById(content.bossId) || bossById(enemies[0]?.id) || BOSSES[run.floor])
+    : null;
   const mod = content.modId ? MODIFIERS.find(m => m.id === content.modId) : null;
   const names = [...new Set(enemies.map(g => g.name))].join(', ');
 
@@ -2226,7 +2302,7 @@ async function coopFightShared(stage, enemies, { boss = null, mod = null } = {})
 
 /* ---------- co-op throne room ---------- */
 async function throneRoomCoop(stage) {
-  const boss = BOSSES[51];
+  const boss = bossById(run.bossPicks?.[51]) || BOSSES[51];
   if (coopS.isHost) return throneRoom(stage);
   stage.innerHTML = `
     <div class="card-stage"><div class="panel event-card">
@@ -2587,12 +2663,22 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
         const found = pool.find(e => e.id === id);
         if (found) return found;
       }
-      const boss = Object.values(BOSSES).find(e => e.id === id);
+      const boss = Object.values(BOSSES).find(e => e.id === id) || Object.values(ALT_BOSSES).find(e => e.id === id);
       if (boss) return boss;
       return ENEMIES[biome.id][0];
     });
     if (lines.length) await showOutcomePanel(stage, lines, ups, { continueLabel: 'Steel yourself', advance: false });
     return fightGroup(stage, specs, { text: o.combat.text, reward: o.combat.reward });
+  }
+
+  if (o.coopTrade) {
+    if (lines.length) await showOutcomePanel(stage, lines, ups, { continueLabel: 'Open the exchange', advance: false });
+    const tradeLines = await runCoopTrade();
+    lines.push(...tradeLines);
+    saveRun(run);
+    renderHud();
+    if (coopS) coopS.broadcastStatus(statusOf(run, 'choosing'), 'choosing');
+    return showOutcomePanel(stage, lines, ups);
   }
 
   if (run.hp <= 0) {
@@ -2621,6 +2707,266 @@ function noteEventTags(ev) {
   for (const tag of ev.tags) {
     if (!run.seenEventTags.includes(tag)) run.seenEventTags.push(tag);
   }
+}
+
+/** List tradeable gear (equipped + pack) with rarity for equal-rarity swaps. */
+function tradeableEntries() {
+  const out = [];
+  for (const slot of EQUIP_SLOTS) {
+    const id = run.equipment[slot];
+    if (!id) continue;
+    const it = resolveItem(run, id);
+    if (it) out.push({ where: 'equip', slot, id, item: it });
+  }
+  run.inventory.forEach((id, idx) => {
+    const it = resolveItem(run, id);
+    if (it) out.push({ where: 'pack', idx, id, item: it });
+  });
+  return out;
+}
+
+function detachTradeItem(entry) {
+  const it = resolveItem(run, entry.id);
+  if (!it) return null;
+  const blob = {
+    id: it.id,
+    item: { ...it },
+    gearBag: run.gearBag?.[it.id] ? { ...run.gearBag[it.id] } : null,
+  };
+  if (entry.where === 'equip') {
+    run.equipment[entry.slot] = null;
+  } else {
+    const i = run.inventory.indexOf(entry.id);
+    if (i > -1) run.inventory.splice(i, 1);
+  }
+  if (run.gearBag?.[entry.id]) delete run.gearBag[entry.id];
+  return blob;
+}
+
+function receiveTradeBlob(blob) {
+  if (!blob?.item) return;
+  run.gearBag = run.gearBag || {};
+  if (blob.gearBag) run.gearBag[blob.id] = blob.gearBag;
+  else if (blob.item.instanceId) run.gearBag[blob.id] = blob.item;
+  run.inventory.push(blob.id);
+}
+
+/**
+ * Co-op equal-rarity barter. Both players must confirm matching rarities, or either may skip.
+ * Returns outcome lines for the panel.
+ */
+async function runCoopTrade() {
+  if (!coopS || coopS.alone) {
+    return [{ text: 'The other stool stays empty. Trading alone is just rearranging pockets.', cls: 'bad' }];
+  }
+
+  const partners = [...coopS.partners.entries()];
+  let partnerId = partners.length === 1 ? partners[0][0] : null;
+  if (!partnerId) {
+    partnerId = await new Promise(resolve => {
+      modalCustom((m, close) => {
+        m.innerHTML = `<h3>Who trades with you?</h3>
+          <p class="modal-sub">Equal rarity. One item each. Both must agree — or skip.</p>
+          <div class="pick-grid">${partners.map(([id, p]) => `
+            <button class="pick-option" data-id="${id}"><div class="po-name">${p.name}</div>
+            <div class="po-desc">${p.status?.className || p.classId || 'companion'}</div></button>`).join('')}
+            <button class="pick-option" data-id=""><div class="po-name">Skip the exchange</div></button>
+          </div>`;
+        m.querySelectorAll('[data-id]').forEach(b => b.onclick = () => { close(); resolve(b.dataset.id || null); });
+      });
+    });
+  }
+  if (!partnerId) return [{ text: 'You leave the chalk circle untouched.', cls: '' }];
+
+  const floor = run.floor;
+  const tag = `trade-${floor}-${[coopS.you, partnerId].sort().join('-')}`;
+
+  return await new Promise(resolve => {
+    let myOffer = null; // { entry snapshot, rarity, name, id }
+    let theirOffer = null;
+    let myReady = false;
+    let theirReady = false;
+    let mySkip = false;
+    let theirSkip = false;
+    let done = false;
+    let pendingTheirBlob = null;
+    let awaitingSwap = false;
+    let swapSent = false;
+    const offs = [];
+
+    const finish = (lines) => {
+      if (done) return;
+      done = true;
+      for (const off of offs) off();
+      resolve(lines);
+    };
+
+    const render = () => {
+      const entries = tradeableEntries();
+      const byRarity = theirOffer
+        ? entries.filter(e => e.item.rarity === theirOffer.rarity)
+        : entries;
+      const list = (theirOffer ? byRarity : entries).map((e, i) => {
+        const sel = myOffer?.id === e.id ? 'picked' : '';
+        return `<button class="pick-option ${sel}" data-trade="${i}" ${myReady ? 'disabled' : ''}>
+          <span class="po-tag tag ${rarityClass(e.item.rarity)}">${e.item.rarity}</span>
+          <div class="po-name">${e.item.name}</div>
+          <div class="po-desc">${e.where === 'equip' ? `equipped · ${e.slot}` : 'in pack'}</div>
+        </button>`;
+      }).join('');
+
+      stage.innerHTML = `
+        <div class="card-stage"><div class="panel event-card">
+          <div class="card-art"><div class="card-glyph">🤝</div>
+            <span class="tag card-type-tag">TRADE</span><span class="tag card-floor-tag">FLOOR ${floor}</span></div>
+          <div class="card-body">
+            <h3>Equal Exchange</h3>
+            <div class="card-text">Trade <b>one</b> item of <b>equal rarity</b> with ${coopS.partners.get(partnerId)?.name || 'your companion'}. Both must confirm — or either may skip.</div>
+            <div class="trade-status">
+              <div>You: ${mySkip ? '⏭ skipped' : myOffer ? `${myOffer.name} (${myOffer.rarity})${myReady ? ' · locked in' : ''}` : '— choose an item —'}</div>
+              <div>Them: ${theirSkip ? '⏭ skipped' : theirOffer ? `${theirOffer.name} (${theirOffer.rarity})${theirReady ? ' · locked in' : ''}` : '— waiting —'}</div>
+            </div>
+            <div class="pick-grid" style="max-height:220px;overflow:auto">${list || '<div style="color:var(--ink-faint);padding:12px">No matching-rarity gear to offer.</div>'}</div>
+            <div class="card-choices" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+              <button class="choice-btn" id="trade-confirm" ${(!myOffer || myReady || mySkip) ? 'disabled' : ''}>
+                <span class="choice-label">Confirm trade</span>
+                <span class="choice-hint">${theirOffer && myOffer && theirOffer.rarity !== myOffer.rarity ? 'rarities must match' : 'both must agree'}</span>
+              </button>
+              <button class="choice-btn" id="trade-skip"><span class="choice-label">Skip</span><span class="choice-hint">walk away</span></button>
+            </div>
+          </div>
+        </div></div>`;
+
+      const pool = theirOffer ? byRarity : entries;
+      stage.querySelectorAll('[data-trade]').forEach(b => {
+        b.onclick = () => {
+          if (myReady || mySkip) return;
+          const e = pool[+b.dataset.trade];
+          if (!e) return;
+          myOffer = { id: e.id, name: e.item.name, rarity: e.item.rarity, where: e.where, slot: e.slot, idx: e.idx };
+          coopS.net.send({
+            k: 'trade', op: 'offer', floor, tag, to: partnerId,
+            itemId: e.id, name: e.item.name, rarity: e.item.rarity,
+          });
+          SFX.click();
+          render();
+        };
+      });
+      stage.querySelector('#trade-skip').onclick = () => {
+        mySkip = true;
+        coopS.net.send({ k: 'trade', op: 'skip', floor, tag, to: partnerId });
+        SFX.click();
+        tryResolve();
+        render();
+      };
+      const conf = stage.querySelector('#trade-confirm');
+      if (conf) conf.onclick = () => {
+        if (!myOffer || myReady) return;
+        if (theirOffer && theirOffer.rarity !== myOffer.rarity) {
+          toast('Rarities must match.', 'bad');
+          return;
+        }
+        myReady = true;
+        coopS.net.send({ k: 'trade', op: 'confirm', floor, tag, to: partnerId, rarity: myOffer.rarity, itemId: myOffer.id });
+        SFX.click();
+        tryResolve();
+        render();
+      };
+    };
+
+    const tryResolve = () => {
+      if (mySkip || theirSkip) {
+        finish([{ text: 'The exchange ends without a handshake. No hard feelings — the tower keeps the chalk.', cls: '' }]);
+        return;
+      }
+      if (!(myReady && theirReady && myOffer && theirOffer)) return;
+      if (myOffer.rarity !== theirOffer.rarity) {
+        myReady = false;
+        theirReady = false;
+        toast('Rarities no longer match — reconfirm.', 'bad');
+        render();
+        return;
+      }
+      if (swapSent) {
+        if (pendingTheirBlob) {
+          receiveTradeBlob(pendingTheirBlob);
+          pendingTheirBlob = null;
+          saveRun(run);
+          finish([
+            { text: `Traded ${myOffer.name} for ${theirOffer.name}. Equal rarity. Fair is fair.`, cls: 'good' },
+          ]);
+        }
+        return;
+      }
+      const entry = tradeableEntries().find(e => e.id === myOffer.id);
+      if (!entry) {
+        finish([{ text: 'Your offered item vanished before the trade closed.', cls: 'bad' }]);
+        return;
+      }
+      swapSent = true;
+      const blob = detachTradeItem(entry);
+      coopS.net.send({
+        k: 'trade', op: 'swap', floor, tag, to: partnerId,
+        blob, rarity: myOffer.rarity,
+      });
+      if (pendingTheirBlob) {
+        receiveTradeBlob(pendingTheirBlob);
+        pendingTheirBlob = null;
+        saveRun(run);
+        finish([
+          { text: `Traded ${myOffer.name} for ${theirOffer.name}. Equal rarity. Fair is fair.`, cls: 'good' },
+        ]);
+      } else {
+        awaitingSwap = true;
+        renderWaiting();
+      }
+    };
+
+    const renderWaiting = () => {
+      stage.innerHTML = `
+        <div class="card-stage"><div class="panel event-card">
+          <div class="card-body">
+            <h3>Sealing the trade…</h3>
+            <div class="card-text">Waiting for ${coopS.partners.get(partnerId)?.name || 'your companion'} to pass their item through.</div>
+          </div>
+        </div></div>`;
+    };
+
+    offs.push(coopS.net.on('trade', (d, from) => {
+      if (d.floor !== floor || d.tag !== tag) return;
+      if (d.to && d.to !== coopS.you && from !== partnerId) return;
+      if (from !== partnerId && d.op !== 'swap') return;
+
+      if (d.op === 'offer' && from === partnerId) {
+        theirOffer = { id: d.itemId, name: d.name, rarity: d.rarity };
+        theirReady = false;
+        if (myOffer && myOffer.rarity !== theirOffer.rarity) myReady = false;
+        render();
+      } else if (d.op === 'confirm' && from === partnerId) {
+        theirReady = true;
+        if (d.rarity && theirOffer) theirOffer.rarity = d.rarity;
+        tryResolve();
+        render();
+      } else if (d.op === 'skip' && from === partnerId) {
+        theirSkip = true;
+        tryResolve();
+      } else if (d.op === 'swap' && from === partnerId) {
+        if (awaitingSwap || swapSent) {
+          receiveTradeBlob(d.blob);
+          saveRun(run);
+          finish([
+            { text: `Traded ${myOffer?.name || 'your item'} for ${theirOffer?.name || d.blob?.item?.name || 'theirs'}. Equal rarity. Fair is fair.`, cls: 'good' },
+          ]);
+        } else {
+          pendingTheirBlob = d.blob;
+        }
+      }
+    }));
+
+    // Announce presence so partner UI can pair
+    coopS.net.send({ k: 'trade', op: 'hello', floor, tag, to: partnerId });
+    render();
+  });
 }
 
 function biomeTier() {
@@ -2871,7 +3217,9 @@ const LEVEL_FLAVOR = [
   'Strength arrives quietly, like it was always yours and just got lost in the mail.',
 ];
 
-const SKILL_OFFER_LEVELS = [3, 5, 8, 11, 14, 17, 20, 24];
+// Technique offers are sparse on purpose — bosses grant loot/relics, not a
+// skill modal every gate. Levels below match early / mid / late climb beats.
+const SKILL_OFFER_LEVELS = [5, 9, 13, 17, 21];
 
 async function levelUpModal(up) {
   SFX.levelup();
@@ -2980,30 +3328,28 @@ function subclassSkillGrantHtml(sub) {
   </div>`;
 }
 
-// The climb teaches: pick one technique from your class pool (level-ups and
-// boss victories both call this — bosses are where AOE usually arrives).
+// Sparse technique offers on milestone levels only (bosses grant relic/loot instead).
 async function offerSkillChoice() {
   {
     const rng = runRng(run);
     const pool = rng.shuffle(learnableSkills(run)).slice(0, 3);
     rng.advance();
-    if (pool.length) {
-      await modalCustom((m, close) => {
-        m.innerHTML = `<h3>New Technique</h3><p class="modal-sub">The climb teaches. Choose one skill to learn.</p>
-          <div class="pick-grid">
-            ${pool.map((s, i) => `<button class="pick-option" data-i="${i}">${skillPickHtml(s)}</button>`).join('')}
-            <button class="pick-option" data-skip="1"><div class="po-name" style="color:var(--ink-dim)">Skip — stay sharp with what you know</div></button>
-          </div>`;
-        m.querySelectorAll('[data-i]').forEach(b => b.onclick = async () => {
-          const sk = pool[+b.dataset.i];
-          run.knownSkills.push(sk.id);
-          close();
-          await maybeEquipSkill(sk);
-          saveRun(run);
-        });
-        m.querySelector('[data-skip]').onclick = () => close();
+    if (!pool.length) return;
+    await modalCustom((m, close) => {
+      m.innerHTML = `<h3>New Technique</h3><p class="modal-sub">The climb teaches. Choose one skill to learn.</p>
+        <div class="pick-grid">
+          ${pool.map((s, i) => `<button class="pick-option" data-i="${i}">${skillPickHtml(s)}</button>`).join('')}
+          <button class="pick-option" data-skip="1"><div class="po-name" style="color:var(--ink-dim)">Skip — stay sharp with what you know</div></button>
+        </div>`;
+      m.querySelectorAll('[data-i]').forEach(b => b.onclick = async () => {
+        const sk = pool[+b.dataset.i];
+        run.knownSkills.push(sk.id);
+        close();
+        await maybeEquipSkill(sk);
+        saveRun(run);
       });
-    }
+      m.querySelector('[data-skip]').onclick = () => close();
+    });
   }
 }
 
@@ -3243,11 +3589,17 @@ function characterSheet({ locked = false } = {}) {
           </div>
           <div class="sheet-section">
             <h4>Techniques (${skillCapacity(run)} + Strike &amp; Guard)</h4>
-            ${run.skills.map(id => {
+            <p class="modal-sub" style="margin-top:-4px;margin-bottom:8px">Use ↑↓ to rearrange battle order.</p>
+            ${run.skills.map((id, idx) => {
               const s = SKILLS[id];
+              const reorder = !locked ? `
+                <div class="inv-actions skill-order">
+                  <button class="btn small ghost" data-skill-up="${idx}" ${idx === 0 ? 'disabled' : ''} title="Move up">↑</button>
+                  <button class="btn small ghost" data-skill-down="${idx}" ${idx >= run.skills.length - 1 ? 'disabled' : ''} title="Move down">↓</button>
+                </div>` : '';
               return `<div class="inv-item"><div><div class="item-name">${s.name}${s.charge ? ` <span class="tag">${s.charge}⚡</span>` : ''}</div>
                 <div class="po-cost" style="margin:2px 0">${skillCostTip(s)} · ${skillEffectTip(s)}</div>
-                <div class="item-desc">${s.desc}</div></div></div>`;
+                <div class="item-desc">${s.desc}</div></div>${reorder}</div>`;
             }).join('')}
             ${!locked && run.knownSkills.filter(id => !run.skills.includes(id)).length ? `
               <h4 style="margin-top:12px">Reserve</h4>
@@ -3310,6 +3662,22 @@ function characterSheet({ locked = false } = {}) {
         await swapSkillModal(SKILLS[b.dataset.swap]);
         saveRun(run);
       });
+      m.querySelectorAll('[data-skill-up]').forEach(b => b.onclick = () => {
+        const i = +b.dataset.skillUp;
+        if (i <= 0) return;
+        const tmp = run.skills[i - 1];
+        run.skills[i - 1] = run.skills[i];
+        run.skills[i] = tmp;
+        SFX.click(); saveRun(run); render();
+      });
+      m.querySelectorAll('[data-skill-down]').forEach(b => b.onclick = () => {
+        const i = +b.dataset.skillDown;
+        if (i >= run.skills.length - 1) return;
+        const tmp = run.skills[i + 1];
+        run.skills[i + 1] = run.skills[i];
+        run.skills[i] = tmp;
+        SFX.click(); saveRun(run); render();
+      });
       m.querySelectorAll('[data-unequip]').forEach(b => b.onclick = () => {
         unequipSlot(b.dataset.unequip);
         SFX.click(); saveRun(run); renderHud(); render();
@@ -3342,7 +3710,9 @@ function characterSheet({ locked = false } = {}) {
    THE THRONE — floor 51
    ============================================================ */
 async function throneRoom(stage) {
-  const boss = BOSSES[51];
+  const rngPick = runRng(run);
+  const boss = pickBossForFloor(51, rngPick, run);
+  rngPick.advance(); saveRun(run);
   const hasSigils = run.sigils.length >= 3;
 
   let clauseLine = '';

@@ -119,6 +119,16 @@ Same shape in `BOSSES`, keyed by floor. Give it ≥2 specials (mid + max charge)
 fast dukes), and `intro`/`taunt` lines. Mechanics: `summons`, `heads`, `phases`,
 `chargeOnPhase`.
 
+**Phase evolve (optional):** with `phases: true`, set `phaseArt` (an `ENEMY_ART`
+key), plus optional `phaseName` / `phaseGlyph` / `phaseSpecials` / `phaseText`.
+At ≤50% HP the sprite (and optional identity) swap — used by the Putrid Prince
+slime → demon-slime fight. See `docs/ASSET_USAGE.md`.
+
+## Free asset packs
+Drop packs in `assets/img/NEW_ASSETS/`, then run
+`python tools/integrate_new_assets.py` to build idle strips. Usage ledger:
+[`docs/ASSET_USAGE.md`](ASSET_USAGE.md).
+
 ## Balance — encounter-first
 
 Do **not** tune HP, enemy count, Guard, or revival independently. Balance complete

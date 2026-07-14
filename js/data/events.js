@@ -844,6 +844,30 @@ export const EVENTS = [
           fail: { text: 'Chest-deep, freezing, and long, and at one point something touches your leg with great curiosity. Character-building, in the worst sense.', hp: -14, xp: 20 } } },
     ],
   },
+  {
+    id: 'wayfarers_exchange', biome: 'any', category: 'social', type: 'story', glyph: '🤝', w: 7,
+    cond: s => s.coopMode,
+    title: 'The Wayfarers\' Exchange',
+    text: 'A chalk circle on the floor. Two stools. A sign in six languages and one that hasn\'t been invented yet:\n\n"ONE FOR ONE. EQUAL RARITY. BOTH MUST AGREE. OR WALK."\n\nThe tower does not fence goods. It only witnesses the handshake.',
+    choices: [
+      { label: 'Sit and trade', hint: '1 item · equal rarity · both agree',
+        outcome: { text: 'You take a stool. Across from you, a companion does the same.', coopTrade: true } },
+      { label: 'Walk past', hint: 'no deal today',
+        outcome: { text: 'The stools wait for climbers with lighter packs — or heavier pride.' } },
+    ],
+  },
+  {
+    id: 'mirrored_bargain', biome: 'any', category: 'social', type: 'story', glyph: '🪞', w: 5,
+    cond: s => s.coopMode && s.floor >= 12,
+    title: 'The Mirrored Bargain',
+    text: 'A cracked looking-glass stands between two alcoves. Reach through and you feel a companion\'s pack as if it were your own — cold metal, worn leather, the weight of choices.\n\nThe glass will only pass items of matching rarity. Unequal trades shatter the pane (and the mood).',
+    choices: [
+      { label: 'Propose an equal trade', hint: 'swap 1 item · both must agree',
+        outcome: { text: 'Your hand passes into silver. Somewhere nearby, so does theirs.', coopTrade: true } },
+      { label: 'Leave the glass unbroken', hint: 'keep your kit',
+        outcome: { text: 'Some mirrors are better left as décor.' } },
+    ],
+  },
 
   /* ==================== FOREST (1–10) ==================== */
   {
@@ -936,13 +960,55 @@ export const EVENTS = [
     text: 'The smoke from the hive drifted far. Yellow eyes ring the clearing — the forest has sent collectors for its grievance.',
     choices: [
       { label: 'Stand and fight', hint: 'combat',
-        outcome: { combat: { enemies: ['wolf', 'wolf', 'wolf'], text: 'The pack closes in. You did technically start this.' } } },
+        outcome: { combat: { enemies: ['wolf', 'wolf', 'rat', 'rat'], text: 'The pack closes in — and the rats followed the smoke.' } } },
       { label: 'Offer your rations', hint: 'buy peace',
         outcome: { text: 'You lay out everything edible you own. The alpha considers, takes it, and marks you as "annoying but paid up." The eyes withdraw.', gold: -30, flag: 'forest_peace', clearFlag: 'angered_forest' } },
     ],
   },
 
+  {
+    id: 'slime_crown', biome: 'forest', category: 'dangerous', type: 'risk', glyph: '🟢', w: 5,
+    title: 'The Quivering Crown',
+    text: 'A ring of grove-slimes has crowned a larger blob with a stolen bird\'s nest. It burps at you in what might be a royal decree. The smaller ones look ready to enforce protocol.',
+    choices: [
+      { label: 'Depose the prince', hint: 'combat',
+        outcome: { combat: { enemies: ['slime', 'slime', 'slime'], text: 'The court of ooze advances.' } } },
+      { label: 'Bow and leave an offering', req: { gold: 15 }, hint: '-15g, safe',
+        outcome: { text: 'You leave coins. The crown-blob absorbs them with dignity. You are waved onward by a tentacle that almost looks like a scepter.', gold: -15, fame: 1 } },
+      { label: 'Kick the nest off', hint: 'risky',
+        outcome: { roll: { stat: 'dex', dc: 11 },
+          success: { text: 'The nest sails into the underbrush. The slimes deflate in shared embarrassment and ooze away.', gold: 20, xp: 12 },
+          fail: { text: 'You slip. The prince takes this personally.', combat: { enemies: ['slime', 'orc'], text: 'An orc was watching. It laughs, then joins in.' } } } },
+    ],
+  },
+  {
+    id: 'orc_logging_camp', biome: 'forest', category: 'combat', type: 'risk', glyph: '🪓', w: 6,
+    title: 'The Logging Camp',
+    text: 'Axes ring ahead. A woods-orc camp has claimed a clearing — and your path. A dusk-lurker sits in a cage behind them, watching with too many eyes.',
+    choices: [
+      { label: 'Fight through', hint: 'combat',
+        outcome: { combat: { enemies: ['orc', 'orc', 'bandit'], text: 'Axes and knives. The forest is a workplace hazard.' } } },
+      { label: 'Free the lurker first', hint: 'chaos as strategy',
+        outcome: { combat: { enemies: ['dusk_lurker', 'orc'], text: 'The cage opens. Gratitude is… complicated.' } } },
+      { label: 'Sneak around', req: { stat: 'dex', min: 11 }, hint: 'quiet feet',
+        outcome: { text: 'You circle wide. An orc argues with a stump about overtime. You do not intervene.', xp: 15 } },
+    ],
+  },
+
   /* ==================== RUINS (11–20) ==================== */
+  {
+    id: 'void_stare', biome: 'ruins', category: 'dangerous', type: 'risk', glyph: '🧿', w: 5,
+    title: 'The Unblinking Hall',
+    text: 'A corridor ends in a floating knot of eyes and claws. A horned stalker kneels before it like a parishioner. Neither has blinked since you arrived.',
+    choices: [
+      { label: 'Interrupt the sermon', hint: 'combat',
+        outcome: { combat: { enemies: ['void_eye', 'horned_stalker'], text: 'Every pupil turns. That\'s a lot of attention.' } } },
+      { label: 'Offer a memory', hint: 'pay in story',
+        outcome: { text: 'You speak a true thing you\'d rather forget. The void-eye drinks it. The stalker bows you past.', xp: 20, fame: 2 } },
+      { label: 'Back away slowly', hint: 'safe',
+        outcome: { text: 'You reverse course without turning your back. Somewhere behind you, something finally blinks — once.' } },
+    ],
+  },
   {
     id: 'buried_library', biome: 'ruins', category: 'mystery', type: 'story', glyph: '📚', w: 6, once: true,
     affinity: { classes: ['mage'] },
@@ -1119,7 +1185,7 @@ export const EVENTS = [
       { label: 'Ring the bell', hint: 'wake the mire?',
         outcome: { roll: { stat: 'str', dc: 13 },
           success: { text: 'The toll rolls across the swamp like judgment day\'s rehearsal. Everything with legs flees. Everything without legs sinks deeper. For one hour, the mire is entirely, blessedly yours.', gold: 60, xp: 25, fame: 3 },
-          fail: { text: 'The bell tolls, and the swamp ANSWERS.', combat: { enemies: ['leech', 'leech', 'croc'], text: 'You rang the dinner bell.' } } } },
+          fail: { text: 'The bell tolls, and the swamp ANSWERS.', combat: { enemies: ['leech', 'leech', 'mire_abomination'], text: 'You rang the dinner bell.' } } } },
       { label: 'Dive beneath it', hint: 'treasure?',
         outcome: { roll: { stat: 'lk', dc: 12 },
           success: { text: 'The drowned crypt beneath the bell holds offerings from a congregation of no one. Their loss.', gold: 95, itemRoll: true },
@@ -1218,6 +1284,19 @@ export const EVENTS = [
         outcome: { text: 'It takes a thief to rob a cheat. While his four mouths trash-talk each other, your hands do quiet, professional work. You leave with the pot, his cufflinks, and two of his cards for sentiment.', gold: 160, xp: 35, fame: 3 } },
       { label: '"Tell the Duke he wins."', hint: 'safe, humble',
         outcome: { text: 'The demon blinks eight eyes. "Nobody\'s EVER just conceded." Baffled, he stamps your hand with a mark of safe passage — apparently there\'s a protocol for this and it favors you.', flag: 'dukes_mark', fame: 1 } },
+    ],
+  },
+  {
+    id: 'slag_patrol', biome: 'hell', category: 'combat', type: 'risk', glyph: '⚔️', w: 6,
+    title: 'The Slag Patrol',
+    text: 'A knight of cooling iron marches a pair of crimson wretches on chain-leashes. Its chest-runes tick like a furnace clock. "Clearance," it rasps. "Or clearance."',
+    choices: [
+      { label: 'Clearance it is', hint: 'combat',
+        outcome: { combat: { enemies: ['slag_knight', 'crimson_wretch', 'crimson_wretch'], text: 'The leashes snap. The knight does not hurry.' } } },
+      { label: 'Show the Duke\'s mark', req: { flag: 'dukes_mark' }, hint: 'prior concession pays off',
+        outcome: { text: 'The knight inspects your stamped hand, nods once, and redirects the wretches down a side shaft. Bureaucracy: the seventh circle\'s softest power.', xp: 25, fame: 2 } },
+      { label: 'Bribe in brimstone coin', req: { gold: 80 }, hint: '-80g',
+        outcome: { text: 'Coin melts into the knight\'s palm and becomes part of its armor. "Efficient," it says, and lets you pass.', gold: -80 } },
     ],
   },
   {
