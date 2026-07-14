@@ -2,15 +2,15 @@
 // Flavor-only: reaching full charge fires onComplete(); the game reveals a
 // deliberately WIDE potential band, never the true (hidden) stats. (handoff §3)
 
-export function mountCrystal(canvas, { onComplete } = {}) {
+export function mountCrystal(canvas, { onComplete, filled = false } = {}) {
   const ctx = canvas.getContext('2d');
   const W = 320, H = 400;
   canvas.width = W * 2; canvas.height = H * 2;
   ctx.setTransform(2, 0, 0, 2, 0, 0);
 
-  let charge = 0;
+  let charge = filled ? 100 : 0;
   let holding = false;
-  let done = false;
+  let done = !!filled;
   let raf = 0;
 
   const accent = '#4fd6c0', accent2 = '#9b6cff';

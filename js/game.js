@@ -459,14 +459,15 @@ function creationFlow(coopContext = null) {
     if (crystalCtl) { crystalCtl.destroy(); crystalCtl = null; }
     app.innerHTML = '';
     const steps = ['Bloodline', 'Calling', 'Origin', 'The Name'];
-    const scr = el(`<div class="screen">
+    const pickStep = step <= 2;
+    const scr = el(`<div class="screen ${pickStep ? 'creation-screen' : (step === 3 ? 'creation-screen mono-screen' : '')}">
       <div class="select-header">
         <h2>${steps[step]}</h2>
         <p id="step-sub"></p>
         <div class="step-dots">${steps.map((_, i) => `<span class="fdot ${i === step ? 'on' : i < step ? 'done' : ''}"></span>`).join('')}</div>
       </div>
-      <div id="step-body"></div>
-      <div style="display:flex;justify-content:center;gap:10px;margin-top:18px">
+      <div id="step-body" class="creation-body"></div>
+      <div class="creation-nav">
         ${step > 0 ? '<button class="btn small" id="btn-prev">← Back</button>' : '<button class="btn ghost small" id="btn-title">← Title</button>'}
         <button class="btn primary" id="btn-next">${step === 3 ? 'Approach the Gate' : 'Continue →'}</button>
       </div>
@@ -481,11 +482,6 @@ function creationFlow(coopContext = null) {
       const isOrigin = step === 2;
       const fateKey = isClass ? 'fateClass' : isOrigin ? null : 'fateRace';
       const boostEach = fateGrowthPctOne();
-      sub.textContent = isClass
-        ? 'Six callings. What you\'re truly made of, you\'ll discover on the way up.'
-        : isOrigin
-          ? 'Where were you, the day before the tower? Origins are lived, not listed — yours plays out at the gate.'
-          : 'Eight peoples climb. The tower does not care which — but the tower is often wrong about what matters.';
       const RACE_TAG = {
         human: 'ADAPTABLE', elf: 'ARCANE', orc: 'BRUTAL', dwarf: 'ENDURING',
         halfling: 'FORTUNATE', tiefling: 'INFERNAL', beastfolk: 'FERAL', dragonkin: 'SCALED',
@@ -498,6 +494,12 @@ function creationFlow(coopContext = null) {
       const list = isOrigin ? ORIGINS : Object.values(isClass ? CLASSES : RACES);
       const key = isClass ? 'classId' : isOrigin ? 'originId' : 'raceId';
       const selectable = it => isClass ? !(it.hidden && !(it.unlockCond?.(meta))) : true;
+      const playableCount = list.filter(selectable).length;
+      sub.textContent = isClass
+        ? `${playableCount} callings — use ◄ ► to see them all.`
+        : isOrigin
+          ? `${playableCount} origins — use ◄ ► to browse. Yours plays out at the gate.`
+          : `${playableCount} peoples climb — use ◄ ► to see them all.`;
       const accentOf = it => isClass ? it.accent : isOrigin ? '#8fd8cc' : '#e8b64a';
       const tagOf = it => isClass ? it.resource.name.toUpperCase() : isOrigin ? (ORIGIN_TAG[it.id] || 'ORIGIN') : (RACE_TAG[it.id] || 'CLIMBER');
       const blurbOf = it => isClass ? it.epithet : it.blurb;
@@ -505,32 +507,71 @@ function creationFlow(coopContext = null) {
         ? heroSpriteHtml(it.id, 40)
         : isOrigin ? (originIconUrl(it.id) && `<img class="px-icon" src="${originIconUrl(it.id)}" style="width:40px;height:40px" alt="">`)
         : (raceIconUrl(it.id) && `<img class="px-icon" src="${raceIconUrl(it.id)}" style="width:40px;height:40px" alt="">`);
-      const emblemOf = it => railArtOf(it) || (isOrigin ? (it.name.replace(/^The\s+/i, '')[0] || it.name[0]) : it.name[0]);
+      const emblemOf = it => railArtOf(it) || (isOrigin ? (it.name.replace(/^The\s+/i, '')[0] || it.name[0]) : (it.glyph || it.name[0]));
       const artOf = it => isClass
-        ? (heroSpriteHtml(it.id, 220) || `<div class="class-icon" style="width:170px;height:170px">${ICONS[it.id]}</div>`)
+        ? (heroSpriteHtml(it.id, 280) || `<div class="class-icon" style="width:220px;height:220px">${ICONS[it.id]}</div>`)
         : isOrigin
-          ? (originArtHtml(it.id, 168) || `<div style="font-size:130px;line-height:1">${it.glyph}</div>`)
-          : (raceArtHtml(it.id, 200) || `<div style="font-size:130px;line-height:1">${it.glyph}</div>`);
+          ? (originArtHtml(it.id, 220) || `<div style="font-size:160px;line-height:1">${it.glyph}</div>`)
+          : (raceArtHtml(it.id, 260) || `<div style="font-size:160px;line-height:1">${it.glyph}</div>`);
 
+      if (fateKey && pick[fateKey]) {
+        // Fate already locked this slot — never reveal the pick here (blocks reroll-shopping).
+        const kindLabel = isClass ? 'calling' : 'bloodline';
+        sub.textContent = `Fate has spoken. Your ${kindLabel} stays sealed until the climb begins.`;
+        body.innerHTML = `
+          <div class="creation-stage fate-sealed-stage">
+            <div class="fate-sealed">
+              <div class="fate-sealed-glyph">🎲</div>
+              <div class="fate-sealed-title"><span class="fate-badge">FATE</span> ${isClass ? 'Calling' : 'Bloodline'} sealed</div>
+              <div class="fate-sealed-blurb">A random ${kindLabel} is locked. You will not see it until you enter the tower.<br/>+${boostEach}% level-up growth.</div>
+              <div class="fate-sealed-actions">
+                <button class="btn primary" id="btn-fate-continue">Continue →</button>
+                <button class="btn ghost small" id="btn-fate-break">Choose yourself instead</button>
+              </div>
+            </div>
+          </div>`;
+        body.querySelector('#btn-fate-continue').onclick = () => { SFX.click(); step++; render(); };
+        body.querySelector('#btn-fate-break').onclick = () => {
+          pick[fateKey] = false;
+          SFX.click();
+          toast(`The seal breaks. Choose your ${kindLabel}.`, 'sys');
+          render();
+        };
+      } else {
       body.innerHTML = `
         <div class="creation-stage">
-          <div class="showcase">
-            <div class="showcase-art" id="sc-art"></div>
-            <div class="showcase-name" id="sc-name"></div>
+          <div class="creation-hero">
+            <div class="showcase">
+              <div class="showcase-art" id="sc-art"></div>
+              <div class="showcase-name" id="sc-name"></div>
+            </div>
+            <div class="showcase-text" id="sc-text"></div>
           </div>
-          <div class="showcase-text" id="sc-text"></div>
           <div class="creation-rail">
             <div class="rail-arrow" id="rail-left">◄</div>
             <div class="rail-window"><div class="rail-track" id="rail-track"></div></div>
             <div class="rail-arrow" id="rail-right">►</div>
           </div>
-        </div>
-        ${fateKey ? `<div class="fate-row">
+        </div>`;
+
+      // Tuck Trust Fate into the bottom nav so the stage can give space to the portrait.
+      if (fateKey) {
+        const nav = scr.querySelector('.creation-nav');
+        nav.classList.add('has-fate');
+        const actions = document.createElement('div');
+        actions.className = 'creation-nav-actions';
+        [...nav.children].forEach(child => actions.appendChild(child));
+        nav.appendChild(actions);
+        nav.insertAdjacentHTML('afterbegin', `<div class="fate-nav">
           <button class="btn small" id="btn-fate">🎲 Trust fate</button>
-          <div class="fate-hint" id="fate-hint"></div>
-        </div>` : ''}`;
+          <div class="fate-hint">Hidden random ${isClass ? 'calling' : 'bloodline'} · +${boostEach}% growth · revealed on the climb</div>
+        </div>`);
+      }
 
       const track = body.querySelector('#rail-track');
+      // Card pitch must match CSS (.rail-card width + gap) for centering.
+      const CARD_PITCH = 136;
+      const RAIL_CENTER = 272;
       for (const it of list) {
         const lock = !selectable(it);
         const acc = accentOf(it);
@@ -559,27 +600,16 @@ function creationFlow(coopContext = null) {
       }
       function center() {
         const selIdx = idxOf(pick[key]);
-        track.style.transform = `translateX(${257 - 166 * selIdx}px)`;
+        track.style.transform = `translateX(${RAIL_CENTER - CARD_PITCH * selIdx}px)`;
         track.querySelectorAll('.rail-card').forEach(c => c.classList.toggle('active', c.dataset.id === pick[key]));
       }
-      function paintFateHint() {
-        const hint = body.querySelector('#fate-hint');
-        if (!hint) return;
-        if (pick[fateKey]) {
-          hint.innerHTML = `<span class="fate-badge">FATE</span> Random ${isClass ? 'calling' : 'bloodline'} locked in · <b>+${boostEach}% growth</b>`;
-        } else {
-          hint.textContent = `Leave the choice to chance for a slight growth boost (+${boostEach}% level-up gains).`;
-        }
-      }
-      function selectItem(id, { fromFate = false } = {}) {
-        const changed = id !== pick[key] || (!!pick[fateKey] !== fromFate);
+      function selectItem(id) {
+        if (id === pick[key]) return;
         pick[key] = id;
-        if (fateKey) pick[fateKey] = fromFate;
-        if (!changed) { paintFateHint(); return; }
+        if (fateKey) pick[fateKey] = false;
         SFX.click();
         center();
         paint(list[idxOf(id)], true);
-        paintFateHint();
       }
       function stepSel(dir) {
         let i = idxOf(pick[key]) + dir;
@@ -587,16 +617,19 @@ function creationFlow(coopContext = null) {
       }
       body.querySelector('#rail-left').onclick = () => stepSel(-1);
       body.querySelector('#rail-right').onclick = () => stepSel(1);
-      body.querySelector('#btn-fate')?.addEventListener('click', () => {
+      scr.querySelector('#btn-fate')?.addEventListener('click', () => {
         const pool = list.filter(selectable);
         const chosen = pool[Math.floor(Math.random() * pool.length)];
-        selectItem(chosen.id, { fromFate: true });
+        pick[key] = chosen.id;
+        pick[fateKey] = true;
         SFX.unlock();
-        toast(isClass ? 'Fate names your calling.' : 'Fate names your bloodline.', 'good');
+        toast(isClass ? 'Fate seals your calling.' : 'Fate seals your bloodline.', 'good');
+        step++;
+        render();
       });
       center();
       paint(list[idxOf(pick[key])], false);
-      paintFateHint();
+      }
     }
     if (step === 3) {
       if (!gen) gen = rollStart(pick.classId, pick.raceId);
@@ -605,9 +638,9 @@ function creationFlow(coopContext = null) {
       const boost = fatePct();
       sub.textContent = appraised ? 'Potential felt. Name yourself — or tempt fate once more.' : 'Attune to the Monolith — press & hold to gauge your potential.';
       const fateLine = boost
-        ? `<div class="mono-earned" style="margin-top:8px"><span class="fate-badge">FATE</span> Trusted chance on ${[pick.fateRace && 'bloodline', pick.fateClass && 'calling'].filter(Boolean).join(' & ')} · +${boost}% growth</div>`
+        ? `<div class="mono-earned"><span class="fate-badge">FATE</span> Trusted chance on ${[pick.fateRace && 'bloodline', pick.fateClass && 'calling'].filter(Boolean).join(' & ')} · +${boost}% growth</div>`
         : '';
-      const caption = appraised ? `
+      const revealHtml = `
         <div class="mono-reveal">
           <div class="mono-feel">"${desc.word}"</div>
           <div class="mono-range-label">POTENTIAL RANGE</div>
@@ -617,37 +650,91 @@ function creationFlow(coopContext = null) {
             <span style="color:var(--rk-${band.high})">${band.high}</span>
           </div>
           <div class="mono-earned">Your true rank is not given — it is earned within.</div>
-          <div class="mono-earned" style="opacity:.75;margin-top:6px">Approach the Gate to seal this roll — the Monolith awakens you then.</div>
+          <div class="mono-earned" style="opacity:.75;margin-top:4px">Approach the Gate to seal this roll — the Monolith awakens you then.</div>
           ${fateLine}
-        </div>` : `<div class="mono-hint">press &amp; hold the crystal to measure your potential</div>${fateLine}`;
+        </div>`;
+      const hintHtml = `<div class="mono-hint">press &amp; hold the crystal to measure your potential</div>${fateLine}`;
+      const actionsHtml = `
+          <div class="mono-actions" id="mono-actions">
+            <input class="name-input" id="name" maxlength="16" placeholder="Name your climber..." />
+            <button class="btn small" id="btn-reroll" ${rerolls >= maxRerolls() ? 'disabled' : ''}>🎲 Tempt fate (${maxRerolls() - rerolls} left)</button>
+          </div>
+          <div class="mono-reroll-hint">Tempt fate rerolls your hidden starting gifts — then attune again to feel the new roll.</div>`;
+      const raceLabel = pick.fateRace ? '???' : RACES[pick.raceId].name;
+      const classLabel = pick.fateClass ? '???' : CLASSES[pick.classId].name;
+      const raceArt = pick.fateRace
+        ? '<span style="font-size:28px">🎲</span>'
+        : (raceIconUrl(pick.raceId) ? `<img class="px-icon" src="${raceIconUrl(pick.raceId)}" style="width:36px;height:36px" alt="">` : '');
+      const classArt = pick.fateClass
+        ? '<span style="font-size:28px">🎲</span>'
+        : (heroSpriteHtml(pick.classId, 36) || `<span style="font-size:24px">${RACES[pick.raceId].glyph}</span>`);
       body.innerHTML = `
         <div class="mono-stage">
           <div class="mono-title">THE MONOLITH OF MEASURE</div>
           <div class="mono-identity">
-            ${heroSpriteHtml(pick.classId, 40) || `<span style="font-size:28px">${RACES[pick.raceId].glyph}</span>`}
-            ${raceIconUrl(pick.raceId) ? `<img class="px-icon" src="${raceIconUrl(pick.raceId)}" style="width:40px;height:40px" alt="">` : ''}
-            <div class="mono-identity-text">${RACES[pick.raceId].name} ${CLASSES[pick.classId].name} · ${originById(pick.originId).name}</div>
+            ${classArt}
+            ${raceArt}
+            <div class="mono-identity-text">${raceLabel} ${classLabel} · ${originById(pick.originId).name}</div>
           </div>
-          <div class="mono-crystal-wrap">
+          <div class="mono-crystal-wrap ${appraised ? 'is-done' : ''}" id="mono-crystal-wrap">
             <canvas id="crystal" width="320" height="400"></canvas>
           </div>
-          <div class="mono-caption">${caption}</div>
-          ${appraised ? `
-          <div class="mono-actions">
-            <input class="name-input" id="name" maxlength="16" placeholder="Name your climber..." />
-            <button class="btn small" id="btn-reroll" ${rerolls >= maxRerolls() ? 'disabled' : ''}>🎲 Tempt fate (${maxRerolls() - rerolls} left)</button>
-          </div>
-          <div style="font-size:13px;color:var(--ink-dim);margin-top:8px;max-width:360px;margin-left:auto;margin-right:auto;line-height:1.35">Tempt fate rerolls your hidden starting gifts — then attune again to feel the new roll.</div>` : ''}
+          <div class="mono-caption" id="mono-caption">${appraised ? revealHtml : hintHtml}</div>
+          ${appraised ? actionsHtml : '<div id="mono-post"></div>'}
         </div>`;
       const cv = body.querySelector('#crystal');
+      const nextBtn = scr.querySelector('#btn-next');
+      const showAppraisedUi = () => {
+        const captionEl = body.querySelector('#mono-caption');
+        const wrap = body.querySelector('#mono-crystal-wrap');
+        wrap?.classList.add('is-done');
+        if (captionEl) captionEl.innerHTML = (() => {
+          const d = startDescriptor(gen.percentile);
+          const b = apprBand || potentialBand(gen.percentile);
+          return `
+        <div class="mono-reveal">
+          <div class="mono-feel">"${d.word}"</div>
+          <div class="mono-range-label">POTENTIAL RANGE</div>
+          <div class="mono-band">
+            <span style="color:var(--rk-${b.low})">${b.low}</span>
+            <span class="mono-band-sep">—</span>
+            <span style="color:var(--rk-${b.high})">${b.high}</span>
+          </div>
+          <div class="mono-earned">Your true rank is not given — it is earned within.</div>
+          <div class="mono-earned" style="opacity:.75;margin-top:4px">Approach the Gate to seal this roll — the Monolith awakens you then.</div>
+          ${fateLine}
+        </div>`;
+        })();
+        let post = body.querySelector('#mono-post');
+        if (!post) {
+          post = el('<div id="mono-post"></div>');
+          body.querySelector('.mono-stage')?.appendChild(post);
+        }
+        if (!body.querySelector('#mono-actions')) {
+          post.outerHTML = actionsHtml;
+          const nameInput = body.querySelector('#name');
+          nameInput.value = creationFlow._savedName || RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
+          nameInput.addEventListener('input', () => { creationFlow._savedName = nameInput.value; });
+          body.querySelector('#btn-reroll').onclick = () => {
+            if (rerolls >= maxRerolls()) return;
+            creationFlow._savedName = nameInput.value;
+            rerolls++; gen = rollStart(pick.classId, pick.raceId); appraised = false; apprBand = null;
+            SFX.cardDeal(); render();
+          };
+        }
+        if (nextBtn) { nextBtn.disabled = false; nextBtn.title = ''; }
+        sub.textContent = 'Potential felt. Name yourself — or tempt fate once more.';
+      };
       if (!appraised) {
         crystalCtl = mountCrystal(cv, { onComplete: () => {
           appraised = true;
           apprBand = potentialBand(gen.percentile);
           SFX.unlock();
-          render();
+          // Keep the filled crystal on screen — reveal appraisal below it.
+          showAppraisedUi();
         } });
       } else {
+        crystalCtl = mountCrystal(cv, { filled: true });
         const nameInput = body.querySelector('#name');
         nameInput.value = creationFlow._savedName || RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
         nameInput.addEventListener('input', () => { creationFlow._savedName = nameInput.value; });
@@ -830,7 +917,8 @@ function coopLobby(myName) {
   const offLobby = coopS.net.on('lobby', (d, from) => {
     lobbyState.set(from, d);
     const p = coopS.partners.get(from);
-    if (p) p.classId = d.classId;
+    // Only cache a revealed calling — sealed fate stays hidden until the climb.
+    if (p && d.classId && !d.fateClass) p.classId = d.classId;
     updateRoster();
   });
   const offMode = coopS.net.on('mode', d => { decisionMode = d.mode; updateModeButtons(); });
@@ -839,7 +927,16 @@ function coopLobby(myName) {
   coopS.onPartnerLeft = () => updateRoster();
 
   function sendLobby() {
-    coopS.net.send({ k: 'lobby', classId: myPick.classId, raceId: myPick.raceId, ready: myReady, name: myName });
+    // When fate-sealed, omit the real ids so partners cannot peek the roll.
+    coopS.net.send({
+      k: 'lobby',
+      classId: myPick.fateClass ? null : myPick.classId,
+      raceId: myPick.fateRace ? null : myPick.raceId,
+      fateRace: !!myPick.fateRace,
+      fateClass: !!myPick.fateClass,
+      ready: myReady,
+      name: myName,
+    });
   }
 
   function everyoneReady() {
@@ -880,6 +977,28 @@ function coopLobby(myName) {
   // proper grid pickers instead of click-to-cycle (patch)
   function openPicker(kind) {
     if (myReady) return;
+    if ((kind === 'race' && myPick.fateRace) || (kind === 'class' && myPick.fateClass)) {
+      modalCustom((m, close) => {
+        const label = kind === 'race' ? 'bloodline' : 'calling';
+        m.innerHTML = `<h3>Fate sealed this ${label}</h3>
+          <p class="modal-sub">The result stays hidden until the climb. Break the seal to choose yourself — you lose the growth boost for this pick.</p>
+          <div class="pick-grid">
+            <button class="pick-option" id="break-seal"><span class="po-name">Choose yourself</span></button>
+            <button class="pick-option" data-close="x"><span class="po-name">Keep the seal</span></button>
+          </div>`;
+        m.querySelector('#break-seal').onclick = () => {
+          if (kind === 'race') myPick.fateRace = false;
+          else myPick.fateClass = false;
+          SFX.click();
+          close();
+          updatePickTiles();
+          updatePotential();
+          sendLobby();
+          openPicker(kind);
+        };
+      });
+      return;
+    }
     const defs = {
       race: { title: 'Bloodline', items: Object.values(RACES).map(r => ({ id: r.id, glyph: r.glyph, icon: raceIconUrl(r.id) && `<img class="px-icon" src="${raceIconUrl(r.id)}" style="width:40px;height:40px" alt="">`, name: r.name, desc: r.hint })) },
       class: {
@@ -929,7 +1048,7 @@ function coopLobby(myName) {
     gen = rollStart(myPick.classId, myPick.raceId);
     rerolls = 0;
     SFX.unlock();
-    toast(kind === 'race' ? 'Fate names your bloodline.' : 'Fate names your calling.', 'good');
+    toast(kind === 'race' ? 'Fate seals your bloodline.' : 'Fate seals your calling.', 'good');
     updatePickTiles();
     updatePotential();
     sendLobby();
@@ -937,9 +1056,17 @@ function coopLobby(myName) {
 
   function pickTilesHtml() {
     const boost = fateGrowthPctOne();
+    const raceSealed = myPick.fateRace;
+    const classSealed = myPick.fateClass;
+    const raceArt = raceSealed
+      ? '<span style="font-size:32px">🎲</span>'
+      : (raceIconUrl(myPick.raceId) ? `<img class="px-icon" src="${raceIconUrl(myPick.raceId)}" style="width:44px;height:44px" alt="">` : `<span style="font-size:32px">${RACES[myPick.raceId].glyph}</span>`);
+    const classArt = classSealed
+      ? '<span style="font-size:32px">🎲</span>'
+      : (heroSpriteHtml(myPick.classId, 44) || `<div class="class-icon" style="width:40px;height:40px;margin:0 auto;color:${CLASSES[myPick.classId].accent}">${ICONS[myPick.classId]}</div>`);
     return `
-      <div class="panel pick-tile" id="pick-race"><div class="pt-art">${raceIconUrl(myPick.raceId) ? `<img class="px-icon" src="${raceIconUrl(myPick.raceId)}" style="width:44px;height:44px" alt="">` : `<span style="font-size:32px">${RACES[myPick.raceId].glyph}</span>`}</div><b>${RACES[myPick.raceId].name}${myPick.fateRace ? ' <span class="fate-badge">FATE</span>' : ''}</b><div class="pt-hint">change race</div><button class="btn small fate-mini" id="fate-race" type="button" ${myReady ? 'disabled' : ''}>🎲 Random (+${boost}%)</button></div>
-      <div class="panel pick-tile" id="pick-class"><div class="pt-art">${heroSpriteHtml(myPick.classId, 44) || `<div class="class-icon" style="width:40px;height:40px;margin:0 auto;color:${CLASSES[myPick.classId].accent}">${ICONS[myPick.classId]}</div>`}</div><b>${CLASSES[myPick.classId].name}${myPick.fateClass ? ' <span class="fate-badge">FATE</span>' : ''}</b><div class="pt-hint">change class</div><button class="btn small fate-mini" id="fate-class" type="button" ${myReady ? 'disabled' : ''}>🎲 Random (+${boost}%)</button></div>
+      <div class="panel pick-tile" id="pick-race"><div class="pt-art">${raceArt}</div><b>${raceSealed ? '???' : RACES[myPick.raceId].name}${raceSealed ? ' <span class="fate-badge">FATE</span>' : ''}</b><div class="pt-hint">${raceSealed ? 'sealed until the climb' : 'change race'}</div>${raceSealed || myReady ? '' : `<button class="btn small fate-mini" id="fate-race" type="button">🎲 Trust fate (+${boost}%)</button>`}</div>
+      <div class="panel pick-tile" id="pick-class"><div class="pt-art">${classArt}</div><b>${classSealed ? '???' : CLASSES[myPick.classId].name}${classSealed ? ' <span class="fate-badge">FATE</span>' : ''}</b><div class="pt-hint">${classSealed ? 'sealed until the climb' : 'change class'}</div>${classSealed || myReady ? '' : `<button class="btn small fate-mini" id="fate-class" type="button">🎲 Trust fate (+${boost}%)</button>`}</div>
       <div class="panel pick-tile" id="pick-origin"><div class="pt-art">${originIconUrl(myPick.originId) ? `<img class="px-icon" src="${originIconUrl(myPick.originId)}" style="width:44px;height:44px" alt="">` : `<span style="font-size:32px">${originById(myPick.originId).glyph}</span>`}</div><b style="font-size:13px">${originById(myPick.originId).name}</b><div class="pt-hint">change origin</div></div>`;
   }
 
@@ -988,14 +1115,31 @@ function coopLobby(myName) {
   function rosterHtml() {
     const partners = [...coopS.partners.entries()];
     const rows = [
-      { name: myName + ' (you)', classId: myPick.classId, raceId: myPick.raceId, ready: myReady, host: coopS.isHost },
-      ...partners.map(([id, p]) => ({ name: p.name, classId: lobbyState.get(id)?.classId, raceId: lobbyState.get(id)?.raceId, ready: lobbyState.get(id)?.ready, host: coopS.net.roster.find(r => r.id === id)?.host })),
+      {
+        name: myName + ' (you)',
+        classId: myPick.classId, raceId: myPick.raceId,
+        fateRace: myPick.fateRace, fateClass: myPick.fateClass,
+        ready: myReady, host: coopS.isHost,
+      },
+      ...partners.map(([id, p]) => {
+        const lob = lobbyState.get(id);
+        return {
+          name: p.name,
+          classId: lob?.classId, raceId: lob?.raceId,
+          fateRace: !!lob?.fateRace, fateClass: !!lob?.fateClass,
+          ready: lob?.ready, host: coopS.net.roster.find(r => r.id === id)?.host,
+        };
+      }),
     ];
     return rows.map(r => `
       <div class="inv-item">
         <div class="item-name">${r.host ? '👑 ' : ''}${r.name}</div>
         <div style="display:flex;gap:10px;align-items:center">
-          <span class="tag">${r.raceId ? RACES[r.raceId]?.name || '' : ''} ${r.classId ? CLASSES[r.classId].name : 'choosing...'}</span>
+          <span class="tag">${(() => {
+            const race = r.fateRace ? '???' : (r.raceId ? RACES[r.raceId]?.name || '' : '');
+            const cls = r.fateClass ? '???' : (r.classId ? CLASSES[r.classId]?.name : 'choosing...');
+            return `${race} ${cls}`.trim();
+          })()}</span>
           <span class="tag" style="${r.ready ? 'color:var(--luck);border-color:var(--luck)' : ''}">${r.ready ? 'READY' : 'not ready'}</span>
         </div>
       </div>`).join('');

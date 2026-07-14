@@ -1063,47 +1063,69 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 .gate-skip { font-size: 8px; }
 
 /* Appraisal — The Monolith of Measure (handoff §3) */
-.mono-stage { text-align: center; max-width: 520px; margin: 0 auto; }
-.mono-title { font-family: var(--font-display); font-size: 14px; letter-spacing: 4px; color: #f7ecce; text-shadow: 0 0 22px rgba(79,214,192,.5); }
-.mono-identity {
-  display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap;
-  margin: 4px 0 6px;
+.mono-screen .creation-body { overflow: hidden; }
+.mono-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
 }
-.mono-identity-text { font-family: var(--font-display); font-size: 11px; color: var(--ink-dim); }
+.mono-title { font-family: var(--font-display); font-size: 12px; letter-spacing: 3px; color: #f7ecce; text-shadow: 0 0 18px rgba(79,214,192,.5); flex: 0 0 auto; }
+.mono-identity {
+  display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap;
+  margin: 0; flex: 0 0 auto;
+}
+.mono-identity-text { font-family: var(--font-display); font-size: 10px; color: var(--ink-dim); }
 .mono-crystal-wrap {
-  position: relative; width: 240px; height: 288px; margin: 0 auto;
+  position: relative; width: 150px; height: 180px; margin: 0 auto;
+  flex: 0 0 auto;
 }
 .mono-crystal-wrap canvas {
   display: block; width: 100%; height: 100%;
   cursor: pointer; touch-action: none; user-select: none;
 }
+.mono-crystal-wrap.is-done canvas { cursor: default; }
 .mono-caption {
-  margin-top: 10px; padding: 0 12px;
-  min-height: 52px;
+  margin-top: 2px; padding: 0 10px;
+  min-height: 0;
+  flex: 0 0 auto;
+  max-width: 420px;
 }
 .mono-hint {
-  font-size: 15px; color: var(--teal-hi); letter-spacing: 1px;
+  font-size: 14px; color: var(--teal-hi); letter-spacing: 1px;
   animation: flick 1.6s ease-in-out infinite;
 }
 @keyframes flick { 0%,100% { opacity: .9; } 50% { opacity: .55; } }
 .mono-reveal { animation: screen-in .5s ease; }
 .mono-feel {
-  font-family: var(--font-display); font-size: 15px; color: var(--gold-bright); letter-spacing: .05em;
+  font-family: var(--font-display); font-size: 14px; color: var(--gold-bright); letter-spacing: .05em;
 }
 .mono-range-label {
-  font-family: var(--font-mono); font-size: 8px; letter-spacing: 3px; color: var(--ink-faint); margin: 8px 0 4px;
+  font-family: var(--font-mono); font-size: 8px; letter-spacing: 3px; color: var(--ink-faint); margin: 4px 0 2px;
 }
 .mono-band {
-  display: flex; align-items: center; justify-content: center; gap: 12px;
-  font-family: var(--font-display); font-size: 24px; animation: shimmer 2.4s ease-in-out infinite;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-family: var(--font-display); font-size: 20px; animation: shimmer 2.4s ease-in-out infinite;
 }
 .mono-band span { text-shadow: 0 0 14px currentColor; }
 .mono-band-sep { color: #6a5d44 !important; }
 .mono-earned {
-  margin-top: 8px; font-size: 13px; color: var(--ink-dim); line-height: 1.35; max-width: 280px; margin-left: auto; margin-right: auto;
+  margin-top: 4px; font-size: 12px; color: var(--ink-dim); line-height: 1.3; max-width: 320px; margin-left: auto; margin-right: auto;
 }
 .mono-actions {
-  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 10px;
+  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 4px; flex: 0 0 auto;
+}
+.mono-actions .name-input { max-width: 220px; padding: 8px 10px; font-size: 14px; }
+.mono-reroll-hint {
+  font-size: 12px; color: var(--ink-dim); margin-top: 2px; max-width: 340px; line-height: 1.3;
+  flex: 0 0 auto;
 }
 @keyframes shimmer { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.5); } }
 
@@ -1263,55 +1285,158 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 
 /* ============================================================
    CHARACTER CREATION — sliding rail + showcase (handoff §2)
+   Fits the fixed 1280×720 frame with no vertical scroll.
    ============================================================ */
-.creation-stage { position: relative; height: 500px; margin-top: 6px; }
-.showcase { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 300px; text-align: center; z-index: 2; }
+#app:has(.creation-screen) { overflow: hidden; }
+
+.creation-screen {
+  height: 100%;
+  max-height: 100%;
+  width: min(1180px, 96%);
+  padding: 10px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.creation-screen .select-header {
+  flex: 0 0 auto;
+  margin-bottom: 6px;
+}
+.creation-screen .select-header h2 {
+  font-size: 16px;
+  margin: 0;
+  line-height: 1.2;
+}
+.creation-screen .select-header p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.25;
+}
+.creation-screen .step-dots { margin-top: 6px; }
+.creation-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.creation-nav {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+}
+.creation-nav.has-fate {
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+.creation-nav-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+.fate-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.fate-nav .fate-hint {
+  font-size: 12px;
+  color: var(--ink-dim);
+  line-height: 1.25;
+  max-width: 280px;
+  text-align: left;
+}
+
+.creation-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.creation-hero {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+  padding: 4px 24px 0;
+}
+.showcase {
+  position: relative;
+  top: auto; left: auto; transform: none;
+  width: 260px;
+  text-align: center;
+  z-index: 2;
+  flex: 0 0 auto;
+}
 .showcase-art {
-  width: 300px; height: 300px; border: 3px solid var(--gold); box-shadow: 0 0 24px rgba(232,182,74,.35);
+  width: 260px; height: 260px; border: 3px solid var(--gold); box-shadow: 0 0 22px rgba(232,182,74,.35);
   background: rgba(20,13,38,.7); display: grid; place-items: center; overflow: hidden; transition: opacity .15s ease;
 }
 .showcase-art .px-sprite { image-rendering: pixelated; }
+.showcase-art .px-sprite,
+.showcase-art img {
+  max-width: 230px; max-height: 230px; width: auto; height: auto;
+}
 .showcase-name {
-  display: inline-block; position: relative; top: -14px; font-family: var(--font-display); font-size: 13px;
-  color: #f7ecce; background: #1a1030; border: 2px solid var(--gold); padding: 8px 16px; transition: opacity .15s ease;
+  display: inline-block; position: relative; top: -12px; font-family: var(--font-display); font-size: 13px;
+  color: #f7ecce; background: #1a1030; border: 2px solid var(--gold); padding: 7px 14px; transition: opacity .15s ease;
 }
 .showcase-text {
-  position: absolute; top: 30px; left: calc(50% + 175px); width: 250px; padding: 14px;
+  position: relative; top: auto; left: auto; width: min(420px, 42%);
+  padding: 16px 18px;
   border-left: 3px solid var(--gold); background: rgba(28,20,48,.72); transition: opacity .15s ease; z-index: 2;
+  max-height: 280px; overflow: hidden;
 }
-.showcase-tag { font-family: var(--font-display); font-size: 10px; letter-spacing: 1px; }
-.showcase-blurb { font-size: 21px; line-height: 1.25; color: #e0d3b4; margin-top: 10px; }
-.creation-rail { position: absolute; bottom: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: center; gap: 26px; }
-.fate-row {
-  display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap;
-  margin-top: 10px; padding: 0 16px; text-align: center;
+.showcase-tag { font-family: var(--font-display); font-size: 12px; letter-spacing: 1.5px; }
+.showcase-blurb { font-size: 20px; line-height: 1.35; color: #e0d3b4; margin-top: 10px; }
+
+.creation-rail {
+  position: relative; bottom: auto; left: auto; right: auto;
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  width: 100%;
 }
-.fate-hint { font-size: 14px; color: var(--ink-dim); line-height: 1.35; max-width: 420px; }
+.fate-hint { font-size: 13px; color: var(--ink-dim); line-height: 1.3; max-width: 380px; }
 .fate-badge {
-  display: inline-block; font-family: var(--font-display); font-size: 11px; letter-spacing: .12em;
-  color: #1a1030; background: var(--gold-bright); border: 1px solid var(--gold); padding: 2px 7px;
+  display: inline-block; font-family: var(--font-display); font-size: 10px; letter-spacing: .12em;
+  color: #1a1030; background: var(--gold-bright); border: 1px solid var(--gold); padding: 2px 6px;
   vertical-align: middle; margin-right: 4px;
 }
 .fate-mini { margin-top: 8px; width: 100%; font-size: 12px; padding: 6px 8px; }
 .rail-arrow {
-  cursor: pointer; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display); font-size: 14px; color: var(--gold); border: 2px solid #6a5528; background: rgba(28,20,48,.7);
+  cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 13px; color: var(--gold); border: 2px solid #6a5528; background: rgba(28,20,48,.7);
 }
 .rail-arrow:hover { filter: brightness(1.3); }
-.rail-window { width: 664px; overflow: hidden; padding: 16px 0; }
+.rail-window { width: 664px; max-width: calc(100% - 100px); overflow: hidden; padding: 8px 0; }
 .rail-track { display: flex; gap: 16px; transition: transform .5s cubic-bezier(.2,.8,.2,1); will-change: transform; }
 .rail-card {
-  flex: 0 0 150px; text-align: center; padding: 16px 12px; cursor: pointer; border: 2px solid #3a2f1e;
+  flex: 0 0 120px; text-align: center; padding: 10px 8px; cursor: pointer; border: 2px solid #3a2f1e;
   background: rgba(20,13,38,.55); opacity: .55; transform: scale(.94); transition: all .3s cubic-bezier(.2,.8,.2,1);
 }
-.rail-card.active { border-color: var(--sel, var(--gold)); background: rgba(40,28,66,.92); opacity: 1; transform: translateY(-8px) scale(1.04); box-shadow: 0 0 22px var(--sel-glow, rgba(232,182,74,.3)); }
+.rail-card.active { border-color: var(--sel, var(--gold)); background: rgba(40,28,66,.92); opacity: 1; transform: translateY(-6px) scale(1.04); box-shadow: 0 0 18px var(--sel-glow, rgba(232,182,74,.3)); }
 .rail-card.locked { cursor: default; filter: grayscale(.7); }
 .rail-emblem {
-  width: 56px; height: 56px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display); font-size: 22px; color: #1a1030; border: 2px solid;
+  width: 44px; height: 44px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 18px; color: #1a1030; border: 2px solid;
 }
-.rail-name { font-family: var(--font-display); font-size: 11px; color: #f7ecce; }
-.rail-tag { font-size: 16px; letter-spacing: 1px; margin-top: 4px; }
+.rail-emblem .px-icon, .rail-emblem img { width: 36px !important; height: 36px !important; }
+.rail-name { font-family: var(--font-display); font-size: 10px; color: #f7ecce; }
+.rail-tag { font-size: 12px; letter-spacing: 1px; margin-top: 2px; }
 
 /* ============================================================
    COMBAT — handoff full-frame layout (handoff §4), mechanics kept
