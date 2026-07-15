@@ -214,17 +214,33 @@ export const BOSSES = {
     intro: '"Fifty floors," the Duke muses, drawing a sword made of other swords.\n"Impressive. The King will want to kill you personally. Let\'s disappoint him."',
     taunt: 'THE THRONE IS A PRIVILEGE. DYING HERE IS FREE.',
   },
+  // Two-phase final boss. Vorath first meets climbers as a churning mass of his
+  // own shed blood (phase 1 — the "demon slime"); destroy that shell and the true
+  // Demon King rises with a fresh HP bar (phase 2). Handled by `twoPhase` in
+  // combat.js (transform at 0 HP), distinct from the ≤50% `phases` enrage — which
+  // the king form keeps, so he still stops holding back on the back half.
+  // Total HP (200 + 340) matches the old single bar so tuning stays put.
   51: {
-    id: 'demon_king', name: 'VORATH, THE DEMON KING', glyph: '🜏', biome: 'throne',
-    hp: 540, atk: 56, def: 11, spd: 11, gold: [0, 0], xp: 0, phases: true, boss: true,
-    chargeGain: 1, chargeOnPhase: 3, // enrage banks charge instantly
-    cleanseCost: 1, // the King breaks bindings cheaply
+    id: 'demon_king', name: 'VORATH — SHED BLOOD', glyph: '🩸', artId: 'demon_slime', biome: 'throne',
+    hp: 200, atk: 46, def: 10, spd: 11, gold: [0, 0], xp: 0, boss: true, twoPhase: true,
+    chargeGain: 1,
     specials: [
-      { at: 3, name: 'Century\'s Edge', mult: 1.5, desc: 'his blade remembers every hero it has ended' },
-      { at: 6, name: 'THE KING\'S QUESTION', mult: 2.0, aoe: true, desc: 'the air itself takes his side' },
+      { at: 3, name: 'Hemorrhage', mult: 1.4, desc: 'the mass splits and lashes outward' },
+      { at: 6, name: 'CRIMSON TIDE', mult: 1.9, aoe: true, desc: 'a wave of boiling blood swells to the ceiling' },
     ],
-    intro: 'The Demon King sets down a book, marks his page, and stands.\n"Every century, one of you reaches this room. Every century I ask the same question."\nHis blade ignites the air itself.\n"Are you the interesting kind?"',
-    taunt: 'I HAVE KILLED HEROES WITH BETTER STATS THAN YOURS.',
+    intro: 'The Demon King does not rise to meet you. He merely bleeds — and the blood\nremembers how to hate. It gathers, it stands, it turns its many eyes on you.\n"He will see you," it gurgles, "if you are worth the walk across the room."',
+    taunt: 'YOU ARE NOT WORTH HIS HANDS. YET.',
+    // destroy the shell → the true king rises (transform in combat.js)
+    phase2: {
+      artId: 'demon_king', name: 'VORATH, THE DEMON KING', glyph: '🜏',
+      hp: 340, atk: 56, def: 11, spd: 11, chargeGain: 1, chargeOnPhase: 3, phases: true, cleanseCost: 1,
+      specials: [
+        { at: 3, name: 'Century\'s Edge', mult: 1.5, desc: 'his blade remembers every hero it has ended' },
+        { at: 6, name: 'THE KING\'S QUESTION', mult: 2.0, aoe: true, desc: 'the air itself takes his side' },
+      ],
+      taunt: 'I HAVE KILLED HEROES WITH BETTER STATS THAN YOURS.',
+      transformText: 'The blood boils upward and FOLDS into a shape that remembers being a king.\nVorath sets down his book, marks his page, and finally stands.\n"Every century, one of you reaches this room. You are the first to make me rise.\nAre you the interesting kind?"',
+    },
   },
 };
 

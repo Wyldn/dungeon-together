@@ -16,6 +16,7 @@ import { initiativeOrder, addCharge, tickEnemyCharge, canAfford, pickEnemySpecia
 import { biomeForFloor, ENEMIES } from './data/enemies.js';
 import { ICONS } from './icons.js';
 import { enemySpriteHtml, heroSpriteHtml, biomeBgUrl } from './art.js';
+import * as SpriteAnim from './anim.js';
 import { SFX } from './audio.js';
 import { screenShake } from './fx.js';
 
@@ -89,6 +90,8 @@ export function buildEnemy(spec, floor, biomeStart, { boss = false, hpMult = 1 }
     statuses: {},
     phaseTriggers: [],
     turnCount: 0,
+    // stashed so a two-phase boss can scale its phase-2 stats identically (§51)
+    _m: { hp: sc.hp * hpMult, atk: sc.atk, def: sc.def, spd: sc.spd },
     uid: spec.uid || Math.random().toString(36).slice(2, 8),
   };
 }
@@ -293,11 +296,13 @@ class Fight {
     this.log(`${e.name} is bewildered and turns on ${victim.name}!`, 'log-good');
     const es = this.sprite(e.uid);
     if (es) { es.classList.add('attack'); setTimeout(() => es.classList.remove('attack'), 420); }
+    SpriteAnim.play(e.uid, 'attack');
     await sleep(220);
     let dmg = Math.max(1, Math.round(e.atk * CONFIG.combat.enemyAtkMult * (0.85 + this.rng.next() * 0.3) - victim.def));
     victim.hp = Math.max(0, victim.hp - dmg);
     const vs = this.sprite(victim.uid);
     if (vs) { vs.classList.add('hit'); setTimeout(() => vs.classList.remove('hit'), 360); this.float(vs.parentElement, `${dmg}`, 'dmg'); }
+    SpriteAnim.play(victim.uid, 'hurt');
     SFX.hit();
     if (victim.hp <= 0) this.log(`${victim.name} is cut down by its own ally!`, 'log-sys');
     this.renderEnemies();
@@ -430,6 +435,7 @@ class Fight {
     this.utilBar = this.el.querySelector('.combat-utility');
     this._bindCombatLog();
 
+    SpriteAnim.reset(); // fresh animation state for this fight
     this.rollBattleOrder();
     this.renderEnemies();
     this.renderPlayers();
@@ -534,7 +540,12 @@ class Fight {
         spawn ? 'summon-in' : '',
         i === this.target ? 'target' : '',
       ].filter(Boolean).join(' ');
-      const art = enemySpriteHtml(e.artId || e.id, { boss: e.boss, elite: e.elite, summon: e.summon });
+      // Animated multi-state sprite (js/anim.js) when this art id has one; else
+      // the friend's N-frame px-sprite / glyph. artId is the phase-swap override.
+      const spriteKey = e.artId || e.id;
+      const art = SpriteAnim.hasAnim(spriteKey)
+        ? SpriteAnim.animSpriteHtml(e.uid, spriteKey, { boss: e.boss, dead: e.hp <= 0 })
+        : enemySpriteHtml(spriteKey, { boss: e.boss, elite: e.elite, summon: e.summon });
       div.innerHTML = `
         ${tel ? `<div class="telegraph ${tel.ready ? 'ready' : ''}">${tel.ready ? '⚠ ' + tel.name + '!' : '… ' + tel.desc}</div>` : ''}
         <div class="fighter-sprite" id="sprite-${e.uid}">${art || e.glyph}</div>
@@ -554,6 +565,8 @@ class Fight {
         }, 560);
       }
     });
+    // (Re)bind animated sprites to the freshly-rebuilt DOM nodes.
+    SpriteAnim.attach(this.enemyRow);
   }
 
   renderPlayers(actingKey = null) {
@@ -816,6 +829,8 @@ class Fight {
     this.offs.push(this.coop.net.on('cpass', (d, from) => this._pendingActs.push({ d: { ...d, pass: true }, from })));
     this.offs.push(this.coop.net.on('eturn', d => { this._eturn = d; this._eturnResolve?.(); }));
     this.offs.push(this.coop.net.on('cend', d => this.finishShared(d)));
+    // §51 two-phase boss: host authoritatively swaps the shell for the true king
+    this.offs.push(this.coop.net.on('transform', d => this.applyTransform(d.uid, d.spec)));
     this.offs.push(this.coop.net.on('status', (d, from) => {
       const a = this.allies.get(from);
       if (a) {
@@ -973,6 +988,7 @@ class Fight {
         this.spawnFx(es, t.fx || act.fx);
         this.float(es.parentElement, t.crit ? `${t.dmg}!` : `${t.dmg}`, t.crit ? 'crit' : 'dmg');
       }
+      SpriteAnim.play(e.uid, 'hurt');
       t.crit ? SFX.crit() : SFX.hit();
       if (e.hp <= 0) this.log(`${e.name} is defeated!`, 'log-sys');
     }
@@ -1035,6 +1051,7 @@ class Fight {
 
       const es = this.sprite(e.uid);
       if (es) { es.classList.add('attack'); setTimeout(() => es.classList.remove('attack'), 420); }
+      SpriteAnim.play(e.uid, special ? 'special' : 'attack');
       await sleep(240);
 
       for (const target of hitTargets) {
@@ -1205,6 +1222,7 @@ class Fight {
       } else if (op.type === 'hit') {
         const es = this.sprite(op.uid);
         if (es) { es.classList.add('attack'); setTimeout(() => es.classList.remove('attack'), 420); }
+        SpriteAnim.play(op.uid, op.special ? 'special' : 'attack');
         await sleep(200);
         this.applyHitOp(op);
       }
@@ -1226,9 +1244,84 @@ class Fight {
     this.renderPlayers(this._actingKey);
   }
 
+  /* ---- two-phase boss transform (§51 Demon King) ---- */
+  // The phase-1 shell reached 0 HP: become the true form in place (same uid) with
+  // a fresh HP bar instead of dying. Mutates the entity; returns the reveal text.
+  transformBoss(e) {
+    const p2 = e.phase2 || {};
+    const m = e._m || { hp: 1, atk: 1, def: 1, spd: 1 };
+    e.artId = p2.artId ?? e.artId;
+    e.name = p2.name ?? e.name;
+    e.glyph = p2.glyph ?? e.glyph;
+    // phase-2 bases are raw (like the bestiary) — scale them the same way
+    // buildEnemy scaled phase 1, so the difficulty curve stays intact.
+    if (p2.atk != null) e.atk = Math.round(p2.atk * m.atk);
+    if (p2.def != null) e.def = Math.round(p2.def * m.def);
+    if (p2.spd != null) e.spd = Math.max(1, Math.round(p2.spd * m.spd));
+    e.maxHp = p2.hp != null ? Math.round(p2.hp * m.hp) : e.maxHp;
+    e.hp = e.maxHp;
+    e.specials = p2.specials ?? e.specials;
+    e.chargeGain = p2.chargeGain ?? e.chargeGain;
+    e.chargeOnPhase = p2.chargeOnPhase;
+    e.cleanseCost = p2.cleanseCost ?? e.cleanseCost;
+    e.phases = !!p2.phases;
+    e.taunt = p2.taunt ?? e.taunt;
+    e.charge = 0; e.statuses = {}; e.phaseTriggers = [];
+    e.twoPhase = false; e.phase = 2;
+    this.syncOrderIdentity(e);
+    return p2.transformText || `${e.name} rises!`;
+  }
+
+  syncOrderIdentity(e) {
+    const oe = this.order.find(o => o.key === e.uid);
+    if (oe) { oe.name = e.name; oe.glyph = e.glyph; oe.spdStat = e.spd; }
+  }
+
+  // Called when a phase-1 boss hits 0 HP (solo + host). Transforms rather than
+  // dying so the fight continues; the host mirrors it to companions. Returns true
+  // if a transform happened (so the caller must NOT end the fight).
+  maybeTransform() {
+    const e = this.enemies.find(x => x.twoPhase && x.phase2 && x.hp <= 0);
+    if (!e) return false;
+    const text = this.transformBoss(e);
+    this.log(text, 'log-sys');
+    SFX.evolve(); screenShake();
+    if (this.shared && this.coop?.isHost) {
+      this.coop.net.send({ k: 'transform', uid: e.uid, spec: {
+        artId: e.artId, name: e.name, glyph: e.glyph, atk: e.atk, def: e.def, spd: e.spd,
+        maxHp: e.maxHp, hp: e.hp, specials: e.specials, chargeGain: e.chargeGain,
+        chargeOnPhase: e.chargeOnPhase, cleanseCost: e.cleanseCost, phases: e.phases,
+        taunt: e.taunt, text } });
+    }
+    this.target = this.enemies.findIndex(x => x.hp > 0);
+    this.renderEnemies();
+    this.renderTurnOrder();
+    return true;
+  }
+
+  // Companion side: apply the host's authoritative transform.
+  applyTransform(uid, spec = {}) {
+    const e = this.enemyByUid(uid);
+    if (!e) return;
+    Object.assign(e, {
+      artId: spec.artId, name: spec.name, glyph: spec.glyph, atk: spec.atk, def: spec.def,
+      spd: spec.spd, maxHp: spec.maxHp, hp: spec.hp, specials: spec.specials,
+      chargeGain: spec.chargeGain, chargeOnPhase: spec.chargeOnPhase, cleanseCost: spec.cleanseCost,
+      phases: spec.phases, taunt: spec.taunt, charge: 0, statuses: {}, phaseTriggers: [],
+      twoPhase: false, phase: 2,
+    });
+    this.syncOrderIdentity(e);
+    this.log(spec.text || `${e.name} rises!`, 'log-sys');
+    SFX.evolve(); screenShake();
+    this.target = this.enemies.findIndex(x => x.hp > 0);
+    this.renderEnemies();
+    this.renderTurnOrder();
+  }
+
   hostCheckEnd() {
     if (!this.coop?.isHost) return this.ended;
     if (this.aliveEnemies().length === 0) {
+      if (this.maybeTransform()) return false;
       let gold = 0, xp = 0;
       for (const e of this.enemies) {
         gold += this.rng.int(e.gold?.[0] ?? 0, e.gold?.[1] ?? 0);
@@ -1387,6 +1480,7 @@ class Fight {
       setTimeout(() => sprite.classList.remove('hit'), 360);
       this.float(sprite.parentElement, isCrit ? `${dmg}!` : `${dmg}`, isCrit ? 'crit' : 'dmg');
     }
+    SpriteAnim.play(e.uid, 'hurt');
     isCrit ? SFX.crit() : SFX.hit();
     if (isCrit) screenShake();
     this.log(`${sk.name} hits ${e.name} for ${dmg}${isCrit ? ' — CRITICAL!' : ''}`, isCrit ? 'log-sys' : '');
@@ -1434,6 +1528,7 @@ class Fight {
       for (const e of this.aliveEnemies()) {
         e.hp = Math.max(0, e.hp - c.bombDmg);
         this.float(this.sprite(e.uid)?.parentElement, `${c.bombDmg}`, 'dmg');
+        SpriteAnim.play(e.uid, 'hurt');
         actOps.targets.push({ uid: e.uid, dmg: c.bombDmg, hpAfter: e.hp });
       }
       SFX.crit(); screenShake();
@@ -1511,6 +1606,7 @@ class Fight {
 
     const sprite = this.sprite(e.uid);
     if (sprite) { sprite.classList.add('attack'); setTimeout(() => sprite.classList.remove('attack'), 420); }
+    SpriteAnim.play(e.uid, special ? 'special' : 'attack');
     await sleep(240);
 
     const d = this.d();
@@ -1545,6 +1641,7 @@ class Fight {
       e.hp = Math.max(0, e.hp - back);
       const es2 = this.sprite(e.uid);
       if (es2) { es2.classList.add('hit'); setTimeout(() => es2.classList.remove('hit'), 360); this.float(es2.parentElement, `${back}`, 'dmg'); }
+      SpriteAnim.play(e.uid, 'hurt');
       this.log(`Thorns bite back — ${e.name} takes ${back}.`, 'log-good');
       if (e.hp <= 0) this.log(`${e.name} is defeated by its own violence!`, 'log-sys');
     }
@@ -1680,6 +1777,7 @@ class Fight {
     if (this.shared) return this.ended;
     if (this.run.hp <= 0) { this.finishSolo('dead'); return true; }
     if (this.aliveEnemies().length === 0) {
+      if (this.maybeTransform()) return false;
       const d = this.d();
       let gold = 0, xp = 0;
       for (const e of this.enemies) {

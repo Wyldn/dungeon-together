@@ -26,7 +26,23 @@ export function simBuildEnemy(spec, floor, biomeStart, { boss = false, hpMult = 
     chargeGain: (spec.chargeGain || 1) * sc.chargeGain,
     charge: 0,
     statuses: {},
+    _m: { hp: sc.hp * hpMult, atk: sc.atk, def: sc.def },
   };
+}
+
+// Mirror combat.js transformBoss: a two-phase boss whose shell is destroyed
+// rises with a fresh, identically-scaled HP bar. Keeps the RTK benchmark honest.
+function simTransform(e) {
+  const p2 = e.phase2 || {};
+  const m = e._m || { hp: 1, atk: 1, def: 1 };
+  if (p2.atk != null) e.atk = Math.round(p2.atk * m.atk);
+  if (p2.def != null) e.def = Math.round(p2.def * m.def);
+  e.maxHp = p2.hp != null ? Math.round(p2.hp * m.hp) : e.maxHp;
+  e.hp = e.maxHp;
+  e.specials = p2.specials ?? e.specials;
+  e.chargeGain = p2.chargeGain ?? e.chargeGain;
+  e.charge = 0; e.statuses = {};
+  e.twoPhase = false;
 }
 
 /**
@@ -123,6 +139,7 @@ export function simulateFight(rng, player, enemySpecs, {
       target.hp = Math.max(0, target.hp - playerHit(p, target, rng, { power }));
       if (heavy) p.charge = Math.max(0, p.charge - 3);
       else p.charge = addCharge(p.charge, CONFIG.charge.gainPerTurn);
+      if (target.hp <= 0 && target.twoPhase && target.phase2) simTransform(target);
       if (target.hp <= 0) p.charge = addCharge(p.charge, CONFIG.charge.gainOnKill);
     }
 
