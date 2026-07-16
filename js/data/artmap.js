@@ -426,7 +426,25 @@ export const ENEMY_ART = {
   "w": 62,
   "h": 82,
   "frames": 1
- }
+ },
+ "veteran_blade": { "f": "assets/img/npcs/old_warrior.png", "w": 32, "h": 32, "frames": 2 },
+ "tower_scholar": { "f": "assets/img/npcs/old_mage.png", "w": 32, "h": 32, "frames": 2 },
+ "pathfinder_veteran": { "f": "assets/img/npcs/old_ranger.png", "w": 32, "h": 32, "frames": 2 },
+ "northman_raider": { "f": "assets/img/npcs/viking1.png", "w": 32, "h": 32, "frames": 2 },
+ "northman_raider2": { "f": "assets/img/npcs/viking2.png", "w": 32, "h": 32, "frames": 2 },
+ "northman_raider3": { "f": "assets/img/npcs/viking3.png", "w": 32, "h": 32, "frames": 2 },
+ "northman_raider4": { "f": "assets/img/npcs/viking4.png", "w": 32, "h": 32, "frames": 2 },
+ "northman_raider5": { "f": "assets/img/npcs/viking5.png", "w": 32, "h": 32, "frames": 2 },
+ "farmer_a": { "f": "assets/img/npcs/farmer1.png", "w": 32, "h": 32, "frames": 2 },
+ "farmer_b": { "f": "assets/img/npcs/farmer2.png", "w": 32, "h": 32, "frames": 2 },
+ "farmer_c": { "f": "assets/img/npcs/farmer3.png", "w": 32, "h": 32, "frames": 2 },
+ "farmer_d": { "f": "assets/img/npcs/farmer4.png", "w": 32, "h": 32, "frames": 2 },
+ "farmer_e": { "f": "assets/img/npcs/farmer5.png", "w": 32, "h": 32, "frames": 2 },
+ "farmer_f": { "f": "assets/img/npcs/farmer6.png", "w": 32, "h": 32, "frames": 2 },
+ "roadside_npc": { "f": "assets/img/npcs/npc1.png", "w": 32, "h": 32, "frames": 2 },
+ "roadside_npc2": { "f": "assets/img/npcs/npc2.png", "w": 32, "h": 32, "frames": 2 },
+ "oldman_gentle": { "f": "assets/img/npcs/oldman1.png", "w": 32, "h": 32, "frames": 2 },
+ "oldman_wrath": { "f": "assets/img/npcs/oldman2.png", "w": 32, "h": 32, "frames": 2 }
 };
 
 export const ITEM_ART = {
@@ -504,61 +522,19 @@ export const ITEM_ART = {
  "sanity_lantern": "assets/img/items/sanity_lantern.png"
 };
 
+// Bob-idle skins (warrior1… etc.) are merged at runtime via appearances.js.
+// Class keys below are defaults; monk/necromancer keep their original sheets.
 export const HERO_ART = {
- "warrior": {
-  "f": "assets/img/heroes/warrior.png",
-  "w": 32,
-  "h": 32,
-  "frames": 2
- },
- "mage": {
-  "f": "assets/img/heroes/mage.png",
-  "w": 32,
-  "h": 32,
-  "frames": 2
- },
- "archer": {
-  "f": "assets/img/heroes/archer.png",
-  "w": 32,
-  "h": 32,
-  "frames": 2
- },
- "rogue": {
-  "f": "assets/img/heroes/rogue.png",
-  "w": 32,
-  "h": 32,
-  "frames": 2
- },
- "priest": {
-  "f": "assets/img/heroes/priest.png",
-  "w": 32,
-  "h": 32,
-  "frames": 2
- },
- "monk": {
-  "f": "assets/img/heroes/monk.png",
-  "w": 32,
-  "h": 32,
-  "frames": 2
- },
- "warlock": {
-  "f": "assets/img/heroes/warlock.png",
-  "w": 32,
-  "h": 32,
-  "frames": 2
- },
- "bard": {
-  "f": "assets/img/heroes/bard.png",
-  "w": 32,
-  "h": 32,
-  "frames": 2
- },
- "necromancer": {
-  "f": "assets/img/heroes/necromancer.png",
-  "w": 32,
-  "h": 32,
-  "frames": 2
- }
+ "warrior": { "f": "assets/img/heroes/warrior1.png", "w": 32, "h": 32, "frames": 2 },
+ "mage": { "f": "assets/img/heroes/mage1.png", "w": 32, "h": 32, "frames": 2 },
+ "archer": { "f": "assets/img/heroes/ranger.png", "w": 32, "h": 32, "frames": 2 },
+ "rogue": { "f": "assets/img/heroes/rogue.png", "w": 32, "h": 32, "frames": 2 },
+ "priest": { "f": "assets/img/heroes/priest1.png", "w": 32, "h": 32, "frames": 2 },
+ "monk": { "f": "assets/img/heroes/monk.png", "w": 32, "h": 32, "frames": 2 },
+ "warlock": { "f": "assets/img/heroes/warlock1.png", "w": 32, "h": 32, "frames": 2 },
+ "bard": { "f": "assets/img/heroes/bard1.png", "w": 32, "h": 32, "frames": 2 },
+ "necromancer": { "f": "assets/img/heroes/necromancer.png", "w": 32, "h": 32, "frames": 2 },
+ "spellsword": { "f": "assets/img/heroes/spellsword1.png", "w": 32, "h": 32, "frames": 2 }
 };
 
 export const BIOME_BG = {

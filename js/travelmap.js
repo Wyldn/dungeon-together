@@ -3,8 +3,9 @@
 // array generateCards() produces; picking a node calls the same resolveCard().
 // Co-op vote/lock contract is preserved verbatim (picks / renderVotes / bind).
 
-import { CATEGORY_META } from './data/events.js';
-import { travelMapBgUrl } from './art.js';
+import { CATEGORY_META, EVENTS } from './data/events.js';
+import { travelMapBgUrl, eventCatUrl, enemySpriteHtml } from './art.js';
+import { findEnemySpec } from './data/enemies.js';
 import { makeRng } from './rng.js';
 
 // module-persistent trail + layout across floors
@@ -22,7 +23,9 @@ function assignPathHints(run, cards) {
   const rng = makeRng(((run.seed >>> 0) ^ (run.floor * 2654435761) ^ 0xA11CE) >>> 0);
   return cards.map((c) => {
     if (rng.chance(HINT_NONE_CHANCE)) return null;
-    const pool = HINT_POOL.filter(cat => cat !== c.category);
+    // Veiled nodes read as mystery so hints don't leak the real category.
+    const faceCat = c.hidden ? 'mystery' : c.category;
+    const pool = HINT_POOL.filter(cat => cat !== faceCat);
     return {
       category: rng.pick(pool.length ? pool : HINT_POOL),
       // which way to branch (±1); slight angle jitter keeps siblings from stacking
@@ -86,6 +89,13 @@ const NODE = {
 };
 const nodeMeta = cat => NODE[cat] || NODE.unknown;
 
+// Per-event difficulty when we know the type; category NODE.risk is the fallback.
+const TYPE_RISK = {
+  rest: 0, shop: 0, blessing: 0,
+  story: 1, treasure: 1,
+  risk: 3,
+};
+
 function riskInfo(risk) {
   if (risk === '?') return { label: 'UNKNOWN', color: '#a678ff', pips: 0 };
   if (risk === 0) return { label: 'SAFE', color: '#5fd6a0', pips: 0 };
@@ -104,27 +114,185 @@ function riskPips(risk) {
   return out;
 }
 
+function shortFlavor(text, max = 90) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max - 1);
+  return cut.replace(/\s+\S*$/, '') + '…';
+}
+
+function artFromCategory(category, glyph) {
+  const url = eventCatUrl(category);
+  if (url) return `<img class="tm-emblem" src="${url}" alt="" />`;
+  return `<span class="tm-icon">${glyph || '❓'}</span>`;
+}
+
+/**
+ * Resolve what a path node should show. Reveals event title/art/risk unless
+ * `card.hidden` (mystery veil). Exported for tests.
+ */
+export function pathNodeView(card) {
+  if (card?.hidden) {
+    const m = CATEGORY_META.mystery;
+    const nm = nodeMeta('mystery');
+    return {
+      faceCategory: 'mystery',
+      tag: m.label.toUpperCase(),
+      title: '???',
+      flavor: m.blurb,
+      glyph: m.glyph,
+      color: nm.color,
+      glow: nm.glow,
+      risk: nm.risk,
+      artHtml: artFromCategory('mystery', m.glyph),
+    };
+  }
+
+  if (card?.kind === 'encounter' || card?.category === 'combat') {
+    const m = CATEGORY_META.combat;
+    const nm = nodeMeta('combat');
+    const foes = card.enemies || [];
+    const first = foes[0];
+    const id = first?.id || first?.artId;
+    const spec = id ? findEnemySpec(id) : null;
+    const name = first?.name || spec?.name;
+    const names = [...new Set(foes.map(e => e.name || findEnemySpec(e.id)?.name).filter(Boolean))];
+    const title = names.length === 1 ? names[0] : (names.length ? 'Hostiles Ahead' : m.label);
+    const elite = foes.some(e => e.elite || findEnemySpec(e.id)?.elite);
+    const spr = id ? enemySpriteHtml(id, { elite: !!(first?.elite || spec?.elite) }) : null;
+    const glyph = first?.glyph || spec?.glyph || m.glyph;
+    return {
+      faceCategory: 'combat',
+      tag: m.label.toUpperCase(),
+      title,
+      flavor: names.length > 1
+        ? `${names.join(', ')}${foes.length > names.length ? ` ×${foes.length}` : ''}.`
+        : (name ? `${name} bars the path.` : m.blurb),
+      glyph,
+      color: nm.color,
+      glow: nm.glow,
+      risk: elite ? 3 : nm.risk,
+      artHtml: spr || `<span class="tm-icon">${glyph}</span>`,
+    };
+  }
+
+  const ev = EVENTS.find(e => e.id === card?.eventId);
+  if (!ev) {
+    const cat = card?.category || 'unknown';
+    const m = CATEGORY_META[cat] || CATEGORY_META.unknown;
+    const nm = nodeMeta(cat);
+    return {
+      faceCategory: cat,
+      tag: m.label.toUpperCase(),
+      title: m.label,
+      flavor: m.blurb,
+      glyph: m.glyph,
+      color: nm.color,
+      glow: nm.glow,
+      risk: nm.risk,
+      artHtml: artFromCategory(cat, m.glyph),
+    };
+  }
+
+  const cat = ev.category || card.category || 'unknown';
+  const m = CATEGORY_META[cat] || CATEGORY_META.unknown;
+  const nm = nodeMeta(cat);
+  const risk = (ev.type && TYPE_RISK[ev.type] != null) ? TYPE_RISK[ev.type] : nm.risk;
+  let artHtml;
+  if (ev.npc?.art) {
+    const spr = enemySpriteHtml(ev.npc.art, { elite: true });
+    artHtml = spr || `<span class="tm-icon">${ev.glyph || m.glyph}</span>`;
+  } else {
+    artHtml = artFromCategory(cat, ev.glyph || m.glyph);
+  }
+
+  return {
+    faceCategory: cat,
+    tag: m.label.toUpperCase(),
+    title: ev.title,
+    flavor: shortFlavor(ev.text) || m.blurb,
+    glyph: ev.glyph || m.glyph,
+    color: nm.color,
+    glow: nm.glow,
+    risk: cat === 'dangerous' ? Math.max(risk, 4) : risk,
+    artHtml,
+  };
+}
+
 // A choice node (compact ↔ hover-expanded). i = card index (kept 1:1 with cards).
-function nodeHtml(card, i, cx, cy) {
-  const m = CATEGORY_META[card.category] || CATEGORY_META.unknown;
-  const nm = nodeMeta(card.category);
-  const ri = riskInfo(nm.risk);
+function nodeHtml(card, i, cx, cy, { coop = false } = {}) {
+  const v = pathNodeView(card);
+  const ri = riskInfo(v.risk);
   return `
-    <div class="tm-node ${card.sparkle ? 'tm-sparkle' : ''}" data-i="${i}" style="left:${cx}px;top:${cy}px;--nc:${nm.color};--ng:${nm.glow}">
+    <div class="tm-node ${card.sparkle ? 'tm-sparkle' : ''}${card.hidden ? ' tm-mystery' : ''}" data-i="${i}" style="left:${cx}px;top:${cy}px;--nc:${v.color};--ng:${v.glow}">
       <div class="tm-card">
-        <div class="tm-art"><span class="tm-icon">${m.glyph}</span></div>
+        <div class="tm-art">${v.artHtml}</div>
         <div class="tm-foot">
-          <div class="tm-tag">${m.label}</div>
-          <div class="tm-name">${m.label}</div>
+          <div class="tm-tag">${v.tag}</div>
+          <div class="tm-name">${v.title}</div>
           <div class="tm-expand">
-            <div class="tm-risk"><span class="tm-risk-label" style="color:${ri.color}">${ri.label}</span><span class="tm-pips">${riskPips(nm.risk)}</span></div>
-            <div class="tm-flavor">${m.blurb}</div>
+            <div class="tm-risk"><span class="tm-risk-label" style="color:${ri.color}">${ri.label}</span><span class="tm-pips">${riskPips(v.risk)}</span></div>
             <div class="tm-cta">▶ TRAVEL HERE</div>
           </div>
-          <div class="tm-votes" id="tm-votes-${i}"></div>
+          ${coop ? `<div class="tm-votes" id="tm-votes-${i}"></div>` : ''}
         </div>
       </div>
     </div>`;
+}
+
+/** Majority-tie roulette: cycle highlights across candidates, slow down, land on winner. */
+function playTieSpin(stage, candidates, winner) {
+  const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+  if (reduce || !candidates?.length) return Promise.resolve();
+
+  const opts = [...new Set(candidates.map(Number))];
+  if (opts.length < 2 || !opts.includes(winner)) return Promise.resolve();
+
+  const root = stage.querySelector('.tm-root');
+  root?.classList.add('tm-rolling');
+
+  // Deterministic reel (same on every client) that rattles the tied options
+  // and always ends on the host-chosen winner.
+  let seed = ((winner + 1) * 2654435761 ^ (opts.length * 9973)) >>> 0;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 0x100000000; };
+  const seq = [];
+  const loops = 3 + Math.floor(rnd() * 2);
+  for (let L = 0; L < loops; L++) {
+    // mild shuffle each loop so it doesn't feel strictly left-to-right
+    const order = [...opts].sort(() => rnd() - 0.5);
+    for (const idx of order) seq.push(idx);
+  }
+  let guard = 0;
+  while (seq[seq.length - 1] !== winner || seq.length < loops * opts.length + opts.length) {
+    seq.push(opts[seq.length % opts.length]);
+    if (++guard > 48) { seq.push(winner); break; }
+  }
+  seq[seq.length - 1] = winner;
+
+  return new Promise(resolve => {
+    let step = 0;
+    let delay = 70;
+    const tick = () => {
+      const idx = seq[step];
+      stage.querySelectorAll('.tm-node').forEach(n => {
+        n.classList.toggle('tm-spin', +n.dataset.i === idx);
+      });
+      step++;
+      if (step >= seq.length) {
+        setTimeout(() => {
+          stage.querySelectorAll('.tm-node').forEach(n => n.classList.remove('tm-spin'));
+          root?.classList.remove('tm-rolling');
+          resolve();
+        }, 220);
+        return;
+      }
+      // Ease out: each tick a bit slower, sharper near the end.
+      const t = step / seq.length;
+      delay = 70 + Math.floor(220 * (t * t));
+      setTimeout(tick, delay);
+    };
+    tick();
+  });
 }
 
 export function renderTravelMap(stage, cards, coopCtx, ctx) {
@@ -157,7 +325,10 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
   });
 
   // connectors: you → choices, then each choice → its hint (when present)
-  const lines = pos.map((p, i) => `<line x1="${CURX}" y1="${CURY - 6}" x2="${p.cx.toFixed(1)}" y2="${p.cy.toFixed(1)}" stroke="${nodeMeta(cards[i].category).color}" stroke-opacity="0.34" stroke-width="2" stroke-dasharray="2 8" stroke-linecap="round"></line>`).join('');
+  const lines = pos.map((p, i) => {
+    const col = pathNodeView(cards[i]).color;
+    return `<line x1="${CURX}" y1="${CURY - 6}" x2="${p.cx.toFixed(1)}" y2="${p.cy.toFixed(1)}" stroke="${col}" stroke-opacity="0.34" stroke-width="2" stroke-dasharray="2 8" stroke-linecap="round"></line>`;
+  }).join('');
   const hintLines = hintPos.map((h, i) => {
     if (!h || !pathHints[i]) return '';
     const p = pos[i];
@@ -184,7 +355,6 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
     return `<div class="tm-hcard" style="${style};opacity:${op};border-color:${h.color}66"><span style="color:${h.color};font-size:${A ? 20 : 22}px">${h.glyph}</span></div>`;
   }).join('');
 
-  const cm = CATEGORY_META;
   const r = ctx.run;
   const resLabel = ctx.resourceName || 'Resource';
   const gearBits = (ctx.equippedSummary || []).slice(0, 4);
@@ -236,12 +406,12 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
         <div class="tm-cur-body">
           <div class="tm-cur-tag">FLOOR ${r.floor} / 51</div>
           <div class="tm-cur-name">${biome.name}</div>
-          <div class="tm-cur-flavor">${coopCtx ? (coopCtx.mode === 'first' ? 'First pick decides the party\'s road.' : 'The party votes on the road ahead.') : 'The paths ahead show only their nature — never their contents. Choose.'}</div>
+          <div class="tm-cur-flavor">${coopCtx ? (coopCtx.mode === 'first' ? 'First pick decides the party\'s road.' : 'The party votes on the road ahead.') : 'The paths ahead name their destinations. A rare fog still hides a few.'}</div>
         </div>
         <div class="tm-here">◆ YOU ARE HERE ◆</div>
       </div>
       <div class="tm-choice-layer">
-        ${cards.map((c, i) => nodeHtml(c, i, pos[i].cx, pos[i].cy)).join('')}
+        ${cards.map((c, i) => nodeHtml(c, i, pos[i].cx, pos[i].cy, { coop: !!coopCtx })).join('')}
       </div>
     </div>`;
 
@@ -303,21 +473,24 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
     for (let i = 0; i < cards.length; i++) {
       const votes = [...picks.entries()].filter(([, v]) => v === i);
       const elv = stage.querySelector(`#tm-votes-${i}`);
-      if (elv) elv.innerHTML = votes.map(([id]) => {
-        const name = id === coopS.you ? 'You' : (coopS.partners.get(id)?.name || '?');
-        return `<span class="vote-chip">${name}</span>`;
-      }).join('');
+      if (elv) {
+        elv.innerHTML = votes.map(([id]) => {
+          const name = id === coopS.you ? 'You' : (coopS.partners.get(id)?.name || '?');
+          return `<span class="vote-chip">${name}</span>`;
+        }).join('');
+      }
+      stage.querySelector(`.tm-node[data-i="${i}"]`)
+        ?.classList.toggle('tm-has-votes', votes.length > 0);
     }
   }
 
   function commit(i) {
     // record the chosen node in the history trail, then resolve
-    const nm = nodeMeta(cards[i].category);
-    const m = CATEGORY_META[cards[i].category] || CATEGORY_META.unknown;
-    trail.history.push({ glyph: m.glyph, color: nm.color });
+    const v = pathNodeView(cards[i]);
+    trail.history.push({ glyph: v.glyph, color: v.color });
     // The hint branching off this path becomes a promised category next floor
     if (pathHints[i]?.category) run.mapHintCategory = pathHints[i].category;
-    // battle nodes get the radial flash; others resolve in place
+    // battle nodes get the walk-across transition; others resolve in place
     const isBattle = cards[i].category === 'combat' || cards[i].category === 'dangerous';
     if (isBattle && flash) flash(() => resolveCard(stage, cards[i]));
     else resolveCard(stage, cards[i]);
@@ -340,10 +513,19 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
   });
 
   if (coopCtx) {
-    coopCtx.bind({ picks, renderVotes, lock: idx => {
-      locked = true;
-      stage.querySelectorAll('.tm-node').forEach(c => c.classList.toggle('tm-chosen', +c.dataset.i === idx));
-      setTimeout(() => commit(idx), 700);
-    } });
+    coopCtx.bind({
+      picks,
+      renderVotes,
+      lock: (idx, opts = {}) => {
+        locked = true;
+        const spinFrom = opts.spinFrom;
+        const after = () => {
+          stage.querySelectorAll('.tm-node').forEach(c => c.classList.toggle('tm-chosen', +c.dataset.i === idx));
+          setTimeout(() => commit(idx), 700);
+        };
+        if (spinFrom?.length > 1) playTieSpin(stage, spinFrom, idx).then(after);
+        else after();
+      },
+    });
   }
 }

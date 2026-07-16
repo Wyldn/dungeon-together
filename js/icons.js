@@ -71,4 +71,13 @@ export const ICONS = {
     <path d="M22 40 L42 40" />
     <path d="M20 54 L44 54" stroke-dasharray="3 3"/>
   `),
+  spellsword: wrap(`
+    <path d="M18 48 L32 10 L46 48" fill="currentColor" fill-opacity=".12"/>
+    <path d="M32 10 L32 54" />
+    <path d="M24 22 L40 22" />
+    <path d="M22 40 L42 40" />
+    <circle cx="32" cy="16" r="2.4" fill="currentColor" stroke="none">
+      <animate attributeName="opacity" values="1;.35;1" dur="1.8s" repeatCount="indefinite"/>
+    </circle>
+  `),
 };

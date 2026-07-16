@@ -105,6 +105,15 @@ export const EVENT_TAG_MAP = {
   river_of_fire: ['stat-test', 'secret-flag', 'resource-test', 'curse'],
   cowards_gate: ['secret-flag', 'gamble'],
   last_rest: ['recovery', 'secret-flag', 'blessing'],
+
+  /* ---- NPC cast (bob-sheet / legacy heroes) ---- */
+  veteran_blade_meet: ['npc-duel', 'combat-threat', 'equipment', 'mentor'],
+  tower_scholar_meet: ['npc-duel', 'combat-threat', 'equipment', 'mentor'],
+  pathfinder_meet: ['npc-duel', 'combat-threat', 'equipment', 'mentor'],
+  northman_meet: ['npc-duel', 'combat-threat', 'equipment', 'fame-test'],
+  roadside_climbers: ['npc-duel', 'combat-threat', 'equipment', 'blessing'],
+  farmstead_meet: ['npc-duel', 'combat-threat', 'recovery', 'equipment'],
+  oldman_trials: ['npc-duel', 'combat-threat', 'appraisal', 'mentor', 'gamble'],
 };
 
 export function tagsForEvent(event) {

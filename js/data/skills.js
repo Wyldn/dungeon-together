@@ -802,6 +802,123 @@ export const SKILLS = {
     power: 110, stat: 'best', burn: 0.6,
     desc: 'Borrowed from something with scales. Devastates all enemies, 60% burn.',
   },
+
+  /* ============ SPELLSWORD (Arcana) ============ */
+  rune_edge: composeSkill(
+    { id: 'rune_edge', name: 'Rune Edge', class: 'spellsword', fx: 'arcane',
+      desc: 'A sword-cut edged in script. Free — scales on your best of STR/INT.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(100, 'best'),
+  ),
+  arc_ward: composeSkill(
+    { id: 'arc_ward', name: 'Arc Ward', class: 'spellsword', fx: 'buff',
+      desc: 'A thin shield of circulating Arcana. Block 48% of damage for 3 turns.' },
+    COMP.cost(18), COMP.charge(0), COMP.target('self'), COMP.shield(0.48),
+  ),
+  mana_lunge: composeSkill(
+    { id: 'mana_lunge', name: 'Mana Lunge', class: 'spellsword', fx: 'slash',
+      desc: 'Close the gap with a charged blade. Solid hybrid damage.' },
+    COMP.cost(16), COMP.charge(1), COMP.target('one'), COMP.dmg(125, 'best'),
+  ),
+  sigil_thrust: composeSkill(
+    { id: 'sigil_thrust', name: 'Sigil Thrust', class: 'spellsword', fx: 'pierce',
+      desc: 'A short thrust stamped with a killing mark. Cheap and precise.' },
+    COMP.cost(12), COMP.charge(1), COMP.target('one'), COMP.dmg(118, 'best'),
+  ),
+  blade_tempest: composeSkill(
+    { id: 'blade_tempest', name: 'Blade Tempest', class: 'spellsword', fx: 'arcane',
+      desc: 'A whirl of steel and loose glyphs. Hits every enemy.' },
+    COMP.cost(30), COMP.charge(3), COMP.target('all'), COMP.dmg(78, 'best'),
+  ),
+  aegis_cut: composeSkill(
+    { id: 'aegis_cut', name: 'Aegis Cut', class: 'spellsword', fx: 'slash', tier: 2,
+      desc: 'Strike and brace as one motion. Solid damage; block 30% for 3 turns.' },
+    COMP.cost(22), COMP.charge(2), COMP.target('one'), COMP.dmg(135, 'str'),
+    COMP.shield(0.3),
+  ),
+  hex_rend: composeSkill(
+    { id: 'hex_rend', name: 'Hex Rend', class: 'spellsword', fx: 'shadow', tier: 2,
+      desc: 'Carve a curse into the wound. Hexed foes take +25% damage. 85% chance.' },
+    COMP.cost(20), COMP.charge(2), COMP.target('one'), COMP.dmg(115, 'int'),
+    COMP.hex(0.85),
+  ),
+  sanctum_blade: composeSkill(
+    { id: 'sanctum_blade', name: 'Sanctum Blade', class: 'spellsword', fx: 'holy', tier: 3,
+      desc: 'ULTIMATE — oath-bound steel. Heavy single-target; light mends you 8%.' },
+    COMP.cost(48), COMP.charge(5), COMP.target('one'), COMP.dmg(200, 'str'),
+    COMP.healPct(0.08),
+  ),
+  living_script: composeSkill(
+    { id: 'living_script', name: 'Living Script', class: 'spellsword', fx: 'arcane', tier: 3,
+      desc: 'ULTIMATE — the blade writes a storm. Hits all enemies; 40% hex.' },
+    COMP.cost(52), COMP.charge(6), COMP.target('all'), COMP.dmg(125, 'int'),
+    COMP.hex(0.4),
+  ),
+  eclipse_cut: composeSkill(
+    { id: 'eclipse_cut', name: 'Eclipse Cut', class: 'spellsword', fx: 'shadow', tier: 2,
+      desc: 'Cut with the void between spell and steel. Heavy damage; ignores defense.' },
+    COMP.cost(34), COMP.charge(4), COMP.target('one'), COMP.dmg(175, 'best'),
+    COMP.ignoreDef(),
+  ),
+  glyph_parry: composeSkill(
+    { id: 'glyph_parry', name: 'Glyph Parry', class: 'spellsword', fx: 'buff', tier: 2,
+      desc: 'Intercept with a floating rune. Block 40% and recover a little Arcana.' },
+    COMP.cost(16), COMP.charge(1), COMP.target('self'),
+    COMP.shield(0.4), COMP.gainResource(10),
+  ),
+  spark_riposte: composeSkill(
+    { id: 'spark_riposte', name: 'Spark Riposte', class: 'spellsword', fx: 'thunder', tier: 2,
+      desc: 'Answer a threat with a charged counter-cut. 30% stun.' },
+    COMP.cost(24), COMP.charge(2), COMP.target('one'), COMP.dmg(140, 'best'),
+    COMP.stun(0.3),
+  ),
+
+  /* ---- NPC / event specials ---- */
+  veteran_guard: composeSkill(
+    { id: 'veteran_guard', name: 'Veteran Guard', class: 'special', fx: 'buff',
+      desc: 'Old parade-ground habit. Block 40% for 3 turns and gain +1 charge.' },
+    COMP.cost(10), COMP.charge(0), COMP.target('self'),
+    COMP.shield(0.4), COMP.gainCharge(1),
+  ),
+  scholar_hex: composeSkill(
+    { id: 'scholar_hex', name: 'Scholar\'s Hex', class: 'special', fx: 'arcane',
+      desc: 'A footnote that bites. Modest damage; 75% chance to hex.' },
+    COMP.cost(16), COMP.charge(1), COMP.target('one'), COMP.dmg(105, 'best'),
+    COMP.hex(0.75),
+  ),
+  pathfinder_mark: composeSkill(
+    { id: 'pathfinder_mark', name: 'Pathfinder\'s Mark', class: 'special', fx: 'pierce',
+      desc: 'Mark the trail — and the quarry. Solid hit; 80% hex.' },
+    COMP.cost(18), COMP.charge(2), COMP.target('one'), COMP.dmg(115, 'best'),
+    COMP.hex(0.8),
+  ),
+  northman_rage: composeSkill(
+    { id: 'northman_rage', name: 'Northman\'s Rage', class: 'special', fx: 'slash',
+      desc: 'Cold country anger. Heavy strike; you hit harder for 2 turns.' },
+    COMP.cost(22), COMP.charge(2), COMP.target('one'), COMP.dmg(150, 'best'),
+    COMP.buff('str', 1.35, 2),
+  ),
+  harvest_swing: composeSkill(
+    { id: 'harvest_swing', name: 'Harvest Swing', class: 'special', fx: 'blunt',
+      desc: 'A scythe-motion meant for wheat. Mild damage. Honest work.' },
+    COMP.cost(8), COMP.charge(0), COMP.target('one'), COMP.dmg(95, 'best'),
+  ),
+  elder_lesson: composeSkill(
+    { id: 'elder_lesson', name: 'Elder\'s Lesson', class: 'special', fx: 'holy',
+      desc: 'ULTIMATE — the last thing the old climber taught you. Devastates all foes.' },
+    COMP.cost(56), COMP.charge(6), COMP.target('all'), COMP.dmg(155, 'best'),
+  ),
+  militia_press: composeSkill(
+    { id: 'militia_press', name: 'Militia Press', class: 'special', fx: 'blunt',
+      desc: 'Town-watch training: shove them off-balance. 40% stun.' },
+    COMP.cost(14), COMP.charge(1), COMP.target('one'), COMP.dmg(100, 'best'),
+    COMP.stun(0.4),
+  ),
+  hedge_cantrip: composeSkill(
+    { id: 'hedge_cantrip', name: 'Hedge Cantrip', class: 'special', fx: 'fire',
+      desc: 'Half-remembered village magic. Light burn chance, no charge required.' },
+    COMP.cost(12), COMP.charge(0), COMP.target('one'), COMP.dmg(108, 'best'),
+    COMP.burn(0.35),
+  ),
 };
 
 // Learnable pool: class skills gated by tier + your subclass lineage's skills.

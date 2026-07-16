@@ -1336,6 +1336,194 @@ export const EVENTS = [
         outcome: { text: 'The longest-burning candle is labeled in faded script: "V." You do the arithmetic on that, twice, and sit down hard. The Demon King lit a candle here. As a climber. Going UP.', xp: 50, flag: 'v_lore' } },
     ],
   },
+
+  /* ---- NPC social / duel events (bob-sheet + legacy hero sprites) ---- */
+  {
+    id: 'veteran_blade_meet', biome: 'any', category: 'social', type: 'story', glyph: '⚔️', w: 5, once: true, cond: s => s.floor >= 3,
+    title: 'The Parade Veteran',
+    text: 'A climber in a dented parade helm sits on a crate, polishing a blade that has outlived its army. "Talk, steel, or walk," he says. "I\'ve got time. The tower doesn\'t."',
+    npc: { art: 'veteran_blade', name: 'Parade Veteran', blurb: 'An old warrior\'s silhouette — the look your calling used to wear.' },
+    choices: [
+      { label: 'Talk shop', hint: 'gear or technique',
+        outcome: { text: 'He talks like a drill yard. You leave sharper — and heavier by one keepsake.',
+          reward: { chooseLabel: 'He offers one:', options: [
+            { kind: 'item', id: 'veteran_helm' },
+            { kind: 'item', id: 'veteran_cuirass' },
+            { kind: 'skill', id: 'veteran_guard' },
+          ] } } },
+      { label: 'Spar him', hint: 'hard fight — better spoils + XP',
+        outcome: { combat: { enemies: ['veteran_blade'], text: 'He salutes, then stops being polite.',
+          reward: { chooseLabel: 'The veteran nods. Take one:', options: [
+            { kind: 'item', id: 'veteran_cuirass' },
+            { kind: 'skill', id: 'veteran_guard' },
+            { kind: 'item', id: 'war_badge' },
+          ] }, xp: 35 } } },
+      { label: 'Leave him be', hint: 'XP + random growth',
+        outcome: { text: 'You tip an imaginary hat. He returns a real one.', xp: 28, statUpRandom: 2 } },
+    ],
+  },
+  {
+    id: 'tower_scholar_meet', biome: 'any', category: 'social', type: 'story', glyph: '📖', w: 5, once: true, cond: s => s.floor >= 5,
+    title: 'The Ink-Stained Scholar',
+    text: 'A mage in a robe the color of old footnotes looks up from a floating page. "Conversation, contest, or courtesy," she offers. "I grade all three."',
+    npc: { art: 'tower_scholar', name: 'Tower Scholar', blurb: 'The classic mage silhouette — ink, arrogance, and useful footnotes.' },
+    choices: [
+      { label: 'Ask for a lesson', hint: 'gear or technique',
+        outcome: { text: 'She grades your questions gently. You pass with a gift.',
+          reward: { chooseLabel: 'She slides one across the air:', options: [
+            { kind: 'item', id: 'scholar_cap' },
+            { kind: 'item', id: 'scholar_robe' },
+            { kind: 'skill', id: 'scholar_hex' },
+          ] } } },
+      { label: 'Challenge her', hint: 'hard fight — better spoils + XP',
+        outcome: { combat: { enemies: ['tower_scholar'], text: 'The page snaps shut. The air tastes like chalk and lightning.',
+          reward: { chooseLabel: 'She smiles like a rubric. Take one:', options: [
+            { kind: 'item', id: 'scholar_robe' },
+            { kind: 'skill', id: 'scholar_hex' },
+            { kind: 'item', id: 'spellthread' },
+          ] }, xp: 40 } } },
+      { label: 'Bow and move on', hint: 'XP + random growth',
+        outcome: { text: '"Polite. Rare." She marks something invisible in your favor.', xp: 30, statUpRandom: 2 } },
+    ],
+  },
+  {
+    id: 'pathfinder_meet', biome: 'any', category: 'social', type: 'story', glyph: '🏹', w: 5, once: true, cond: s => s.floor >= 4,
+    title: 'The Pathfinder Veteran',
+    text: 'A ranger leans against a trail-marker that shouldn\'t exist indoors. "Talk trails, test aim, or keep walking," they say. "I\'ve mapped worse."',
+    npc: { art: 'pathfinder_veteran', name: 'Pathfinder Veteran', blurb: 'The old ranger look — quiet boots, quieter arrows.' },
+    choices: [
+      { label: 'Trade trail lore', hint: 'gear or technique',
+        outcome: { text: 'They mark three shortcuts on your palm in dirt. One of them is a gift.',
+          reward: { chooseLabel: 'Take one:', options: [
+            { kind: 'item', id: 'pathfinder_hood' },
+            { kind: 'skill', id: 'pathfinder_mark' },
+            { kind: 'item', id: 'quiver_pin' },
+          ] } } },
+      { label: 'Test your aim', hint: 'hard fight — better spoils + XP',
+        outcome: { combat: { enemies: ['pathfinder_veteran'], text: 'They step off the marker. The floor becomes a clearing.',
+          reward: { chooseLabel: 'A nod. Take one:', options: [
+            { kind: 'item', id: 'pathfinder_hood' },
+            { kind: 'skill', id: 'pathfinder_mark' },
+            { kind: 'item', id: 'trailbow' },
+          ] }, xp: 36 } } },
+      { label: 'Keep to the path', hint: 'XP + random growth',
+        outcome: { text: 'They tip two fingers off their brow. The trail ahead feels clearer.', xp: 28, statUpRandom: 2 } },
+    ],
+  },
+  {
+    id: 'northman_meet', biome: 'any', category: 'social', type: 'story', glyph: '🪓', w: 5, once: true, cond: s => s.floor >= 6,
+    title: 'The Northman Camp',
+    text: 'Cold-country climbers have claimed a landing — fire, axes, and a jarl\'s laugh. "Speak, fight, or freeze politely," one calls. "We respect all three."',
+    npc: { art: 'northman_raider', name: 'Northmen', blurb: 'Raiders from colder climbs — several faces, one appetite for a good scrap.' },
+    choices: [
+      { label: 'Share the fire', hint: 'gear or technique',
+        outcome: { text: 'They pour something that burns twice. You leave warmer and armed.',
+          reward: { chooseLabel: 'A northman tosses you one:', options: [
+            { kind: 'item', id: 'northman_helm' },
+            { kind: 'skill', id: 'northman_rage' },
+            { kind: 'item', id: 'raider_hatchet' },
+          ] } } },
+      { label: 'Answer the challenge', hint: 'hard fight — better spoils + XP',
+        outcome: { combat: {
+          pickEnemies: { pool: ['northman_raider', 'northman_raider2', 'northman_raider3', 'northman_raider4', 'northman_raider5'], count: [1, 1] },
+          text: 'Axes rise like a toast.',
+          reward: { chooseLabel: 'The jarl grins. Take one:', options: [
+            { kind: 'item', id: 'northman_helm' },
+            { kind: 'skill', id: 'northman_rage' },
+            { kind: 'item', id: 'battle_axe' },
+          ] }, xp: 42 } } },
+      { label: 'Freeze politely', hint: 'XP + random growth',
+        outcome: { text: 'You toast with empty hands. They toast you back.', xp: 32, statUpRandom: 2 } },
+    ],
+  },
+  {
+    id: 'roadside_climbers', biome: 'any', category: 'social', type: 'story', glyph: '🧳', w: 6,
+    title: 'Roadside Climbers',
+    text: 'Two travelers share a cold meal on the stair. One waves you over. "Company, contest, or quiet — we\'ve got all three priced fair."',
+    npc: { art: 'roadside_npc', name: 'Roadside Climbers', blurb: 'Ordinary faces on an extraordinary climb — talk, duel, or pass.' },
+    choices: [
+      { label: 'Share the meal', hint: 'gear or technique',
+        outcome: { text: 'Bread, gossip, and a spare trinket change hands.',
+          reward: { chooseLabel: 'They insist you take one:', options: [
+            { kind: 'skill', id: 'militia_press' },
+            { kind: 'skill', id: 'hedge_cantrip' },
+            { kind: 'item', id: 'lucky_coin' },
+          ] } } },
+      { label: 'Spar for sport', hint: 'hard fight — better spoils + XP',
+        outcome: { combat: { enemies: ['roadside_npc', 'roadside_npc2'], text: 'Sport, they said. Competitive sport.',
+          reward: { chooseLabel: 'Panting, they offer one:', options: [
+            { kind: 'skill', id: 'militia_press' },
+            { kind: 'item', id: 'steel_blade' },
+            { kind: 'item', id: 'hawk_charm' },
+          ] }, xp: 38 } } },
+      { label: 'Wish them luck', hint: 'XP + random growth',
+        outcome: { text: 'They wish it back. Somehow, it sticks.', xp: 26, statUpRandom: 2 } },
+    ],
+  },
+  {
+    id: 'farmstead_meet', biome: 'any', category: 'social', type: 'story', glyph: '🌾', w: 7,
+    title: 'A Stubborn Farmstead',
+    text: 'Somehow, a patch of tilled earth survives between floors — scarecrows, a trough, and farmers who look unsurprised to see a climber. "Hungry?" one asks. "Or looking for trouble?"',
+    npc: { art: 'farmer_a', name: 'Farmstead Folk', blurb: 'Tower farmers. Generous with food. Less generous with trespassers.' },
+    choices: [
+      { label: 'Accept their hospitality', hint: '1–3 enchanted foods',
+        outcome: { text: 'They pack you parcels that hum faintly. "Don\'t ask what we grow," says one. "Just eat it before floor twelve."',
+          enchantedFood: [1, 3] } },
+      { label: 'Pick a fight', hint: 'easy scrap — little gold, fame loss, farm loot',
+        outcome: { fame: -3, combat: {
+          pickEnemies: { pool: ['farmer_a', 'farmer_b', 'farmer_c', 'farmer_d', 'farmer_e', 'farmer_f'], count: [2, 3], partyExtra: 1 },
+          text: 'Pitchforks lower. The scarecrow looks away.',
+          reward: { farmerLoot: true },
+        } } },
+      { label: 'Tip your hat and leave', hint: 'XP + random growth',
+        outcome: { text: 'They tip theirs back. The trough gurgles approvingly.', xp: 22, statUpRandom: 2 } },
+    ],
+  },
+  {
+    id: 'oldman_trials', biome: 'any', category: 'social', type: 'story', glyph: '🧓', w: 4, once: true, cond: s => s.floor >= 8,
+    title: 'The Old Man on the Stair',
+    text: 'An old man sits where the stair widens, cane across his knees. His eyes are kind. His shadow is not. "Test your skills," he offers, "ask how strong I think you are, or ask if I still teach."',
+    npc: { art: 'oldman_gentle', name: 'The Old Man', blurb: 'Kind eyes. Unkind secrets. Three offers — only one is a fight.' },
+    choices: [
+      { label: 'Test your skills', hint: 'secret fight — easy OR boss-tier',
+        outcome: {
+          text: 'He stands. The stair forgets how wide it was.',
+          randomOutcome: [
+            { combat: { enemies: ['oldman_gentle'], text: 'A gentle lesson — until it isn\'t.',
+              reward: { chooseLabel: 'He chuckles. Take one:', options: [
+                { kind: 'item', id: 'elder_cane' },
+                { kind: 'skill', id: 'hedge_cantrip' },
+                { kind: 'item', id: 'focus_ring' },
+              ] }, xp: 40 } },
+            { combat: { enemies: ['oldman_wrath'], text: 'The kindness stays. The mercy does not.',
+              reward: {
+                guaranteed: [
+                  { weight: 70, kind: 'item', id: 'elder_cane' },
+                  { weight: 30, kind: 'item', id: 'elder_blade' },
+                ],
+                bonusChance: 0.28,
+                bonus: [
+                  { kind: 'item', id: 'elder_crown' },
+                  { kind: 'skill', id: 'elder_lesson' },
+                  { kind: 'relic' },
+                ],
+              }, xp: 80, fame: 4 } },
+          ],
+        } },
+      { label: 'Ask how strong you seem', hint: 'full appraisal + a little growth',
+        outcome: { text: 'He looks through you the way a jeweler looks through glass — then names what he sees.',
+          appraisal: 'full', statUpRandom: 2 } },
+      { label: 'Ask for teachings', hint: 'more growth, full restore, XP',
+        outcome: { text: 'He teaches without standing. Your bones rearrange their opinions.',
+          statUpRandom: 4, fullHeal: true, fullMana: true, xp: 55 } },
+    ],
+  },
+];
+
+/** Events shown on the Compendium NPCs tab. */
+export const NPC_EVENTS = [
+  'veteran_blade_meet', 'tower_scholar_meet', 'pathfinder_meet', 'northman_meet',
+  'roadside_climbers', 'farmstead_meet', 'oldman_trials',
 ];
 
 // Stamp default tags from EVENT_TAG_MAP (inline `tags` on a card wins).

@@ -1,6 +1,8 @@
 // Ambient particle canvas — biome-themed weather (embers, snow, leaves,
 // spores, dust). Cheap: one rAF loop, ~60 particles, pauses when hidden.
 
+import { biomeBgUrl } from './art.js';
+
 const canvas = document.getElementById('fx-canvas');
 const g = canvas.getContext('2d');
 let particles = [];
@@ -90,22 +92,77 @@ export function screenShake() {
   document.getElementById('app').classList.add('shake');
 }
 
-// Full-frame radial screen-transition flash. Calls swap() at the peak, then
-// fades out. Purely local/cosmetic — never gate network sync behind it.
-export function flash(swap) {
+const WALK_SHEET = 'assets/img/fx/knight_walk.png';
+
+/**
+ * Full-frame travel transition: a party of knights walk across the current
+ * biome background. Calls swap() mid-crossing, then fades out.
+ * Purely local/cosmetic — never gate network sync behind it.
+ */
+export function walkTransition(swap, opts = {}) {
+  const {
+    biomeId = 'forest',
+    partySize = 1,
+    caption = '',
+    durationMs = 1400,
+    skippable = false,
+  } = opts;
   const frame = document.getElementById('frame') || document.body;
   const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduce) { swap && swap(); return; }
+
+  const n = Math.max(1, Math.min(4, partySize | 0));
+  const bg = biomeBgUrl(biomeId) || biomeBgUrl('forest') || '';
+  const knights = Array.from({ length: n }, (_, i) => {
+    const lag = i * 28;
+    const bob = (i % 3) * 10;
+    return `<div class="walk-knight" style="--lag:${lag}ms;--bob:${bob}px"></div>`;
+  }).join('');
+
   const el = document.createElement('div');
-  el.className = 'screen-flash';
+  el.className = 'walk-overlay' + (skippable ? ' skippable' : '');
+  el.style.setProperty('--walk-dur', `${durationMs}ms`);
+  el.style.setProperty('--walk-bg', bg ? `url("${bg}")` : 'none');
+  el.style.setProperty('--walk-sheet', `url("${WALK_SHEET}")`);
+  el.innerHTML = `
+    <div class="walk-bg" aria-hidden="true"></div>
+    <div class="walk-haze" aria-hidden="true"></div>
+    <div class="walk-party" aria-hidden="true">${knights}</div>
+    ${caption ? `<div class="walk-caption">${caption}</div>` : ''}
+    ${skippable ? `<div class="walk-skip">click to continue</div>` : ''}
+  `;
   frame.appendChild(el);
-  // opacity 0 -> 1 (~0.4s), swap at peak, fade out ~0.08s later, then remove.
-  requestAnimationFrame(() => { el.style.opacity = '1'; });
-  setTimeout(() => {
+
+  let done = false;
+  let swapped = false;
+  const doSwap = () => {
+    if (swapped) return;
+    swapped = true;
     swap && swap();
-    setTimeout(() => {
-      el.style.opacity = '0';
-      setTimeout(() => el.remove(), 200);
-    }, 80);
-  }, 400);
+  };
+  const finish = () => {
+    if (done) return;
+    done = true;
+    doSwap();
+    el.classList.add('leaving');
+    setTimeout(() => el.remove(), 280);
+  };
+
+  requestAnimationFrame(() => { el.classList.add('show'); });
+  // Mid-walk: reveal the destination while the party is still crossing.
+  const mid = Math.max(220, Math.floor(durationMs * 0.55));
+  setTimeout(doSwap, mid);
+  setTimeout(finish, durationMs);
+
+  if (skippable) el.onclick = finish;
+}
+
+/** Screen transition used between map → battle / title → creation. */
+export function flash(swap, opts) {
+  walkTransition(swap, {
+    durationMs: 1200,
+    partySize: 1,
+    biomeId: 'forest',
+    ...opts,
+  });
 }

@@ -15,7 +15,7 @@ import { derived, gearHas, heal, restoreMana, usableSkillIds, resourceName, chan
 import { initiativeOrder, addCharge, tickEnemyCharge, canAfford, pickEnemySpecial, enemyTelegraph, applyGuard } from './systems.js';
 import { biomeForFloor, ENEMIES } from './data/enemies.js';
 import { ICONS } from './icons.js';
-import { enemySpriteHtml, heroSpriteHtml, biomeBgUrl } from './art.js';
+import { enemySpriteHtml, heroSpriteHtml, playHeroAnim, heroHasAnim, heroCombatSize, biomeBgUrl } from './art.js';
 import * as SpriteAnim from './anim.js';
 import { SFX } from './audio.js';
 import { screenShake } from './fx.js';
@@ -133,6 +133,7 @@ class Fight {
       for (const [id, p] of coop.partners) {
         this.allies.set(id, {
           name: p.name, classId: p.classId || 'warrior',
+          appearanceId: p.status?.appearanceId || p.appearanceId,
           hp: p.status?.hp ?? 1, maxHp: p.status?.maxHp ?? 1,
           down: p.status?.down || false,
           def: p.status?.def ?? 0, dodge: p.status?.dodge ?? 5,
@@ -577,7 +578,11 @@ class Fight {
     const resShort = resName.length > 4 ? resName.slice(0, 3).toUpperCase() : resName.toUpperCase();
     let html = `
       <div class="combatant ${this.run.down ? 'downed' : ''} ${actingKey === 'player' ? 'acting' : ''}">
-        <div class="fighter-sprite" id="sprite-player">${heroSpriteHtml(this.run.classId) || ICONS[this.run.classId]}</div>
+        <div class="fighter-sprite" id="sprite-player">${heroSpriteHtml(this.run.classId, heroCombatSize(this.run.classId), {
+          ...(this.run.down && heroHasAnim(this.run.classId, 'death') ? { anim: 'death', holdLast: true } : {}),
+          faceLeft: true,
+          appearanceId: this.run.appearanceId,
+        }) || ICONS[this.run.classId]}</div>
         <div class="cx-info">
           <div class="cx-head"><span class="fighter-name">${this.run.name}${this.run.down ? ' (down)' : ''}</span></div>
           <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${hpW}%"></div><span class="cx-bar-num">${Math.round(this.run.hp)}/${Math.round(this.run.maxHp)}</span></div></div>
@@ -592,7 +597,7 @@ class Fight {
     for (const [id, a] of this.allies) {
       html += `
         <div class="combatant ${a.down ? 'downed' : ''} ${actingKey === 'ally-' + id ? 'acting' : ''}">
-          <div class="fighter-sprite" id="sprite-${id}">${heroSpriteHtml(a.classId) || ICONS[a.classId] || ICONS.warrior}</div>
+          <div class="fighter-sprite" id="sprite-${id}">${heroSpriteHtml(a.classId, heroCombatSize(a.classId), { faceLeft: true, appearanceId: a.appearanceId }) || ICONS[a.classId] || ICONS.warrior}</div>
           <div class="cx-info">
             <div class="cx-head"><span class="fighter-name">${a.name}${a.down ? ' (down)' : ''}</span></div>
             <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${clamp(a.hp / a.maxHp * 100, 0, 100)}%"></div><span class="cx-bar-num">${Math.round(a.hp)}/${Math.round(a.maxHp)}</span></div></div>
@@ -922,6 +927,29 @@ class Fight {
     };
   }
 
+  /** Choose a hero sheet anim for this skill (archer pack etc.). */
+  pickHeroAnim(sk) {
+    if (!sk || !heroHasAnim(this.run.classId, 'attack')) return null;
+    const id = sk.id || '';
+    const name = (sk.name || '').toLowerCase();
+    if (sk.dodge || id.includes('roll') || id.includes('dash') || id.includes('windstep') || name.includes('evasive')) {
+      return heroHasAnim(this.run.classId, 'dash') ? 'dash' : 'attack';
+    }
+    if (sk.target === 'self' && (sk.healPct || sk.shield || sk.buff)) return null;
+    if (sk.target === 'all') return heroHasAnim(this.run.classId, 'attackLoop') ? 'attackLoop' : 'attack';
+    if (id.includes('aimed') || id.includes('one_shot') || name.includes('snipe')) {
+      return heroHasAnim(this.run.classId, 'attackHigh') ? 'attackHigh' : 'attack';
+    }
+    if (sk.power || sk.target === 'one') return 'attack';
+    return null;
+  }
+
+  async playLocalHeroAnim(anim, { holdLast = false } = {}) {
+    if (!anim || !heroHasAnim(this.run.classId, anim)) return;
+    const spriteP = this.el.querySelector('#sprite-player');
+    await playHeroAnim(spriteP, this.run.classId, anim, { target: heroCombatSize(this.run.classId), holdLast, faceLeft: true, appearanceId: this.run.appearanceId });
+  }
+
   async localSharedTurn() {
     if (this.run.down) {
       this.coop.net.send({ k: 'cpass', why: 'down' });
@@ -972,7 +1000,13 @@ class Fight {
   async applyRemoteAct(act, ally, seatId) {
     const name = ally?.name || 'Companion';
     const sprite = this.sprite(seatId);
-    if (sprite) { sprite.classList.add('attack'); setTimeout(() => sprite.classList.remove('attack'), 420); }
+    const classId = ally?.classId;
+    if (act.heroAnim && classId && heroHasAnim(classId, act.heroAnim)) {
+      await playHeroAnim(sprite, classId, act.heroAnim, { target: heroCombatSize(classId), faceLeft: true });
+    } else if (sprite) {
+      sprite.classList.add('attack');
+      setTimeout(() => sprite.classList.remove('attack'), 420);
+    }
     if (act.label === 'Guard') { this.log(`${name} raises their guard.`, 'log-good'); await sleep(300); return; }
     if (act.label) this.log(`${name} uses ${act.label}!`, 'log-good');
     for (const t of act.targets || []) {
@@ -1242,6 +1276,9 @@ class Fight {
     this.log('You fall! Your companions fight on — hold fast for the next floor.', 'log-sys');
     SFX.death();
     this.renderPlayers(this._actingKey);
+    if (heroHasAnim(this.run.classId, 'death')) {
+      playHeroAnim(this.el.querySelector('#sprite-player'), this.run.classId, 'death', { target: heroCombatSize(this.run.classId), holdLast: true, faceLeft: true });
+    }
   }
 
   /* ---- two-phase boss transform (§51 Demon King) ---- */
@@ -1402,10 +1439,16 @@ class Fight {
       : [this.enemies[this.target]].filter(e => e && e.hp > 0);
 
     const spriteP = this.el.querySelector('#sprite-player');
-    spriteP.classList.add('attack');
-    setTimeout(() => spriteP.classList.remove('attack'), 420);
+    const heroAnim = this.pickHeroAnim(sk);
+    if (heroAnim && heroHasAnim(this.run.classId, heroAnim)) {
+      // Play sheet anim; don't also bounce-transform or it fights the sprite
+      await playHeroAnim(spriteP, this.run.classId, heroAnim, { target: heroCombatSize(this.run.classId), faceLeft: true });
+    } else if (spriteP) {
+      spriteP.classList.add('attack');
+      setTimeout(() => spriteP.classList.remove('attack'), 420);
+    }
 
-    const actOps = { k: 'cact', label: sk.name, targets: [] };
+    const actOps = { k: 'cact', label: sk.name, targets: [], heroAnim };
     if (sk.target === 'self') {
       this.applySelfSkill(sk, d);
     } else {
@@ -1521,8 +1564,10 @@ class Fight {
     this.run.consumables.splice(idx, 1);
     const actOps = { k: 'cact', label: c.name, targets: [] };
     if (c.heal) { const amt = heal(this.run, c.heal); this.float(this.el.querySelector('#sprite-player'), `+${amt}`, 'heal'); SFX.heal(); }
+    if (c.healPct) { const amt = heal(this.run, Math.round(this.run.maxHp * c.healPct)); this.float(this.el.querySelector('#sprite-player'), `+${amt}`, 'heal'); SFX.heal(); }
     if (c.mana) { restoreMana(this.run, c.mana); this.float(this.el.querySelector('#sprite-player'), `+${c.mana}`, 'mana'); }
     if (c.fame) changeFame(this.run, c.fame);
+    if (c.foodBuff) this.run.foodBuff = { ...c.foodBuff, floorsLeft: c.foodBuff.floors || 3 };
     if (c.cure) { this.player.statuses = {}; this.log('Ailments cured.', 'log-good'); }
     if (c.bombDmg) {
       for (const e of this.aliveEnemies()) {
@@ -1775,7 +1820,15 @@ class Fight {
   /* ---------------- end conditions (solo) ---------------- */
   checkEndSolo() {
     if (this.shared) return this.ended;
-    if (this.run.hp <= 0) { this.finishSolo('dead'); return true; }
+    if (this.run.hp <= 0) {
+      if (heroHasAnim(this.run.classId, 'death')) {
+        playHeroAnim(this.el.querySelector('#sprite-player'), this.run.classId, 'death', { target: heroCombatSize(this.run.classId), holdLast: true, faceLeft: true });
+        this.finishSolo('dead', { _delayMs: 1100 });
+      } else {
+        this.finishSolo('dead');
+      }
+      return true;
+    }
     if (this.aliveEnemies().length === 0) {
       if (this.maybeTransform()) return false;
       const d = this.d();
@@ -1798,6 +1851,8 @@ class Fight {
     this.ended = true;
     if (CONFIG.charge.resetAfterCombat) this.charge = 0;
     this.rng.advance?.();
-    setTimeout(() => this.resolve({ result, noDamage: !this.damageTaken, usedUltimate: !!this.usedUltimate, ...extra }), result === 'win' ? 500 : 900);
+    const delay = extra._delayMs ?? (result === 'win' ? 500 : 900);
+    const { _delayMs, ...rest } = extra;
+    setTimeout(() => this.resolve({ result, noDamage: !this.damageTaken, usedUltimate: !!this.usedUltimate, ...rest }), delay);
   }
 }

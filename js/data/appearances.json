@@ -1,0 +1,355 @@
+{
+  "cell": 32,
+  "appearances": {
+    "warrior": [
+      {
+        "id": "warrior1",
+        "name": "Vanguard",
+        "f": "assets/img/heroes/warrior1.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "warrior2",
+        "name": "Phalanx",
+        "f": "assets/img/heroes/warrior2.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "warrior3",
+        "name": "Raider",
+        "f": "assets/img/heroes/warrior3.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "warrior4",
+        "name": "Captain",
+        "f": "assets/img/heroes/warrior4.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "warrior5",
+        "name": "Bulwark",
+        "f": "assets/img/heroes/warrior5.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "warrior6",
+        "name": "Tower Guard",
+        "f": "assets/img/heroes/warrior6.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "warrior7",
+        "name": "Champion",
+        "f": "assets/img/heroes/warrior7.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "warrior8",
+        "name": "Warlord",
+        "f": "assets/img/heroes/warrior8.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      }
+    ],
+    "mage": [
+      {
+        "id": "mage1",
+        "name": "Acolyte",
+        "f": "assets/img/heroes/mage1.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "mage2",
+        "name": "Channeler",
+        "f": "assets/img/heroes/mage2.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "mage3",
+        "name": "War-Mage",
+        "f": "assets/img/heroes/mage3.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "mage4",
+        "name": "Archivist",
+        "f": "assets/img/heroes/mage4.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      }
+    ],
+    "archer": [
+      {
+        "id": "ranger",
+        "name": "Pathfinder",
+        "f": "assets/img/heroes/ranger.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "ranger2",
+        "name": "Scout",
+        "f": "assets/img/heroes/ranger2.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      }
+    ],
+    "rogue": [
+      {
+        "id": "rogue",
+        "name": "Cutpurse",
+        "f": "assets/img/heroes/rogue.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "rogue2",
+        "name": "Shadow",
+        "f": "assets/img/heroes/rogue2.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "rogue3",
+        "name": "Duelist",
+        "f": "assets/img/heroes/rogue3.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      }
+    ],
+    "priest": [
+      {
+        "id": "priest1",
+        "name": "Acolyte",
+        "f": "assets/img/heroes/priest1.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "priest2",
+        "name": "Chaplain",
+        "f": "assets/img/heroes/priest2.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "priest3",
+        "name": "Hierarch",
+        "f": "assets/img/heroes/priest3.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      }
+    ],
+    "warlock": [
+      {
+        "id": "warlock1",
+        "name": "Pactbound",
+        "f": "assets/img/heroes/warlock1.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "warlock2",
+        "name": "Hexer",
+        "f": "assets/img/heroes/warlock2.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      }
+    ],
+    "bard": [
+      {
+        "id": "bard1",
+        "name": "Troubadour",
+        "f": "assets/img/heroes/bard1.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      }
+    ],
+    "spellsword": [
+      {
+        "id": "spellsword1",
+        "name": "Runic Blade",
+        "f": "assets/img/heroes/spellsword1.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "spellsword2",
+        "name": "Arcane Duelist",
+        "f": "assets/img/heroes/spellsword2.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      }
+    ]
+  },
+  "npcs": {
+    "farmer1": {
+      "id": "farmer1",
+      "f": "assets/img/npcs/farmer1.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    "farmer2": {
+      "id": "farmer2",
+      "f": "assets/img/npcs/farmer2.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    "farmer3": {
+      "id": "farmer3",
+      "f": "assets/img/npcs/farmer3.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    "farmer4": {
+      "id": "farmer4",
+      "f": "assets/img/npcs/farmer4.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    "farmer5": {
+      "id": "farmer5",
+      "f": "assets/img/npcs/farmer5.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    "farmer6": {
+      "id": "farmer6",
+      "f": "assets/img/npcs/farmer6.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    "npc1": {
+      "id": "npc1",
+      "f": "assets/img/npcs/npc1.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    "npc2": {
+      "id": "npc2",
+      "f": "assets/img/npcs/npc2.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    "oldman1": {
+      "id": "oldman1",
+      "f": "assets/img/npcs/oldman1.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    "oldman2": {
+      "id": "oldman2",
+      "f": "assets/img/npcs/oldman2.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    "viking1": {
+      "id": "viking1",
+      "f": "assets/img/npcs/viking1.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    "viking2": {
+      "id": "viking2",
+      "f": "assets/img/npcs/viking2.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    "viking3": {
+      "id": "viking3",
+      "f": "assets/img/npcs/viking3.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    "viking4": {
+      "id": "viking4",
+      "f": "assets/img/npcs/viking4.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    "viking5": {
+      "id": "viking5",
+      "f": "assets/img/npcs/viking5.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    }
+  },
+  "labels": {
+    "warrior1": "Vanguard",
+    "warrior2": "Phalanx",
+    "warrior3": "Raider",
+    "warrior4": "Captain",
+    "warrior5": "Bulwark",
+    "warrior6": "Tower Guard",
+    "warrior7": "Champion",
+    "warrior8": "Warlord",
+    "mage1": "Acolyte",
+    "mage2": "Channeler",
+    "mage3": "War-Mage",
+    "mage4": "Archivist",
+    "ranger": "Pathfinder",
+    "ranger2": "Scout",
+    "rogue": "Cutpurse",
+    "rogue2": "Shadow",
+    "rogue3": "Duelist",
+    "priest1": "Acolyte",
+    "priest2": "Chaplain",
+    "priest3": "Hierarch",
+    "warlock1": "Pactbound",
+    "warlock2": "Hexer",
+    "bard1": "Troubadour",
+    "spellsword1": "Runic Blade",
+    "spellsword2": "Arcane Duelist"
+  }
+}

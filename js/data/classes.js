@@ -144,6 +144,21 @@ export const CLASSES = {
     aoeSkill: 'grave_bloom',
     growthBias: ['int', 'int', 'wis', 'lk'],
   },
+  spellsword: {
+    id: 'spellsword',
+    name: 'Spellsword',
+    epithet: 'Steel in one hand, syntax in the other. Refuses to specialize.',
+    accent: '#5ec8c0',
+    resource: { name: 'Arcana', color: '#5ec8c0' },
+    weapons: ['sword', 'staff'],
+    startWeapon: 'runed_shortsword',
+    base: { hp: 40, mp: 34, str: 7, dex: 5, int: 7, wis: 5, lk: 4 },
+    roll: { hp: 10, mp: 10, str: 4, dex: 3, int: 4, wis: 3, lk: 3 },
+    startSkills: ['rune_edge', 'arc_ward', 'mana_lunge'],
+    pool: { common: 'sigil_thrust', rare: 'blade_tempest' },
+    aoeSkill: 'blade_tempest',
+    growthBias: ['str', 'int', 'str', 'int'],
+  },
 };
 
 /* ============================================================
@@ -456,6 +471,42 @@ export const SUBCLASSES = {
     hint: 'An option with your own handwriting on it.',
     secretCond: run => (run.sigils?.length || 0) >= 1 || run.kills >= 25,
     bonus: { int: 4, wis: 3, hp: 15 }, skill: 'phylactery_pulse',
+    next: null,
+  },
+
+  /* ---- Spellsword ---- */
+  spellknight: {
+    id: 'spellknight', name: 'Spellknight', parent: 'spellsword', tier: 1,
+    blurb: 'You put the ward on the blade and the blade on the problem.',
+    hint: 'The aegis-road: steel that protects as it cuts.',
+    bonus: { str: 2, int: 2, hp: 16, mp: 6 }, skill: 'aegis_cut',
+    next: 'arcane_paladin',
+  },
+  hexblade: {
+    id: 'hexblade', name: 'Hexblade', parent: 'spellsword', tier: 1,
+    blurb: 'Every cut leaves a footnote the enemy would rather unread.',
+    hint: 'The brand-road: hex first, then harvest the weakness.',
+    bonus: { int: 3, str: 2, mp: 10 }, skill: 'hex_rend',
+    next: 'runeblade',
+  },
+  arcane_paladin: {
+    id: 'arcane_paladin', name: 'Arcane Paladin', parent: 'spellknight', tier: 2,
+    blurb: 'Oath and formula agree for once. The tower files a complaint.',
+    bonus: { str: 3, int: 3, wis: 2, hp: 22 }, skill: 'sanctum_blade',
+  },
+  runeblade: {
+    id: 'runeblade', name: 'Runeblade', parent: 'hexblade', tier: 2,
+    blurb: 'Your sword is a living manuscript. Enemies are the edit.',
+    bonus: { int: 4, str: 3, mp: 18 }, skill: 'living_script',
+  },
+  void_edge: {
+    id: 'void_edge', name: 'Void Edge', parent: 'spellsword', tier: 1, secret: true,
+    blurb: 'You learned to cut with the space between steel and spell.',
+    hint: 'An option that only appears when both hands are equally bloody.',
+    secretCond: run =>
+      (run.stats.str >= 12 && run.stats.int >= 12)
+      || (run.kills >= 20 && run.stats.str >= 10 && run.stats.int >= 10),
+    bonus: { str: 3, int: 4, hp: 12, mp: 12 }, skill: 'eclipse_cut',
     next: null,
   },
 };

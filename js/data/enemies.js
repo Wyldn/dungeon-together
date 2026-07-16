@@ -348,6 +348,112 @@ export function bossById(id) {
   return null;
 }
 
+/** Event / social NPCs — harder than mimics at the same floor (elite-leaning). */
+export const NPC_ENEMIES = {
+  veteran_blade: {
+    id: 'veteran_blade', name: 'Veteran Blade', glyph: '⚔️', hp: 48, atk: 10, def: 3, spd: 7,
+    gold: [28, 48], xp: 22, intelligent: true, elite: true,
+    specials: [{ at: 3, name: 'Parade Cut', mult: 1.55, desc: 'raises a notched parade blade' }],
+  },
+  tower_scholar: {
+    id: 'tower_scholar', name: 'Tower Scholar', glyph: '📖', hp: 42, atk: 11, def: 2, spd: 8,
+    gold: [30, 52], xp: 24, caster: true, intelligent: true, elite: true,
+    specials: [{ at: 3, name: 'Errata', mult: 1.45, aoe: true, desc: 'mutters a correcting spell' }],
+  },
+  pathfinder_veteran: {
+    id: 'pathfinder_veteran', name: 'Pathfinder Veteran', glyph: '🏹', hp: 44, atk: 11, def: 2, spd: 10,
+    gold: [26, 46], xp: 23, intelligent: true, elite: true,
+    specials: [{ at: 3, name: 'Trail Shot', mult: 1.6, desc: 'nocks without looking' }],
+  },
+  northman_raider: {
+    id: 'northman_raider', name: 'Northman Raider', glyph: '🪓', hp: 52, atk: 12, def: 3, spd: 6,
+    gold: [32, 55], xp: 25, intelligent: true, elite: true,
+    specials: [{ at: 4, name: 'Frost Howl', mult: 1.7, desc: 'breathes winter into the swing' }],
+  },
+  northman_raider2: {
+    id: 'northman_raider2', name: 'Northman Shieldbearer', glyph: '🛡️', hp: 56, atk: 10, def: 5, spd: 5,
+    gold: [30, 50], xp: 24, intelligent: true, elite: true,
+    specials: [{ at: 4, name: 'Shield Wall', mult: 1.4, desc: 'plants and answers' }],
+  },
+  northman_raider3: {
+    id: 'northman_raider3', name: 'Northman Skald', glyph: '🎵', hp: 46, atk: 11, def: 2, spd: 8,
+    gold: [28, 50], xp: 24, intelligent: true, elite: true,
+    specials: [{ at: 3, name: 'War Verse', mult: 1.5, aoe: true, desc: 'sings something sharp' }],
+  },
+  northman_raider4: {
+    id: 'northman_raider4', name: 'Northman Berserk', glyph: '💥', hp: 50, atk: 13, def: 2, spd: 7,
+    gold: [34, 58], xp: 26, intelligent: true, elite: true,
+    specials: [{ at: 3, name: 'Blood Spree', mult: 1.75, desc: 'stops smiling' }],
+  },
+  northman_raider5: {
+    id: 'northman_raider5', name: 'Northman Jarl', glyph: '👑', hp: 58, atk: 12, def: 4, spd: 6,
+    gold: [36, 60], xp: 28, intelligent: true, elite: true,
+    specials: [{ at: 4, name: 'Jarl\'s Due', mult: 1.8, stun: 0.3, desc: 'claims the floor' }],
+  },
+  farmer_a: {
+    id: 'farmer_a', name: 'Stubborn Farmer', glyph: '🌾', hp: 26, atk: 5, def: 1, spd: 5,
+    gold: [4, 10], xp: 7, pack: true, intelligent: true,
+    specials: [{ at: 4, name: 'Pitchfork Prod', mult: 1.35, desc: 'levels a pitchfork' }],
+  },
+  farmer_b: {
+    id: 'farmer_b', name: 'Orchard Hand', glyph: '🍎', hp: 24, atk: 5, def: 1, spd: 6,
+    gold: [4, 9], xp: 6, pack: true, intelligent: true,
+    specials: [{ at: 4, name: 'Basket Swing', mult: 1.3, desc: 'swings a heavy basket' }],
+  },
+  farmer_c: {
+    id: 'farmer_c', name: 'Mill Hand', glyph: '🌽', hp: 28, atk: 6, def: 1, spd: 4,
+    gold: [5, 11], xp: 7, pack: true, intelligent: true,
+    specials: [{ at: 5, name: 'Sack Toss', mult: 1.4, desc: 'hefts a grain sack' }],
+  },
+  farmer_d: {
+    id: 'farmer_d', name: 'Field Watch', glyph: '🥕', hp: 25, atk: 5, def: 1, spd: 6,
+    gold: [4, 10], xp: 6, pack: true, intelligent: true,
+    specials: [{ at: 4, name: 'Scarecrow Feint', mult: 1.25, stun: 0.25, desc: 'feints like a scarecrow' }],
+  },
+  farmer_e: {
+    id: 'farmer_e', name: 'Dairy Hand', glyph: '🧀', hp: 27, atk: 5, def: 2, spd: 4,
+    gold: [5, 10], xp: 7, pack: true, intelligent: true,
+    specials: [{ at: 4, name: 'Churn Bash', mult: 1.35, desc: 'brandishes a churn' }],
+  },
+  farmer_f: {
+    id: 'farmer_f', name: 'Hedge Witch\'s Kin', glyph: '🌿', hp: 24, atk: 6, def: 1, spd: 7,
+    gold: [5, 12], xp: 8, pack: true, intelligent: true, caster: true,
+    specials: [{ at: 3, name: 'Hedge Pinch', mult: 1.3, poisonSure: true, desc: 'pins a bitter leaf' }],
+  },
+  roadside_npc: {
+    id: 'roadside_npc', name: 'Roadside Climber', glyph: '🧳', hp: 46, atk: 10, def: 3, spd: 7,
+    gold: [24, 44], xp: 20, intelligent: true, elite: true,
+    specials: [{ at: 3, name: 'Trail Bargain', mult: 1.5, desc: 'draws a travel blade' }],
+  },
+  roadside_npc2: {
+    id: 'roadside_npc2', name: 'Wandering Hireling', glyph: '🗡️', hp: 44, atk: 11, def: 2, spd: 8,
+    gold: [26, 46], xp: 21, intelligent: true, elite: true,
+    specials: [{ at: 3, name: 'Contract Cut', mult: 1.55, desc: 'honors a bloody clause' }],
+  },
+  oldman_gentle: {
+    id: 'oldman_gentle', name: 'Kindly Elder', glyph: '🧓', hp: 40, atk: 8, def: 2, spd: 6,
+    gold: [20, 40], xp: 18, intelligent: true,
+    specials: [{ at: 4, name: 'Cane Tap', mult: 1.35, desc: 'taps the cane once' }],
+  },
+  oldman_wrath: {
+    id: 'oldman_wrath', name: 'Trialmaster', glyph: '⚡', hp: 95, atk: 16, def: 5, spd: 9,
+    gold: [80, 140], xp: 55, intelligent: true, elite: true, boss: true,
+    specials: [
+      { at: 3, name: 'Lesson One', mult: 1.6, desc: 'the cane becomes a verdict' },
+      { at: 6, name: 'Final Examination', mult: 2.1, aoe: true, stun: 0.25, desc: 'the air itself quizzes you' },
+    ],
+  },
+};
+
+export function findEnemySpec(id) {
+  if (NPC_ENEMIES[id]) return NPC_ENEMIES[id];
+  for (const pool of Object.values(ENEMIES)) {
+    const found = pool.find(e => e.id === id);
+    if (found) return found;
+  }
+  return bossById(id);
+}
+
 // Trial-floor battle modifiers (every 5th non-boss floor).
 export const MODIFIERS = [
   { id: 'ambush', name: 'Ambush!', desc: 'Enemies strike first this battle.', enemyFirst: true },

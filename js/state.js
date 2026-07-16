@@ -5,6 +5,7 @@ import { RACES } from './data/races.js';
 import { CONFIG } from './data/config.js';
 import { rollGrowthRank } from './data/ranks.js';
 import { makeRng, randomSeed } from './rng.js';
+import { defaultAppearanceId } from './data/appearances.js';
 
 const META_KEY = 'dt_meta_v1';
 const RUN_KEY = 'dt_run_v2'; // schema v2: fame, races, 8 equip slots, growth
@@ -170,7 +171,7 @@ export function awakenMonolith(gen, seed = randomSeed()) {
 
 /* ------------------------- RUN (per-climb) ------------------------- */
 
-export function newRun(meta, { classId, raceId = 'human', originId = null, name, seed = randomSeed(), gen: providedGen = null, fateRace = false, fateClass = false } = {}) {
+export function newRun(meta, { classId, raceId = 'human', originId = null, name, seed = randomSeed(), gen: providedGen = null, fateRace = false, fateClass = false, appearanceId = null } = {}) {
   const opts = { fateRace, fateClass };
   const cls = CLASSES[classId];
   const up = id => upgradeRank(meta, id);
@@ -191,6 +192,7 @@ export function newRun(meta, { classId, raceId = 'human', originId = null, name,
     biomeId: 'forest',
     name,
     classId,
+    appearanceId: appearanceId || defaultAppearanceId(classId),
     className: cls.name,
     subclassId: null,
     raceId,
@@ -282,6 +284,8 @@ function migrateRun(run) {
   run.recentCategories = run.recentCategories || [];
   run.flags = run.flags || {};
   run.bossPicks = run.bossPicks || {};
+  run.appearanceId = run.appearanceId || defaultAppearanceId(run.classId);
+  run.foodBuff = run.foodBuff || null;
   run.equipment = {
     weapon: null, helmet: null, chest: null, legs: null, boots: null,
     accessory1: null, accessory2: null, accessory3: null,

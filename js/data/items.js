@@ -12,6 +12,7 @@ export const EQUIP_SLOTS = ['weapon', 'helmet', 'chest', 'legs', 'boots', 'acces
 export const WEAPONS = [
   // ---- starting weapons (one per class) ----
   { id: 'rusty_sword', name: 'Rusty Sword', slot: 'weapon', wtype: 'sword', rarity: 'common', tier: 1, atk: 2, desc: 'Sword · +2 damage. Tetanus sold separately.', price: 25 },
+  { id: 'runed_shortsword', name: 'Runed Shortsword', slot: 'weapon', wtype: 'sword', rarity: 'common', tier: 1, atk: 2, int: 1, desc: 'Sword · +2 damage, +1 INT. A practice blade that still remembers its grammar.', price: 30 },
   { id: 'oak_staff', name: 'Oak Staff', slot: 'weapon', wtype: 'staff', rarity: 'common', tier: 1, atk: 1, int: 2, desc: 'Staff · +1 damage, +2 INT.', price: 30 },
   { id: 'hunting_bow', name: 'Hunting Bow', slot: 'weapon', wtype: 'bow', rarity: 'common', tier: 1, atk: 2, dex: 1, desc: 'Bow · +2 damage, +1 DEX.', price: 30 },
   { id: 'runed_dagger_worn', name: 'Worn Dagger', slot: 'weapon', wtype: 'dagger', rarity: 'common', tier: 1, atk: 2, crit: 3, desc: 'Dagger · +2 damage, +3% crit.', price: 25 },
@@ -41,6 +42,11 @@ export const WEAPONS = [
   { id: 'titan_maul', name: 'Titan\'s Maul', slot: 'weapon', wtype: 'mace', rarity: 'epic', tier: 5, atk: 13, str: 5, desc: 'Mace · +13 damage, +5 STR. Swings like a verdict.', price: 350 },
   // ---- class-flavored finds (widen event / shop / loot variety) ----
   { id: 'battle_cleaver', name: 'Battle Cleaver', slot: 'weapon', wtype: 'axe', rarity: 'uncommon', tier: 2, atk: 5, str: 2, desc: 'Axe · +5 damage, +2 STR. Made for splitting problems.', price: 88 },
+  { id: 'farmer_sickle', name: 'Harvest Sickle', slot: 'weapon', wtype: 'dagger', rarity: 'uncommon', tier: 1, atk: 3, crit: 4, exclusive: true, desc: 'Dagger · +3 damage, +4% crit. Meant for wheat. Works on other things. (event)', price: 70 },
+  { id: 'farmer_pitchfork', name: 'Pitchfork', slot: 'weapon', wtype: 'axe', rarity: 'uncommon', tier: 1, atk: 4, str: 1, exclusive: true, desc: 'Axe · +4 damage, +1 STR. Three tines, one opinion. (event)', price: 75 },
+  { id: 'farmer_rake', name: 'Iron Rake', slot: 'weapon', wtype: 'axe', rarity: 'uncommon', tier: 1, atk: 3, dex: 1, exclusive: true, desc: 'Axe · +3 damage, +1 DEX. Rakes leaves; rakes faces. (event)', price: 70 },
+  { id: 'elder_cane', name: 'Trialmaster\'s Cane', slot: 'weapon', wtype: 'staff', rarity: 'legendary', tier: 5, atk: 12, int: 5, wis: 5, mp: 16, exclusive: true, desc: 'Legendary staff · +12 dmg, +5 INT/WIS, +16 resource. (event)', price: 750 },
+  { id: 'elder_blade', name: 'Lesson Steel', slot: 'weapon', wtype: 'sword', rarity: 'unique', tier: 5, atk: 22, str: 6, int: 6, crit: 12, dmgMult: 1.12, exclusive: true, unique: true, noAffix: true, desc: 'UNIQUE · +22 dmg, +6 STR/INT, +12% crit, +12% damage. The hard lesson.', price: 1350 },
   { id: 'raider_hatchet', name: 'Raider\'s Hatchet', slot: 'weapon', wtype: 'axe', rarity: 'rare', tier: 3, atk: 7, str: 2, crit: 5, desc: 'Axe · +7 damage, +2 STR, +5% crit.', price: 165 },
   { id: 'executioner_axe', name: 'Tower Executioner', slot: 'weapon', wtype: 'axe', rarity: 'epic', tier: 4, atk: 11, str: 4, crit: 6, desc: 'Axe · +11 damage, +4 STR, +6% crit. Still smells of paperwork.', price: 310 },
   { id: 'judge_gavel', name: 'Judge\'s Gavel', slot: 'weapon', wtype: 'mace', rarity: 'rare', tier: 3, atk: 6, wis: 2, str: 2, desc: 'Mace · +6 damage, +2 WIS, +2 STR. Sentences are optional.', price: 170 },
@@ -87,6 +93,13 @@ export const HELMETS = [
   { id: 'dragonbone_helm', name: 'Dragonbone Helm', slot: 'helmet', rarity: 'epic', tier: 4, def: 4, hp: 15, str: 2, desc: '+4 defense, +15 HP, +2 STR.', price: 280 },
   { id: 'crown_of_ash', name: 'Crown of Ash', slot: 'helmet', rarity: 'epic', tier: 5, def: 3, int: 4, wis: 2, mp: 14, desc: '+3 defense, +4 INT, +2 WIS, +14 max resource.', price: 320 },
   { id: 'scout_coif', name: 'Scout\'s Coif', slot: 'helmet', rarity: 'uncommon', tier: 2, def: 1, dex: 2, dodge: 3, desc: '+1 defense, +2 DEX, +3% dodge.', price: 75 },
+  { id: 'farmer_hat', name: 'Farmer\'s Hat', slot: 'helmet', rarity: 'uncommon', tier: 1, def: 1, wis: 1, hp: 4, exclusive: true, desc: '+1 defense, +1 WIS, +4 HP. Keeps the sun — and judgment — off. (event)', price: 55 },
+  { id: 'veteran_helm', name: 'Parade Helm', slot: 'helmet', rarity: 'rare', tier: 3, def: 3, str: 2, hp: 8, exclusive: true, desc: '+3 defense, +2 STR, +8 HP. Still polished for review. (event)', price: 200 },
+  { id: 'scholar_cap', name: 'Ink-Stained Cap', slot: 'helmet', rarity: 'rare', tier: 3, def: 1, int: 3, mp: 10, exclusive: true, desc: '+1 defense, +3 INT, +10 resource. Smells of footnotes. (event)', price: 195 },
+  { id: 'pathfinder_hood', name: 'Trail Hood', slot: 'helmet', rarity: 'rare', tier: 3, def: 2, dex: 3, crit: 4, exclusive: true, desc: '+2 defense, +3 DEX, +4% crit. Leaves do not snag it. (event)', price: 200 },
+  { id: 'northman_helm', name: 'Northman Helm', slot: 'helmet', rarity: 'rare', tier: 3, def: 3, str: 3, hp: 10, exclusive: true, desc: '+3 defense, +3 STR, +10 HP. Horns optional; attitude not. (event)', price: 210 },
+  { id: 'elder_circlet', name: 'Elder\'s Circlet', slot: 'helmet', rarity: 'legendary', tier: 5, def: 4, wis: 4, int: 3, mp: 12, exclusive: true, desc: 'Legendary · +4 DEF, +4 WIS, +3 INT, +12 resource. A quiet crown. (event)', price: 700 },
+  { id: 'elder_crown', name: 'Crown of Quiet Trials', slot: 'helmet', rarity: 'unique', tier: 5, def: 6, wis: 6, int: 6, lk: 4, mp: 20, exclusive: true, unique: true, noAffix: true, desc: 'UNIQUE · +6 DEF, +6 WIS/INT, +4 LK, +20 resource. Earned, not found.', price: 1300 },
   { id: 'prayer_veil', name: 'Prayer Veil', slot: 'helmet', rarity: 'rare', tier: 3, def: 1, wis: 3, mp: 8, desc: '+1 defense, +3 WIS, +8 max resource.', price: 145 },
   { id: 'bone_circlet', name: 'Bone Circlet', slot: 'helmet', rarity: 'rare', tier: 3, def: 2, int: 2, lifesteal: 0.05, exclusive: true, desc: '+2 defense, +2 INT, 5% lifesteal. (event-exclusive)', price: 190 },
   { id: 'horizon_crown', name: 'Crown of the Horizon', slot: 'helmet', rarity: 'wrld', tier: 5, def: 10, int: 8, wis: 8, lk: 6, mp: 24, crit: 8, desc: 'WRLD · the crown that sees past the tower. +10 DEF, +8 INT/WIS, +6 LK, +24 resource, +8% crit.', price: 2800, wrld: true, noAffix: true },
@@ -101,6 +114,9 @@ export const CHEST_ARMOR = [
   { id: 'shadow_shroud', name: 'Shroud of Still Shadows', slot: 'chest', rarity: 'epic', tier: 4, def: 5, dodge: 8, dex: 3, desc: '+5 defense, +8% dodge, +3 DEX.', price: 280 },
   { id: 'mage_regalia', name: 'Archmagus Regalia', slot: 'chest', rarity: 'epic', tier: 5, def: 4, int: 5, wis: 3, mp: 20, desc: '+4 defense, +5 INT, +3 WIS, +20 max resource.', price: 320 },
   { id: 'meditation_sash', name: 'Meditation Sash', slot: 'chest', rarity: 'uncommon', tier: 2, def: 2, dex: 2, wis: 1, desc: '+2 defense, +2 DEX, +1 WIS. Ties like a promise.', price: 85 },
+  { id: 'farmer_tunic', name: 'Farmer\'s Tunic', slot: 'chest', rarity: 'uncommon', tier: 1, def: 2, hp: 8, exclusive: true, desc: '+2 defense, +8 HP. Patched thrice, still proud. (event)', price: 60 },
+  { id: 'veteran_cuirass', name: 'Veteran\'s Cuirass', slot: 'chest', rarity: 'rare', tier: 3, def: 5, str: 2, hp: 12, exclusive: true, desc: '+5 defense, +2 STR, +12 HP. Dents with stories. (event)', price: 220 },
+  { id: 'scholar_robe', name: 'Tower Scholar\'s Robe', slot: 'chest', rarity: 'rare', tier: 3, def: 3, int: 4, mp: 14, exclusive: true, desc: '+3 defense, +4 INT, +14 resource. (event)', price: 220 },
   { id: 'vanguard_cuirass', name: 'Vanguard Cuirass', slot: 'chest', rarity: 'rare', tier: 3, def: 5, str: 2, hp: 10, desc: '+5 defense, +2 STR, +10 HP.', price: 185 },
   { id: 'grave_shroud', name: 'Grave Shroud', slot: 'chest', rarity: 'rare', tier: 3, def: 3, int: 3, mp: 10, exclusive: true, desc: '+3 defense, +3 INT, +10 resource. (event-exclusive)', price: 210 },
   // event-exclusive: the necromancer\'s coat + the vampire\'s cape (§1, §16)
@@ -119,6 +135,7 @@ export const LEG_ARMOR = [
   { id: 'warplate_legs', name: 'Warplate Legguards', slot: 'legs', rarity: 'rare', tier: 4, def: 5, hp: 12, desc: '+5 defense, +12 max HP.', price: 200 },
   { id: 'infernal_greaves', name: 'Infernal Greaves', slot: 'legs', rarity: 'epic', tier: 5, def: 4, str: 3, dodge: 4, desc: '+4 defense, +3 STR, +4% dodge.', price: 300 },
   { id: 'ranger_chaps', name: 'Ranger\'s Chaps', slot: 'legs', rarity: 'uncommon', tier: 2, def: 2, dex: 2, dodge: 2, desc: '+2 defense, +2 DEX, +2% dodge.', price: 70 },
+  { id: 'farmer_pants', name: 'Farmer\'s Trousers', slot: 'legs', rarity: 'uncommon', tier: 1, def: 1, hp: 6, exclusive: true, desc: '+1 defense, +6 HP. Mud is a feature. (event)', price: 50 },
   { id: 'duelist_hose', name: 'Duelist\'s Hose', slot: 'legs', rarity: 'rare', tier: 3, def: 2, dex: 3, crit: 4, desc: '+2 defense, +3 DEX, +4% crit.', price: 155 },
 ];
 
@@ -214,6 +231,16 @@ export const CONSUMABLES = [
   { id: 'bomb', name: 'Alchemist\'s Bomb', rarity: 'uncommon', desc: 'Deal 40 damage to all enemies.', bombDmg: 40, price: 55 },
   { id: 'smelling_salts', name: 'Smelling Salts', rarity: 'rare', desc: 'Cure all ailments and restore 20 HP.', cure: true, heal: 20, price: 70 },
   { id: 'appraisal_scroll', name: 'Scroll of Appraisal', rarity: 'rare', desc: 'A single-use reading of your current potential.', appraisal: true, price: 90 },
+  // ---- farm foods (plain) ----
+  { id: 'farm_bread', name: 'Farmhouse Bread', rarity: 'common', desc: 'Restore 18 HP. Dense, honest, slightly judgmental.', heal: 18, price: 12 },
+  { id: 'farm_cheese', name: 'Wheel of Soft Cheese', rarity: 'common', desc: 'Restore 22 HP. The tower\'s mice envy you.', heal: 22, price: 14 },
+  { id: 'farm_stew', name: 'Traveler\'s Stew', rarity: 'common', desc: 'Restore 28 HP. One bowl, many vegetables.', heal: 28, price: 16 },
+  // ---- enchanted farm foods (heal% + short floor buff) ----
+  { id: 'enchanted_loaf', name: 'Sun-Warmed Loaf', rarity: 'uncommon', desc: 'Heal 22% HP. +8% damage for 3 floors.', healPct: 0.22, foodBuff: { dmgMult: 1.08, floors: 3 }, price: 40 },
+  { id: 'enchanted_honey', name: 'Hivegold Honey', rarity: 'uncommon', desc: 'Heal 20% HP. +1 resource regen for 3 floors.', healPct: 0.2, foodBuff: { manaRegen: 1, floors: 3 }, price: 42 },
+  { id: 'enchanted_root', name: 'Ironroot Mash', rarity: 'uncommon', desc: 'Heal 18% HP. Take 8% less damage for 3 floors.', healPct: 0.18, foodBuff: { dmgTakenMult: 0.92, floors: 3 }, price: 44 },
+  { id: 'enchanted_berry', name: 'Luckberry Tart', rarity: 'uncommon', desc: 'Heal 16% HP. +6% crit for 3 floors.', healPct: 0.16, foodBuff: { crit: 6, floors: 3 }, price: 46 },
+  { id: 'enchanted_cider', name: 'Orchard Cider', rarity: 'rare', desc: 'Heal 25% HP. +4% dodge and +1 initiative for 3 floors.', healPct: 0.25, foodBuff: { dodge: 4, initiative: 1, floors: 3 }, price: 55 },
 ];
 
 export const ALL_EQUIPMENT = [...WEAPONS, ...HELMETS, ...CHEST_ARMOR, ...LEG_ARMOR, ...BOOTS, ...ACCESSORIES];

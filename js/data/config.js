@@ -133,6 +133,8 @@ export const CONFIG = {
     cardsPerDrawFourChance: 0.10,
     sparkleChance: 0.5,        // chance an affinity actually shows its shimmer
     encounterCategoryWeight: 34, // relative weight of Combat cards in draws
+    // Face-down "mystery" path: hides identity; underlying draw is any eligible event
+    mysteryNodeChance: 0.10,
   },
 
   /* ---- technique slots unlocked by clearing boss floors ----
