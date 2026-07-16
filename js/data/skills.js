@@ -935,8 +935,8 @@ export const SKILLS = {
     COMP.shield(0.4), COMP.gainCharge(1),
   ),
   scholar_hex: composeSkill(
-    { id: 'scholar_hex', name: 'Scholar\'s Hex', class: 'special', fx: 'arcane',
-      desc: 'A footnote that bites. Modest damage; 75% chance to hex.' },
+    { id: 'scholar_hex', name: 'Apostate\'s Hex', class: 'special', fx: 'arcane',
+      desc: 'A footnote that bites back. Modest damage; 75% chance to hex.' },
     COMP.cost(16), COMP.charge(1), COMP.target('one'), COMP.dmg(105, 'best'),
     COMP.hex(0.75),
   ),
@@ -946,11 +946,11 @@ export const SKILLS = {
     COMP.cost(18), COMP.charge(2), COMP.target('one'), COMP.dmg(115, 'best'),
     COMP.hex(0.8),
   ),
-  northman_rage: composeSkill(
-    { id: 'northman_rage', name: 'Northman\'s Rage', class: 'special', fx: 'slash',
-      desc: 'Cold country anger. Heavy strike; you hit harder for 2 turns.' },
-    COMP.cost(22), COMP.charge(2), COMP.target('one'), COMP.dmg(150, 'best'),
-    COMP.buff('str', 1.35, 2),
+  axe_pack_cleave: composeSkill(
+    { id: 'axe_pack_cleave', name: 'Bearded Cleave', class: 'special', fx: 'slash',
+      desc: 'The old axe-pack habit: cut deep, take a little back. Heavy hit with lifesteal.' },
+    COMP.cost(20), COMP.charge(2), COMP.target('one'), COMP.dmg(145, 'best'),
+    COMP.lifesteal(0.25),
   ),
   harvest_swing: composeSkill(
     { id: 'harvest_swing', name: 'Harvest Swing', class: 'special', fx: 'blunt',

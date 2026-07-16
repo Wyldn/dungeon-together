@@ -287,6 +287,43 @@ export const ENEMY_ANIM = {
    "special": "powerup"
   },
   "ox": -40
+ },
+ // Player-facing packs reused as NPC enemies (flip:true faces them toward the party).
+ "blade_hero": {
+  "fw": 40,
+  "fh": 30,
+  "disp": 90,
+  "flip": true,
+  "states": {
+   "idle": { "f": "assets/img/anim/warrior/idle.png", "n": 5, "fps": 7, "loop": true },
+   "walk": { "f": "assets/img/anim/warrior/walk.png", "n": 6, "fps": 10, "loop": true },
+   "run": { "f": "assets/img/anim/warrior/run.png", "n": 6, "fps": 12, "loop": true },
+   "attack01": { "f": "assets/img/anim/warrior/attack01.png", "n": 10, "fps": 13, "once": true },
+   "attack02": { "f": "assets/img/anim/warrior/attack02.png", "n": 12, "fps": 13, "once": true },
+   "attack03": { "f": "assets/img/anim/warrior/attack03.png", "n": 8, "fps": 13, "once": true },
+   "hurt": { "f": "assets/img/anim/warrior/hurt.png", "n": 6, "fps": 12, "once": true },
+   "guard": { "f": "assets/img/anim/warrior/guard.png", "n": 5, "fps": 12, "once": true }
+  },
+  "roles": {
+   "idle": "idle",
+   "attack": "attack01",
+   "special": "attack02",
+   "hurt": "hurt",
+   "guard": "guard"
+  }
+ },
+ "dark_mage": {
+  "fw": 30,
+  "fh": 31,
+  "disp": 62,
+  "flip": true,
+  "states": {
+   "idle": { "f": "assets/img/anim/mage/idle.png", "n": 12, "fps": 7, "loop": true },
+   "walk": { "f": "assets/img/anim/mage/walk.png", "n": 4, "fps": 10, "loop": true }
+  },
+  "roles": {
+   "idle": "idle"
+  }
  }
 };
 

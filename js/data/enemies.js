@@ -229,33 +229,19 @@ export const BOSSES = {
     intro: '"Fifty floors," the Duke muses, drawing a sword made of other swords.\n"Impressive. The King will want to kill you personally. Let\'s disappoint him."',
     taunt: 'THE THRONE IS A PRIVILEGE. DYING HERE IS FREE.',
   },
-  // Two-phase final boss. Vorath first meets climbers as a churning mass of his
-  // own shed blood (phase 1 — the "demon slime"); destroy that shell and the true
-  // Demon King rises with a fresh HP bar (phase 2). Handled by `twoPhase` in
-  // combat.js (transform at 0 HP), distinct from the ≤50% `phases` enrage — which
-  // the king form keeps, so he still stops holding back on the back half.
-  // Total HP (200 + 340) matches the old single bar so tuning stays put.
+  // Default throne: Spike Sovereign. The two-phase slime→king Vorath fight lives
+  // on ALT_BOSSES[51] (~50% via pickBossForFloor).
   51: {
-    id: 'demon_king', name: 'VORATH — SHED BLOOD', glyph: '🩸', artId: 'demon_slime', biome: 'throne',
-    hp: 200, atk: 46, def: 10, spd: 11, gold: [0, 0], xp: 0, boss: true, twoPhase: true,
-    chargeGain: 1,
+    id: 'ashen_sovereign', name: 'ASHKAR, THE SPIKE SOVEREIGN', glyph: '🔥', biome: 'throne',
+    hp: 520, atk: 54, def: 10, spd: 12, gold: [0, 0], xp: 0, phases: true, boss: true, burn: 0.35,
+    chargeGain: 1, chargeOnPhase: 3,
+    cleanseCost: 1,
     specials: [
-      { at: 3, name: 'Hemorrhage', mult: 1.4, desc: 'the mass splits and lashes outward' },
-      { at: 6, name: 'CRIMSON TIDE', mult: 1.9, aoe: true, desc: 'a wave of boiling blood swells to the ceiling' },
+      { at: 3, name: 'Crystal Coronation', mult: 1.55, burnSure: true, desc: 'spine-crystals bloom from its mane' },
+      { at: 6, name: 'THE THRONE REMEMBERS SPIKES', mult: 2.1, aoe: true, desc: 'the room itself chooses a side — puncture' },
     ],
-    intro: 'The Demon King does not rise to meet you. He merely bleeds — and the blood\nremembers how to hate. It gathers, it stands, it turns its many eyes on you.\n"He will see you," it gurgles, "if you are worth the walk across the room."',
-    taunt: 'YOU ARE NOT WORTH HIS HANDS. YET.',
-    // destroy the shell → the true king rises (transform in combat.js)
-    phase2: {
-      artId: 'demon_king', name: 'VORATH, THE DEMON KING', glyph: '🜏',
-      hp: 340, atk: 56, def: 11, spd: 11, chargeGain: 1, chargeOnPhase: 3, phases: true, cleanseCost: 1,
-      specials: [
-        { at: 3, name: 'Century\'s Edge', mult: 1.5, desc: 'his blade remembers every hero it has ended' },
-        { at: 6, name: 'THE KING\'S QUESTION', mult: 2.0, aoe: true, desc: 'the air itself takes his side' },
-      ],
-      taunt: 'I HAVE KILLED HEROES WITH BETTER STATS THAN YOURS.',
-      transformText: 'The blood boils upward and FOLDS into a shape that remembers being a king.\nVorath sets down his book, marks his page, and finally stands.\n"Every century, one of you reaches this room. You are the first to make me rise.\nAre you the interesting kind?"',
-    },
+    intro: 'Something older than names sits the throne — a sovereign of spikes and molten light.\n"Interesting," it says, and the air crystallizes into knives.',
+    taunt: 'KINGS ARE TEMPORARY. SPIKES ARE FOREVER.',
   },
 };
 
@@ -328,17 +314,29 @@ export const ALT_BOSSES = {
     intro: 'The Duke is elsewhere. In his place: a horned cyclops of slag and flame,\npolishing the glow in its chest like a favorite hymn. "Malgrimm sends regrets," it says. "I do not."',
     taunt: 'THE THRONE CAN WAIT. YOUR ASH CANNOT.',
   },
+  // Two-phase alternate final boss (~50%). Shed-blood slime shell, then the true
+  // Demon King with a fresh bar (combat.js `twoPhase`). Total HP matches the old
+  // single-bar tuning. Distinct from ≤50% `phases` enrage — which the king keeps.
   51: {
-    id: 'ashen_sovereign', name: 'ASHKAR, THE SPIKE SOVEREIGN', glyph: '🔥', biome: 'throne',
-    hp: 520, atk: 54, def: 10, spd: 12, gold: [0, 0], xp: 0, phases: true, boss: true, burn: 0.35,
-    chargeGain: 1, chargeOnPhase: 3,
-    cleanseCost: 1,
+    id: 'demon_king', name: 'VORATH — SHED BLOOD', glyph: '🩸', artId: 'demon_slime', biome: 'throne',
+    hp: 200, atk: 46, def: 10, spd: 11, gold: [0, 0], xp: 0, boss: true, twoPhase: true,
+    chargeGain: 1,
     specials: [
-      { at: 3, name: 'Crystal Coronation', mult: 1.55, burnSure: true, desc: 'spine-crystals bloom from its mane' },
-      { at: 6, name: 'THE THRONE REMEMBERS SPIKES', mult: 2.1, aoe: true, desc: 'the room itself chooses a side — puncture' },
+      { at: 3, name: 'Hemorrhage', mult: 1.4, desc: 'the mass splits and lashes outward' },
+      { at: 6, name: 'CRIMSON TIDE', mult: 1.9, aoe: true, desc: 'a wave of boiling blood swells to the ceiling' },
     ],
-    intro: 'Vorath is not on the throne today. Something older sits there instead — a sovereign of\nspikes and molten light who ruled before names were invented.\n"Interesting," it says, and the air crystallizes into knives.',
-    taunt: 'KINGS ARE TEMPORARY. SPIKES ARE FOREVER.',
+    intro: 'The throne room is wrong. No king — only a churning mass of blood that stands up\nand turns its many eyes on you. "He will see you," it gurgles, "if you are worth the walk."',
+    taunt: 'YOU ARE NOT WORTH HIS HANDS. YET.',
+    phase2: {
+      artId: 'demon_king', name: 'VORATH, THE DEMON KING', glyph: '🜏',
+      hp: 340, atk: 56, def: 11, spd: 11, chargeGain: 1, chargeOnPhase: 3, phases: true, cleanseCost: 1,
+      specials: [
+        { at: 3, name: 'Century\'s Edge', mult: 1.5, desc: 'his blade remembers every hero it has ended' },
+        { at: 6, name: 'THE KING\'S QUESTION', mult: 2.0, aoe: true, desc: 'the air itself takes his side' },
+      ],
+      taunt: 'I HAVE KILLED HEROES WITH BETTER STATS THAN YOURS.',
+      transformText: 'The blood boils upward and FOLDS into a shape that remembers being a king.\nVorath sets down his book, marks his page, and finally stands.\n"Every century, one of you reaches this room. You are the first to make me rise.\nAre you the interesting kind?"',
+    },
   },
 };
 
@@ -365,45 +363,34 @@ export function bossById(id) {
 
 /** Event / social NPCs — harder than mimics at the same floor (elite-leaning). */
 export const NPC_ENEMIES = {
-  veteran_blade: {
-    id: 'veteran_blade', name: 'Veteran Blade', glyph: '⚔️', hp: 48, atk: 10, def: 3, spd: 7,
+  // Knight Hero Platformer pack (anim/warrior) — social duel NPC.
+  blade_hero: {
+    id: 'blade_hero', name: 'Oathbound Champion', glyph: '⚔️', hp: 50, atk: 11, def: 3, spd: 7,
     gold: [28, 48], xp: 22, intelligent: true, elite: true,
-    specials: [{ at: 3, name: 'Parade Cut', mult: 1.55, desc: 'raises a notched parade blade' }],
+    specials: [
+      { at: 3, name: 'Oath Swing', mult: 1.55, desc: 'raises a well-kept blade' },
+      { at: 5, name: 'Shield Answer', mult: 1.35, desc: 'plants and answers' },
+    ],
   },
-  tower_scholar: {
-    id: 'tower_scholar', name: 'Tower Scholar', glyph: '📖', hp: 42, atk: 11, def: 2, spd: 8,
+  // Blue-mage pack (anim/mage) — a scholar who slid into forbidden work.
+  dark_mage: {
+    id: 'dark_mage', name: 'Apostate Channeler', glyph: '🔮', hp: 44, atk: 12, def: 2, spd: 8,
     gold: [30, 52], xp: 24, caster: true, intelligent: true, elite: true,
-    specials: [{ at: 3, name: 'Errata', mult: 1.45, aoe: true, desc: 'mutters a correcting spell' }],
+    specials: [
+      { at: 3, name: 'Black Margin', mult: 1.45, aoe: true, desc: 'ink-smoke curls into a hex' },
+      { at: 5, name: 'Unwritten Name', mult: 1.7, desc: 'whispers something the tower forgot' },
+    ],
   },
   pathfinder_veteran: {
     id: 'pathfinder_veteran', name: 'Pathfinder Veteran', glyph: '🏹', hp: 44, atk: 11, def: 2, spd: 10,
     gold: [26, 46], xp: 23, intelligent: true, elite: true,
     specials: [{ at: 3, name: 'Trail Shot', mult: 1.6, desc: 'nocks without looking' }],
   },
-  northman_raider: {
-    id: 'northman_raider', name: 'Northman Raider', glyph: '🪓', hp: 52, atk: 12, def: 3, spd: 6,
-    gold: [32, 55], xp: 25, intelligent: true, elite: true,
-    specials: [{ at: 4, name: 'Frost Howl', mult: 1.7, desc: 'breathes winter into the swing' }],
-  },
-  northman_raider2: {
-    id: 'northman_raider2', name: 'Northman Shieldbearer', glyph: '🛡️', hp: 56, atk: 10, def: 5, spd: 5,
-    gold: [30, 50], xp: 24, intelligent: true, elite: true,
-    specials: [{ at: 4, name: 'Shield Wall', mult: 1.4, desc: 'plants and answers' }],
-  },
-  northman_raider3: {
-    id: 'northman_raider3', name: 'Northman Skald', glyph: '🎵', hp: 46, atk: 11, def: 2, spd: 8,
-    gold: [28, 50], xp: 24, intelligent: true, elite: true,
-    specials: [{ at: 3, name: 'War Verse', mult: 1.5, aoe: true, desc: 'sings something sharp' }],
-  },
-  northman_raider4: {
-    id: 'northman_raider4', name: 'Northman Berserk', glyph: '💥', hp: 50, atk: 13, def: 2, spd: 7,
+  // Pre-bob Viking class look (viking_axe_pack idle strip).
+  axe_northman: {
+    id: 'axe_northman', name: 'Axe-Pack Veteran', glyph: '🪓', hp: 54, atk: 12, def: 3, spd: 6,
     gold: [34, 58], xp: 26, intelligent: true, elite: true,
-    specials: [{ at: 3, name: 'Blood Spree', mult: 1.75, desc: 'stops smiling' }],
-  },
-  northman_raider5: {
-    id: 'northman_raider5', name: 'Northman Jarl', glyph: '👑', hp: 58, atk: 12, def: 4, spd: 6,
-    gold: [36, 60], xp: 28, intelligent: true, elite: true,
-    specials: [{ at: 4, name: 'Jarl\'s Due', mult: 1.8, stun: 0.3, desc: 'claims the floor' }],
+    specials: [{ at: 4, name: 'Bearded Cleave', mult: 1.75, desc: 'hefts an axe that remembers coastlines' }],
   },
   farmer_a: {
     id: 'farmer_a', name: 'Stubborn Farmer', glyph: '🌾', hp: 26, atk: 5, def: 1, spd: 5,

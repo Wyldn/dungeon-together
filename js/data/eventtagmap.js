@@ -107,10 +107,12 @@ export const EVENT_TAG_MAP = {
   last_rest: ['recovery', 'secret-flag', 'blessing'],
 
   /* ---- NPC cast (bob-sheet / legacy heroes) ---- */
-  veteran_blade_meet: ['npc-duel', 'combat-threat', 'equipment', 'mentor'],
-  tower_scholar_meet: ['npc-duel', 'combat-threat', 'equipment', 'mentor'],
+  blade_hero_meet: ['npc-duel', 'combat-threat', 'equipment', 'mentor'],
+  dark_mage_meet: ['npc-duel', 'combat-threat', 'equipment', 'mentor'],
   pathfinder_meet: ['npc-duel', 'combat-threat', 'equipment', 'mentor'],
-  northman_meet: ['npc-duel', 'combat-threat', 'equipment', 'fame-test'],
+  axe_northman_meet: ['npc-duel', 'combat-threat', 'equipment', 'mentor'],
+  cursed_knight_vigil: ['npc-duel', 'combat-threat', 'equipment', 'gamble'],
+  crowned_shadow: ['npc-duel', 'combat-threat', 'gamble'],
   roadside_climbers: ['npc-duel', 'combat-threat', 'equipment', 'blessing'],
   farmstead_meet: ['npc-duel', 'combat-threat', 'recovery', 'equipment'],
   oldman_trials: ['npc-duel', 'combat-threat', 'appraisal', 'mentor', 'gamble'],

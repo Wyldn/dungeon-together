@@ -29,6 +29,7 @@ CLASS_SKINS = {
     "warlock": ["warlock1", "warlock2"],
     "bard": ["bard1"],
     "spellsword": ["spellsword1", "spellsword2"],
+    "viking": ["viking1", "viking2", "viking3", "viking4", "viking5"],
 }
 
 NPC_SKINS = {
@@ -42,6 +43,7 @@ NPC_SKINS = {
     "npc2": "npc2",
     "oldman1": "oldman1",
     "oldman2": "oldman2",
+    # Same bob strips as the Viking class skins — kept under npcs/ for northman_meet.
     "viking1": "viking1",
     "viking2": "viking2",
     "viking3": "viking3",
@@ -75,6 +77,11 @@ SKIN_LABELS = {
     "bard1": "Troubadour",
     "spellsword1": "Runic Blade",
     "spellsword2": "Arcane Duelist",
+    "viking1": "Reaver",
+    "viking2": "Shieldbearer",
+    "viking3": "Skald",
+    "viking4": "Berserk",
+    "viking5": "Jarl",
 }
 
 
@@ -155,6 +162,8 @@ def copy_legacy_npc_art() -> None:
         "warrior.png": "old_warrior.png",
         "mage.png": "old_mage.png",
         "archer_old.png": "old_ranger.png",
+        # Axe-pack idle strip (pre-bob class look) → veteran NPC event art.
+        "viking.png": "old_viking.png",
     }
     for src_name, dst_name in mapping.items():
         src = OUT_HEROES / src_name

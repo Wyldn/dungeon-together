@@ -29,7 +29,11 @@ export function animSpriteHtml(uid, mon, { boss = false, dead = false } = {}) {
   // `ox` is how far the idle body sits from its canvas centre (the canvas is
   // sized to fit the widest attack, so it's lopsided). Shift it back so the
   // character stays centred under its own name/HP bar.
-  const shift = set.ox ? ` transform:translateX(${-set.ox * s}px);` : '';
+  // `flip` mirrors player-facing packs (left) for the enemy side (right).
+  const xf = [];
+  if (set.flip) xf.push('scaleX(-1)');
+  if (set.ox) xf.push(`translateX(${-(set.flip ? -set.ox : set.ox) * s}px)`);
+  const shift = xf.length ? ` transform:${xf.join(' ')};` : '';
   return `<div class="anim-sprite${boss ? ' anim-boss' : ''}" data-uid="${uid}" data-mon="${mon}"`
     + `${dead ? ' data-dead="1"' : ''} style="width:${set.fw * s}px;height:${set.fh * s}px;${shift}"></div>`;
 }

@@ -218,12 +218,44 @@ export const CLASS_APPEARANCES = {
   ],
   "viking": [
     {
-      "id": "viking",
-      "name": "Northman",
-      "f": "assets/img/heroes/viking.png",
-      "w": 21,
-      "h": 31,
-      "frames": 6
+      "id": "viking1",
+      "name": "Reaver",
+      "f": "assets/img/heroes/viking1.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    {
+      "id": "viking2",
+      "name": "Shieldbearer",
+      "f": "assets/img/heroes/viking2.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    {
+      "id": "viking3",
+      "name": "Skald",
+      "f": "assets/img/heroes/viking3.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    {
+      "id": "viking4",
+      "name": "Berserk",
+      "f": "assets/img/heroes/viking4.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
+    },
+    {
+      "id": "viking5",
+      "name": "Jarl",
+      "f": "assets/img/heroes/viking5.png",
+      "w": 32,
+      "h": 32,
+      "frames": 2
     }
   ]
 };

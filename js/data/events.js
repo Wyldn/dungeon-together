@@ -1339,21 +1339,21 @@ export const EVENTS = [
 
   /* ---- NPC social / duel events (bob-sheet + legacy hero sprites) ---- */
   {
-    id: 'veteran_blade_meet', biome: 'any', category: 'social', type: 'story', glyph: '⚔️', w: 5, once: true, cond: s => s.floor >= 3,
-    title: 'The Parade Veteran',
-    text: 'A climber in a dented parade helm sits on a crate, polishing a blade that has outlived its army. "Talk, steel, or walk," he says. "I\'ve got time. The tower doesn\'t."',
-    npc: { art: 'veteran_blade', name: 'Parade Veteran', blurb: 'An old warrior\'s silhouette — the look your calling used to wear.' },
+    id: 'blade_hero_meet', biome: 'any', category: 'social', type: 'story', glyph: '⚔️', w: 5, once: true, cond: s => s.floor >= 3,
+    title: 'The Oathbound Champion',
+    text: 'A knight in travel-worn plate sits polishing a shield that still remembers parade grounds. "Counsel, contest, or courtesy," he says. "I offer all three. The tower offers none."',
+    npc: { art: 'blade_hero', name: 'Oathbound Champion', blurb: 'A living hero of the old knightly cut — blade, shield, and stubborn hope.' },
     choices: [
-      { label: 'Talk shop', hint: 'gear or technique',
-        outcome: { text: 'He talks like a drill yard. You leave sharper — and heavier by one keepsake.',
+      { label: 'Ask for counsel', hint: 'gear or technique',
+        outcome: { text: 'He talks like a drill yard that learned mercy. You leave sharper — and heavier by one keepsake.',
           reward: { chooseLabel: 'He offers one:', options: [
             { kind: 'item', id: 'veteran_helm' },
             { kind: 'item', id: 'veteran_cuirass' },
             { kind: 'skill', id: 'veteran_guard' },
           ] } } },
       { label: 'Spar him', hint: 'hard fight — better spoils + XP',
-        outcome: { combat: { enemies: ['veteran_blade'], text: 'He salutes, then stops being polite.',
-          reward: { chooseLabel: 'The veteran nods. Take one:', options: [
+        outcome: { combat: { enemies: ['blade_hero'], text: 'He salutes, then stops being polite.',
+          reward: { chooseLabel: 'The champion nods. Take one:', options: [
             { kind: 'item', id: 'veteran_cuirass' },
             { kind: 'skill', id: 'veteran_guard' },
             { kind: 'item', id: 'war_badge' },
@@ -1363,27 +1363,27 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'tower_scholar_meet', biome: 'any', category: 'social', type: 'story', glyph: '📖', w: 5, once: true, cond: s => s.floor >= 5,
-    title: 'The Ink-Stained Scholar',
-    text: 'A mage in a robe the color of old footnotes looks up from a floating page. "Conversation, contest, or courtesy," she offers. "I grade all three."',
-    npc: { art: 'tower_scholar', name: 'Tower Scholar', blurb: 'The classic mage silhouette — ink, arrogance, and useful footnotes.' },
+    id: 'dark_mage_meet', biome: 'any', category: 'social', type: 'story', glyph: '🔮', w: 5, once: true, cond: s => s.floor >= 5,
+    title: 'The Apostate Channeler',
+    text: 'A mage in a robe the color of spoiled ink looks up from a page that is writing itself. The margins crawl. "Conversation, contest, or courtesy," she offers — and smiles like a failing grade. "I left the academy. The academy did not leave me."',
+    npc: { art: 'dark_mage', name: 'Apostate Channeler', blurb: 'A mage gone off the rails — staff, idle sway, and magic the footnotes refuse to name.' },
     choices: [
-      { label: 'Ask for a lesson', hint: 'gear or technique',
-        outcome: { text: 'She grades your questions gently. You pass with a gift.',
+      { label: 'Ask what she learned', hint: 'gear or technique — risky wisdom',
+        outcome: { text: 'She grades your questions with something that is not chalk. You pass. Mostly.',
           reward: { chooseLabel: 'She slides one across the air:', options: [
             { kind: 'item', id: 'scholar_cap' },
             { kind: 'item', id: 'scholar_robe' },
             { kind: 'skill', id: 'scholar_hex' },
           ] } } },
-      { label: 'Challenge her', hint: 'hard fight — better spoils + XP',
-        outcome: { combat: { enemies: ['tower_scholar'], text: 'The page snaps shut. The air tastes like chalk and lightning.',
+      { label: 'Challenge the hex', hint: 'hard fight — better spoils + XP',
+        outcome: { combat: { enemies: ['dark_mage'], text: 'The page snaps shut. The air tastes like burnt footnotes and lightning.',
           reward: { chooseLabel: 'She smiles like a rubric. Take one:', options: [
             { kind: 'item', id: 'scholar_robe' },
             { kind: 'skill', id: 'scholar_hex' },
             { kind: 'item', id: 'spellthread' },
           ] }, xp: 40 } } },
-      { label: 'Bow and move on', hint: 'XP + random growth',
-        outcome: { text: '"Polite. Rare." She marks something invisible in your favor.', xp: 30, statUpRandom: 2 } },
+      { label: 'Back away carefully', hint: 'XP + random growth',
+        outcome: { text: '"Polite. Rare." She marks something invisible — hopefully in your favor.', xp: 30, statUpRandom: 2 } },
     ],
   },
   {
@@ -1411,29 +1411,74 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'northman_meet', biome: 'any', category: 'social', type: 'story', glyph: '🪓', w: 5, once: true, cond: s => s.floor >= 6,
-    title: 'The Northman Camp',
-    text: 'Cold-country climbers have claimed a landing — fire, axes, and a jarl\'s laugh. "Speak, fight, or freeze politely," one calls. "We respect all three."',
-    npc: { art: 'northman_raider', name: 'Northmen', blurb: 'Raiders from colder climbs — several faces, one appetite for a good scrap.' },
+    id: 'axe_northman_meet', biome: 'any', category: 'social', type: 'story', glyph: '🪓', w: 5, once: true, cond: s => s.floor >= 5,
+    title: 'The Axe-Pack Veteran',
+    text: 'A climber in the old northman cut — bearded axe, travel leathers, a stare that has measured coastlines — sits whetting steel. "Talk, trade blows, or keep climbing," he rumbles. "I\'ve raided quieter towers."',
+    npc: { art: 'axe_northman', name: 'Axe-Pack Veteran', blurb: 'The old Viking silhouette — the look your calling used to wear.' },
     choices: [
-      { label: 'Share the fire', hint: 'gear or technique',
-        outcome: { text: 'They pour something that burns twice. You leave warmer and armed.',
-          reward: { chooseLabel: 'A northman tosses you one:', options: [
-            { kind: 'item', id: 'northman_helm' },
-            { kind: 'skill', id: 'northman_rage' },
-            { kind: 'item', id: 'raider_hatchet' },
+      { label: 'Talk raids', hint: 'gear or technique',
+        outcome: { text: 'He speaks of winters and dues. You leave colder — and better armed.',
+          reward: { chooseLabel: 'He sets one down for you:', options: [
+            { kind: 'item', id: 'axe_pack_helm' },
+            { kind: 'item', id: 'axe_pack_mail' },
+            { kind: 'skill', id: 'axe_pack_cleave' },
           ] } } },
-      { label: 'Answer the challenge', hint: 'hard fight — better spoils + XP',
-        outcome: { combat: {
-          pickEnemies: { pool: ['northman_raider', 'northman_raider2', 'northman_raider3', 'northman_raider4', 'northman_raider5'], count: [1, 1] },
-          text: 'Axes rise like a toast.',
-          reward: { chooseLabel: 'The jarl grins. Take one:', options: [
-            { kind: 'item', id: 'northman_helm' },
-            { kind: 'skill', id: 'northman_rage' },
-            { kind: 'item', id: 'battle_axe' },
-          ] }, xp: 42 } } },
-      { label: 'Freeze politely', hint: 'XP + random growth',
-        outcome: { text: 'You toast with empty hands. They toast you back.', xp: 32, statUpRandom: 2 } },
+      { label: 'Answer the axe', hint: 'hard fight — better spoils + XP',
+        outcome: { combat: { enemies: ['axe_northman'], text: 'He salutes with the flat of the blade. Then the edge.',
+          reward: { chooseLabel: 'He nods once. Take one:', options: [
+            { kind: 'item', id: 'axe_pack_mail' },
+            { kind: 'skill', id: 'axe_pack_cleave' },
+            { kind: 'item', id: 'sea_token' },
+          ] }, xp: 40 } } },
+      { label: 'Keep climbing', hint: 'XP + random growth',
+        outcome: { text: 'You leave him to the whetstone. The next stair feels shorter.', xp: 30, statUpRandom: 2 } },
+    ],
+  },
+  {
+    id: 'cursed_knight_vigil', biome: 'ruins', category: 'dangerous', type: 'risk', glyph: '🗡️', w: 4, once: true, cond: s => s.floor >= 11,
+    title: 'The Cursed Vigil',
+    text: 'A dark knight stands watch over a cracked sarcophagus, sword planted, armor whispering to itself. The ruins remember him as a hero. He remembers something else.',
+    npc: { art: 'cursed_knight', name: 'Cursed Knight', blurb: 'A ruined oath in walking armor — walk, strike, hurt, fall.' },
+    choices: [
+      { label: 'Offer a prayer for the oath', hint: 'blessing — or wake him',
+        outcome: { roll: { stat: 'wis', dc: 12 },
+          success: { text: 'Something in the helm softens. A keepsake falls from a gauntlet like a tear.', fame: 2, itemRoll: { slot: 'accessory', requireUseful: true }, xp: 35 },
+          fail: { text: 'The prayer was the wrong language. The sword comes free.',
+            combat: { enemies: ['cursed_knight'], text: 'The vigil ends. The fight begins.', xp: 45,
+              reward: { chooseLabel: 'From the cracked helm:', options: [
+                { kind: 'item', id: 'war_badge' },
+                { kind: 'skill', id: 'veteran_guard' },
+                { kind: 'item', id: 'spellthread' },
+              ] } } } } },
+      { label: 'Challenge the vigil', hint: 'hard fight — elite spoils',
+        outcome: { combat: { enemies: ['cursed_knight'], text: 'He draws. The ruins lean in to watch.',
+          reward: { chooseLabel: 'The armor empties. Take one:', options: [
+            { kind: 'item', id: 'veteran_cuirass' },
+            { kind: 'skill', id: 'veteran_guard' },
+            { kind: 'item', id: 'war_badge' },
+          ] }, xp: 48 } } },
+      { label: 'Leave the dead to their watch', hint: 'XP + growth',
+        outcome: { text: 'You tip your head. The helm does not move. That is somehow worse.', xp: 30, statUpRandom: 2 } },
+    ],
+  },
+  {
+    id: 'crowned_shadow', biome: 'ruins', category: 'mystery', type: 'risk', glyph: '👑', w: 3, once: true, cond: s => s.floor >= 12 && s.floor < 15,
+    title: 'A Crown in the Dust',
+    text: 'You find a kneeling silhouette ahead — greatsword planted, crown fused to helm. He has waited six centuries. He might wait six more. Or he might stand for you early.',
+    npc: { art: 'crowned_revenant', name: 'Crowned Revenant', blurb: 'The floor-15 midboss, if you are foolish enough to wake him early.' },
+    choices: [
+      { label: 'Kneel and swear a temporary oath', hint: 'blessing + fame — refuse a harder road later?',
+        outcome: { text: 'He does not rise. Something cold accepts your words anyway.', fame: 4, hpPct: 0.15, flag: 'revenant_oath', xp: 40 } },
+      { label: 'Wake him now', hint: 'DEADLY — face the Crowned Revenant early',
+        outcome: { combat: { enemies: ['crowned_revenant'], text: 'He stands up for you. Early.',
+          xp: 85, gold: [70, 110],
+          reward: { chooseLabel: 'Dust settles. Take one:', options: [
+            { kind: 'item', id: 'war_badge' },
+            { kind: 'item', id: 'veteran_helm' },
+            { kind: 'skill', id: 'axe_pack_cleave' },
+          ] } } } },
+      { label: 'Circle wide and leave him kneeling', hint: 'safe — XP',
+        outcome: { text: 'You give the crown a wide berth. Floor 15 will remember either way.', xp: 28 } },
     ],
   },
   {
@@ -1522,7 +1567,8 @@ export const EVENTS = [
 
 /** Events shown on the Compendium NPCs tab. */
 export const NPC_EVENTS = [
-  'veteran_blade_meet', 'tower_scholar_meet', 'pathfinder_meet', 'northman_meet',
+  'blade_hero_meet', 'dark_mage_meet', 'pathfinder_meet', 'axe_northman_meet',
+  'cursed_knight_vigil', 'crowned_shadow',
   'roadside_climbers', 'farmstead_meet', 'oldman_trials',
 ];
 

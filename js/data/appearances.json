@@ -216,6 +216,48 @@
         "h": 32,
         "frames": 2
       }
+    ],
+    "viking": [
+      {
+        "id": "viking1",
+        "name": "Reaver",
+        "f": "assets/img/heroes/viking1.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "viking2",
+        "name": "Shieldbearer",
+        "f": "assets/img/heroes/viking2.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "viking3",
+        "name": "Skald",
+        "f": "assets/img/heroes/viking3.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "viking4",
+        "name": "Berserk",
+        "f": "assets/img/heroes/viking4.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      },
+      {
+        "id": "viking5",
+        "name": "Jarl",
+        "f": "assets/img/heroes/viking5.png",
+        "w": 32,
+        "h": 32,
+        "frames": 2
+      }
     ]
   },
   "npcs": {
@@ -350,6 +392,11 @@
     "warlock2": "Hexer",
     "bard1": "Troubadour",
     "spellsword1": "Runic Blade",
-    "spellsword2": "Arcane Duelist"
+    "spellsword2": "Arcane Duelist",
+    "viking1": "Reaver",
+    "viking2": "Shieldbearer",
+    "viking3": "Skald",
+    "viking4": "Berserk",
+    "viking5": "Jarl"
   }
 }

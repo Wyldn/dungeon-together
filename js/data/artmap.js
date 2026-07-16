@@ -436,14 +436,11 @@ export const ENEMY_ART = {
   "h": 82,
   "frames": 1
  },
- "veteran_blade": { "f": "assets/img/npcs/old_warrior.png", "w": 32, "h": 32, "frames": 2 },
- "tower_scholar": { "f": "assets/img/npcs/old_mage.png", "w": 32, "h": 32, "frames": 2 },
+ "blade_hero": { "f": "assets/img/anim/warrior/idle.png", "w": 40, "h": 30, "frames": 5 },
+ "dark_mage": { "f": "assets/img/anim/mage/idle.png", "w": 30, "h": 31, "frames": 12 },
  "pathfinder_veteran": { "f": "assets/img/npcs/old_ranger.png", "w": 32, "h": 32, "frames": 2 },
- "northman_raider": { "f": "assets/img/npcs/viking1.png", "w": 32, "h": 32, "frames": 2 },
- "northman_raider2": { "f": "assets/img/npcs/viking2.png", "w": 32, "h": 32, "frames": 2 },
- "northman_raider3": { "f": "assets/img/npcs/viking3.png", "w": 32, "h": 32, "frames": 2 },
- "northman_raider4": { "f": "assets/img/npcs/viking4.png", "w": 32, "h": 32, "frames": 2 },
- "northman_raider5": { "f": "assets/img/npcs/viking5.png", "w": 32, "h": 32, "frames": 2 },
+ "axe_northman": { "f": "assets/img/npcs/old_viking.png", "w": 21, "h": 31, "frames": 6 },
+ "crowned_revenant": { "f": "assets/img/anim/crowned_revenant/idle.png", "w": 164, "h": 158, "frames": 8 },
  "farmer_a": { "f": "assets/img/npcs/farmer1.png", "w": 32, "h": 32, "frames": 2 },
  "farmer_b": { "f": "assets/img/npcs/farmer2.png", "w": 32, "h": 32, "frames": 2 },
  "farmer_c": { "f": "assets/img/npcs/farmer3.png", "w": 32, "h": 32, "frames": 2 },
@@ -544,7 +541,7 @@ export const HERO_ART = {
  "bard": { "f": "assets/img/heroes/bard1.png", "w": 32, "h": 32, "frames": 2 },
  "necromancer": { "f": "assets/img/heroes/necromancer.png", "w": 32, "h": 32, "frames": 2 },
  "spellsword": { "f": "assets/img/heroes/spellsword1.png", "w": 32, "h": 32, "frames": 2 },
- "viking": { "f": "assets/img/heroes/viking.png", "w": 21, "h": 31, "frames": 6 }
+ "viking": { "f": "assets/img/heroes/viking1.png", "w": 32, "h": 32, "frames": 2 }
 };
 
 export const BIOME_BG = {
