@@ -1,7 +1,7 @@
 // Pixel-art helpers: sprite/icon HTML builders with graceful fallbacks to the
 // original glyph/SVG look when a piece has no art (see js/data/artmap.js).
 
-import { ENEMY_ART, HERO_ART, ITEM_ART, BIOME_BG, RACE_ART, ORIGIN_ART, EVENT_CAT_ART } from './data/artmap.js';
+import { ENEMY_ART, HERO_ART, ITEM_ART, BIOME_BG, RACE_ART, ORIGIN_ART, EVENT_CAT_ART, NPC_ART } from './data/artmap.js';
 import { buildHeroSkinArt, defaultAppearanceId } from './data/appearances.js';
 
 const HERO_SKINS = buildHeroSkinArt();
@@ -160,3 +160,11 @@ export function eventCatIconHtml(category, size = 56) {
   return `<img class="px-evicon" src="${f}" style="width:${size}px;height:${size}px" alt="" />`;
 }
 export function eventCatUrl(category) { return EVENT_CAT_ART[category] || null; }
+
+// Portrait for an event's `npc`. Accepts a string id (merchant portraits) or
+// an object `{ art }` from bob-NPC social meets (no portrait URL — return null).
+export function npcArtUrl(npc) {
+  if (!npc) return null;
+  if (typeof npc === 'string') return NPC_ART[npc] || null;
+  return null;
+}

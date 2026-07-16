@@ -8,3 +8,6 @@ Thumbs.db
 
 # Node (if tooling gets added later)
 node_modules/
+
+# Disposable sprite-pack staging for tools/build_anim.py (output under assets/img/anim ships)
+tools/spritestage/

@@ -26,7 +26,7 @@ import { makeRng, randomSeed } from './rng.js';
 import { defaultServerUrl, isMixedContentBlocked, PUBLIC_GAME_URL } from './net.js';
 import { CoopSession, connectCoop } from './coop.js';
 import { Music } from './music.js';
-import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl, raceArtHtml, originArtHtml, raceIconUrl, originIconUrl, eventCatUrl, enemySpriteHtml } from './art.js';
+import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl, raceArtHtml, originArtHtml, raceIconUrl, originIconUrl, eventCatUrl, npcArtUrl, enemySpriteHtml } from './art.js';
 
 let meta = loadMeta();
 let run = null;
@@ -2467,12 +2467,14 @@ function renderEventCard(stage, ev, { originIntro = false } = {}) {
   if (ev.type === 'rest') Music.play('rest');
   else if (MINIGAME_EVENTS.includes(ev.id)) Music.play('minigame');
 
-  const evArt = eventCatUrl(ev.category);
+  // An event with a face shows the face; everything else keeps the category emblem.
+  const npcArt = npcArtUrl(ev.npc);
+  const evArt = npcArt || eventCatUrl(ev.category);
   stage.innerHTML = `
     <div class="card-stage"><div class="panel event-card">
       <div class="card-art">
         <div class="ev-center">${evArt
-          ? `<img class="ev-emblem" src="${evArt}" alt=""><span class="ev-glyph-mini">${ev.glyph}</span>`
+          ? `<img class="ev-emblem${npcArt ? ' ev-npc' : ''}" src="${evArt}" alt=""><span class="ev-glyph-mini">${ev.glyph}</span>`
           : `<div class="card-glyph">${ev.glyph}</div>`}</div>
         <span class="tag card-type-tag">${originIntro ? 'ORIGIN' : TYPE_LABEL[ev.type] || 'EVENT'}</span>
         <span class="tag card-floor-tag">${originIntro ? 'THE DAY BEFORE' : `FLOOR ${run.floor}`}</span>

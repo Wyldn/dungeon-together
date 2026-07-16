@@ -215,6 +215,16 @@ export const CLASS_APPEARANCES = {
       "h": 32,
       "frames": 2
     }
+  ],
+  "viking": [
+    {
+      "id": "viking",
+      "name": "Northman",
+      "f": "assets/img/heroes/viking.png",
+      "w": 21,
+      "h": 31,
+      "frames": 6
+    }
   ]
 };
 

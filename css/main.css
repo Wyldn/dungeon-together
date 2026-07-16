@@ -850,13 +850,19 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
   image-rendering: pixelated; width: 92px; height: 92px;
   filter: drop-shadow(0 6px 16px rgba(0,0,0,.6)); display: block; margin: 0;
 }
+/* NPC portraits are detailed busts rather than a flat emblem — give them room. */
+.card-art .ev-emblem.ev-npc { width: 124px; height: 124px; }
 .card-art .ev-glyph-mini {
   position: absolute; bottom: -4px; right: -10px; font-size: 22px;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,.8)); z-index: 3;
   pointer-events: none;
 }
-.fighter-sprite:has(.px-sprite) { background: none; border: none; font-size: 0; width: auto; height: auto; min-width: 96px; min-height: 96px; display: grid; place-items: center; }
-.combatant.boss .fighter-sprite:has(.px-sprite) { min-width: 170px; min-height: 160px; }
+.fighter-sprite:has(.px-sprite), .fighter-sprite:has(.anim-sprite) { background: none; border: none; font-size: 0; width: auto; height: auto; min-width: 96px; min-height: 96px; display: grid; place-items: center; }
+.combatant.boss .fighter-sprite:has(.px-sprite), .combatant.boss .fighter-sprite:has(.anim-sprite) { min-width: 170px; min-height: 160px; }
+/* Multi-state sprites (js/anim.js) are drawn as a background strip and stepped by
+   background-position. Unlike .px-sprite they can be scaled up (a 30px-tall knight
+   renders at x3), so they need the same pixelated snap or they turn to mush. */
+.anim-sprite { image-rendering: pixelated; background-repeat: no-repeat; margin: 0 auto; }
 .card-art.has-bg { background-size: cover; background-position: center 62%; image-rendering: pixelated; }
 .card-art.has-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,6,12,.15), rgba(8,6,12,.55)); pointer-events: none; }
 /* Keep tags absolutely centered — do NOT flip them to relative (that shoved the emblem off-center). */

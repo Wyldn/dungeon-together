@@ -62,6 +62,13 @@ export const ICONS = {
     <circle cx="38" cy="36" r="5.5" fill="currentColor" fill-opacity=".2"/>
     <path d="M30 16 L44 12" />
   `),
+  viking: wrap(`
+    <path d="M32 12 L32 56" />
+    <path d="M32 14 C 40 12 48 16 50 24 C 44 28 36 26 32 22 Z" fill="currentColor" fill-opacity=".18"/>
+    <path d="M32 14 C 24 12 16 16 14 24 C 20 28 28 26 32 22 Z" fill="currentColor" fill-opacity=".18"/>
+    <path d="M26 52 L38 52" />
+    <circle cx="32" cy="18" r="1.8" fill="currentColor" stroke="none"/>
+  `),
   necromancer: wrap(`
     <circle cx="32" cy="22" r="10" fill="currentColor" fill-opacity=".14"/>
     <circle cx="28" cy="20" r="2" fill="currentColor" stroke="none"/>

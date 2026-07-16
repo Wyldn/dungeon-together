@@ -44,6 +44,61 @@ export const SKILLS = {
       desc: 'A sweeping blow that hits every enemy.' },
     COMP.cost(26), COMP.charge(3), COMP.target('all'), COMP.dmg(70, 'str'),
   ),
+  /* ============ VIKING (Fury) ============
+     The Warrior spends Vigor to stay standing; the Viking spends HP to hit
+     harder and drinks it back with lifesteal. Every big swing has a bill. */
+  axe_chop: composeSkill(
+    { id: 'axe_chop', name: 'Axe Chop', class: 'viking', fx: 'slash',
+      desc: 'A blunt, downward answer. Free to use.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(100, 'str'),
+  ),
+  shield_splitter: composeSkill(
+    { id: 'shield_splitter', name: 'Shield Splitter', class: 'viking', fx: 'slash',
+      desc: 'Hack straight through the guard — ignores enemy defence.' },
+    COMP.cost(15), COMP.charge(1), COMP.target('one'), COMP.dmg(85, 'str'), COMP.ignoreDef(),
+  ),
+  blood_howl: composeSkill(
+    { id: 'blood_howl', name: 'Blood Howl', class: 'viking', fx: 'buff',
+      desc: 'Open a vein and roar: pay 8% HP for +60% damage over 3 turns.' },
+    COMP.cost(12), COMP.charge(1), COMP.target('self'),
+    COMP.selfHpCost(0.08), COMP.buff('str', 1.6, 3),
+  ),
+  raiders_hook: composeSkill(
+    { id: 'raiders_hook', name: "Raider's Hook", class: 'viking', fx: 'blunt',
+      desc: 'Drag them off their footing. 40% chance to stun.' },
+    COMP.cost(16), COMP.charge(1), COMP.target('one'), COMP.dmg(90, 'str'), COMP.stun(0.4),
+  ),
+  spinning_axes: composeSkill(
+    { id: 'spinning_axes', name: 'Spinning Axes', class: 'viking', fx: 'slash',
+      desc: 'Turn once, with everything. Hits every enemy and drinks the spray.' },
+    COMP.cost(28), COMP.charge(3), COMP.target('all'), COMP.dmg(75, 'str'), COMP.lifesteal(0.12),
+  ),
+  pillage: {
+    id: 'pillage', fx: 'slash', name: 'Pillage', class: 'viking', cost: 18, charge: 1, target: 'one', tier: 2,
+    power: 105, stat: 'str', lifesteal: 0.2,
+    desc: 'Take the hit and the wallet: heavy damage, 20% of it comes back as HP.',
+  },
+  bite_the_shield: {
+    id: 'bite_the_shield', fx: 'buff', name: 'Bite the Shield', class: 'viking', cost: 16, charge: 1, target: 'self', tier: 2,
+    selfHpCost: 0.12, buff: { stat: 'str', mult: 1.8, turns: 3 }, gainCharge: 1,
+    desc: 'Chew the rim until the fear goes: pay 12% HP for +80% damage and a charge.',
+  },
+  longship_charge: {
+    id: 'longship_charge', fx: 'slash', name: 'Longship Charge', class: 'viking', cost: 30, charge: 3, target: 'all', tier: 3,
+    power: 95, stat: 'str', stun: 0.35,
+    desc: 'The whole crew hits the beach at once. Hits everything, 35% chance to stun.',
+  },
+  thunder_of_shields: {
+    id: 'thunder_of_shields', fx: 'blunt', name: 'Thunder of Shields', class: 'viking', cost: 26, charge: 3, target: 'all', tier: 3,
+    power: 85, stat: 'str', shield: 0.3,
+    desc: 'Beat the wall of shields until the room agrees. Hits all; block 30% for 3 turns.',
+  },
+  valhalla_calls: {
+    id: 'valhalla_calls', fx: 'holy', name: 'Valhalla Calls', class: 'viking', cost: 24, charge: 2, target: 'one', tier: 2,
+    power: 130, stat: 'str', execute: 0.2, lifesteal: 0.25,
+    desc: 'The hall is watching. Devastating; finishes anything under 20% HP outright.',
+  },
+
   iron_will: {
     id: 'iron_will', fx: 'buff', name: 'Iron Will', class: 'warrior', cost: 20, charge: 1, target: 'self', tier: 2,
     shield: 0.35, healPct: 0.12,

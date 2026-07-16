@@ -9,6 +9,65 @@ Gameplay lives in `js/data/enemies.js` and `js/data/events.js`.
 
 ---
 
+## Animated packs (`tools/build_anim.py`)
+
+A second pipeline stages **multi-state** packs (not just idle strips) from
+`tools/spritestage/` into `assets/img/anim/` + `js/data/animmap.js`. The staging
+dir is disposable — unzip the packs into it and re-run. It also cuts each hero's
+flat menu strip into `assets/img/heroes/` and the NPC portraits into
+`assets/img/npc/`, merging `HERO_ART` / `NPC_ART` into `artmap.js`.
+
+| Sprite | Pack | Role mapping | Death? |
+|--------|------|--------------|--------|
+| `imp`, `demon_slime` | Tiny RPG Pack 02 | idle/attack01/attack02/hurt/death | yes |
+| `demon_king` | boss_demon_slime FREE | idle/cleave/take_hit/death | yes |
+| `mimic` | Mimic Animation Pack | idle/bite/tongue/hit/death + `reveal` intro | yes |
+| `warrior` (HERO) | Knight Hero Platfomer | idle/attack01/attack02/hurt/**guard** | **no** — CSS fade |
+| `viking` (HERO) | viking_axe_pack | idle/attack01/attack02/hurt/death | yes |
+| `mage` (HERO) | blue-mage-free | idle only | **no** — pack has no attack/death |
+| `cursed_knight` | FREE SAMPLE RPG Characters | idle(=walk)/attack01/attack02/hurt/death | yes |
+| `crowned_revenant` | Hooded Knight Sprites | idle/attack/**powerup** (special) | **no** — CSS fade |
+
+A role left unmapped simply doesn't play — the existing `.combatant.dying`
+fade/sink covers sprites with no death frames, so a missing role is never fatal.
+
+### Why `aligned_set()` exists
+
+These packs draw each animation on its **own canvas** (the Knight idles at 22×24
+but attacks at 40×30; the Hooded Knight idles at 100×100, attacks at 180×100 and
+powers up at 100×180). `js/anim.js` plays one `fw × fh` per sprite, so states are
+re-packed onto a single canvas: lined up by the first frame's alpha-bbox
+centre-x + bottom-y, then cropped to the tight union of every frame.
+
+Two gotchas the build handles, and which any new pack will hit:
+
+- **`disp` scales off the idle BODY, not the canvas.** Canvases carry headroom
+  for big attacks, so scaling by canvas height renders packs at wildly different
+  body sizes.
+- **`ox`** records how far the idle body sits from its canvas centre (the union
+  grows toward the attack side — the Revenant's lands 40px left). `js/anim.js`
+  translates it back so the sprite stays centred under its own HP bar.
+
+Facing: combat draws enemies on the **left facing right** and the player on the
+**right facing left**. Hero packs here already face left; `cursed_knight` is a
+player-facing pack reused as an enemy, so `aligned_set(..., flip=True)` mirrors it.
+
+### NPC portraits (MikAnimus NPC Pack)
+
+Busts are trimmed and padded to a centred square, then shown on an event card in
+place of the category emblem when the event carries an `npc:` field. Matched to
+each event's own text:
+
+| Event | NPC | Why |
+|-------|-----|-----|
+| `merchant` | `old_man` | "a figure in a patchwork cloak" |
+| `street_performer` | `jester` | "**he** juggles skulls, chalices…" |
+| `bard`, `bard_returns` | `woman` | "'I came here for material,' **she** says" |
+| `wounded_adventurer` | `girl` | "A young climber… **Her** party left her" |
+| `ghost_king` | `soldier` | armoured revenant in the ruins |
+
+---
+
 ## Used — by enemy / location
 
 | Enemy / art id | Role | Biome / floor | Source pack | Source file(s) |

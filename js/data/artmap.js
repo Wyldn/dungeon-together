@@ -36,6 +36,15 @@ export const EVENT_CAT_ART = {
  "unknown": "assets/img/events/cat_unknown.png"
 };
 
+// Event-card portraits (string id on `ev.npc`). Distinct from bob NPC strips in appearances.js.
+export const NPC_ART = {
+ "old_man": "assets/img/npc/old_man.png",
+ "jester": "assets/img/npc/jester.png",
+ "girl": "assets/img/npc/girl.png",
+ "soldier": "assets/img/npc/soldier.png",
+ "woman": "assets/img/npc/woman.png"
+};
+
 export const ENEMY_ART = {
  "wolf": {
   "f": "assets/img/enemies/wolf.png",
@@ -534,7 +543,8 @@ export const HERO_ART = {
  "warlock": { "f": "assets/img/heroes/warlock1.png", "w": 32, "h": 32, "frames": 2 },
  "bard": { "f": "assets/img/heroes/bard1.png", "w": 32, "h": 32, "frames": 2 },
  "necromancer": { "f": "assets/img/heroes/necromancer.png", "w": 32, "h": 32, "frames": 2 },
- "spellsword": { "f": "assets/img/heroes/spellsword1.png", "w": 32, "h": 32, "frames": 2 }
+ "spellsword": { "f": "assets/img/heroes/spellsword1.png", "w": 32, "h": 32, "frames": 2 },
+ "viking": { "f": "assets/img/heroes/viking.png", "w": 21, "h": 31, "frames": 6 }
 };
 
 export const BIOME_BG = {
