@@ -76,7 +76,7 @@ console.log('— monolith awakening —');
 }
 
 console.log('— classes & subclasses (handoff §21) —');
-t('nine classes (6 base + Warlock + Bard + hidden Necromancer)', Object.keys(CLASSES).length === 9);
+t('ten classes (6 base + Warlock + Bard + Viking + hidden Necromancer)', Object.keys(CLASSES).length === 10);
 t('exactly one hidden class with an unlock condition', Object.values(CLASSES).filter(c => c.hidden).length === 1 && typeof Object.values(CLASSES).find(c => c.hidden).unlockCond === 'function');
 for (const cls of Object.values(CLASSES)) {
   const immediates = Object.values(SUBCLASSES).filter(s => s.parent === cls.id && s.tier === 1 && !s.secret);

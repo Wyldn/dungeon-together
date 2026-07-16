@@ -65,7 +65,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'merchant', biome: 'any', category: 'merchant', type: 'shop', glyph: '🧳', w: 14,
+    id: 'merchant', biome: 'any', category: 'merchant', type: 'shop', npc: 'old_man', glyph: '🧳', w: 14,
     title: 'The Hooded Merchant',
     text: 'A figure in a patchwork cloak has set up shop in a place no shop should exist. "Climbers! My favorite kind of customer. Repeat business is rare, but the margins are excellent."',
     shop: true,
@@ -179,7 +179,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'bard', biome: 'any', category: 'social', type: 'blessing', glyph: '🎻', w: 5,
+    id: 'bard', biome: 'any', category: 'social', type: 'blessing', npc: 'woman', glyph: '🎻', w: 5,
     title: 'The Bard Who Stayed',
     text: 'A bard sits cross-legged on a broken pillar, tuning a lute. "I came here for material," she says. "Forty floors of material later, I have simply decided to live here. Request?"',
     choices: [
@@ -192,7 +192,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'bard_returns', biome: 'any', category: 'social', type: 'blessing', glyph: '🎻', w: 14, cond: s => s.flags.bard_friend, once: true,
+    id: 'bard_returns', biome: 'any', category: 'social', type: 'blessing', npc: 'woman', glyph: '🎻', w: 14, cond: s => s.flags.bard_friend, once: true,
     title: 'An Encore',
     text: 'The bard again — impossibly, floors above where you left her. "My patron!" She\'s already tuning. "I wrote your verse. Want to hear how your story goes? Spoiler: I gave you good odds."',
     choices: [
@@ -424,7 +424,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'street_performer', biome: 'any', category: 'social', type: 'blessing', glyph: '🤹', w: 4,
+    id: 'street_performer', biome: 'any', category: 'social', type: 'blessing', npc: 'jester', glyph: '🤹', w: 4,
     title: 'The Juggler of Floor Debris',
     text: 'A climber who gave up climbing but not the tower: he juggles skulls, chalices, and one confused (live) scarab for an audience of nobody. He is, honestly, extremely good.',
     choices: [
@@ -871,7 +871,7 @@ export const EVENTS = [
 
   /* ==================== FOREST (1–10) ==================== */
   {
-    id: 'wounded_adventurer', biome: 'forest', category: 'social', type: 'story', glyph: '🩹', w: 8, once: true,
+    id: 'wounded_adventurer', biome: 'forest', category: 'social', type: 'story', npc: 'girl', glyph: '🩹', w: 8, once: true,
     title: 'The Wounded Climber',
     text: 'A young climber slumps against a tree, clutching a gashed side. Her party left her — "the run matters more," they said. She looks up at you with the specific hope of someone who has stopped expecting it.',
     choices: [
@@ -1068,7 +1068,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'ghost_king', biome: 'ruins', category: 'social', type: 'story', glyph: '👻', w: 4, once: true,
+    id: 'ghost_king', biome: 'ruins', category: 'social', type: 'story', npc: 'soldier', glyph: '👻', w: 4, once: true,
     title: 'The King Who Stayed',
     text: 'A translucent figure sits on a broken throne, crown askew. "My kingdom fell in a single night when the tower grew through it," the ghost says. "I stayed to file a complaint. The line has not moved in six hundred years."',
     choices: [

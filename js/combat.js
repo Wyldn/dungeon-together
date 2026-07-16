@@ -246,6 +246,16 @@ class Fight {
   enemyByUid(uid) { return this.enemies.find(e => e.uid === uid); }
   sprite(uid) { return this.el.querySelector(`#sprite-${uid}`); }
 
+  // Player-side art: the animated set when the class has one (js/data/animmap.js
+  // HERO_ANIM), else the flat idle strip, else the SVG class icon. `down` drives
+  // the death state the same way `dead` does for enemies.
+  heroArt(uid, classId, down = false) {
+    const anim = SpriteAnim.hasAnim(classId)
+      ? SpriteAnim.animSpriteHtml(uid, classId, { dead: down })
+      : null;
+    return anim || heroSpriteHtml(classId) || ICONS[classId] || ICONS.warrior;
+  }
+
   // §12: has the boss picked up any player-applied affliction?
   hasDebuff(st) { return !!(st.poison || st.burn || st.frozen || st.stunned || st.hexed); }
   hasHardCC(st) { return !!(st.frozen || st.stunned); }
@@ -577,7 +587,7 @@ class Fight {
     const resShort = resName.length > 4 ? resName.slice(0, 3).toUpperCase() : resName.toUpperCase();
     let html = `
       <div class="combatant ${this.run.down ? 'downed' : ''} ${actingKey === 'player' ? 'acting' : ''}">
-        <div class="fighter-sprite" id="sprite-player">${heroSpriteHtml(this.run.classId) || ICONS[this.run.classId]}</div>
+        <div class="fighter-sprite" id="sprite-player">${this.heroArt('player', this.run.classId, this.run.down)}</div>
         <div class="cx-info">
           <div class="cx-head"><span class="fighter-name">${this.run.name}${this.run.down ? ' (down)' : ''}</span></div>
           <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${hpW}%"></div><span class="cx-bar-num">${Math.round(this.run.hp)}/${Math.round(this.run.maxHp)}</span></div></div>
@@ -592,7 +602,7 @@ class Fight {
     for (const [id, a] of this.allies) {
       html += `
         <div class="combatant ${a.down ? 'downed' : ''} ${actingKey === 'ally-' + id ? 'acting' : ''}">
-          <div class="fighter-sprite" id="sprite-${id}">${heroSpriteHtml(a.classId) || ICONS[a.classId] || ICONS.warrior}</div>
+          <div class="fighter-sprite" id="sprite-${id}">${this.heroArt(id, a.classId, a.down)}</div>
           <div class="cx-info">
             <div class="cx-head"><span class="fighter-name">${a.name}${a.down ? ' (down)' : ''}</span></div>
             <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${clamp(a.hp / a.maxHp * 100, 0, 100)}%"></div><span class="cx-bar-num">${Math.round(a.hp)}/${Math.round(a.maxHp)}</span></div></div>
@@ -600,6 +610,7 @@ class Fight {
         </div>`;
     }
     this.playerRow.innerHTML = html;
+    SpriteAnim.attach(this.playerRow); // same rebind dance as the enemy row
     this.onHud?.();
   }
 
@@ -1133,6 +1144,7 @@ class Fight {
       this.damageTaken = (this.damageTaken || 0) + dmg;
       if (this.d().chargeOnHit) this.gainCharge(1);
       this.float(this.playerFloatHost(), `-${dmg}`, 'incoming');
+      SpriteAnim.play('player', 'hurt');
       SFX.hit();
       this.log(`${e?.name || 'The enemy'}${op.special ? ` (${op.special})` : ''} hits you for ${dmg}${this.player.guarding ? ' (guarded)' : ''}.`, 'log-hit');
       // §9: tell the party the ACTUAL damage taken (after guard/shield/armor),
@@ -1151,7 +1163,10 @@ class Fight {
       // and broadcasts the real (post-guard) number via 'chit' + authoritative
       // 'status'. We just note that a companion was struck.
       const a = this.allies.get(op.target);
-      if (a) this.log(`${e?.name || 'The enemy'} strikes ${a.name}.`, 'log-hit');
+      if (a) {
+        this.log(`${e?.name || 'The enemy'} strikes ${a.name}.`, 'log-hit');
+        SpriteAnim.play(op.target, 'hurt');
+      }
     }
     this.renderPlayers(this._actingKey);
   }
@@ -1404,6 +1419,9 @@ class Fight {
     const spriteP = this.el.querySelector('#sprite-player');
     spriteP.classList.add('attack');
     setTimeout(() => spriteP.classList.remove('attack'), 420);
+    // Big/charged moves get the heavier swing; a self-buff raises the guard.
+    SpriteAnim.play('player', sk.target === 'self' ? 'guard'
+      : (sk.target === 'all' || (sk.charge || 0) > 0) ? 'special' : 'attack');
 
     const actOps = { k: 'cact', label: sk.name, targets: [] };
     if (sk.target === 'self') {
@@ -1632,6 +1650,7 @@ class Fight {
     this.damageTaken = (this.damageTaken || 0) + dmg;
     if (d.chargeOnHit) this.gainCharge(1);
     this.float(this.playerFloatHost(), `-${dmg}`, 'incoming');
+    SpriteAnim.play('player', 'hurt');
     SFX.hit();
     this.log(`${e.name}${special ? ` (${special.name})` : ''} hits you for ${dmg}${this.player.guarding ? ' (guarded)' : ''}.`, 'log-hit');
 

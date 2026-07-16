@@ -1,14 +1,21 @@
-// Multi-state monster sprite player. Enemies with an ENEMY_ANIM entry render an
-// animated sprite whose state follows combat events: idle loops, an attack/hurt
-// plays once and falls back to idle, death plays once and holds the last frame.
+// Multi-state sprite player. Enemies AND player classes with an animation entry
+// render an animated sprite whose state follows combat events: idle loops, an
+// attack/hurt plays once and falls back to idle, death plays once and holds the
+// last frame.
 //
 // State lives here (keyed by combatant uid), NOT in the DOM — the combat screen
-// rebuilds .enemy-row innerHTML constantly, so we re-bind to the fresh element on
-// every attach() and keep animating without a hitch.
+// rebuilds .enemy-row / .player-row innerHTML constantly, so we re-bind to the
+// fresh element on every attach() and keep animating without a hitch.
+//
+// Monsters and heroes are authored in separate maps (different packs, different
+// pipelines) but play identically, so they share one lookup here. Keys are
+// unique across both — a hero set is keyed by class id.
 
-import { ENEMY_ANIM } from './data/animmap.js';
+import { ENEMY_ANIM, HERO_ANIM } from './data/animmap.js';
 
-export function hasAnim(mon) { return !!ENEMY_ANIM[mon]; }
+const SETS = { ...ENEMY_ANIM, ...HERO_ANIM };
+
+export function hasAnim(mon) { return !!SETS[mon]; }
 
 function scaleFor(set) { return Math.max(1, Math.round((set.disp || set.fh) / set.fh)); }
 
@@ -16,11 +23,15 @@ function scaleFor(set) { return Math.max(1, Math.round((set.disp || set.fh) / se
 // set key (an enemy's `sprite` override or its `id`). Falls back to null so the
 // caller can use the old glyph/px-sprite path.
 export function animSpriteHtml(uid, mon, { boss = false, dead = false } = {}) {
-  const set = ENEMY_ANIM[mon];
+  const set = SETS[mon];
   if (!set) return null;
   const s = scaleFor(set);
+  // `ox` is how far the idle body sits from its canvas centre (the canvas is
+  // sized to fit the widest attack, so it's lopsided). Shift it back so the
+  // character stays centred under its own name/HP bar.
+  const shift = set.ox ? ` transform:translateX(${-set.ox * s}px);` : '';
   return `<div class="anim-sprite${boss ? ' anim-boss' : ''}" data-uid="${uid}" data-mon="${mon}"`
-    + `${dead ? ' data-dead="1"' : ''} style="width:${set.fw * s}px;height:${set.fh * s}px"></div>`;
+    + `${dead ? ' data-dead="1"' : ''} style="width:${set.fw * s}px;height:${set.fh * s}px;${shift}"></div>`;
 }
 
 const recs = new Map();   // uid -> record
@@ -37,8 +48,8 @@ function ensureLoop() {
   rafId = requestAnimationFrame(step);
 }
 
-function stateOf(rec, name) { return ENEMY_ANIM[rec.mon]?.states[name] || null; }
-function role(rec, r) { return ENEMY_ANIM[rec.mon]?.roles[r] || null; }
+function stateOf(rec, name) { return SETS[rec.mon]?.states[name] || null; }
+function role(rec, r) { return SETS[rec.mon]?.roles[r] || null; }
 
 // mode: 'loop' (idle) | 'idle' (once, then back to idle) | 'hold' (once, freeze last)
 function setState(rec, name, mode) {
@@ -51,7 +62,7 @@ function setState(rec, name, mode) {
 function paint(rec, full) {
   const el = rec.el;
   if (!el || !el.isConnected) return;
-  const set = ENEMY_ANIM[rec.mon]; const s = rec.scale;
+  const set = SETS[rec.mon]; const s = rec.scale;
   if (full) {
     el.style.backgroundImage = `url('${rec.st.f}')`;
     el.style.backgroundSize = `${set.fw * s * rec.st.n}px ${set.fh * s}px`;
@@ -94,18 +105,18 @@ export function attach(root) {
   if (!root) return;
   for (const el of root.querySelectorAll('.anim-sprite')) {
     const uid = el.dataset.uid, mon = el.dataset.mon;
-    if (!uid || !ENEMY_ANIM[mon]) continue;
+    if (!uid || !SETS[mon]) continue;
     let rec = recs.get(uid);
     if (!rec || rec.mon !== mon) {
       // brand-new combatant (or a sprite swap, e.g. slime -> king): fresh record
-      rec = { uid, mon, el, scale: scaleFor(ENEMY_ANIM[mon]), frame: 0, acc: 0,
+      rec = { uid, mon, el, scale: scaleFor(SETS[mon]), frame: 0, acc: 0,
         introDone: false, dead: false, st: null };
       recs.set(uid, rec);
       const intro = role(rec, 'intro');
       if (intro && !el.dataset.dead) { rec.introDone = true; setState(rec, intro, 'idle'); }
       else setState(rec, role(rec, 'idle') || 'idle', 'loop');
     } else {
-      rec.el = el; rec.scale = scaleFor(ENEMY_ANIM[mon]);
+      rec.el = el; rec.scale = scaleFor(SETS[mon]);
       paint(rec, true); // rebind to the fresh DOM node
     }
     if (el.dataset.dead && !rec.dead) { rec.dead = true; setState(rec, role(rec, 'death') || 'death', 'hold'); }

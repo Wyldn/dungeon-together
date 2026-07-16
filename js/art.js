@@ -1,7 +1,7 @@
 // Pixel-art helpers: sprite/icon HTML builders with graceful fallbacks to the
 // original glyph/SVG look when a piece has no art (see js/data/artmap.js).
 
-import { ENEMY_ART, HERO_ART, ITEM_ART, BIOME_BG, RACE_ART, ORIGIN_ART, EVENT_CAT_ART } from './data/artmap.js';
+import { ENEMY_ART, HERO_ART, ITEM_ART, BIOME_BG, RACE_ART, ORIGIN_ART, EVENT_CAT_ART, NPC_ART } from './data/artmap.js';
 
 // Integer scale toward a target display height keeps pixels crisp.
 function scaleFor(fh, target) {
@@ -70,6 +70,10 @@ export function eventCatIconHtml(category, size = 56) {
   return `<img class="px-evicon" src="${f}" style="width:${size}px;height:${size}px" alt="" />`;
 }
 export function eventCatUrl(category) { return EVENT_CAT_ART[category] || null; }
+
+// Portrait for an event's `npc` — the face you're actually dealing with, shown
+// instead of the generic category emblem. Null for events without one.
+export function npcArtUrl(npcId) { return (npcId && NPC_ART[npcId]) || null; }
 
 export function titleBgUrl() {
   return BIOME_BG.title || null;

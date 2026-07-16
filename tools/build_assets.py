@@ -35,7 +35,7 @@ _existing_map = os.path.join(ROOT, 'js', 'data', 'artmap.js')
 if os.path.exists(_existing_map):
     import re as _re
     _txt = open(_existing_map, encoding='utf-8').read()
-    for key, var in [('enemies', 'ENEMY_ART'), ('items', 'ITEM_ART'), ('heroes', 'HERO_ART'), ('bg', 'BIOME_BG'), ('music', 'MUSIC_TRACKS'), ('races', 'RACE_ART'), ('origins', 'ORIGIN_ART'), ('events', 'EVENT_CAT_ART')]:
+    for key, var in [('enemies', 'ENEMY_ART'), ('items', 'ITEM_ART'), ('heroes', 'HERO_ART'), ('bg', 'BIOME_BG'), ('music', 'MUSIC_TRACKS'), ('races', 'RACE_ART'), ('origins', 'ORIGIN_ART'), ('events', 'EVENT_CAT_ART'), ('npc', 'NPC_ART')]:
         m = _re.search(r'export const ' + var + r' = (\{.*?\});', _txt, _re.S)
         if m:
             try:
@@ -418,7 +418,14 @@ def draw_hero(cid, main, dark, trim, bob=0):
     HERO_DRAW[cid](d, bob, main + (255,), dark + (255,), trim + (255,))
     return im
 
+# Classes whose art comes from a real sprite pack via tools/build_anim.py. Their
+# HERO_ART entries are preserved from the existing artmap.js above, so leave both
+# the PNG and the entry alone — redrawing the placeholder would undo that pack.
+PACK_HEROES = {'warrior', 'mage', 'viking'}
+
 for cid, (main, dark, trim) in HERO_PAL.items():
+    if cid in PACK_HEROES:
+        continue
     strip = Image.new('RGBA', (64, 32), (0, 0, 0, 0))
     strip.paste(draw_hero(cid, main, dark, trim, 0), (0, 0))
     strip.paste(draw_hero(cid, main, dark, trim, 1), (32, 0))
@@ -850,6 +857,9 @@ with open(os.path.join(ROOT, 'js', 'data', 'artmap.js'), 'w', encoding='utf-8') 
     f.write('export const RACE_ART = ' + json.dumps(artmap['races'], indent=1) + ';\n\n')
     f.write('export const ORIGIN_ART = ' + json.dumps(artmap['origins'], indent=1) + ';\n\n')
     f.write('export const EVENT_CAT_ART = ' + json.dumps(artmap['events'], indent=1) + ';\n\n')
+    # Written by tools/build_anim.py from the NPC Pack; preserved here so a
+    # rebuild without that pack staged doesn't drop the block.
+    f.write('export const NPC_ART = ' + json.dumps(artmap.get('npc', {}), indent=1) + ';\n\n')
     f.write('export const ENEMY_ART = ' + json.dumps(artmap['enemies'], indent=1) + ';\n\n')
     f.write('export const ITEM_ART = ' + json.dumps(artmap['items'], indent=1) + ';\n\n')
     f.write('export const HERO_ART = ' + json.dumps(artmap['heroes'], indent=1) + ';\n\n')

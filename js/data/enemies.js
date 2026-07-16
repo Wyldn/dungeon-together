@@ -167,6 +167,21 @@ export const BOSSES = {
     intro: 'The oldest tree in the forest uproots itself. It has judged ten thousand climbers.\nIt has approved of none.',
     taunt: 'YOU BURN LIKE ALL THE REST.',
   },
+  // A midboss, not a gate: he sits mid-biome between the Guardian and the Lich,
+  // so he's tuned under the F20 curve. Adding the key is all it takes — game.js
+  // derives BOSS_FLOORS from BOSSES, so F15 routes to the boss floor (taking the
+  // slot the every-5th-floor trial used to hold) and F14 becomes a campfire.
+  15: {
+    id: 'crowned_revenant', name: 'The Crowned Revenant', glyph: '🗡️', biome: 'ruins',
+    hp: 165, atk: 25, def: 6, spd: 6, gold: [75, 110], xp: 75, boss: true,
+    chargeGain: 1,
+    specials: [
+      { at: 3, name: 'Oathbreaker', mult: 1.35, desc: 'the greatsword drags a line through the dust' },
+      { at: 6, name: 'CROWN OF ASH', mult: 1.85, desc: 'the dead king remembers he was crowned' },
+    ],
+    intro: 'A knight kneels in the dust, greatsword planted, crown fused to the helm.\nHe has knelt here for six hundred years, waiting for a king who never came.\nHe stands up for you.',
+    taunt: 'I KEPT MY OATH. WHERE IS YOURS?',
+  },
   20: {
     id: 'lich', name: 'Lich of the Fallen King', glyph: '👑', biome: 'ruins',
     hp: 200, atk: 28, def: 5, spd: 8, gold: [90, 130], xp: 90, caster: true, summons: 'skeleton', boss: true,

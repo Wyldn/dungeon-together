@@ -15,6 +15,7 @@ export const WEAPONS = [
   { id: 'oak_staff', name: 'Oak Staff', slot: 'weapon', wtype: 'staff', rarity: 'common', tier: 1, atk: 1, int: 2, desc: 'Staff · +1 damage, +2 INT.', price: 30 },
   { id: 'hunting_bow', name: 'Hunting Bow', slot: 'weapon', wtype: 'bow', rarity: 'common', tier: 1, atk: 2, dex: 1, desc: 'Bow · +2 damage, +1 DEX.', price: 30 },
   { id: 'runed_dagger_worn', name: 'Worn Dagger', slot: 'weapon', wtype: 'dagger', rarity: 'common', tier: 1, atk: 2, crit: 3, desc: 'Dagger · +2 damage, +3% crit.', price: 25 },
+  { id: 'hand_axe', name: 'Notched Hand Axe', slot: 'weapon', wtype: 'axe', rarity: 'common', tier: 1, atk: 2, str: 1, desc: 'Axe · +2 damage, +1 STR. The notches are not decorative.', price: 28 },
   { id: 'novice_mace', name: 'Novice\'s Mace', slot: 'weapon', wtype: 'mace', rarity: 'common', tier: 1, atk: 2, wis: 1, desc: 'Mace · +2 damage, +1 WIS.', price: 25 },
   { id: 'wraps', name: 'Cloth Wraps', slot: 'weapon', wtype: 'fist', rarity: 'common', tier: 1, atk: 2, dex: 1, desc: 'Fist · +2 damage, +1 DEX. Your hands were always the weapon.', price: 20 },
 

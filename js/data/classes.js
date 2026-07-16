@@ -144,6 +144,23 @@ export const CLASSES = {
     aoeSkill: 'grave_bloom',
     growthBias: ['int', 'int', 'wis', 'lk'],
   },
+  viking: {
+    id: 'viking',
+    name: 'Viking',
+    epithet: 'Came for a raid, found a tower. Brought the axe regardless.',
+    accent: '#8aa9c0',
+    // Where the Warrior banks Vigor and spends it carefully, Fury is only earned
+    // by trading blood — the kit leans on selfHpCost and lifesteal.
+    resource: { name: 'Fury', color: '#b8563f' },
+    weapons: ['axe', 'mace'],
+    startWeapon: 'hand_axe',
+    base: { hp: 50, mp: 22, str: 10, dex: 5, int: 3, wis: 3, lk: 5 },
+    roll: { hp: 13, mp: 6, str: 5, dex: 3, int: 2, wis: 2, lk: 4 },
+    startSkills: ['axe_chop', 'shield_splitter', 'blood_howl'],
+    pool: { common: 'raiders_hook', rare: 'spinning_axes' },
+    aoeSkill: 'spinning_axes',
+    growthBias: ['str', 'str', 'lk', 'dex'],
+  },
 };
 
 /* ============================================================
@@ -456,6 +473,41 @@ export const SUBCLASSES = {
     hint: 'An option with your own handwriting on it.',
     secretCond: run => (run.sigils?.length || 0) >= 1 || run.kills >= 25,
     bonus: { int: 4, wis: 3, hp: 15 }, skill: 'phylactery_pulse',
+    next: null,
+  },
+
+  /* ---- Viking ---- */
+  raider: {
+    id: 'raider', name: 'Raider', parent: 'viking', tier: 1,
+    blurb: 'The tower is just a coastline that stands up. You know what to do with a coastline.',
+    hint: 'The plunder-road: take everything, apologise to no one.',
+    bonus: { str: 3, lk: 3, hp: 10 }, skill: 'pillage',
+    next: 'sea_king',
+  },
+  shieldbiter: {
+    id: 'shieldbiter', name: 'Shieldbiter', parent: 'viking', tier: 1,
+    blurb: 'You bit the shield to frighten them. It worked. You kept biting.',
+    hint: 'The mad-road: pain in, pain out, nothing kept in reserve.',
+    bonus: { str: 4, hp: 16 }, skill: 'bite_the_shield',
+    next: 'jarl',
+  },
+  sea_king: {
+    id: 'sea_king', name: 'Sea King', parent: 'raider', tier: 2,
+    blurb: 'Every hall you walked into became yours. This one is taking longer.',
+    bonus: { str: 5, lk: 4, hp: 18 }, skill: 'longship_charge',
+  },
+  jarl: {
+    id: 'jarl', name: 'Jarl', parent: 'shieldbiter', tier: 2,
+    blurb: 'You stopped counting wounds somewhere around the second winter.',
+    bonus: { str: 5, dex: 2, hp: 28 }, skill: 'thunder_of_shields',
+  },
+  einherjar: {
+    id: 'einherjar', name: 'Einherjar', parent: 'viking', tier: 1, secret: true,
+    blurb: 'You have died correctly enough times that someone upstairs took notice.',
+    hint: 'An option that smells of woodsmoke and mead.',
+    // Earned the Viking way — by bleeding for it, not by surviving cleanly.
+    secretCond: run => run.kills >= 12 && (run.fame || 0) >= 5,
+    bonus: { str: 4, lk: 3, hp: 20 }, skill: 'valhalla_calls',
     next: null,
   },
 };
