@@ -95,8 +95,10 @@ export class Net {
     return () => this.sysHandlers.get(t)?.delete(fn);
   }
 
-  create(name) { this.ws.send(JSON.stringify({ t: 'create', name })); }
+  create(name, pub = false) { this.ws.send(JSON.stringify({ t: 'create', name, pub })); }
   join(code, name) { this.ws.send(JSON.stringify({ t: 'join', code, name })); }
+  quickjoin(name) { this.ws.send(JSON.stringify({ t: 'quickjoin', name })); }
+  listPublic() { this.ws.send(JSON.stringify({ t: 'list' })); }
 
   close() { try { this.ws?.close(); } catch {} this.ws = null; }
 }

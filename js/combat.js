@@ -24,6 +24,18 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const LAST_FLOOR = 51;
 
+/** Governing-stat value for a skill: one stat, 'best', or dual 'a+b'.
+ *  Dual = 55% of the sum — beats a single stat only if you feed both. */
+export function skillStatValue(sk, d) {
+  const stat = sk.stat || 'str';
+  if (stat === 'best') return Math.max(d.str, d.dex, d.int, d.wis);
+  if (stat.includes('+')) {
+    const [a, b] = stat.split('+');
+    return ((d[a] || 0) + (d[b] || 0)) * 0.55;
+  }
+  return d[stat] || d.str;
+}
+
 const DEFAULT_SUMMONS = {
   skeleton: { id: 'skeleton', name: 'Risen Skeleton', glyph: '💀', hp: 30, atk: 9, def: 2, spd: 6, gold: [0, 0], xp: 5 },
   leech: { id: 'leech', name: 'Bound Leech', glyph: '🪱', hp: 28, atk: 10, def: 1, spd: 6, gold: [0, 0], xp: 5, lifesteal: 0.35 },
@@ -140,6 +152,7 @@ class Fight {
           dex: p.status?.stats?.dex ?? p.status?.dex,
           spdStat: p.status?.spdStat,
           initiative: p.status?.initiative ?? 0,
+          taunt: p.status?.taunt || 0,
         });
       }
     }
@@ -669,7 +682,7 @@ class Fight {
   estimateSkill(sk) {
     if (!sk.power) return null;
     const d = this.d();
-    const statVal = sk.stat === 'best' ? Math.max(d.str, d.dex, d.int, d.wis) : (d[sk.stat] || d.str);
+    const statVal = skillStatValue(sk, d);
     const C = CONFIG.combat;
     const base = (statVal * C.playerStatWeight + d.atk * C.playerAtkWeight + softLevelDamage(this.run.level, C.playerLevelWeight) + C.playerFlat)
       * (sk.power / 100) * this.buffValue('str').mult;
@@ -802,12 +815,13 @@ class Fight {
   async playerTurn() {
     // guard expires at the start of your turn
     this.player.guarding = false;
-    restoreMana(this.run, this.d().manaRegen);
     const st = this.player.statuses;
     if (st.frozen || st.stunned) {
       this.log(`You are ${st.frozen ? 'frozen solid' : 'stunned'} — turn lost!`, 'log-hit');
       delete st.frozen; delete st.stunned;
+      // a lost turn still ends: charge + resource tick over as usual
       this.gainCharge(CONFIG.charge.gainPerTurn);
+      restoreMana(this.run, this.d().manaRegen);
       this.renderPlayers();
       await sleep(700);
       return;
@@ -824,6 +838,10 @@ class Fight {
 
   endPlayerAction() {
     this.gainCharge(CONFIG.charge.gainPerTurn);
+    // class resource ticks at the END of the turn — you spend into it next
+    // round instead of banking it before you act (Focus-timing review)
+    restoreMana(this.run, this.d().manaRegen);
+    this.onHud?.();
     if (this.shared) { this._sharedTurnDone?.(); }
     else this._turnDone?.();
   }
@@ -844,6 +862,8 @@ class Fight {
         if (d.spdStat != null) a.spdStat = d.spdStat;
         if (d.initiative != null) a.initiative = d.initiative;
         if (d.dex != null) a.dex = d.dex;
+        a.taunt = d.taunt || 0;
+        if (d.appearanceId) a.appearanceId = d.appearanceId;
       }
       this.renderPlayers(this._actingKey);
     }));
@@ -958,12 +978,13 @@ class Fight {
       return;
     }
     this.player.guarding = false;
-    restoreMana(this.run, this.d().manaRegen);
     const st = this.player.statuses;
     if (st.frozen || st.stunned) {
       this.log(`You are ${st.frozen ? 'frozen solid' : 'stunned'} — turn lost!`, 'log-hit');
       delete st.frozen; delete st.stunned;
+      // a lost turn still ends: charge + resource tick over as usual
       this.gainCharge(CONFIG.charge.gainPerTurn);
+      restoreMana(this.run, this.d().manaRegen);
       this.coop.net.send({ k: 'cpass', why: 'stunned' });
       this.renderPlayers(this._actingKey);
       await sleep(600);
@@ -972,10 +993,30 @@ class Fight {
     this.locked = false;
     this.showTurnBanner(true);
     this.renderActions(true);
+    // AFK guard: after a long idle turn, instinct picks a random valid action
+    clearTimeout(this._afkTimer);
+    this._afkTimer = setTimeout(() => this.autoAct(), CONFIG.afk?.turnMs || 60000);
     await new Promise(r => { this._sharedTurnDone = r; });
+    clearTimeout(this._afkTimer);
     this._sharedTurnDone = null;
     this.showTurnBanner(false);
     this.renderActions(false);
+  }
+
+  /** AFK fallback (shared driver): play a random valid action for this turn. */
+  autoAct() {
+    if (this.locked || this.ended || !this._sharedTurnDone) return;
+    const costMult = this.mod.costMult || 1;
+    const usable = usableSkillIds(this.run);
+    const pool = ['basic_attack', 'guard', ...this.run.skills]
+      .map(id => SKILLS[id])
+      .filter(sk => sk && usable.includes(sk.id) && !sk.allyTarget)
+      .filter(sk => canAfford({ cost: Math.ceil((sk.cost || 0) * costMult), charge: sk.charge || 0 }, this.run.mp, this.charge));
+    const sk = pool.length ? pool[Math.floor(Math.random() * pool.length)] : SKILLS.basic_attack;
+    const alive = this.enemies.map((e, i) => ({ e, i })).filter(x => x.e.hp > 0);
+    if (alive.length) this.target = alive[Math.floor(Math.random() * alive.length)].i;
+    this.log('You hesitate too long — instinct takes over.', 'log-sys');
+    this.useSkill(sk, Math.ceil((sk.cost || 0) * costMult));
   }
 
   async remoteTurn(seat) {
@@ -1067,12 +1108,14 @@ class Fight {
       }
 
       const special = pickEnemySpecial(e);
-      const targets = [{ id: this.coop.you, def: this.d().def, dodge: this.d().dodge, down: this.run.down },
-        ...[...this.allies.entries()].map(([id, a]) => ({ id, def: a.def, dodge: a.dodge, down: a.down }))]
+      const targets = [{ id: this.coop.you, def: this.d().def, dodge: this.d().dodge, down: this.run.down, taunt: this.run.combatTaunt || 0 },
+        ...[...this.allies.entries()].map(([id, a]) => ({ id, def: a.def, dodge: a.dodge, down: a.down, taunt: a.taunt || 0 }))]
         .filter(t => !t.down);
       if (!targets.length) break;
 
-      const hitTargets = special?.aoe ? targets : [this.rng.pick(targets)];
+      // Taunt: single-target attacks lock onto whoever demanded attention
+      const taunters = targets.filter(t => t.taunt > 0);
+      const hitTargets = special?.aoe ? targets : [this.rng.pick(taunters.length ? taunters : targets)];
       // §12: heavy boss telegraphs scale with the charge they banked
       let chargeScale = 1;
       if (special) {
@@ -1382,6 +1425,8 @@ class Fight {
     if (this.ended) return;
     this.ended = true;
     this.locked = true;
+    clearTimeout(this._afkTimer);
+    delete this.run.combatTaunt;
     for (const off of this.offs) off();
     this.rng.advance?.();
     setTimeout(() => this.resolve({ result: d.result, gold: d.gold || 0, xp: d.xp || 0, noDamage: !this.damageTaken, usedUltimate: !!this.usedUltimate }), d.result === 'win' ? 500 : 900);
@@ -1488,12 +1533,19 @@ class Fight {
       if (amt > 0) this.float(this.el.querySelector('#sprite-player'), `+${amt}`, 'mana');
     }
     if (sk.gainCharge) this.gainCharge(sk.gainCharge);
+    if (sk.tauntTurns) {
+      // transient combat state; the host reads it off status broadcasts
+      this.run.combatTaunt = sk.tauntTurns;
+      this.log(`You make yourself impossible to ignore — enemies fix on YOU for ${sk.tauntTurns} turns.`, 'log-good');
+      if (this.shared) this.coop.broadcastStatus(this.runStatus(), 'fighting');
+    }
     SFX.heal();
   }
 
   hitEnemy(e, sk, d) {
-    // damage scales off the skill's governing stat (STR warriors, INT mages...)
-    const statVal = sk.stat === 'best' ? Math.max(d.str, d.dex, d.int, d.wis) : (d[sk.stat] || d.str);
+    // damage scales off the skill's governing stat (STR warriors, INT mages,
+    // STR+INT spellswords...)
+    const statVal = skillStatValue(sk, d);
     const buff = this.buffValue('str');
     const C = CONFIG.combat;
     let base = (statVal * C.playerStatWeight + d.atk * C.playerAtkWeight + softLevelDamage(this.run.level, C.playerLevelWeight) + C.playerFlat)
@@ -1790,6 +1842,13 @@ class Fight {
       if (this.run.hp <= 0) { this.deathSaves(); if (this.shared && this.run.hp <= 0) this.goDown(); }
     }
     if (st.shield) { st.shield.turns--; if (st.shield.turns <= 0) delete st.shield; }
+    if (this.run.combatTaunt) {
+      this.run.combatTaunt--;
+      if (this.run.combatTaunt <= 0) {
+        delete this.run.combatTaunt;
+        this.log('Enemies stop rising to your bait.', 'log-sys');
+      }
+    }
     this.player.buffs = this.player.buffs.filter(b => --b.turns > 0);
     if (this.mod.hpDrainPct && !this.run.down && this.run.hp > 0) {
       const drain = Math.max(1, Math.round(this.run.maxHp * this.mod.hpDrainPct));
@@ -1849,6 +1908,7 @@ class Fight {
   finishSolo(result, extra = {}) {
     this.locked = true;
     this.ended = true;
+    delete this.run.combatTaunt;
     if (CONFIG.charge.resetAfterCombat) this.charge = 0;
     this.rng.advance?.();
     const delay = extra._delayMs ?? (result === 'win' ? 500 : 900);

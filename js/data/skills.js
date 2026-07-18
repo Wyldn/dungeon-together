@@ -44,6 +44,12 @@ export const SKILLS = {
       desc: 'A sweeping blow that hits every enemy.' },
     COMP.cost(26), COMP.charge(3), COMP.target('all'), COMP.dmg(70, 'str'),
   ),
+  taunt: composeSkill(
+    { id: 'taunt', name: 'Taunt', class: 'warrior', fx: 'buff',
+      desc: 'Jeer every enemy into aiming at YOU for 2 turns, and brace for it (block 20%). In a party, you are the wall.' },
+    COMP.cost(10), COMP.charge(0), COMP.target('self'), COMP.shield(0.2),
+    { tauntTurns: 2 },
+  ),
   /* ============ VIKING (Fury) ============
      The Warrior spends Vigor to stay standing; the Viking spends HP to hit
      harder and drinks it back with lifesteal. Every big swing has a bill. */
@@ -858,11 +864,13 @@ export const SKILLS = {
     desc: 'Borrowed from something with scales. Devastates all enemies, 60% burn.',
   },
 
-  /* ============ SPELLSWORD (Arcana) ============ */
+  /* ============ SPELLSWORD (Arcana) ============
+     Dual-stat identity: every blade-spell scales on STR+INT together
+     (55% of the sum — stronger than either stat alone only if you feed both). */
   rune_edge: composeSkill(
     { id: 'rune_edge', name: 'Rune Edge', class: 'spellsword', fx: 'arcane',
-      desc: 'A sword-cut edged in script. Free — scales on your best of STR/INT.' },
-    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(100, 'best'),
+      desc: 'A sword-cut edged in script. Free — scales on STR+INT together.' },
+    COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(100, 'str+int'),
   ),
   arc_ward: composeSkill(
     { id: 'arc_ward', name: 'Arc Ward', class: 'spellsword', fx: 'buff',
@@ -872,46 +880,46 @@ export const SKILLS = {
   mana_lunge: composeSkill(
     { id: 'mana_lunge', name: 'Mana Lunge', class: 'spellsword', fx: 'slash',
       desc: 'Close the gap with a charged blade. Solid hybrid damage.' },
-    COMP.cost(16), COMP.charge(1), COMP.target('one'), COMP.dmg(125, 'best'),
+    COMP.cost(16), COMP.charge(1), COMP.target('one'), COMP.dmg(125, 'str+int'),
   ),
   sigil_thrust: composeSkill(
     { id: 'sigil_thrust', name: 'Sigil Thrust', class: 'spellsword', fx: 'pierce',
       desc: 'A short thrust stamped with a killing mark. Cheap and precise.' },
-    COMP.cost(12), COMP.charge(1), COMP.target('one'), COMP.dmg(118, 'best'),
+    COMP.cost(12), COMP.charge(1), COMP.target('one'), COMP.dmg(118, 'str+int'),
   ),
   blade_tempest: composeSkill(
     { id: 'blade_tempest', name: 'Blade Tempest', class: 'spellsword', fx: 'arcane',
       desc: 'A whirl of steel and loose glyphs. Hits every enemy.' },
-    COMP.cost(30), COMP.charge(3), COMP.target('all'), COMP.dmg(78, 'best'),
+    COMP.cost(30), COMP.charge(3), COMP.target('all'), COMP.dmg(78, 'str+int'),
   ),
   aegis_cut: composeSkill(
     { id: 'aegis_cut', name: 'Aegis Cut', class: 'spellsword', fx: 'slash', tier: 2,
       desc: 'Strike and brace as one motion. Solid damage; block 30% for 3 turns.' },
-    COMP.cost(22), COMP.charge(2), COMP.target('one'), COMP.dmg(135, 'str'),
+    COMP.cost(22), COMP.charge(2), COMP.target('one'), COMP.dmg(135, 'str+int'),
     COMP.shield(0.3),
   ),
   hex_rend: composeSkill(
     { id: 'hex_rend', name: 'Hex Rend', class: 'spellsword', fx: 'shadow', tier: 2,
       desc: 'Carve a curse into the wound. Hexed foes take +25% damage. 85% chance.' },
-    COMP.cost(20), COMP.charge(2), COMP.target('one'), COMP.dmg(115, 'int'),
+    COMP.cost(20), COMP.charge(2), COMP.target('one'), COMP.dmg(115, 'str+int'),
     COMP.hex(0.85),
   ),
   sanctum_blade: composeSkill(
     { id: 'sanctum_blade', name: 'Sanctum Blade', class: 'spellsword', fx: 'holy', tier: 3,
       desc: 'ULTIMATE — oath-bound steel. Heavy single-target; light mends you 8%.' },
-    COMP.cost(48), COMP.charge(5), COMP.target('one'), COMP.dmg(200, 'str'),
+    COMP.cost(48), COMP.charge(5), COMP.target('one'), COMP.dmg(200, 'str+int'),
     COMP.healPct(0.08),
   ),
   living_script: composeSkill(
     { id: 'living_script', name: 'Living Script', class: 'spellsword', fx: 'arcane', tier: 3,
       desc: 'ULTIMATE — the blade writes a storm. Hits all enemies; 40% hex.' },
-    COMP.cost(52), COMP.charge(6), COMP.target('all'), COMP.dmg(125, 'int'),
+    COMP.cost(52), COMP.charge(6), COMP.target('all'), COMP.dmg(125, 'str+int'),
     COMP.hex(0.4),
   ),
   eclipse_cut: composeSkill(
     { id: 'eclipse_cut', name: 'Eclipse Cut', class: 'spellsword', fx: 'shadow', tier: 2,
       desc: 'Cut with the void between spell and steel. Heavy damage; ignores defense.' },
-    COMP.cost(34), COMP.charge(4), COMP.target('one'), COMP.dmg(175, 'best'),
+    COMP.cost(34), COMP.charge(4), COMP.target('one'), COMP.dmg(175, 'str+int'),
     COMP.ignoreDef(),
   ),
   glyph_parry: composeSkill(
@@ -923,7 +931,7 @@ export const SKILLS = {
   spark_riposte: composeSkill(
     { id: 'spark_riposte', name: 'Spark Riposte', class: 'spellsword', fx: 'thunder', tier: 2,
       desc: 'Answer a threat with a charged counter-cut. 30% stun.' },
-    COMP.cost(24), COMP.charge(2), COMP.target('one'), COMP.dmg(140, 'best'),
+    COMP.cost(24), COMP.charge(2), COMP.target('one'), COMP.dmg(140, 'str+int'),
     COMP.stun(0.3),
   ),
 

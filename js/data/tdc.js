@@ -30,6 +30,8 @@ export const TDC = {
     residualHpCap: 0.16,     // unused/overspend budget → at most ±16% HP
     residualHpFactor: 0.55,  // conversion rate |remaining|/budget → HP
     fillThreshold: 0.55,     // add another body if ≥55% of its cost remains
+    swarmChance: 0.22,       // chance a trash pack rolls as a swarm (many cheap bodies)
+    swarmMaxBodies: 5,       // hard ceiling on swarm size (UI + turn-length sanity)
     bossBudgetMult: 1.35,    // bosses claim a larger slice of party budget
     bossEscortMinFrac: 0.22, // leftover must clear this before an escort spawns
     refHp: 28,               // F1 wolf hp — threat cost denominator
@@ -64,7 +66,7 @@ export const TDC = {
     // in the single digits after player DEF grew.
     bossFloorAtk: 0.014,
     // Commons sit a notch under forced mimic fights; bosses punch harder.
-    boss: { hp: 1.08, atk: 1.35, def: 1.05 },
+    boss: { hp: 1.08, atk: 1.5, def: 1.05 },
     common: { hp: 1.12, atk: 0.92, def: 1.0 },
     elite: { hp: 1.38, atk: 1.08, def: 1.05 },
   },

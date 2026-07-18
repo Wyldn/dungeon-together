@@ -40,6 +40,19 @@ export class CoopSession {
     this.offs.push(net.on('wrldclaim', (d) => {
       if (d?.id) this.claimedWrld.add(d.id);
     }));
+    // Individual-combat deaths eliminate the climber from the run: the party
+    // continues without them (gates, scaling, and votes all skip them).
+    this.eliminated = new Set();
+    this.offs.push(net.on('elim', (d, from) => {
+      this.eliminated.add(from);
+      const p = this.partners.get(from);
+      if (p) {
+        this.partners.delete(from);
+        for (const tag of [...this.gates.keys()]) this._checkGate(tag);
+        this.onPartnerUpdate?.();
+        this.onPartnerEliminated?.(p.name);
+      }
+    }));
     // Party requeue votes — buffered so a late end-screen still sees earlier votes
     this.requeueVotes = new Set();
     this.offs.push(net.on('requeue', (d, from) => {
@@ -65,13 +78,24 @@ export class CoopSession {
     const ids = new Set(this.net.roster.map(p => p.id));
     for (const id of [...this.partners.keys()]) if (!ids.has(id)) this.partners.delete(id);
     for (const p of this.net.roster) {
-      if (p.id !== this.net.you && !this.partners.has(p.id)) {
+      // eliminated climbers stay connected (end screen) but are out of the run
+      if (p.id !== this.net.you && !this.partners.has(p.id) && !this.eliminated.has(p.id)) {
         this.partners.set(p.id, { name: p.name, classId: null, status: null, act: 'lobby' });
       }
     }
   }
 
-  get isHost() { return this.net.isHost; }
+  // Acting host: publishes floors, arbitrates votes, drives shared enemies.
+  // Normally the relay host — but an eliminated host can no longer simulate
+  // (their run is over), so the lowest-id active climber takes over.
+  get isHost() {
+    const hostId = this.net.roster.find(p => p.host)?.id;
+    if (hostId && !this.eliminated.has(hostId)) return this.net.isHost;
+    const active = [this.net.you, ...this.partners.keys()]
+      .filter(id => !this.eliminated.has(id))
+      .sort();
+    return active.length > 0 && active[0] === this.net.you;
+  }
   get you() { return this.net.you; }
   get seed() { return this.net.seed; }
   get partySize() { return this.partners.size + 1; }
@@ -135,6 +159,8 @@ export class CoopSession {
       sanity: Math.round(run.sanity), maxSanity: run.maxSanity,
       gold: run.gold, floor: run.floor, down: !!run.down,
       def: run.def, dodge: run.dodge, // callers pass derived values via runStatus()
+      appearanceId: run.appearanceId || null,
+      taunt: run.combatTaunt || 0,
       spdStat: run.spdStat, initiative: run.initiative,
       dex: run.stats?.dex ?? run.dex,
       gear: run.sheetGear || [],
@@ -145,6 +171,12 @@ export class CoopSession {
     if (key === this.lastStatus) return;
     this.lastStatus = key;
     this.net.send(msg);
+  }
+
+  /** Tell the party this climber is out of the run (individual-combat death). */
+  announceEliminated() {
+    this.eliminated.add(this.net.you);
+    this.net.send({ k: 'elim' });
   }
 
   allPartnersDown() {

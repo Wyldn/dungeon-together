@@ -22,6 +22,7 @@ export const UPGRADES = [
   { id: 'first_aid', name: 'Field Medicine', desc: 'Start each run with a Healing Potion per rank.', max: 2, cost: r => 45 + r * 35 },
   { id: 'keen_eye', name: 'Keen Eye', desc: '+4% crit chance per rank.', max: 3, cost: r => 55 + r * 45 },
   { id: 'tempo', name: 'Veteran\'s Tempo', desc: 'Begin every battle with +1 Battle Charge per rank.', max: 2, cost: r => 70 + r * 60 },
+  { id: 'foresight', name: 'Read the Stars', desc: '+1 starting-potential reroll per rank when building a climber.', max: 2, cost: r => 45 + r * 40 },
 ];
 
 export const ACHIEVEMENTS = [

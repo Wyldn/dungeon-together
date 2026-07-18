@@ -14,10 +14,11 @@ Gameplay inspiration: **An Average Campaign** (Roblox), **Reigns**, and **Baldur
 ### 🎭 Playing together
 
 1. Title screen → **⚔ Play Together**
-2. One player **creates a party** and shares the 4-letter code; up to 3 more join
-3. Everyone picks a class, readies up; the host opens the gate
+2. One player **creates a party** and shares the 4-letter code (or checks **🌐 Public party**); up to 3 more join
+3. No friends online? **🌐 Quick Match** drops you into any open public party — or makes you the host of a fresh one. **Browse open parties** lists what's waiting.
+4. Everyone picks a class (and a look), readies up; the host opens the gate
 
-**How co-op works:** one shared tower (same seed, same cards, lock-step floors). Story/event cards are answered *individually* — your choices, your consequences. Encounters, trials, bosses, and the Throne are fought **together**, turn by turn. If you fall, you're *down*, not dead — your party's victory revives you at the next floor (30% HP). If the whole party falls, the tower keeps everyone.
+**How co-op works:** one shared tower (same seed, same cards, lock-step floors). Story/event cards are answered *individually* — your choices, your consequences. Encounters, trials, bosses, and the Throne are fought **together**, turn by turn. If you fall in a **shared** fight, you're *down*, not dead — your party's victory revives you at the next floor (30% HP). But a fight you picked **alone** (an event's duel, a mimic, an ambush) is yours alone: die there and the tower keeps you — the party climbs on without you. Idle climbers don't stall the party: after ~60s, votes resolve once half the party has spoken, and an AFK combat turn plays itself.
 
 ## 🖥️ Run locally
 

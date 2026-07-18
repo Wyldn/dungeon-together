@@ -478,7 +478,7 @@ function creationFlow(coopContext = null) {
   let crystalCtl = null;
   let apprBand = null;        // the revealed potential band (computed once per roll)
 
-  function maxRerolls() { return CONFIG.chargen.rerolls + (RACES[pick.raceId].extraReroll || 0); }
+  function maxRerolls() { return CONFIG.chargen.rerolls + (RACES[pick.raceId].extraReroll || 0) + upgradeRank(meta, 'foresight'); }
   function fatePct() { return fateGrowthPct(pick.fateRace, pick.fateClass); }
 
   function render() {
@@ -896,11 +896,20 @@ function coopMenu() {
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn primary" id="btn-create" style="flex:1">Create a Party</button>
       </div>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px;color:var(--ink-dim);cursor:pointer">
+        <input type="checkbox" id="coop-public" /> 🌐 Public party — strangers can find and join it
+      </label>
       <div class="divider"></div>
       <div style="display:flex;gap:10px">
         <input class="name-input" id="coop-code" maxlength="4" placeholder="CODE" style="width:110px;text-transform:uppercase;text-align:center;letter-spacing:.3em" />
         <button class="btn" id="btn-join" style="flex:1">Join a Party</button>
       </div>
+      <div class="divider"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn" id="btn-quick" style="flex:1">🌐 Quick Match</button>
+        <button class="btn ghost" id="btn-browse">Browse open parties</button>
+      </div>
+      <div id="coop-publist" style="margin-top:10px"></div>
       <div id="coop-err" style="color:#f0a8a0;font-size:14px;margin-top:12px;min-height:20px"></div>
     </div>
     <div style="text-align:center;margin-top:16px"><button class="btn ghost small" id="btn-back">← Back</button></div>
@@ -910,7 +919,7 @@ function coopMenu() {
   nameInput.value = localStorage.getItem('dt_coop_name') || RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
   const errEl = scr.querySelector('#coop-err');
 
-  async function go(mode) {
+  async function go(mode, joinCode = null) {
     const name = nameInput.value.trim() || 'Climber';
     localStorage.setItem('dt_coop_name', name);
     errEl.textContent = 'Connecting to the tower...';
@@ -923,19 +932,56 @@ function coopMenu() {
     }
     net.sys('err', m => { errEl.textContent = m.why; net.close(); });
     const roomPromise = new Promise(r => { const off = net.sys('room', m => { off(); r(m); }); });
-    if (mode === 'create') net.create(name);
+    if (mode === 'create') net.create(name, scr.querySelector('#coop-public')?.checked || false);
+    else if (mode === 'quick') net.quickjoin(name);
     else {
-      const code = scr.querySelector('#coop-code').value.trim().toUpperCase();
+      const code = (joinCode || scr.querySelector('#coop-code').value.trim()).toUpperCase();
       if (code.length !== 4) { errEl.textContent = 'Party codes are 4 letters.'; net.close(); return; }
       net.join(code, name);
     }
-    await roomPromise;
+    const roomMsg = await roomPromise;
     coopS = new CoopSession(net);
+    if (mode === 'quick' && roomMsg.host) {
+      toast('No open parties right now — you host a public one. Climbers can find you.', 'info');
+    }
     coopLobby(name);
+  }
+
+  // one-shot browser for open public parties
+  async function browsePublic() {
+    const listEl = scr.querySelector('#coop-publist');
+    listEl.innerHTML = '<span style="color:var(--ink-dim);font-style:italic">Looking for open parties…</span>';
+    let net;
+    try {
+      net = await connectCoop(defaultServerUrl());
+    } catch {
+      listEl.innerHTML = '';
+      errEl.textContent = 'Could not reach the party server. Is it awake?';
+      return;
+    }
+    const listPromise = new Promise(r => { const off = net.sys('publist', m => { off(); r(m); }); });
+    net.listPublic();
+    const timeout = new Promise(r => setTimeout(() => r(null), 5000));
+    const m = await Promise.race([listPromise, timeout]);
+    net.close();
+    if (!m) { listEl.innerHTML = ''; errEl.textContent = 'The server did not answer the lobby list.'; return; }
+    if (!m.rooms.length) {
+      listEl.innerHTML = '<span style="color:var(--ink-dim);font-style:italic">No open public parties. Quick Match will make you the host.</span>';
+      return;
+    }
+    listEl.innerHTML = m.rooms.map(r => `
+      <div class="inv-item">
+        <div><div class="item-name">${String(r.host).replace(/[<>&"]/g, '')}'s party</div>
+        <div class="item-desc">${r.count}/4 climbers · code ${r.code}</div></div>
+        <button class="btn small" data-pubjoin="${r.code}">Join</button>
+      </div>`).join('');
+    listEl.querySelectorAll('[data-pubjoin]').forEach(b => b.onclick = () => { SFX.click(); go('join', b.dataset.pubjoin); });
   }
 
   scr.querySelector('#btn-create').onclick = () => { SFX.click(); go('create'); };
   scr.querySelector('#btn-join').onclick = () => { SFX.click(); go('join'); };
+  scr.querySelector('#btn-quick').onclick = () => { SFX.click(); go('quick'); };
+  scr.querySelector('#btn-browse').onclick = () => { SFX.click(); browsePublic(); };
   scr.querySelector('#btn-back').onclick = () => { SFX.click(); titleScreen(); };
 }
 
@@ -946,7 +992,7 @@ function coopLobby(myName) {
   const lobbyState = new Map();
   let gen = rollStart(myPick.classId, myPick.raceId);
   let rerolls = 0;
-  function maxRerolls() { return CONFIG.chargen.rerolls + (RACES[myPick.raceId].extraReroll || 0); }
+  function maxRerolls() { return CONFIG.chargen.rerolls + (RACES[myPick.raceId].extraReroll || 0) + upgradeRank(meta, 'foresight'); }
   function fateBoostPct() { return fateGrowthPct(myPick.fateRace, myPick.fateClass); }
 
   // Remote updates touch ONLY the roster/mode sections — never the whole
@@ -991,6 +1037,8 @@ function coopLobby(myName) {
     coopS.floorContent.clear();
     coopS.gates.clear();
     coopS.requeueVotes = new Set();
+    coopS.eliminated.clear();
+    coopS._syncRoster?.(); // eliminated climbers from a past run rejoin the roster
     run = newRun(meta, {
       classId: myPick.classId, raceId: myPick.raceId, originId: myPick.originId,
       appearanceId: myPick.appearanceId || defaultAppearanceId(myPick.classId),
@@ -1004,6 +1052,14 @@ function coopLobby(myName) {
     SFX.unlock();
     coopS.onPartnerLeft = () => {
       toast('A climber has left the party.', 'bad');
+      if (coopS.isHost && run && run.floor > 0 && !coopS.floorContent.has(run.floor)) {
+        hostPublishFloorContent();
+      }
+      refreshPartnerStrip();
+    };
+    coopS.onPartnerEliminated = (name) => {
+      toast(`${name} has fallen — the tower keeps them.`, 'bad');
+      // if host duty just migrated to this client, keep the floors flowing
       if (coopS.isHost && run && run.floor > 0 && !coopS.floorContent.has(run.floor)) {
         hostPublishFloorContent();
       }
@@ -1100,15 +1156,23 @@ function coopLobby(myName) {
     const boost = fateGrowthPctOne();
     const raceSealed = myPick.fateRace;
     const classSealed = myPick.fateClass;
+    const looks = classSealed ? [] : (appearancesFor(myPick.classId) || []);
+    const lookName = looks.find(s => s.id === myPick.appearanceId)?.name || 'Look';
+    const lookRow = (!classSealed && !myReady && looks.length > 1)
+      ? `<div class="pt-hint" style="display:flex;gap:6px;align-items:center;justify-content:center;margin-top:4px">
+          <button class="btn small ghost" id="look-prev" type="button">◀</button>
+          <span>${lookName}</span>
+          <button class="btn small ghost" id="look-next" type="button">▶</button></div>`
+      : '';
     const raceArt = raceSealed
       ? '<span style="font-size:32px">🎲</span>'
       : (raceIconUrl(myPick.raceId) ? `<img class="px-icon" src="${raceIconUrl(myPick.raceId)}" style="width:44px;height:44px" alt="">` : `<span style="font-size:32px">${RACES[myPick.raceId].glyph}</span>`);
     const classArt = classSealed
       ? '<span style="font-size:32px">🎲</span>'
-      : (heroSpriteHtml(myPick.classId, 44) || `<div class="class-icon" style="width:40px;height:40px;margin:0 auto;color:${CLASSES[myPick.classId].accent}">${ICONS[myPick.classId]}</div>`);
+      : (heroSpriteHtml(myPick.classId, 44, { appearanceId: myPick.appearanceId }) || `<div class="class-icon" style="width:40px;height:40px;margin:0 auto;color:${CLASSES[myPick.classId].accent}">${ICONS[myPick.classId]}</div>`);
     return `
       <div class="panel pick-tile" id="pick-race"><div class="pt-art">${raceArt}</div><b>${raceSealed ? '???' : RACES[myPick.raceId].name}${raceSealed ? ' <span class="fate-badge">FATE</span>' : ''}</b><div class="pt-hint">${raceSealed ? 'sealed until the climb' : 'change race'}</div>${raceSealed || myReady ? '' : `<button class="btn small fate-mini" id="fate-race" type="button">🎲 Trust fate (+${boost}%)</button>`}</div>
-      <div class="panel pick-tile" id="pick-class"><div class="pt-art">${classArt}</div><b>${classSealed ? '???' : CLASSES[myPick.classId].name}${classSealed ? ' <span class="fate-badge">FATE</span>' : ''}</b><div class="pt-hint">${classSealed ? 'sealed until the climb' : 'change class'}</div>${classSealed || myReady ? '' : `<button class="btn small fate-mini" id="fate-class" type="button">🎲 Trust fate (+${boost}%)</button>`}</div>
+      <div class="panel pick-tile" id="pick-class"><div class="pt-art">${classArt}</div><b>${classSealed ? '???' : CLASSES[myPick.classId].name}${classSealed ? ' <span class="fate-badge">FATE</span>' : ''}</b><div class="pt-hint">${classSealed ? 'sealed until the climb' : 'change class'}</div>${lookRow}${classSealed || myReady ? '' : `<button class="btn small fate-mini" id="fate-class" type="button">🎲 Trust fate (+${boost}%)</button>`}</div>
       <div class="panel pick-tile" id="pick-origin"><div class="pt-art">${originIconUrl(myPick.originId) ? `<img class="px-icon" src="${originIconUrl(myPick.originId)}" style="width:44px;height:44px" alt="">` : `<span style="font-size:32px">${originById(myPick.originId).glyph}</span>`}</div><b style="font-size:13px">${originById(myPick.originId).name}</b><div class="pt-hint">change origin</div></div>`;
   }
 
@@ -1125,6 +1189,16 @@ function coopLobby(myName) {
     document.getElementById('pick-origin').onclick = () => openPicker('origin');
     document.getElementById('fate-race')?.addEventListener('click', e => { e.stopPropagation(); trustFate('race'); });
     document.getElementById('fate-class')?.addEventListener('click', e => { e.stopPropagation(); trustFate('class'); });
+    const cycleLook = dir => {
+      const skins = appearancesFor(myPick.classId) || [];
+      if (skins.length < 2) return;
+      const i = Math.max(0, skins.findIndex(s => s.id === myPick.appearanceId));
+      myPick.appearanceId = skins[(i + dir + skins.length) % skins.length].id;
+      SFX.click();
+      updatePickTiles();
+    };
+    document.getElementById('look-prev')?.addEventListener('click', e => { e.stopPropagation(); cycleLook(-1); });
+    document.getElementById('look-next')?.addEventListener('click', e => { e.stopPropagation(); cycleLook(1); });
   }
 
   function potentialHtml() {
@@ -1836,7 +1910,10 @@ async function fightGroup(stage, specs, { text = null, modifier = null, prebuilt
   const mult = (modifier?.hpMult || 1) * (hpMult || 1);
   const enemies = prebuilt || specs.map(s => buildEnemy(s, run.floor, biome.floors[0], { hpMult: mult }));
   if (modifier?.extraEnemy) {
-    enemies.push(buildEnemy(runRng(run).pick(ENEMIES[biome.id].filter(e => !e.elite)), run.floor, biome.floors[0], { hpMult: mult }));
+    const extra = modifier.extraEnemy === true ? 1 : modifier.extraEnemy;
+    for (let i = 0; i < extra; i++) {
+      enemies.push(buildEnemy(runRng(run).pick(ENEMIES[biome.id].filter(e => !e.elite)), run.floor, biome.floors[0], { hpMult: mult }));
+    }
   }
   sheetCombatLock = true; renderHud();
   const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
@@ -1848,14 +1925,9 @@ async function fightGroup(stage, specs, { text = null, modifier = null, prebuilt
   if (result === 'win') { if (noDamage) unlock('untouchable'); if (usedUltimate) unlock('overcharged'); }
 
   if (result === 'dead') {
-    if (coopS && !coopS.alone) {
-      run.down = true;
-      saveRun(run);
-      coopS.broadcastStatus(statusOf(run, 'waiting'), 'waiting');
-      return showOutcomePanel(stage, [
-        { text: 'You fall — but you are not alone in this tower. Your companions find you and carry you to the stairs.', cls: 'bad' },
-      ]);
-    }
+    // Individual fights are yours alone — dying in one eliminates you from
+    // the climb. Party mercy only covers battles fought side by side.
+    if (coopS && !coopS.alone) coopS.announceEliminated();
     return endRun('dead');
   }
   if (result === 'fled') {
@@ -1907,8 +1979,8 @@ async function afterVictory(stage, enemies, gold, xp, { boss = null, reward = nu
   }
   SFX.victory();
   const ups = gainXp(run, xp, runRng(run));
-  // §16: exclusive spoils from an optional NPC duel
-  const rewardUps = reward ? (await grantReward(reward, lines)) || [] : [];
+  // §16: exclusive spoils from an optional NPC duel — techniques cost gold here
+  const rewardUps = reward ? (await grantReward(reward, lines, { paySkills: true })) || [] : [];
   saveRun(run);
   await showOutcomePanel(stage, lines, [...ups, ...rewardUps], boss ? { continueLabel: 'Claim your prize', advance: false } : {});
   if (boss) await bossRelicPick(stage);
@@ -1955,7 +2027,7 @@ async function applyRewardOption(opt, lines) {
   }
 }
 
-async function grantReward(reward, lines) {
+async function grantReward(reward, lines, { paySkills = false } = {}) {
   if (!reward) return;
   const rng = runRng(run);
   if (reward.gold) { run.gold += reward.gold; run.goldEarned += reward.gold; lines.push({ text: `+${reward.gold} gold`, cls: 'gold' }); }
@@ -2009,15 +2081,33 @@ async function grantReward(reward, lines) {
   }
   if (reward.options?.length) {
     let chosen = reward.options[0];
+    // Combat spoils: techniques carry an acquisition fee by tier — the tower
+    // teaches nothing for free. Items and relics stay plain spoils.
+    const skillCost = op => {
+      if (!paySkills || (op.kind !== 'skill' && !op.skill)) return 0;
+      const sk = SKILLS[op.kind === 'skill' ? op.id : op.skill];
+      return sk ? (CONFIG.skillReward?.costByTier?.[sk.tier || 1] ?? 0) : 0;
+    };
+    const anyAffordable = reward.options.some(op => skillCost(op) <= run.gold);
     await modalCustom((m, close) => {
       m.innerHTML = `<h3>Spoils</h3><p class="modal-sub">${reward.chooseLabel || 'Take one:'}</p>
         <div class="pick-grid">${reward.options.map((op, i) => {
           const nm = op.kind === 'skill' ? SKILLS[op.id]?.name : itemById(op.id)?.name;
           const desc = op.kind === 'skill' ? SKILLS[op.id]?.desc : itemById(op.id)?.desc;
-          return `<button class="pick-option" data-i="${i}"><span class="po-tag tag">${op.kind}</span><div class="po-name">${nm || op.id}</div><div class="po-desc">${desc || ''}</div></button>`;
+          const cost = skillCost(op);
+          const short = anyAffordable && cost > run.gold;
+          return `<button class="pick-option" data-i="${i}" ${short ? 'disabled' : ''}>
+            <span class="po-tag tag">${op.kind}${cost ? ` · ${cost}g` : ''}</span>
+            <div class="po-name">${nm || op.id}</div>
+            <div class="po-desc">${desc || ''}${cost ? `<br/><span style="color:var(--gold-bright)">Learning fee: ${cost} gold${short ? ' — beyond your purse' : ''}.</span>` : ''}</div></button>`;
         }).join('')}</div>`;
-      m.querySelectorAll('[data-i]').forEach(b => b.onclick = () => { chosen = reward.options[+b.dataset.i]; close(); });
+      m.querySelectorAll('[data-i]:not([disabled])').forEach(b => b.onclick = () => { chosen = reward.options[+b.dataset.i]; close(); });
     });
+    const fee = Math.min(skillCost(chosen), run.gold);
+    if (fee > 0) {
+      run.gold -= fee;
+      lines.push({ text: `Technique learning fee: -${fee} gold`, cls: 'bad' });
+    }
     await applyRewardOption(chosen, lines);
   } else if (!reward.guaranteed && !reward.farmerLoot) {
     await applyRewardOption(reward, lines);
@@ -2218,7 +2308,13 @@ function hostPublishFloorContent() {
   } else if (run.floor % 5 === 0) {
     const mod = rng.pick(MODIFIERS);
     const plan = pickEnemyPlan(rng, biome, coopS.partySize);
-    content = { floor: run.floor, type: 'trial', modId: mod.id, enemies: buildSharedEnemies(plan.specs, { hpMult: plan.hpMult }) };
+    const specs = [...plan.specs];
+    if (mod.extraEnemy) {
+      const extra = mod.extraEnemy === true ? 1 : mod.extraEnemy;
+      const pool = (ENEMIES[biome.id] || ENEMIES.hell).filter(e => !e.elite);
+      for (let i = 0; i < extra; i++) specs.push(rng.pick(pool));
+    }
+    content = { floor: run.floor, type: 'trial', modId: mod.id, enemies: buildSharedEnemies(specs, { hpMult: plan.hpMult * (mod.hpMult || 1) }) };
   } else if (BOSS_FLOORS.includes(run.floor + 1)) {
     content = { floor: run.floor, type: 'event', eventId: 'campfire' };
   } else {
@@ -2277,9 +2373,11 @@ function coopCardChoice(stage, cards) {
     return;
   }
 
+  let afkTimer = null;
   const finish = (idx, spinFrom = null) => {
     if (resolved) return;
     resolved = true;
+    clearTimeout(afkTimer);
     for (const off of offs) off();
     api?.lock(idx, spinFrom?.length > 1 ? { spinFrom } : {});
   };
@@ -2302,10 +2400,12 @@ function coopCardChoice(stage, cards) {
     finish(d.idx, Array.isArray(d.tied) ? d.tied : null);
   }));
 
-  function hostTallyIfComplete() {
-    const all = new Map([...remotePicks, ...(api?.picks.has(coopS.you) ? [[coopS.you, api.picks.get(coopS.you)]] : [])]);
-    if (all.size < coopS.partySize) return;
-    // tally; ties resolved randomly, synchronized via broadcast (handoff §3)
+  const collectVotes = () =>
+    new Map([...remotePicks, ...(api?.picks.has(coopS.you) ? [[coopS.you, api.picks.get(coopS.you)]] : [])]);
+
+  // tally; ties resolved randomly, synchronized via broadcast (handoff §3)
+  function hostTally(all) {
+    if (!all.size || resolved) return;
     const counts = {};
     for (const idx of all.values()) counts[idx] = (counts[idx] || 0) + 1;
     const max = Math.max(...Object.values(counts));
@@ -2318,6 +2418,25 @@ function coopCardChoice(stage, cards) {
     coopS.net.send(msg);
     finish(winner, tied.length > 1 ? tied : null);
   }
+
+  function hostTallyIfComplete() {
+    const all = collectVotes();
+    if (all.size < coopS.partySize) return;
+    hostTally(all);
+  }
+
+  // AFK guard (host): once the timer runs out, resolve with whatever votes are
+  // in — as long as at least half the active party has spoken.
+  const armAfk = ms => {
+    clearTimeout(afkTimer);
+    afkTimer = setTimeout(() => {
+      if (resolved) return;
+      const all = collectVotes();
+      if (all.size >= Math.max(1, Math.ceil(coopS.partySize / 2))) hostTally(all);
+      else armAfk(CONFIG.afk?.voteRecheckMs || 15000);
+    }, ms);
+  };
+  if (coopS.isHost && mode === 'majority') armAfk(CONFIG.afk?.voteMs || 60000);
 
   renderTravelMap(stage, cards, {
     mode,
@@ -2788,9 +2907,8 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
       const n = rng.int(cLo, cHi);
       enemyIds = [];
       for (let i = 0; i < n; i++) enemyIds.push(rng.pick(pe.pool));
-      if (pe.partyExtra && coopS && !coopS.alone) {
-        for (let i = 0; i < coopS.partners.size * pe.partyExtra; i++) enemyIds.push(rng.pick(pe.pool));
-      }
+      // NOTE: event fights are fought individually even in co-op, so party
+      // size must never scale them — solo scaling only (pe.partyExtra ignored).
     }
     const specs = enemyIds.map(id => findEnemySpec(id) || ENEMIES[biome.id][0]);
     const fightReward = o.combat.reward || o.combat.xp ? { ...(o.combat.reward || {}) } : null;
@@ -3183,6 +3301,12 @@ function accessorySlots() {
   return ['accessory1', 'accessory2', 'accessory3'];
 }
 
+/** Weapon-compatibility check for a candidate item (handoff §20). */
+function weaponFitsClass(item) {
+  if (!item || item.slot !== 'weapon' || !item.wtype) return true;
+  return allowedWeaponTypes(run).includes(item.wtype);
+}
+
 function equipItem(item, targetSlot = null) {
   const slot = targetSlot || slotFor(item);
   const oldId = run.equipment[slot];
@@ -3190,6 +3314,9 @@ function equipItem(item, targetSlot = null) {
   const bagIdx = run.inventory.indexOf(item.id);
   if (bagIdx > -1) run.inventory.splice(bagIdx, 1);
   run.equipment[slot] = item.id;
+  if (slot === 'weapon' && !weaponFitsClass(item)) {
+    toast(`⚠ ${item.name} fights your training — only Strike and Guard until you swap weapons.`, 'bad');
+  }
   if (item.rarity === 'legendary' || item.rarity === 'unique' || item.rarity === 'wrld') unlock('legendary');
   if (item.rarity === 'unique') unlock('unique_gear');
   if (item.rarity === 'wrld') unlock('wrld_gear');
@@ -3253,9 +3380,10 @@ async function offerEquipment(item, lines) {
       } else {
         const s = item.slot;
         const cur = run.equipment[s] ? resolveItem(run, run.equipment[s]) : null;
+        const misfit = !weaponFitsClass(item);
         slotBtns = `<button class="pick-option" data-act="equip" data-slot="${s}">
-          <span class="po-name">${cur ? 'Replace it' : 'Equip it'}</span>
-          <span class="po-desc">${cur ? `${cur.name} → pack` : ''}</span>
+          <span class="po-name">${cur ? 'Replace it' : 'Equip it'}${misfit ? ' ⚠' : ''}</span>
+          <span class="po-desc">${misfit ? 'Incompatible with your training — only Strike and Guard while wielded.' : (cur ? `${cur.name} → pack` : '')}</span>
         </button>`;
         compareRight = gearCard(cur, 'EQUIPPED');
       }
@@ -3692,7 +3820,8 @@ function characterSheet({ locked = false } = {}) {
         ? `<p class="modal-sub" style="color:var(--crit)">In combat — gear, pack swaps, and consumables are locked. Use ITEMS on your turn to drink potions.</p>`
         : `<p class="modal-sub">Floor ${run.floor} · ${run.kills} kills · Origin: ${run.originId ? originById(run.originId)?.name : 'Unknown'}</p>`;
       m.innerHTML = `
-        <h3>${run.name} — Lv ${run.level} ${run.raceName} ${classTitle(run)}</h3>
+        <h3>${run.name} — Lv ${run.level} ${run.raceName} ${classTitle(run)}
+          <button class="btn small ghost" id="sheet-look" title="Cycle your look — companions see it too">🎭 Look</button></h3>
         ${lockNote}
         <div class="sheet-grid">
           <div class="sheet-section">
@@ -3775,6 +3904,22 @@ function characterSheet({ locked = false } = {}) {
         <div style="text-align:right"><button class="btn small" id="sheet-close">Close</button></div>`;
 
       m.querySelector('#sheet-close').onclick = () => close();
+      // Cosmetic — allowed any time, mid-run and mid-party. Partners see the
+      // new look through the regular status broadcast.
+      m.querySelector('#sheet-look')?.addEventListener('click', () => {
+        const skins = appearancesFor(run.classId) || [];
+        if (skins.length < 2) { toast('Your calling has only one look.', 'sys'); return; }
+        const i = Math.max(0, skins.findIndex(s => s.id === run.appearanceId));
+        const next = skins[(i + 1) % skins.length];
+        run.appearanceId = next.id;
+        SFX.click(); saveRun(run); renderHud();
+        if (coopS) {
+          const act = sheetCombatLock ? 'fighting' : 'choosing';
+          coopS.broadcastStatus(statusOf(run, act), act);
+        }
+        toast(`Look: ${next.name}`, 'info');
+        render();
+      });
       if (locked) return;
 
       m.querySelectorAll('[data-use]').forEach(b => b.onclick = () => {
@@ -4090,12 +4235,15 @@ function wireEndButtons(wasCoop, myName) {
 
   if (!coopS.requeueVotes) coopS.requeueVotes = new Set();
   const statusEl = document.getElementById('requeue-status');
+  // Count every connected climber (roster), not partySize — eliminated players
+  // are out of `partners` but still get a requeue vote from the end screen.
+  const requeueNeeded = () => coopS?.net?.roster?.length || coopS?.partySize || 1;
   const updateStatus = () => {
     if (!coopS) return;
     const n = coopS.requeueVotes.size;
     const voted = coopS.requeueVotes.has(coopS.you);
     statusEl.textContent = n
-      ? `Party climb votes: ${n}/${coopS.partySize}${voted ? ' (you voted yes)' : ''} — everyone must agree.`
+      ? `Party climb votes: ${n}/${requeueNeeded()}${voted ? ' (you voted yes)' : ''} — everyone must agree.`
       : 'Propose a party climb — all climbers must accept.';
     if (voted) {
       partyBtn.disabled = true;
@@ -4104,7 +4252,7 @@ function wireEndButtons(wasCoop, myName) {
   };
 
   const tryEnterLobby = () => {
-    if (!coopS || coopS.requeueVotes.size < coopS.partySize) return false;
+    if (!coopS || coopS.requeueVotes.size < requeueNeeded()) return false;
     coopS.onRequeue = null;
     toast('The party climbs again.', 'info');
     coopLobby(myName);

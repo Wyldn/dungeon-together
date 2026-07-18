@@ -1516,7 +1516,7 @@ export const EVENTS = [
           enchantedFood: [1, 3] } },
       { label: 'Pick a fight', hint: 'easy scrap — little gold, fame loss, farm loot',
         outcome: { fame: -3, combat: {
-          pickEnemies: { pool: ['farmer_a', 'farmer_b', 'farmer_c', 'farmer_d', 'farmer_e', 'farmer_f'], count: [2, 3], partyExtra: 1 },
+          pickEnemies: { pool: ['farmer_a', 'farmer_b', 'farmer_c', 'farmer_d', 'farmer_e', 'farmer_f'], count: [2, 3] },
           text: 'Pitchforks lower. The scarecrow looks away.',
           reward: { farmerLoot: true },
         } } },

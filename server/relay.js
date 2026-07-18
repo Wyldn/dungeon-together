@@ -85,14 +85,26 @@ wss.on('connection', ws => {
     try { msg = JSON.parse(raw); } catch { return; }
     if (typeof msg !== 'object' || !msg) return;
 
+    const createRoom = (pub) => {
+      const code = makeCode();
+      room = { code, players: new Map(), hostId: id, seed: (Math.random() * 0xFFFFFFFF) >>> 0, pub: !!pub };
+      room.players.set(id, { ws, name: String(msg.name || 'Climber').slice(0, 16) });
+      rooms.set(code, room);
+      send({ t: 'room', code, you: id, host: true, seed: room.seed, roster: roster(room), pub: room.pub });
+    };
+    const joinRoom = (r) => {
+      room = r;
+      room.players.set(id, { ws, name: String(msg.name || 'Climber').slice(0, 16) });
+      send({ t: 'room', code: room.code, you: id, host: false, seed: room.seed, roster: roster(room), pub: !!room.pub });
+      broadcast(room, { t: 'roster', roster: roster(room) }, id);
+    };
+    const openPublicRooms = () =>
+      [...rooms.values()].filter(r => r.pub && !r.started && r.players.size < MAX_ROOM);
+
     switch (msg.t) {
       case 'create': {
         if (room) return;
-        const code = makeCode();
-        room = { code, players: new Map(), hostId: id, seed: (Math.random() * 0xFFFFFFFF) >>> 0 };
-        room.players.set(id, { ws, name: String(msg.name || 'Climber').slice(0, 16) });
-        rooms.set(code, room);
-        send({ t: 'room', code, you: id, host: true, seed: room.seed, roster: roster(room) });
+        createRoom(!!msg.pub);
         break;
       }
       case 'join': {
@@ -101,10 +113,23 @@ wss.on('connection', ws => {
         if (!r) return send({ t: 'err', why: 'No such room. Codes expire when everyone leaves.' });
         if (r.players.size >= MAX_ROOM) return send({ t: 'err', why: 'Room is full (4 max).' });
         if (r.started) return send({ t: 'err', why: 'That party has already entered the tower.' });
-        room = r;
-        room.players.set(id, { ws, name: String(msg.name || 'Climber').slice(0, 16) });
-        send({ t: 'room', code: room.code, you: id, host: false, seed: room.seed, roster: roster(room) });
-        broadcast(room, { t: 'roster', roster: roster(room) }, id);
+        joinRoom(r);
+        break;
+      }
+      case 'list': { // open public parties, for a lobby browser
+        const open = openPublicRooms().slice(0, 20).map(r => ({
+          code: r.code,
+          count: r.players.size,
+          host: r.players.get(r.hostId)?.name || 'Climber',
+        }));
+        send({ t: 'publist', rooms: open });
+        break;
+      }
+      case 'quickjoin': { // matchmaking: join any open public party, or host one
+        if (room) return;
+        const open = openPublicRooms();
+        if (open.length) joinRoom(open[Math.floor(Math.random() * open.length)]);
+        else createRoom(true);
         break;
       }
       case 'msg': { // game-level payload, relayed verbatim to the rest of the room

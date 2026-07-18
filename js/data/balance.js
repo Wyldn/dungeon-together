@@ -190,7 +190,14 @@ export function planEncounter(rng, {
   const cap = maxEnemies ?? soloEarlyMaxEnemies(floor, partySize);
   const roomFor = (n = 1) => !cap || specs.length + n <= cap;
 
-  const lead = rng.pick(usable);
+  // Swarm draws (AoE showcase): many cheap pack bodies instead of a heavy
+  // lead. Same threat budget — more targets, thinner blood each.
+  const swarmPool = usable.filter(e => !e.elite && e.pack);
+  const swarm = swarmPool.length > 0 && rng.chance(TDC.budget.swarmChance || 0);
+  const swarmMax = TDC.budget.swarmMaxBodies || 5;
+  const swarmCap = cap != null ? Math.min(cap, swarmMax) : swarmMax;
+
+  const lead = swarm ? rng.pick(swarmPool) : rng.pick(usable);
   const specs = [lead];
   remaining -= enemyThreatCost(lead, floor, biomeStart);
 
@@ -235,18 +242,22 @@ export function planEncounter(rng, {
   let guard = 0;
   const fillAt = TDC.budget.fillThreshold;
   while (guard++ < 8) {
-    if (cap != null && specs.length >= cap) break;
-    const next = cheapest();
+    const bodyCap = swarm ? swarmCap : cap;
+    if (bodyCap != null && specs.length >= bodyCap) break;
+    // Swarms keep stacking the lead's kin; normal draws take the cheapest body.
+    const next = swarm && rng.chance(0.75)
+      ? { e: lead, cost: enemyThreatCost(lead, floor, biomeStart) }
+      : cheapest();
     if (!next) break;
     if (next.cost > remaining && next.cost * fillAt > remaining) break;
-    if (specs.length >= 2 + Math.max(0, (partySize | 0) - 1) && remaining < next.cost * 0.85 && rng.chance(0.4)) break;
+    if (!swarm && specs.length >= 2 + Math.max(0, (partySize | 0) - 1) && remaining < next.cost * 0.85 && rng.chance(0.4)) break;
     specs.push(next.e);
     remaining -= next.cost;
   }
 
   const spent = budget - remaining;
   const hpMult = residualHpMult(remaining, budget);
-  return { specs, hpMult, budget, spent, remaining, maxEnemies: cap };
+  return { specs, hpMult, budget, spent, remaining, maxEnemies: cap, swarm };
 }
 
 /**

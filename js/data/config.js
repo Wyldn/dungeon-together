@@ -137,6 +137,23 @@ export const CONFIG = {
     mysteryNodeChance: 0.10,
   },
 
+  /* ---- co-op AFK handling ----
+     After this long without input, votes auto-resolve (if ≥ half the party
+     already voted) and an idle climber's combat turn plays a random valid
+     action. Each client polices its own turn; the host polices votes. */
+  afk: {
+    turnMs: 60000,
+    voteMs: 60000,
+    voteRecheckMs: 15000,   // if under 50% voted at the deadline, re-check this often
+  },
+
+  /* ---- skills offered as combat spoils are bought, not gifted ----
+     The tower teaches nothing for free: picking a technique from a post-fight
+     "take one" offer costs gold by tier. Guaranteed drops stay free. */
+  skillReward: {
+    costByTier: { 1: 40, 2: 85, 3: 150 },
+  },
+
   /* ---- technique slots unlocked by clearing boss floors ----
      Wired via applySkillBreakpoints() after boss victories. */
   skillBreakpoints: [

@@ -162,6 +162,7 @@ export const BOSSES = {
     chargeGain: 1,
     specials: [
       { at: 3, name: 'Limb Sweep', mult: 1.35, aoe: true, desc: 'branches groan overhead' },
+      { at: 5, name: 'Falling Canopy', mult: 1.55, aoe: true, desc: 'the whole crown comes down' },
       { at: 6, name: 'FOREST\'S VERDICT', mult: 2.0, desc: 'ten thousand judged climbers watch through its rings' },
     ],
     intro: 'The oldest tree in the forest uproots itself. It has judged ten thousand climbers.\nIt has approved of none.',
@@ -177,6 +178,7 @@ export const BOSSES = {
     chargeGain: 1,
     specials: [
       { at: 3, name: 'Oathbreaker', mult: 1.35, desc: 'the greatsword drags a line through the dust' },
+      { at: 4, name: 'Ring of Ash', mult: 1.4, aoe: true, desc: 'the crown sheds a burning halo' },
       { at: 6, name: 'CROWN OF ASH', mult: 1.85, desc: 'the dead king remembers he was crowned' },
     ],
     intro: 'A knight kneels in the dust, greatsword planted, crown fused to the helm.\nHe has knelt here for six hundred years, waiting for a king who never came.\nHe stands up for you.',
@@ -188,6 +190,7 @@ export const BOSSES = {
     chargeGain: 1,
     specials: [
       { at: 3, name: 'Soul Tithe', mult: 1.4, heal: 0.06, desc: 'the crown\'s lights burn colder' },
+      { at: 4, name: 'Court of Bones', mult: 1.35, aoe: true, desc: 'the floor remembers its subjects' },
       { at: 6, name: 'DYNASTY\'S END', mult: 1.7, aoe: true, desc: 'six hundred years of grievance condenses' },
     ],
     intro: 'A crown floats above a throne of dust. Beneath it, two cold lights ignite.\n"Kneel. My kingdom needs subjects."',
@@ -202,6 +205,7 @@ export const BOSSES = {
     chargeGain: 1,
     specials: [
       { at: 3, name: 'Glacial Decree', mult: 1.35, desc: 'the temperature plummets' },
+      { at: 4, name: 'Courtly Reproach', mult: 1.4, aoe: true, desc: 'the frozen court exhales as one' },
       { at: 6, name: 'ETERNAL WINTER', mult: 1.75, aoe: true, desc: 'the court\'s frozen betrayers turn their heads in unison' },
     ],
     intro: 'The Frost Queen does not rise from her throne. She merely opens her eyes,\nand the temperature of your blood becomes negotiable.',
@@ -213,6 +217,7 @@ export const BOSSES = {
     chargeGain: 1,
     specials: [
       { at: 3, name: 'Threefold Snap', mult: 1.4, desc: 'three heads inhale together' },
+      { at: 4, name: 'Threefold Breath', mult: 1.45, aoe: true, desc: 'three throats glow at once' },
       { at: 6, name: 'SORROW UNENDING', mult: 1.85, aoe: true, desc: 'the weeping head finally screams' },
     ],
     intro: 'Three heads surface from the black water. One weeps. One laughs.\nThe third simply opens its jaws.',
@@ -224,6 +229,7 @@ export const BOSSES = {
     chargeGain: 2, // the Duke is a duelist — he banks momentum fast
     specials: [
       { at: 3, name: 'Sword of Swords', mult: 1.5, desc: 'the blades within his blade align' },
+      { at: 4, name: 'Bladestorm Toll', mult: 1.45, aoe: true, desc: 'the sword of swords fans open' },
       { at: 6, name: 'GATEKEEPER\'S TOLL', mult: 1.9, aoe: true, burnSure: true, desc: 'he stops being polite about it' },
     ],
     intro: '"Fifty floors," the Duke muses, drawing a sword made of other swords.\n"Impressive. The King will want to kill you personally. Let\'s disappoint him."',
@@ -238,6 +244,7 @@ export const BOSSES = {
     cleanseCost: 1,
     specials: [
       { at: 3, name: 'Crystal Coronation', mult: 1.55, burnSure: true, desc: 'spine-crystals bloom from its mane' },
+      { at: 4, name: 'Spike Bloom', mult: 1.5, aoe: true, desc: 'crystals erupt in a widening ring' },
       { at: 6, name: 'THE THRONE REMEMBERS SPIKES', mult: 2.1, aoe: true, desc: 'the room itself chooses a side — puncture' },
     ],
     intro: 'Something older than names sits the throne — a sovereign of spikes and molten light.\n"Interesting," it says, and the air crystallizes into knives.',
@@ -254,6 +261,7 @@ export const ALT_BOSSES = {
     chargeGain: 1,
     specials: [
       { at: 3, name: 'Bristle Storm', mult: 1.4, aoe: true, desc: 'spines fan out like a crown' },
+      { at: 5, name: 'Quill Nova', mult: 1.6, aoe: true, desc: 'the whole hide fires at once' },
       { at: 6, name: 'CANOPY IMPALE', mult: 1.9, desc: 'every thorn remembers a climber' },
     ],
     intro: 'Where the Guardian judges with rings, this beast judges with spines.\nIt has been waiting under the roots for something soft enough to pierce.',
@@ -265,6 +273,7 @@ export const ALT_BOSSES = {
     chargeGain: 1,
     specials: [
       { at: 3, name: 'Pupil Tax', mult: 1.35, heal: 0.05, desc: 'the central eye drinks a memory' },
+      { at: 4, name: 'Witness Wave', mult: 1.4, aoe: true, desc: 'every lesser eye opens on someone' },
       { at: 6, name: 'CATACOMB UNMAKING', mult: 1.8, aoe: true, desc: 'the ruins forget they were ever solid' },
     ],
     intro: 'A floating knot of eyes and claws hangs above the ossuary.\n"I do not need subjects," it whispers without a mouth. "I need witnesses."',
@@ -278,6 +287,7 @@ export const ALT_BOSSES = {
     chargeGain: 1,
     specials: [
       { at: 3, name: 'Grave Hail', mult: 1.4, aoe: true, desc: 'ice axes peel from the ceiling' },
+      { at: 5, name: 'Glacier\'s Answer', mult: 1.6, aoe: true, desc: 'the stair itself calves and falls' },
       { at: 6, name: 'WHITE FUNERAL', mult: 1.85, freezeSure: true, desc: 'the jarl raises a horn that freezes the breath in your lungs' },
     ],
     intro: 'A horned abomination in a stolen coronet blocks the citadel stair.\nThe Queen\'s court may scheme; this jarl simply ends arguments.',
@@ -298,6 +308,7 @@ export const ALT_BOSSES = {
     ],
     specials: [
       { at: 3, name: 'Acid Coronation', mult: 1.4, poisonSure: true, desc: 'the blob crowns itself in fumes' },
+      { at: 4, name: 'Regal Spray', mult: 1.4, aoe: true, poisonSure: true, desc: 'the realm rains sideways' },
       { at: 6, name: 'ROYAL SPLATTER', mult: 1.75, aoe: true, poisonSure: true, desc: 'the prince bursts — on purpose' },
     ],
     intro: 'A crown of moss floats atop a quivering green mass blocking the causeway.\n"Bow," it burps, somehow regal. "Or become part of the realm."',
@@ -309,6 +320,7 @@ export const ALT_BOSSES = {
     chargeGain: 2,
     specials: [
       { at: 3, name: 'Solar Pupil', mult: 1.45, burnSure: true, desc: 'the chest-eye overcharges' },
+      { at: 4, name: 'Cinder Sweep', mult: 1.45, aoe: true, desc: 'the beam drags across the whole line' },
       { at: 6, name: 'PENANCE ABSOLUTE', mult: 2.0, aoe: true, burnSure: true, desc: 'Vex selects a beam meant for kings' },
     ],
     intro: 'The Duke is elsewhere. In his place: a horned cyclops of slag and flame,\npolishing the glow in its chest like a favorite hymn. "Malgrimm sends regrets," it says. "I do not."',
@@ -323,6 +335,7 @@ export const ALT_BOSSES = {
     chargeGain: 1,
     specials: [
       { at: 3, name: 'Hemorrhage', mult: 1.4, desc: 'the mass splits and lashes outward' },
+      { at: 4, name: 'Arterial Lash', mult: 1.4, aoe: true, desc: 'whips of blood find every climber' },
       { at: 6, name: 'CRIMSON TIDE', mult: 1.9, aoe: true, desc: 'a wave of boiling blood swells to the ceiling' },
     ],
     intro: 'The throne room is wrong. No king — only a churning mass of blood that stands up\nand turns its many eyes on you. "He will see you," it gurgles, "if you are worth the walk."',
@@ -332,6 +345,7 @@ export const ALT_BOSSES = {
       hp: 340, atk: 56, def: 11, spd: 11, chargeGain: 1, chargeOnPhase: 3, phases: true, cleanseCost: 1,
       specials: [
         { at: 3, name: 'Century\'s Edge', mult: 1.5, desc: 'his blade remembers every hero it has ended' },
+        { at: 4, name: 'Kingdom\'s Weight', mult: 1.5, aoe: true, desc: 'the throne room leans on all of you' },
         { at: 6, name: 'THE KING\'S QUESTION', mult: 2.0, aoe: true, desc: 'the air itself takes his side' },
       ],
       taunt: 'I HAVE KILLED HEROES WITH BETTER STATS THAN YOURS.',
@@ -464,5 +478,6 @@ export const MODIFIERS = [
   { id: 'mana_void', name: 'Null Field', desc: 'Skills cost +50% class resource this battle.', costMult: 1.5 },
   { id: 'gilded', name: 'Gilded Foes', desc: 'Enemies are tougher but drop triple gold.', hpMult: 1.35, goldMult: 3 },
   { id: 'horde', name: 'The Horde', desc: 'An extra enemy joins the fray.', extraEnemy: true },
+  { id: 'swarm', name: 'The Swarm', desc: 'Two extra enemies join the fray — each a little thinner-blooded.', extraEnemy: 2, hpMult: 0.85 },
   { id: 'surging', name: 'Surging Air', desc: 'Everyone gains Battle Charge twice as fast. Everyone.', chargeMult: 2 },
 ];
