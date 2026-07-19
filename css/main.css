@@ -137,6 +137,15 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 .btn.danger { background: linear-gradient(180deg, #ff8a7a, var(--blood)); border-color: #7c3530; color: #2a0c0a; }
 .btn.teal { background: linear-gradient(180deg, var(--teal-hi), var(--teal)); border-color: #2a6a60; color: var(--on-teal); }
 .btn.ghost { background: transparent; }
+.btn.danger {
+  background: transparent;
+  border-color: #c44a4a;
+  color: #ff8a8a;
+}
+.btn.danger:hover:not(:disabled) {
+  background: rgba(196, 74, 74, .18);
+  box-shadow: 0 0 16px rgba(196, 74, 74, .35);
+}
 .btn.small { padding: 8px 13px; font-size: 9px; }
 
 .panel {
@@ -453,7 +462,11 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
   transition: transform .12s;
 }
 .combatant.elite .fighter-sprite { border-color: var(--xp); box-shadow: 0 0 22px rgba(155,109,214,.35); }
-.combatant.boss .fighter-sprite { width: 180px; height: 180px; font-size: 96px; border-color: var(--blood); box-shadow: 0 0 34px rgba(184,53,47,.4); }
+.combatant.boss .fighter-sprite {
+  width: 200px; height: 200px; font-size: 96px;
+  border-color: var(--blood); box-shadow: 0 0 34px rgba(184,53,47,.4);
+  overflow: hidden; place-items: end center;
+}
 .fighter-sprite.hit { animation: sprite-hit .35s ease; }
 @keyframes sprite-hit { 20% { transform: translateX(-7px); filter: brightness(2) saturate(0); } 50% { transform: translateX(6px); } 80% { transform: translateX(-3px); } }
 .fighter-sprite.attack { animation: sprite-attack .4s ease; }
@@ -640,6 +653,48 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 .rarity-rare { color: #6fa8f0; }
 .rarity-epic { color: #c08af0; }
 .rarity-legendary { color: var(--gold-bright); text-shadow: 0 0 10px rgba(255,216,115,.4); }
+
+/* Achievement name cosmetics */
+.climber-title {
+  font-family: var(--font-display);
+  font-size: 0.78em;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--ink-dim);
+  margin-right: 2px;
+}
+.climber-name.ns-uncommon { color: #8fd97a; }
+.climber-name.ns-rare { color: #6fa8f0; }
+.climber-name.ns-epic { color: #c08af0; }
+.climber-name.ns-legendary { color: var(--gold-bright); text-shadow: 0 0 8px rgba(255,216,115,.35); }
+.climber-name.ns-unique {
+  background: linear-gradient(90deg, #7ef0e0, #ffe9a8, #c9a8ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.climber-name.ns-wrld {
+  background: linear-gradient(90deg, #fff6c8, #ffe08a, #ff9ec8, #a8e0ff);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: wrld-shimmer 4s linear infinite;
+}
+.climber-name.ns-frost { color: #a8d8ff; text-shadow: 0 0 6px rgba(120,180,255,.35); }
+.climber-name.ns-crimson { color: #ff7a7a; }
+.climber-name.ns-gold { color: var(--gold-bright); }
+.sanctum-cosmetics { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; margin-bottom: 8px; }
+.sanctum-cosmetics .cosmo-preview { font-size: 18px; font-family: var(--font-display); }
+.sanctum-cosmetics .cosmo-row { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--ink-dim); }
+.sanctum-cosmetics select {
+  font: inherit; padding: 8px 10px;
+  background: var(--panel-deep, #1a1824); color: var(--ink);
+  border: 1px solid var(--panel-edge);
+}
+.achievement .ach-reward { font-size: 12px; color: var(--gold); margin-top: 2px; }
+.partner-chip[data-pid] { cursor: pointer; }
+.partner-chip[data-pid]:hover { outline: 1px solid rgba(255,216,115,.35); }
 .rarity-unique {
   color: #7ef0e0;
   text-shadow: 0 0 8px rgba(126,240,224,.55), 0 0 18px rgba(255,216,115,.25);
@@ -858,7 +913,10 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
   pointer-events: none;
 }
 .fighter-sprite:has(.px-sprite), .fighter-sprite:has(.anim-sprite) { background: none; border: none; font-size: 0; width: auto; height: auto; min-width: 96px; min-height: 96px; display: grid; place-items: center; }
-.combatant.boss .fighter-sprite:has(.px-sprite), .combatant.boss .fighter-sprite:has(.anim-sprite) { min-width: 170px; min-height: 160px; }
+.combatant.boss .fighter-sprite:has(.px-sprite), .combatant.boss .fighter-sprite:has(.anim-sprite) {
+  min-width: 200px; min-height: 200px; overflow: hidden; align-items: end;
+}
+.combatant.boss .cx-info { margin-top: 4px; position: relative; z-index: 2; }
 /* Multi-state sprites (js/anim.js) are drawn as a background strip and stepped by
    background-position. Unlike .px-sprite they can be scaled up (a 30px-tall knight
    renders at x3), so they need the same pixelated snap or they turn to mush. */
@@ -1185,7 +1243,7 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 .tm-svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; }
 .tm-hint { position: absolute; width: 44px; height: 52px; border: 1px dashed rgba(160,143,102,.4); background: rgba(20,13,38,.4); display: flex; align-items: center; justify-content: center; font-size: 22px; color: rgba(160,143,102,.55); z-index: 6; }
 .tm-hcard { position: absolute; display: flex; align-items: center; justify-content: center; border: 1px solid; background: linear-gradient(160deg, rgba(28,20,48,.9), rgba(14,9,28,.9)); z-index: 8; box-shadow: 0 3px 8px rgba(0,0,0,.5); }
-.tm-current { position: absolute; width: 212px; transform: translate(-50%,-50%); z-index: 20; }
+.tm-current { position: absolute; width: 212px; transform: translate(-50%,-50%); z-index: 8; }
 .tm-here { text-align: center; font-family: var(--font-display); font-size: 8px; letter-spacing: 2px; color: var(--ink-faint); margin-top: 8px; }
 .tm-cur-art { height: 120px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--teal); box-shadow: 0 0 30px rgba(79,214,192,.5); background: radial-gradient(circle at 50% 40%, rgba(79,214,192,.4), rgba(10,6,24,.15) 70%), repeating-linear-gradient(45deg, rgba(0,0,0,.2) 0 7px, transparent 7px 14px); }
 .tm-cur-art span { font-size: 60px; }
@@ -1193,8 +1251,10 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 .tm-cur-tag { font-family: var(--font-display); font-size: 8px; color: var(--teal); letter-spacing: 1px; }
 .tm-cur-name { font-size: 24px; color: #f7ecce; margin-top: 6px; line-height: 1; }
 .tm-cur-flavor { font-size: 15px; color: var(--ink-dim); line-height: 1.22; margin-top: 8px; }
-.tm-choice-layer { position: absolute; inset: 0; z-index: 12; pointer-events: none; }
+.tm-choice-layer { position: absolute; inset: 0; z-index: 30; pointer-events: none; }
 .tm-choice-layer:hover { z-index: 60; }
+.tm-choice-layer .tm-node { z-index: 31; }
+.tm-choice-layer .tm-node:hover, .tm-choice-layer .tm-node.tm-has-votes { z-index: 50; }
 .tm-node { position: absolute; width: 134px; height: 170px; transform: translate(-50%,-50%); z-index: 12; cursor: pointer; pointer-events: auto; transition: width .3s cubic-bezier(.2,.8,.2,1), height .3s cubic-bezier(.2,.8,.2,1); }
 /* Hover fits art + tag + name + risk + CTA — no reserved vote gutter */
 .tm-node:hover { width: 232px; height: 268px; z-index: 40; }
@@ -1567,25 +1627,35 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 /* positioned regions — `.cx-bg >` beats the upstream `.battlefield.has-bg > *` reset */
 .cx-bg > .cx-mod { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 9; margin: 0; }
 .cx-bg > .cx-topbar { position: absolute; top: 14px; left: 18px; right: 18px; z-index: 7; display: flex; justify-content: space-between; align-items: flex-start; }
-.cx-bg > .cx-turnorder { position: absolute; top: 78px; left: 50%; transform: translateX(-50%); z-index: 6; }
-.cx-bg > .cx-charge { position: absolute; top: 116px; left: 50%; transform: translateX(-50%); z-index: 6; }
-.cx-bg > .cx-banner { position: absolute; top: 152px; left: 50%; transform: translateX(-50%); z-index: 6; width: 360px; }
-.cx-bg > .cx-monsters { position: absolute; top: 150px; left: 60px; z-index: 5; display: flex; gap: 24px; }
-.cx-bg > .cx-party { position: absolute; bottom: 40px; right: 48px; z-index: 5; display: flex; align-items: flex-end; gap: 20px; }
+.cx-bg > .cx-turnorder {
+  position: absolute; top: 88px; left: 10px; transform: none; z-index: 6;
+  width: 148px; max-height: calc(100% - 220px); overflow-y: auto;
+  flex-direction: column !important;
+}
+.cx-bg > .cx-charge { position: absolute; top: 132px; left: 50%; transform: translateX(-50%); z-index: 6; }
+.cx-bg > .cx-banner { position: absolute; top: 168px; left: 50%; transform: translateX(-50%); z-index: 6; width: 360px; }
+.cx-bg > .cx-monsters { position: absolute; top: 168px; left: 170px; right: 220px; z-index: 5; display: flex; gap: 18px; flex-wrap: wrap; }
+.cx-bg > .cx-party {
+  position: absolute; top: 100px; right: 12px; bottom: 120px; z-index: 5;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+  overflow-y: auto; max-width: 200px; border-left: none; padding-left: 0;
+}
 .cx-bg > .combat-fx-layer {
   position: absolute; inset: 0; z-index: 30; pointer-events: none; overflow: visible;
 }
 .cx-bg > .cx-log {
-  /* damage log: tall enough to scroll history */
-  position: absolute; bottom: 58px; left: 72px; z-index: 6;
-  width: 46%; max-width: 480px;
-  height: 220px; max-height: 220px;
+  /* damage log: tall enough to scroll history; extra bottom pad so last line stays visible */
+  position: absolute; bottom: 52px; left: 170px; z-index: 6;
+  width: 42%; max-width: 460px;
+  height: 240px; max-height: 240px;
   overflow-x: hidden; overflow-y: auto;
   background: none; border: none; box-shadow: none; display: block;
   transition: opacity .7s ease;
   opacity: 1;
   pointer-events: auto;
   scrollbar-width: none;
+  padding-bottom: 18px;
+  box-sizing: border-box;
 }
 .cx-bg > .cx-log::-webkit-scrollbar { width: 0; height: 0; display: none; }
 .cx-bg > .cx-log.log-idle {
@@ -1606,10 +1676,11 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 /* §7: when a trial/modifier banner is present, push the whole HUD stack down so
    the banner never overlaps the (centred) floor title */
 .cx-bg > .cx-mod ~ .cx-topbar { top: 44px; }
-.cx-bg > .cx-mod ~ .cx-turnorder { top: 110px; }
-.cx-bg > .cx-mod ~ .cx-charge { top: 148px; }
-.cx-bg > .cx-mod ~ .cx-banner { top: 184px; }
-.cx-bg > .cx-mod ~ .cx-monsters { top: 186px; }
+.cx-bg > .cx-mod ~ .cx-turnorder { top: 118px; }
+.cx-bg > .cx-mod ~ .cx-charge { top: 162px; }
+.cx-bg > .cx-mod ~ .cx-banner { top: 198px; }
+.cx-bg > .cx-mod ~ .cx-monsters { top: 198px; }
+.cx-bg > .cx-mod ~ .cx-party { top: 130px; }
 .cx-bg > .combat-actions { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 8; }
 
 /* top bar */
@@ -1624,15 +1695,25 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 .cx-char-btn { cursor: pointer; font-family: var(--font-display); font-size: 10px; color: var(--on-gold); padding: 9px 16px; border: none; background: linear-gradient(180deg, #ffe6a8, #e8b64a); }
 .cx-char-btn:hover { filter: brightness(1.15); }
 
-/* kept mechanics: turn-order strip (horizontal) + Battle Charge bar */
-.cx-turnorder { flex-direction: row !important; max-height: none; width: auto; padding: 6px 10px; gap: 6px; background: rgba(16,10,30,.72); border: 1px solid var(--panel-edge); }
-.cx-turnorder .to-title { display: none; }
-.cx-turnorder .to-entry { padding: 3px 8px; }
+/* vertical turn-order rail (left) + Battle Charge bar */
+.cx-turnorder {
+  flex-direction: column !important; padding: 8px 8px; gap: 4px;
+  background: rgba(16,10,30,.78); border: 1px solid var(--panel-edge);
+}
+.cx-turnorder .to-title {
+  display: block; font-family: var(--font-display); font-size: 9px;
+  letter-spacing: .08em; color: var(--ink-dim); margin-bottom: 4px;
+}
+.cx-turnorder .to-entry { padding: 4px 6px; }
+.cx-turnorder .to-glyph { display: none; }
+.cx-turnorder .to-name { font-size: 11px; line-height: 1.2; word-break: break-word; }
 .cx-charge { background: rgba(16,10,30,.72); }
+.cx-full .cx-party .combatant { width: 160px; }
+.cx-full .combatant.boss { width: 210px; }
 
 /* floating log */
 .cx-log > div { font-size: 16px; color: #f2e6cc; text-shadow: 0 2px 5px #000, 0 0 8px rgba(0,0,0,.9); margin-bottom: 3px; }
-.cx-full .combat-log { height: 220px; max-height: 220px; }
+.cx-full .combat-log { height: 240px; max-height: 240px; }
 
 /* per-fighter info block: name/Lv + thin HP/MP bars + FOC pips */
 .cx-full .combatant { display: flex; flex-direction: column; align-items: center; width: 172px; }

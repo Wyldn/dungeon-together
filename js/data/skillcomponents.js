@@ -29,6 +29,11 @@ export const COMP = {
   freeze: (chance) => ({ freeze: chance }),
   stun: (chance) => ({ stun: chance }),
   hex: (chance) => ({ hex: chance }),
+  weaken: (chance) => ({ weaken: chance }),   // less damage dealt
+  frail: (chance) => ({ frail: chance }),     // more damage taken
+  tormented: (chance) => ({ tormented: chance }), // DoT + frail
+  confused: (chance) => ({ confused: chance }),   // may skip / hit ally
+  lazy: (chance) => ({ lazy: chance }),           // delayed / skipped act
 
   /* ---- sustain ---- */
   lifesteal: (pct) => ({ lifesteal: pct }),

@@ -135,6 +135,8 @@ wss.on('connection', ws => {
       case 'msg': { // game-level payload, relayed verbatim to the rest of the room
         if (!room) return;
         if (msg.data && msg.data.k === 'start') room.started = true;
+        // Party returned to lobby after a climb — reopen for public list / join.
+        if (msg.data && msg.data.k === 'reopen') room.started = false;
         broadcast(room, { t: 'msg', from: id, data: msg.data }, id);
         break;
       }

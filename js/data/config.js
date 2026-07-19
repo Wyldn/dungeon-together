@@ -59,8 +59,8 @@ export const CONFIG = {
   /* ---- combat: initiative ---- */
   initiative: {
     die: 6,                          // + random roll 1..die
-    beginnerFloors: 5,               // floors where players get a bonus
-    beginnerPlayerBonus: 3,
+    beginnerFloors: 3,               // mild early-climb bias only
+    beginnerPlayerBonus: 1,          // bosses/fast foes can still outspeed players
   },
 
   /* ---- recovery (lean: the tower is not a spa; TDC tension dial) ---- */

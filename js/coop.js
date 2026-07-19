@@ -1,6 +1,7 @@
 // Co-op session state. The tower is shared (one seed, host-drawn cards,
-// lock-step floors); choices and consequences are personal — except combat
-// on encounter/trial/boss/throne floors, which the whole party fights together.
+// lock-step floors). Path cards and combat-capable events are party-voted;
+// combat (including event/mimic fights) is shared. Peaceful event rewards
+// still roll personally from shared pools.
 
 import { Net } from './net.js';
 
@@ -40,8 +41,8 @@ export class CoopSession {
     this.offs.push(net.on('wrldclaim', (d) => {
       if (d?.id) this.claimedWrld.add(d.id);
     }));
-    // Individual-combat deaths eliminate the climber from the run: the party
-    // continues without them (gates, scaling, and votes all skip them).
+    // Legacy elim channel (disconnect / rare wipe paths). Normal co-op deaths
+    // use run.down + next-floor revive instead of removing the climber.
     this.eliminated = new Set();
     this.offs.push(net.on('elim', (d, from) => {
       this.eliminated.add(from);
@@ -53,6 +54,11 @@ export class CoopSession {
         this.onPartnerEliminated?.(p.name);
       }
     }));
+    this.offs.push(net.on('reopen', () => {
+      this.eliminated.clear();
+      this._syncRoster();
+      this.onPartnerUpdate?.();
+    }));
     // Party requeue votes — buffered so a late end-screen still sees earlier votes
     this.requeueVotes = new Set();
     this.offs.push(net.on('requeue', (d, from) => {
@@ -60,6 +66,17 @@ export class CoopSession {
       if (d.yes) this.requeueVotes.add(from);
       else this.requeueVotes.delete(from);
       this.onRequeue?.();
+    }));
+    // Buffered event-choice results (combat-capable events)
+    this.eventResults = new Map(); // `${floor}:${eventId}` -> choiceIdx
+    this.offs.push(net.on('evresult', d => {
+      if (d?.floor != null && d?.eventId != null) {
+        this.eventResults.set(`${d.floor}:${d.eventId}`, d.idx);
+      }
+    }));
+    this._pendingEvFight = null;
+    this.offs.push(net.on('evfight', d => {
+      this._pendingEvFight = d;
     }));
     this.offs.push(net.sys('roster', () => {
       this._syncRoster();
@@ -166,6 +183,8 @@ export class CoopSession {
       gear: run.sheetGear || [],
       pack: run.sheetPack || [],
       appraisal: run.appraisal || null,
+      title: run.title || null,
+      nameStyle: run.nameStyle || null,
     };
     const key = JSON.stringify(msg);
     if (key === this.lastStatus) return;

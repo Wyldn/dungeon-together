@@ -76,13 +76,13 @@ function hintBranch(origin, target, hint, dist = 124) {
 // game category → node visuals (real 11-category taxonomy, not the handoff's 8)
 const NODE = {
   combat:      { color: '#e0564e', glow: 'rgba(224,86,78,.5)',  risk: 2 },
-  dangerous:   { color: '#ff8a3c', glow: 'rgba(255,138,60,.5)', risk: 4 },
+  dangerous:   { color: '#ff8a3c', glow: 'rgba(255,138,60,.5)', risk: 3 },
   mystery:     { color: '#a678ff', glow: 'rgba(166,120,255,.5)', risk: '?' },
   unknown:     { color: '#a678ff', glow: 'rgba(166,120,255,.5)', risk: '?' },
   merchant:    { color: '#5ba7ff', glow: 'rgba(91,167,255,.5)', risk: 0 },
   recovery:    { color: '#5fd6a0', glow: 'rgba(95,214,160,.5)', risk: 0 },
-  equipment:   { color: '#ffd257', glow: 'rgba(255,210,87,.5)', risk: 0 },
-  training:    { color: '#4fd6c0', glow: 'rgba(79,214,192,.5)', risk: 1 },
+  equipment:   { color: '#ffd257', glow: 'rgba(255,210,87,.5)', risk: 1 },
+  training:    { color: '#4fd6c0', glow: 'rgba(79,214,192,.5)', risk: 2 },
   appraisal:   { color: '#5ba7ff', glow: 'rgba(91,167,255,.5)', risk: 0 },
   social:      { color: '#8fd8cc', glow: 'rgba(143,216,204,.5)', risk: 1 },
   advancement: { color: '#ffd257', glow: 'rgba(255,210,87,.5)', risk: 1 },
@@ -92,8 +92,18 @@ const nodeMeta = cat => NODE[cat] || NODE.unknown;
 // Per-event difficulty when we know the type; category NODE.risk is the fallback.
 const TYPE_RISK = {
   rest: 0, shop: 0, blessing: 0,
-  story: 1, treasure: 1,
+  story: 1, treasure: 2,
   risk: 3,
+};
+
+// Explicit overrides for events whose danger doesn't match category/type.
+const EVENT_RISK = {
+  campfire: 0, merchant: 0, wandering_appraiser: 0, guild_assessor: 0,
+  discarded_kit: 1, abandoned_armory: 1, chest_generic: 2,
+  training_grounds: 2, sparring_ring: 3, proving_hall: 2, academy_recruiter: 1,
+  gambler: 3, blood_altar: 4, mysterious_door: 3, cursed_mirror: 3,
+  prodigys_gambit: 4, crimson_stranger: 4, frost_revenant: 4,
+  demon_gambler: 4, old_man_wrath: 4,
 };
 
 function riskInfo(risk) {
@@ -197,7 +207,9 @@ export function pathNodeView(card) {
   const cat = ev.category || card.category || 'unknown';
   const m = CATEGORY_META[cat] || CATEGORY_META.unknown;
   const nm = nodeMeta(cat);
-  const risk = (ev.type && TYPE_RISK[ev.type] != null) ? TYPE_RISK[ev.type] : nm.risk;
+  const risk = ev.risk != null ? ev.risk
+    : (EVENT_RISK[ev.id] != null ? EVENT_RISK[ev.id]
+      : ((ev.type && TYPE_RISK[ev.type] != null) ? TYPE_RISK[ev.type] : nm.risk));
   let artHtml;
   if (ev.npc?.art) {
     const spr = enemySpriteHtml(ev.npc.art, { elite: true });
@@ -298,7 +310,7 @@ function playTieSpin(stage, candidates, winner) {
 export function renderTravelMap(stage, cards, coopCtx, ctx) {
   const { run, coopS, resolveCard, biome, flash } = ctx;
   const A = trail.layout === 'A';
-  const CURX = 640, CURY = A ? 466 : 540;
+  const CURX = 640, CURY = A ? 520 : 580;
   const n = cards.length;
   const picks = new Map();
   let locked = false;

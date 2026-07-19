@@ -27,31 +27,37 @@ export const UPGRADES = [
 
 export const ACHIEVEMENTS = [
   { id: 'first_blood', icon: '⚔️', name: 'First Blood', desc: 'Win your first battle.' },
-  { id: 'floor_10', icon: '🌲', name: 'Out of the Woods', desc: 'Defeat the Elderwood Guardian.' },
-  { id: 'floor_20', icon: '👑', name: 'Regicide (Retroactive)', desc: 'Defeat the Lich of the Fallen King.' },
-  { id: 'floor_30', icon: '❄️', name: 'Spring, Eventually', desc: 'Defeat Queen Vessalia.' },
-  { id: 'floor_40', icon: '🐉', name: 'Grief Counselor', desc: 'Defeat the Grieving Hydra.' },
-  { id: 'floor_50', icon: '😈', name: 'The Doorman Tips You', desc: 'Defeat Duke Malgrimm.' },
-  { id: 'win', icon: '🏆', name: 'Kingslayer', desc: 'Defeat Vorath, the Demon King.' },
-  { id: 'escape', icon: '🌀', name: 'Survivor', desc: 'Take the Coward\'s Gate. The tower counts survivors too.' },
-  { id: 'secret', icon: '🜏', name: 'The Interesting Kind', desc: 'Discover the tower\'s truth.' },
+  { id: 'floor_10', icon: '🌲', name: 'Out of the Woods', desc: 'Defeat the Elderwood Guardian.', title: 'Woodwalker', nameStyle: 'ns-uncommon' },
+  { id: 'floor_15', icon: '🗡️', name: 'Ashen Crown', desc: 'Defeat the Crowned Revenant.', title: 'Oathkeeper', nameStyle: 'ns-rare' },
+  { id: 'floor_20', icon: '👑', name: 'Regicide (Retroactive)', desc: 'Defeat the Lich of the Fallen King.', title: 'Kingbreaker', nameStyle: 'ns-epic' },
+  { id: 'floor_30', icon: '❄️', name: 'Spring, Eventually', desc: 'Defeat Queen Vessalia.', title: 'Thawbringer', nameStyle: 'ns-frost' },
+  { id: 'floor_40', icon: '🐉', name: 'Grief Counselor', desc: 'Defeat the Grieving Hydra.', title: 'Headcounter', nameStyle: 'ns-epic' },
+  { id: 'floor_50', icon: '😈', name: 'The Doorman Tips You', desc: 'Defeat Duke Malgrimm.', title: 'Gatecrasher', nameStyle: 'ns-crimson' },
+  { id: 'win', icon: '🏆', name: 'Kingslayer', desc: 'Defeat Vorath, the Demon King.', title: 'Kingslayer', nameStyle: 'ns-legendary' },
+  { id: 'escape', icon: '🌀', name: 'Survivor', desc: 'Take the Coward\'s Gate. The tower counts survivors too.', title: 'Survivor' },
+  { id: 'secret', icon: '🜏', name: 'The Interesting Kind', desc: 'Discover the tower\'s truth.', title: 'Truthseeker', nameStyle: 'ns-wrld' },
   { id: 'rich', icon: '💰', name: 'Dragon Hoard', desc: 'Hold 500 gold at once.' },
-  { id: 'legendary', icon: '✨', name: 'One of One', desc: 'Wield a legendary or UNIQUE item.' },
-  { id: 'unique_gear', icon: '💠', name: 'Above Legend', desc: 'Claim a UNIQUE — rarer than legendary.' },
-  { id: 'wrld_gear', icon: '🌍', name: 'World\'s Only', desc: 'Claim a WRLD item — one of each in the climb.' },
+  { id: 'legendary', icon: '✨', name: 'One of One', desc: 'Wield a legendary or UNIQUE item.', nameStyle: 'ns-legendary' },
+  { id: 'unique_gear', icon: '💠', name: 'Above Legend', desc: 'Claim a UNIQUE — rarer than legendary.', title: 'Singular', nameStyle: 'ns-unique' },
+  { id: 'wrld_gear', icon: '🌍', name: 'World\'s Only', desc: 'Claim a WRLD item — one of each in the climb.', title: 'Worldbearer', nameStyle: 'ns-wrld' },
   { id: 'mimic', icon: '🦷', name: 'It Bit First', desc: 'Slay a mimic.' },
-  { id: 'famous', icon: '🌟', name: 'Local Legend', desc: 'Reach 50 Fame in a single run.' },
+  { id: 'mimic_survivor', icon: '📦', name: 'Chest Trauma', desc: 'Win a mimic fight while below 30% HP.', title: 'Mimic-Scarred', nameStyle: 'ns-rare' },
+  { id: 'npc_duelist', icon: '⚔️', name: 'Honor Duel', desc: 'Win an optional NPC duel.', title: 'Duelist', nameStyle: 'ns-gold' },
+  { id: 'party_of_three', icon: '🧑‍🤝‍🧑', name: 'Three\'s Company', desc: 'Enter the tower with a party of three.' },
+  { id: 'party_clear_3', icon: '🚩', name: 'Banner Raised', desc: 'Clear a floor with a party of three or more.', title: 'Banner-Bearer', nameStyle: 'ns-rare' },
+  { id: 'no_death_5', icon: '💚', name: 'Unbroken Ascent', desc: 'Clear 5 floors in a row without going down.', title: 'Unbroken', nameStyle: 'ns-uncommon' },
+  { id: 'famous', icon: '🌟', name: 'Local Legend', desc: 'Reach 50 Fame in a single run.', title: 'Local Legend', nameStyle: 'ns-gold' },
   { id: 'promoted', icon: '🧬', name: 'More Than Blood', desc: 'Achieve a race promotion.' },
-  { id: 'secret_class', icon: '🎭', name: 'The Hidden Path', desc: 'Unlock a secret subclass.' },
+  { id: 'secret_class', icon: '🎭', name: 'The Hidden Path', desc: 'Unlock a secret subclass.', title: 'Pathfinder', nameStyle: 'ns-epic' },
   { id: 'all_classes', icon: '🎪', name: 'Full Party', desc: 'Reach floor 10 with four different classes.' },
-  { id: 'untouchable', icon: '🌬️', name: 'Untouchable', desc: 'Win a battle without taking a single point of damage.' },
+  { id: 'untouchable', icon: '🌬️', name: 'Untouchable', desc: 'Win a battle without taking a single point of damage.', title: 'Untouchable', nameStyle: 'ns-frost' },
   { id: 'overcharged', icon: '⚡', name: 'Overcharged', desc: 'Unleash a 6-charge ultimate technique.' },
-  { id: 'guardian', icon: '🛡️', name: 'The Wall', desc: 'Guard 15 times in a single run.' },
-  { id: 'silver_tongue', icon: '👅', name: 'Silver Tongue', desc: 'Bribe your way past 3 encounters in one run.' },
+  { id: 'guardian', icon: '🛡️', name: 'The Wall', desc: 'Guard 15 times in a single run.', title: 'The Wall' },
+  { id: 'silver_tongue', icon: '👅', name: 'Silver Tongue', desc: 'Bribe your way past 3 encounters in one run.', title: 'Silver Tongue', nameStyle: 'ns-gold' },
   { id: 'assessed', icon: '🔍', name: 'Know Thyself (Approximately)', desc: 'Get appraised for the first time.' },
   { id: 'grave_calling', icon: '🦴', name: 'The Tower Shows Its Basement', desc: 'Unlock the hidden Necromancer calling.' },
-  { id: 'party_of_four', icon: '👥', name: 'Full Banner', desc: 'Enter the tower with a party of four.' },
-  { id: 'hoarder', icon: '🏦', name: 'Economically Unkillable', desc: 'Hold 1,000 gold at once.' },
+  { id: 'party_of_four', icon: '👥', name: 'Full Banner', desc: 'Enter the tower with a party of four.', title: 'Full Banner', nameStyle: 'ns-epic' },
+  { id: 'hoarder', icon: '🏦', name: 'Economically Unkillable', desc: 'Hold 1,000 gold at once.', title: 'Hoarder', nameStyle: 'ns-gold' },
 ];
 
 const defaultMeta = () => ({
@@ -65,6 +71,8 @@ const defaultMeta = () => ({
   classFloor10: [],
   seenIntro: false,
   gateSeen: 0, // shorten the gate animation after repeated viewings
+  equippedTitle: null,
+  equippedNameStyle: null,
 });
 
 export function loadMeta() {
@@ -83,10 +91,52 @@ export function upgradeRank(meta, id) { return meta.upgrades[id] || 0; }
 export function award(meta, achId) {
   if (!meta.achievements.includes(achId)) {
     meta.achievements.push(achId);
+    const a = ACHIEVEMENTS.find(x => x.id === achId);
+    // Newest cosmetic unlock becomes the equipped default.
+    if (a?.title) meta.equippedTitle = a.title;
+    if (a?.nameStyle) meta.equippedNameStyle = a.nameStyle;
     saveMeta(meta);
-    return ACHIEVEMENTS.find(a => a.id === achId);
+    return a;
   }
   return null;
+}
+
+/** Titles / name styles granted by unlocked achievements. */
+export function unlockedCosmetics(meta) {
+  const titles = [{ id: '', title: 'None' }];
+  const styles = [{ id: '', style: '', label: 'Default' }];
+  const seenT = new Set();
+  const seenS = new Set();
+  for (const a of ACHIEVEMENTS) {
+    if (!meta.achievements.includes(a.id)) continue;
+    if (a.title && !seenT.has(a.title)) {
+      seenT.add(a.title);
+      titles.push({ id: a.id, title: a.title });
+    }
+    if (a.nameStyle && !seenS.has(a.nameStyle)) {
+      seenS.add(a.nameStyle);
+      styles.push({ id: a.id, style: a.nameStyle, label: a.name });
+    }
+  }
+  return { titles, styles };
+}
+
+/** HTML for a climber name with optional title + rarity-style color. */
+export function climberNameHtml(name, { title = null, nameStyle = null } = {}) {
+  const safe = String(name || '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+  const t = title ? `<span class="climber-title">${String(title).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]))}</span> ` : '';
+  const cls = nameStyle ? `climber-name ${nameStyle}` : 'climber-name';
+  return `${t}<span class="${cls}">${safe}</span>`;
+}
+
+export function resetSanctumUpgrades(meta) {
+  meta.upgrades = {};
+  saveMeta(meta);
+  return meta;
 }
 
 /* ------------------------- CHARACTER GENERATION ------------------------- */

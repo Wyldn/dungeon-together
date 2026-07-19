@@ -46,9 +46,15 @@ export const SKILLS = {
   ),
   taunt: composeSkill(
     { id: 'taunt', name: 'Taunt', class: 'warrior', fx: 'buff',
-      desc: 'Jeer every enemy into aiming at YOU for 2 turns, and brace for it (block 20%). In a party, you are the wall.' },
-    COMP.cost(10), COMP.charge(0), COMP.target('self'), COMP.shield(0.2),
+      desc: 'Jeer every enemy into aiming at YOU for 2 turns, and brace hard (block 65%). In a party, you are the wall.' },
+    COMP.cost(12), COMP.charge(1), COMP.target('self'), COMP.shield(0.65),
     { tauntTurns: 2 },
+  ),
+  bulwark_call: composeSkill(
+    { id: 'bulwark_call', name: 'Bulwark Call', class: 'warrior', fx: 'buff', tier: 2,
+      desc: 'Steel the line — the party takes 30% less damage for 3 turns.' },
+    COMP.cost(18), COMP.charge(2), COMP.target('self'),
+    { partyBuff: { kind: 'dr', mult: 0.7, turns: 3, label: 'BULWARK' } },
   ),
   /* ============ VIKING (Fury) ============
      The Warrior spends Vigor to stay standing; the Viking spends HP to hit
@@ -127,8 +133,8 @@ export const SKILLS = {
   },
   whirlwind: {
     id: 'whirlwind', fx: 'slash', name: 'Whirlwind', class: 'warrior', cost: 50, charge: 6, target: 'all', tier: 3,
-    power: 130, stat: 'str',
-    desc: 'ULTIMATE — become the storm. Massive damage to all enemies.',
+    power: 130, stat: 'str', weaken: 0.45,
+    desc: 'ULTIMATE — become the storm. Massive damage to all enemies; 45% weaken.',
   },
 
   /* ============ MAGE (Mana) ============ */
@@ -311,6 +317,17 @@ export const SKILLS = {
     shield: 0.5,
     desc: 'A halo of light blocks 50% of damage for 3 turns.',
   },
+  aegis_hymn: composeSkill(
+    { id: 'aegis_hymn', name: 'Aegis Hymn', class: 'priest', fx: 'buff', tier: 2,
+      desc: 'A shared blessing — the party takes 35% less damage for 3 turns.' },
+    COMP.cost(20), COMP.charge(2), COMP.target('self'),
+    { partyBuff: { kind: 'dr', mult: 0.65, turns: 3, label: 'AEGIS' } },
+  ),
+  crusader_mark: composeSkill(
+    { id: 'crusaders_mark', name: "Crusader's Mark", class: 'priest', fx: 'holy', tier: 2,
+      desc: 'Brand a foe frail — they take +25% damage for 3 turns. Modest hit.' },
+    COMP.cost(16), COMP.charge(1), COMP.target('one'), COMP.dmg(90, 'wis'), COMP.frail(1),
+  ),
   judgement: {
     id: 'judgement', fx: 'holy', name: 'Judgement', class: 'priest', cost: 36, charge: 3, target: 'all',
     power: 80, stat: 'wis',
@@ -333,13 +350,13 @@ export const SKILLS = {
   },
   final_verdict: {
     id: 'final_verdict', fx: 'holy', name: 'Final Verdict', class: 'priest', cost: 46, charge: 5, target: 'one', tier: 3,
-    power: 230, stat: 'wis', execute: 0.2,
-    desc: 'Gavel down. Massive damage; slays non-boss foes below 20%.',
+    power: 230, stat: 'wis', execute: 0.2, frail: 0.6,
+    desc: 'Gavel down. Massive damage; slays non-boss foes below 20%; 60% frail.',
   },
   last_rites: {
     id: 'last_rites', fx: 'holy', name: 'Last Rites', class: 'priest', cost: 58, charge: 6, target: 'all', tier: 3,
-    power: 140, stat: 'wis', healPct: 0.15,
-    desc: 'ULTIMATE — say the words for everyone at once. Devastates enemies, mends you.',
+    power: 140, stat: 'wis', healPct: 0.15, frail: 0.4,
+    desc: 'ULTIMATE — say the words for everyone at once. Devastates enemies, mends you; 40% frail.',
   },
 
   /* ============ MONK (Ki) ============ */
@@ -474,8 +491,8 @@ export const SKILLS = {
   },
   oblivion: {
     id: 'oblivion', fx: 'shadow', name: 'Oblivion', class: 'warlock', cost: 64, charge: 6, target: 'all', tier: 3,
-    power: 160, stat: 'int', hex: 0.5,
-    desc: 'ULTIMATE: show them the space between stars. 50% hex.',
+    power: 160, stat: 'int', hex: 0.5, tormented: 0.45,
+    desc: 'ULTIMATE: show them the space between stars. 50% hex, 45% torment.',
   },
   dawnbreak: {
     id: 'dawnbreak', fx: 'holy', name: 'Dawnbreak', class: 'warlock', cost: 40, charge: 4, target: 'one', tier: 2,
@@ -492,13 +509,20 @@ export const SKILLS = {
   rallying_chord: {
     id: 'rallying_chord', fx: 'buff', name: 'Rallying Chord', class: 'bard', cost: 16, charge: 1, target: 'self',
     buff: { stat: 'str', mult: 1.4, turns: 3 },
-    desc: 'One chord, and the blood remembers courage. +40% damage, 3 turns.',
+    partyBuff: { kind: 'dmg', mult: 1.25, turns: 3, label: 'RALLY' },
+    desc: 'One chord, and the blood remembers courage. You +40% damage; the party +25% for 3 turns.',
   },
   soothing_refrain: {
     id: 'soothing_refrain', fx: 'heal', name: 'Soothing Refrain', class: 'bard', cost: 20, charge: 1, target: 'self', allyTarget: true,
     healPct: 0.25,
     desc: 'A verse that closes wounds — yours or a companion\'s. Restore 25% HP.',
   },
+  iron_ballad: composeSkill(
+    { id: 'iron_ballad', name: 'Iron Ballad', class: 'bard', fx: 'buff', tier: 2,
+      desc: 'A low hymn that hardens the party — 25% less damage taken for 3 turns.' },
+    COMP.cost(18), COMP.charge(2), COMP.target('self'),
+    { partyBuff: { kind: 'dr', mult: 0.75, turns: 3, label: 'IRON' } },
+  ),
   discord: {
     id: 'discord', fx: 'thunder', name: 'Discord', class: 'bard', cost: 15, charge: 1, target: 'one',
     power: 85, stat: 'lk', stun: 0.35,
@@ -526,13 +550,13 @@ export const SKILLS = {
   },
   showstopper: {
     id: 'showstopper', fx: 'luck', name: 'Showstopper', class: 'bard', cost: 36, charge: 4, target: 'one', tier: 2,
-    power: 175, stat: 'lk', critBonus: 30,
-    desc: 'The finale they never saw coming. +30% crit.',
+    power: 175, stat: 'lk', critBonus: 30, confused: 0.4,
+    desc: 'The finale they never saw coming. +30% crit; 40% confuse.',
   },
   grand_finale: {
     id: 'grand_finale', fx: 'thunder', name: 'Grand Finale', class: 'bard', cost: 54, charge: 6, target: 'all', tier: 3,
-    power: 140, stat: 'lk', critBonus: 15,
-    desc: 'ULTIMATE: bring the house down. On their heads.',
+    power: 140, stat: 'lk', critBonus: 15, weaken: 0.4,
+    desc: 'ULTIMATE: bring the house down. On their heads; 40% weaken.',
   },
   last_ballad: {
     id: 'last_ballad', fx: 'shadow', name: 'The Last Ballad', class: 'bard', cost: 40, charge: 4, target: 'all', tier: 2,

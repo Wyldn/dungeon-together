@@ -19,6 +19,7 @@ import { enemySpriteHtml, heroSpriteHtml, playHeroAnim, heroHasAnim, heroCombatS
 import * as SpriteAnim from './anim.js';
 import { SFX } from './audio.js';
 import { screenShake } from './fx.js';
+import { climberNameHtml, loadMeta } from './state.js';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -83,18 +84,19 @@ function enemyHitFreezes(e, special, rng) {
   return (e.freeze && rng.chance(e.freeze)) || !!special?.freezeSure;
 }
 
-export function buildEnemy(spec, floor, biomeStart, { boss = false, hpMult = 1 } = {}) {
+export function buildEnemy(spec, floor, biomeStart, { boss = false, hpMult = 1, atkMult = 1 } = {}) {
   const isBoss = boss || !!spec.boss;
   const biome = biomeForFloor(floor);
   const sc = enemyScale(floor, biomeStart, biome.id, { boss: isBoss, elite: !!spec.elite });
   const spd = Math.max(1, Math.round((spec.spd || 5) * sc.spd));
+  const atkScale = sc.atk * (atkMult || 1);
   return {
     ...spec,
     boss: isBoss,
     elite: !!spec.elite,
     maxHp: Math.round(spec.hp * sc.hp * hpMult),
     hp: Math.round(spec.hp * sc.hp * hpMult),
-    atk: Math.round(spec.atk * sc.atk),
+    atk: Math.round(spec.atk * atkScale),
     def: Math.round(spec.def * sc.def),
     spd,
     chargeGain: (spec.chargeGain || 1) * sc.chargeGain,
@@ -103,7 +105,7 @@ export function buildEnemy(spec, floor, biomeStart, { boss = false, hpMult = 1 }
     phaseTriggers: [],
     turnCount: 0,
     // stashed so a two-phase boss can scale its phase-2 stats identically (§51)
-    _m: { hp: sc.hp * hpMult, atk: sc.atk, def: sc.def, spd: sc.spd },
+    _m: { hp: sc.hp * hpMult, atk: atkScale, def: sc.def, spd: sc.spd },
     uid: spec.uid || Math.random().toString(36).slice(2, 8),
   };
 }
@@ -140,6 +142,10 @@ class Fight {
     this.order = []; // initiative order (display + solo driver)
     this.offs = [];
 
+    const cos = loadMeta();
+    this._nameTitle = cos.equippedTitle || null;
+    this._nameStyle = cos.equippedNameStyle || null;
+
     this.allies = new Map();
     if (this.shared) {
       for (const [id, p] of coop.partners) {
@@ -153,6 +159,8 @@ class Fight {
           spdStat: p.status?.spdStat,
           initiative: p.status?.initiative ?? 0,
           taunt: p.status?.taunt || 0,
+          title: p.status?.title || null,
+          nameStyle: p.status?.nameStyle || null,
         });
       }
     }
@@ -360,13 +368,43 @@ class Fight {
   }
 
   /* ---------------- initiative ---------------- */
-  rollBattleOrder() {
-    // Co-op: deterministic seat order for players (same on every client), then
-    // enemies by uid. Personal RNGs diverge across the party, so rolling
-    // initiative locally (or racing a corder packet) desyncs the turn strip.
+  _combatantEntries() {
+    const d = this.d();
     if (this.shared) {
-      const d = this.d();
       const seats = this.coop.seatOrder();
+      const players = seats.map(sid => {
+        if (sid === this.coop.you) {
+          return {
+            key: 'player', name: this.run.name, glyph: null,
+            spdStat: Math.round(4 + d.dex * 0.3), mod: d.initiative + (this.mod.enemyFirst ? -100 : 0),
+            isPlayer: true, stableId: sid,
+          };
+        }
+        const a = this.allies.get(sid);
+        const spd = a?.spdStat ?? (a?.dex != null ? Math.round(4 + a.dex * 0.3) : 8);
+        return {
+          key: 'ally-' + sid, name: a?.name || 'Companion', glyph: null,
+          spdStat: spd, mod: a?.initiative || 0,
+          isPlayer: true, stableId: sid,
+        };
+      });
+      const foes = this.aliveEnemies().map(e => ({
+        key: e.uid, name: e.name, glyph: null, spdStat: e.spd, mod: 0, isPlayer: false, stableId: e.uid,
+      }));
+      return [...players, ...foes];
+    }
+    return [
+      { key: 'player', name: this.run.name, glyph: null, spdStat: Math.round(4 + d.dex * 0.3), mod: d.initiative + (this.mod.enemyFirst ? -100 : 0), isPlayer: true, stableId: 'p-me' },
+      ...this.aliveEnemies().map(e => ({ key: e.uid, name: e.name, glyph: null, spdStat: e.spd, mod: 0, isPlayer: false, stableId: e.uid })),
+    ];
+  }
+
+  rollBattleOrder() {
+    // Solo: local roll. Co-op opening order is seat-stable until the first
+    // per-round host roll (see rollRoundInitiative).
+    if (this.shared && !this._sharedInitReady) {
+      const seats = this.coop.seatOrder();
+      const d = this.d();
       const players = seats.map(sid => {
         if (sid === this.coop.you) {
           return {
@@ -384,19 +422,43 @@ class Fight {
         };
       });
       const foes = this.aliveEnemies()
-        .map(e => ({ key: e.uid, name: e.name, glyph: e.glyph, spdStat: e.spd, mod: 0, isPlayer: false, stableId: e.uid }))
+        .map(e => ({ key: e.uid, name: e.name, glyph: null, spdStat: e.spd, mod: 0, isPlayer: false, stableId: e.uid }))
         .sort((a, b) => String(a.stableId).localeCompare(String(b.stableId)));
       this.order = [...players, ...foes];
-      this.log('Turn order: ' + this.order.map(o => o.name).join(' → '), 'log-sys');
       return;
     }
-    const d = this.d();
-    const entities = [
-      { key: 'player', name: this.run.name, glyph: null, spdStat: Math.round(4 + d.dex * 0.3), mod: d.initiative + (this.mod.enemyFirst ? -100 : 0), isPlayer: true, stableId: 'p-me' },
-      ...this.aliveEnemies().map(e => ({ key: e.uid, name: e.name, glyph: e.glyph, spdStat: e.spd, mod: 0, isPlayer: false, stableId: e.uid })),
-    ];
-    this.order = initiativeOrder(this.rng, entities, this.run.floor);
-    this.log('Initiative: ' + this.order.map(o => o.name).join(' → '), 'log-sys');
+    this.order = initiativeOrder(this.rng, this._combatantEntries(), this.run.floor);
+  }
+
+  /** Re-roll initiative each round. Host broadcasts so co-op stays in lockstep. */
+  async rollRoundInitiative() {
+    if (!this.shared) {
+      this.order = initiativeOrder(this.rng, this._combatantEntries(), this.run.floor);
+      this.renderTurnOrder();
+      return;
+    }
+    this._sharedInitReady = true;
+    if (this.coop.isHost) {
+      this.order = initiativeOrder(this.rng, this._combatantEntries(), this.run.floor);
+      this.coop.net.send({
+        k: 'corder',
+        round: this.round,
+        order: this.order.map(o => ({
+          key: o.key, name: o.name, glyph: null, spdStat: o.spdStat,
+          isPlayer: o.isPlayer, stableId: o.stableId, init: o.init,
+        })),
+      });
+    } else {
+      if (!this._corder || this._corder.round !== this.round) {
+        await new Promise(r => { this._corderResolve = r; });
+      }
+      const msg = this._corder;
+      this._corder = null;
+      this._corderResolve = null;
+      if (msg?.order) this.order = msg.order;
+    }
+    this.sharedSeats = this.order.filter(o => o.isPlayer).map(o => String(o.stableId));
+    this.renderTurnOrder();
   }
 
   /* ---------------- rendering ---------------- */
@@ -415,7 +477,7 @@ class Fight {
             </div>
             <div class="cx-hero">
               <div class="cx-hero-plate">
-                <div class="cx-hero-name">${this.run.name}</div>
+                <div class="cx-hero-name">${climberNameHtml(this.run.name, { title: this._nameTitle, nameStyle: this._nameStyle })}</div>
                 <div class="cx-hero-title">Lv.${this.run.level} ${this.run.raceName} ${classTitle(this.run)}</div>
               </div>
               <button class="cx-char-btn" id="cx-character">◈ CHARACTER</button>
@@ -490,7 +552,7 @@ class Fight {
     this.turnOrderEl.innerHTML = `<div class="to-title">TURN ORDER</div>` + this.order
       .filter(o => o.isPlayer || (this.enemyByUid(o.key)?.hp > 0 && !this.enemyByUid(o.key)?.cleared))
       .map(o => `<div class="to-entry ${o.key === activeKey ? 'active' : ''} ${o.isPlayer ? 'to-player' : ''}">
-        <span class="to-glyph">${o.glyph || '🛡'}</span><span class="to-name">${o.name}</span>
+        <span class="to-name">${o.name}</span>
       </div>`).join('');
   }
 
@@ -593,26 +655,26 @@ class Fight {
       <div class="combatant ${this.run.down ? 'downed' : ''} ${actingKey === 'player' ? 'acting' : ''}">
         <div class="fighter-sprite" id="sprite-player">${heroSpriteHtml(this.run.classId, heroCombatSize(this.run.classId), {
           ...(this.run.down && heroHasAnim(this.run.classId, 'death') ? { anim: 'death', holdLast: true } : {}),
-          faceLeft: true,
+          faceLeft: false,
           appearanceId: this.run.appearanceId,
         }) || ICONS[this.run.classId]}</div>
         <div class="cx-info">
-          <div class="cx-head"><span class="fighter-name">${this.run.name}${this.run.down ? ' (down)' : ''}</span></div>
+          <div class="cx-head"><span class="fighter-name">${climberNameHtml(this.run.name, { title: this._nameTitle, nameStyle: this._nameStyle })}${this.run.down ? ' (down)' : ''}</span></div>
           <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${hpW}%"></div><span class="cx-bar-num">${Math.round(this.run.hp)}/${Math.round(this.run.maxHp)}</span></div></div>
           <div class="cx-bar-row"><span class="cx-blabel mp" title="${resName}">${resShort}</span><div class="bar cx-thin"><div class="bar-fill mp" style="width:${mpW}%"></div><span class="cx-bar-num">${Math.round(this.run.mp)}/${Math.round(this.run.maxMp)}</span></div></div>
           <div class="cx-bar-row"><span class="cx-blabel foc">FOC</span>${this.focPips(this.charge)}<span class="cx-bar-num cx-foc-num">${this.charge}/${CONFIG.charge.max}</span></div>
         </div>
         <div class="fighter-statuses">
           ${this.player.guarding ? '<span class="status-pip guard-pip">🛡 GUARD</span>' : ''}
-          ${this.statusPips(s)}${this.player.buffs.map(b => `<span class="status-pip">▲${b.label} ${b.turns}</span>`).join('')}
+          ${this.statusPips(s)}${this.player.buffs.map(b => `<span class="status-pip">▲${b.label} ${b.turns}</span>`).join('')}${(this.player.partyBuffs || []).map(b => `<span class="status-pip">◆${b.label || b.kind} ${b.turns}</span>`).join('')}
         </div>
       </div>`;
     for (const [id, a] of this.allies) {
       html += `
         <div class="combatant ${a.down ? 'downed' : ''} ${actingKey === 'ally-' + id ? 'acting' : ''}">
-          <div class="fighter-sprite" id="sprite-${id}">${heroSpriteHtml(a.classId, heroCombatSize(a.classId), { faceLeft: true, appearanceId: a.appearanceId }) || ICONS[a.classId] || ICONS.warrior}</div>
+          <div class="fighter-sprite" id="sprite-${id}">${heroSpriteHtml(a.classId, heroCombatSize(a.classId), { faceLeft: false, appearanceId: a.appearanceId }) || ICONS[a.classId] || ICONS.warrior}</div>
           <div class="cx-info">
-            <div class="cx-head"><span class="fighter-name">${a.name}${a.down ? ' (down)' : ''}</span></div>
+            <div class="cx-head"><span class="fighter-name">${climberNameHtml(a.name, { title: a.title, nameStyle: a.nameStyle })}${a.down ? ' (down)' : ''}</span></div>
             <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${clamp(a.hp / a.maxHp * 100, 0, 100)}%"></div><span class="cx-bar-num">${Math.round(a.hp)}/${Math.round(a.maxHp)}</span></div></div>
           </div>
         </div>`;
@@ -623,12 +685,17 @@ class Fight {
 
   statusPips(st) {
     const pips = [];
-    if (st.poison) pips.push(`<span class="status-pip">☠ ${st.poison}</span>`);
-    if (st.burn) pips.push(`<span class="status-pip">🔥 ${st.burn}</span>`);
-    if (st.frozen) pips.push(`<span class="status-pip">❄ frozen</span>`);
-    if (st.stunned) pips.push(`<span class="status-pip">✦ stunned</span>`);
-    if (st.shield) pips.push(`<span class="status-pip">◈ ward ${st.shield.turns}</span>`);
-    if (st.hexed) pips.push(`<span class="status-pip">🕯 hex ${st.hexed}</span>`);
+    if (st.poison) pips.push(`<span class="status-pip">poison ${st.poison}</span>`);
+    if (st.burn) pips.push(`<span class="status-pip">burn ${st.burn}</span>`);
+    if (st.frozen) pips.push(`<span class="status-pip">frozen</span>`);
+    if (st.stunned) pips.push(`<span class="status-pip">stunned</span>`);
+    if (st.shield) pips.push(`<span class="status-pip">ward ${st.shield.turns}</span>`);
+    if (st.hexed) pips.push(`<span class="status-pip">hex ${st.hexed}</span>`);
+    if (st.weaken) pips.push(`<span class="status-pip">weaken ${st.weaken}</span>`);
+    if (st.frail) pips.push(`<span class="status-pip">frail ${st.frail}</span>`);
+    if (st.tormented) pips.push(`<span class="status-pip">torment ${st.tormented}</span>`);
+    if (st.confused) pips.push(`<span class="status-pip">confused</span>`);
+    if (st.lazy) pips.push(`<span class="status-pip">lazy ${st.lazy}</span>`);
     return pips.join('');
   }
 
@@ -785,6 +852,7 @@ class Fight {
     await sleep(600);
     while (!this.ended) {
       this.round++;
+      await this.rollRoundInitiative();
       for (const entry of this.order) {
         if (this.ended) return;
         if (entry.isPlayer) {
@@ -816,9 +884,10 @@ class Fight {
     // guard expires at the start of your turn
     this.player.guarding = false;
     const st = this.player.statuses;
-    if (st.frozen || st.stunned) {
-      this.log(`You are ${st.frozen ? 'frozen solid' : 'stunned'} — turn lost!`, 'log-hit');
-      delete st.frozen; delete st.stunned;
+    if (st.frozen || st.stunned || st.lazy || st.confused) {
+      const why = st.frozen ? 'frozen solid' : st.stunned ? 'stunned' : st.lazy ? 'too lazy to act' : 'too confused to act';
+      this.log(`You are ${why} — turn lost!`, 'log-hit');
+      delete st.frozen; delete st.stunned; delete st.lazy; delete st.confused;
       // a lost turn still ends: charge + resource tick over as usual
       this.gainCharge(CONFIG.charge.gainPerTurn);
       restoreMana(this.run, this.d().manaRegen);
@@ -864,6 +933,9 @@ class Fight {
         if (d.dex != null) a.dex = d.dex;
         a.taunt = d.taunt || 0;
         if (d.appearanceId) a.appearanceId = d.appearanceId;
+        if (d.title !== undefined) a.title = d.title;
+        if (d.nameStyle !== undefined) a.nameStyle = d.nameStyle;
+        if (d.name) a.name = d.name;
       }
       this.renderPlayers(this._actingKey);
     }));
@@ -875,10 +947,20 @@ class Fight {
     }));
     this._pendingActs = [];
     // §9: a companion reports the ACTUAL damage they took (post guard/shield)
+    this.offs.push(this.coop.net.on('corder', d => {
+      this._corder = d;
+      this._corderResolve?.();
+    }));
+    this.offs.push(this.coop.net.on('pbuff', d => {
+      this.player.partyBuffs = this.player.partyBuffs || [];
+      this.player.partyBuffs.push({ kind: d.kind, mult: d.mult, turns: d.turns, label: d.label });
+      this.log(`A companion's ${d.label || 'boost'} washes over you.`, 'log-good');
+    }));
     this.offs.push(this.coop.net.on('chit', (d, from) => {
       const a = this.allies.get(from);
       if (!a) return;
       this.float(this.allyFloatHost(from), `-${d.dmg}${d.guarded ? ' 🛡' : ''}`, 'incoming');
+      this.log(`${d.by || 'An enemy'}${d.special ? ` (${d.special})` : ''} hits ${a.name} for ${d.dmg}${d.guarded ? ' (guarded)' : ''}.`, 'log-hit');
       this.renderPlayers(this._actingKey);
     }));
     // ally healing (e.g. a Priest's Mend cast on a companion)
@@ -902,7 +984,6 @@ class Fight {
       this.renderPlayers(this._actingKey);
     }));
 
-    // Seat order is already identical on every client (see rollBattleOrder).
     this.sharedSeats = this.order.filter(o => o.isPlayer).map(o => String(o.stableId));
     if (!this.sharedSeats.length) this.sharedSeats = this.coop.seatOrder();
     this.renderTurnOrder();
@@ -910,6 +991,7 @@ class Fight {
     await sleep(700);
     while (!this.ended) {
       this.round++;
+      await this.rollRoundInitiative();
       for (const seat of this.sharedSeats) {
         if (this.ended) return;
         if (seat !== this.coop.you && !this.allies.has(seat)) continue;
@@ -967,7 +1049,7 @@ class Fight {
   async playLocalHeroAnim(anim, { holdLast = false } = {}) {
     if (!anim || !heroHasAnim(this.run.classId, anim)) return;
     const spriteP = this.el.querySelector('#sprite-player');
-    await playHeroAnim(spriteP, this.run.classId, anim, { target: heroCombatSize(this.run.classId), holdLast, faceLeft: true, appearanceId: this.run.appearanceId });
+    await playHeroAnim(spriteP, this.run.classId, anim, { target: heroCombatSize(this.run.classId), holdLast, faceLeft: false, appearanceId: this.run.appearanceId });
   }
 
   async localSharedTurn() {
@@ -1043,7 +1125,7 @@ class Fight {
     const sprite = this.sprite(seatId);
     const classId = ally?.classId;
     if (act.heroAnim && classId && heroHasAnim(classId, act.heroAnim)) {
-      await playHeroAnim(sprite, classId, act.heroAnim, { target: heroCombatSize(classId), faceLeft: true });
+      await playHeroAnim(sprite, classId, act.heroAnim, { target: heroCombatSize(classId), faceLeft: false });
     } else if (sprite) {
       sprite.classList.add('attack');
       setTimeout(() => sprite.classList.remove('attack'), 420);
@@ -1098,10 +1180,12 @@ class Fight {
       }
       this.bossPhaseChecks(e, ops);
 
-      if (e.statuses.frozen || e.statuses.stunned) {
-        ops.push({ type: 'skip', uid: e.uid, why: e.statuses.frozen ? 'frozen' : 'stunned' });
-        this.log(`${e.name} is ${e.statuses.frozen ? 'frozen' : 'stunned'} — it cannot act.`, 'log-good');
+      if (e.statuses.frozen || e.statuses.stunned || e.statuses.lazy || e.statuses.confused) {
+        const why = e.statuses.frozen ? 'frozen' : e.statuses.stunned ? 'stunned' : e.statuses.lazy ? 'lazy' : 'confused';
+        ops.push({ type: 'skip', uid: e.uid, why });
+        this.log(`${e.name} is ${why} — it cannot act.`, 'log-good');
         delete e.statuses.frozen; delete e.statuses.stunned;
+        delete e.statuses.lazy; delete e.statuses.confused;
         this.renderEnemies();
         await sleep(350);
         continue;
@@ -1140,6 +1224,7 @@ class Fight {
           continue;
         }
         let dmg = e.atk * CONFIG.combat.enemyAtkMult * (0.85 + this.rng.next() * 0.3) * (this.mod.dmgMult || 1) * (special?.mult || 1) * chargeScale;
+        if (e.statuses.weaken) dmg *= 0.7;
         if (this.rng.chance(this.d().enemyCrit / 100)) dmg *= 1.5;
         if (e.caster && !special && e.turnCount % 2 === 0) dmg *= 1.4;
         dmg = Math.max(1, Math.round(dmg - target.def));
@@ -1147,6 +1232,11 @@ class Fight {
         if ((e.poison && this.rng.chance(e.poison)) || special?.poisonSure) riders.poison = 3;
         if ((e.burn && this.rng.chance(e.burn)) || special?.burnSure) riders.burn = 2;
         if (enemyHitFreezes(e, special, this.rng)) riders.freeze = 1;
+        if (special?.weakenSure || (special?.weaken && this.rng.chance(special.weaken))) riders.weaken = 3;
+        if (special?.frailSure || (special?.frail && this.rng.chance(special.frail))) riders.frail = 3;
+        if (special?.tormentedSure || (special?.tormented && this.rng.chance(special.tormented))) riders.tormented = 3;
+        if (special?.confusedSure || (special?.confused && this.rng.chance(special.confused))) riders.confused = 1;
+        if (special?.lazySure || (special?.lazy && this.rng.chance(special.lazy))) riders.lazy = 2;
         if (e.lifesteal || special?.heal) e.hp = Math.min(e.maxHp, e.hp + Math.round(e.maxHp * (special?.heal || 0)) + Math.round(dmg * (e.lifesteal || 0)));
         const op = { type: 'hit', uid: e.uid, target: target.id, dmg, riders, special: special?.name };
         ops.push(op);
@@ -1205,7 +1295,8 @@ class Fight {
       const shield = this.player.statuses.shield;
       if (shield) dmg = Math.max(1, Math.round(dmg * (1 - shield.mult)));
       dmg = applyGuard(dmg, this.player.guarding);
-      dmg = Math.max(1, Math.round(dmg * this.d().dmgTakenMult));
+      dmg = Math.max(1, Math.round(dmg * this.d().dmgTakenMult * this.partyBuffMult('dr')));
+      if (this.player.statuses.frail || this.player.statuses.tormented) dmg = Math.max(1, Math.round(dmg * 1.25));
       this.run.hp = Math.max(0, this.run.hp - dmg);
       this.damageTaken = (this.damageTaken || 0) + dmg;
       if (this.d().chargeOnHit) this.gainCharge(1);
@@ -1214,21 +1305,24 @@ class Fight {
       this.log(`${e?.name || 'The enemy'}${op.special ? ` (${op.special})` : ''} hits you for ${dmg}${this.player.guarding ? ' (guarded)' : ''}.`, 'log-hit');
       // §9: tell the party the ACTUAL damage taken (after guard/shield/armor),
       // so companions render the blocked number, not the host's raw estimate.
-      this.coop.net.send({ k: 'chit', dmg, guarded: this.player.guarding });
+      this.coop.net.send({ k: 'chit', dmg, guarded: this.player.guarding, by: e?.name, special: op.special });
       const r = op.riders || {};
       if (r.poison && !this.rng.chance(this.d().poisonResist)) { this.player.statuses.poison = r.poison; this.log('You are poisoned!', 'log-hit'); }
       if (r.burn) { this.player.statuses.burn = r.burn; this.log('You are set ablaze!', 'log-hit'); }
       if (r.freeze) { this.player.statuses.frozen = 1; this.log('You are frozen!', 'log-hit'); SFX.freeze(); }
+      if (r.weaken) { this.player.statuses.weaken = r.weaken; this.log('You feel weakened!', 'log-hit'); }
+      if (r.frail) { this.player.statuses.frail = r.frail; this.log('You feel frail!', 'log-hit'); }
+      if (r.tormented) { this.player.statuses.tormented = r.tormented; this.log('Torment claws at you!', 'log-hit'); }
+      if (r.confused) { this.player.statuses.confused = r.confused; this.log('Your thoughts tangle!', 'log-hit'); }
+      if (r.lazy) { this.player.statuses.lazy = r.lazy; this.log('Your limbs grow heavy!', 'log-hit'); }
       if (this.run.hp <= 0) this.deathSaves();
       if (this.run.hp <= 0) this.goDown();
       this.coop.broadcastStatus(this.runStatus(), 'fighting');
       this.onHud?.();
     } else {
-      // §9: don't render the host's raw estimate — the target owns its true HP
-      // and broadcasts the real (post-guard) number via 'chit' + authoritative
-      // 'status'. We just note that a companion was struck.
+      // Target broadcasts real damage via chit; note the strike while waiting.
       const a = this.allies.get(op.target);
-      if (a) this.log(`${e?.name || 'The enemy'} strikes ${a.name}.`, 'log-hit');
+      if (a) this.log(`${e?.name || 'The enemy'}${op.special ? ` (${op.special})` : ''} strikes at ${a.name}…`, 'log-hit');
     }
     this.renderPlayers(this._actingKey);
   }
@@ -1487,7 +1581,7 @@ class Fight {
     const heroAnim = this.pickHeroAnim(sk);
     if (heroAnim && heroHasAnim(this.run.classId, heroAnim)) {
       // Play sheet anim; don't also bounce-transform or it fights the sprite
-      await playHeroAnim(spriteP, this.run.classId, heroAnim, { target: heroCombatSize(this.run.classId), faceLeft: true });
+      await playHeroAnim(spriteP, this.run.classId, heroAnim, { target: heroCombatSize(this.run.classId), faceLeft: false });
     } else if (spriteP) {
       spriteP.classList.add('attack');
       setTimeout(() => spriteP.classList.remove('attack'), 420);
@@ -1539,7 +1633,26 @@ class Fight {
       this.log(`You make yourself impossible to ignore — enemies fix on YOU for ${sk.tauntTurns} turns.`, 'log-good');
       if (this.shared) this.coop.broadcastStatus(this.runStatus(), 'fighting');
     }
+    if (sk.partyBuff) {
+      this.applyPartyBuff(sk.partyBuff);
+      this.log(`${sk.name}: the party feels the ${sk.partyBuff.label || 'boost'}.`, 'log-good');
+    }
     SFX.heal();
+  }
+
+  applyPartyBuff(pb) {
+    if (!pb) return;
+    this.player.partyBuffs = this.player.partyBuffs || [];
+    this.player.partyBuffs.push({ ...pb, turns: pb.turns });
+    if (this.shared) this.coop.net.send({ k: 'pbuff', ...pb });
+  }
+
+  partyBuffMult(kind) {
+    let m = 1;
+    for (const b of (this.player.partyBuffs || [])) {
+      if (b.kind === kind) m *= b.mult;
+    }
+    return m;
   }
 
   hitEnemy(e, sk, d) {
@@ -1554,9 +1667,11 @@ class Fight {
     const isCrit = this.rng.chance(clamp(critChance, 0, 85) / 100);
     let dmg = base * (0.85 + this.rng.next() * 0.3);
     if (isCrit) { dmg *= 1.6; this.gainCharge(CONFIG.charge.gainOnCrit); }
-    dmg *= d.dmgMult * (this.mod.dmgMult || 1);
+    dmg *= d.dmgMult * (this.mod.dmgMult || 1) * this.partyBuffMult('dmg');
+    if (this.player.statuses.weaken) dmg *= 0.7;
     if (e.boss) dmg *= d.bossDmgMult;
     if (e.statuses.hexed) dmg *= C.hexTakenMult;
+    if (e.statuses.frail || e.statuses.tormented) dmg *= 1.25;
     // The Berserker's Heart: on its chosen round, everything doubles (§15)
     if (d.doubleDmgRound && this.round === d.doubleDmgRound) dmg *= 2;
     if (!sk.ignoreDef) dmg -= e.def;
@@ -1588,12 +1703,24 @@ class Fight {
     const newStatuses = {};
     const burnCh = (sk.burn || 0) + d.burn;
     const freezeCh = (sk.freeze || 0) + d.freeze;
+    const poisonCh = (sk.poison || 0) + (d.poison || 0);
+    const weakenCh = (sk.weaken || 0) + (d.weaken || 0);
+    const frailCh = (sk.frail || 0) + (d.frail || 0);
     if (e.hp > 0) {
-      if (sk.poison && this.rng.chance(sk.poison)) { e.statuses.poison = 3; newStatuses.poison = 3; this.log(`${e.name} is poisoned.`, 'log-good'); }
+      if (poisonCh && this.rng.chance(poisonCh)) { e.statuses.poison = 3; newStatuses.poison = 3; this.log(`${e.name} is poisoned.`, 'log-good'); }
       if (burnCh && this.rng.chance(burnCh)) { e.statuses.burn = 2; newStatuses.burn = 2; this.log(`${e.name} catches fire.`, 'log-good'); SFX.fire(); }
       if (freezeCh && this.rng.chance(freezeCh)) { e.statuses.frozen = 1; newStatuses.frozen = 1; this.log(`${e.name} is frozen solid.`, 'log-good'); SFX.freeze(); }
-      if (sk.stun && this.rng.chance(sk.stun)) { e.statuses.stunned = 1; newStatuses.stunned = 1; this.log(`${e.name} is stunned.`, 'log-good'); }
+      const stunCh = (sk.stun || 0) + (d.stun || 0);
+      if (stunCh && this.rng.chance(stunCh)) { e.statuses.stunned = 1; newStatuses.stunned = 1; this.log(`${e.name} is stunned.`, 'log-good'); }
       if (sk.hex && this.rng.chance(sk.hex)) { e.statuses.hexed = 3; newStatuses.hexed = 3; this.log(`${e.name} is hexed — it will suffer more.`, 'log-good'); }
+      if (weakenCh && this.rng.chance(Math.min(1, weakenCh))) { e.statuses.weaken = 3; newStatuses.weaken = 3; this.log(`${e.name} is weakened.`, 'log-good'); }
+      if (frailCh && this.rng.chance(Math.min(1, frailCh))) { e.statuses.frail = 3; newStatuses.frail = 3; this.log(`${e.name} is frail.`, 'log-good'); }
+      const tormentCh = (sk.tormented || 0) + (d.tormented || 0);
+      if (tormentCh && this.rng.chance(Math.min(1, tormentCh))) { e.statuses.tormented = 3; newStatuses.tormented = 3; this.log(`${e.name} is tormented.`, 'log-good'); }
+      const confuseCh = (sk.confused || 0) + (d.confused || 0);
+      if (confuseCh && this.rng.chance(confuseCh)) { e.statuses.confused = 1; newStatuses.confused = 1; this.log(`${e.name} is confused.`, 'log-good'); }
+      const lazyCh = (sk.lazy || 0) + (d.lazy || 0);
+      if (lazyCh && this.rng.chance(lazyCh)) { e.statuses.lazy = 2; newStatuses.lazy = 2; this.log(`${e.name} grows lazy.`, 'log-good'); }
     } else {
       this.gainCharge(CONFIG.charge.gainOnKill);
     }
@@ -1677,9 +1804,11 @@ class Fight {
     }
     this.bossPhaseChecksSolo(e);
 
-    if (e.statuses.frozen || e.statuses.stunned) {
-      this.log(`${e.name} is ${e.statuses.frozen ? 'frozen' : 'stunned'} — it cannot act.`, 'log-good');
+    if (e.statuses.frozen || e.statuses.stunned || e.statuses.lazy || e.statuses.confused) {
+      const why = e.statuses.frozen ? 'frozen' : e.statuses.stunned ? 'stunned' : e.statuses.lazy ? 'lazy' : 'confused';
+      this.log(`${e.name} is ${why} — it cannot act.`, 'log-good');
       delete e.statuses.frozen; delete e.statuses.stunned;
+      delete e.statuses.lazy; delete e.statuses.confused;
       this.renderEnemies();
       await sleep(350);
       return;
@@ -1718,12 +1847,14 @@ class Fight {
     }
 
     let dmg = e.atk * CONFIG.combat.enemyAtkMult * (0.85 + this.rng.next() * 0.3) * (this.mod.dmgMult || 1) * (special?.mult || 1) * chargeScale;
+    if (e.statuses.weaken) dmg *= 0.7;
     if (this.rng.chance(d.enemyCrit / 100)) dmg *= 1.5;
     dmg -= d.def;
     if (e.caster && !special && e.turnCount % 2 === 0) { dmg *= 1.4; this.log(`${e.name} channels a darker spell!`, 'log-hit'); }
     const shield = this.player.statuses.shield;
     if (shield) dmg *= (1 - shield.mult);
-    dmg = applyGuard(Math.max(1, Math.round(dmg * d.dmgTakenMult)), this.player.guarding);
+    dmg = applyGuard(Math.max(1, Math.round(dmg * d.dmgTakenMult * this.partyBuffMult('dr'))), this.player.guarding);
+    if (this.player.statuses.frail || this.player.statuses.tormented) dmg = Math.max(1, Math.round(dmg * 1.25));
 
     this.run.hp = Math.max(0, this.run.hp - dmg);
     this.damageTaken = (this.damageTaken || 0) + dmg;
@@ -1750,6 +1881,11 @@ class Fight {
     if (((e.poison && this.rng.chance(e.poison)) || special?.poisonSure) && !this.rng.chance(d.poisonResist)) { this.player.statuses.poison = 3; this.log('You are poisoned!', 'log-hit'); }
     if ((e.burn && this.rng.chance(e.burn)) || special?.burnSure) { this.player.statuses.burn = 2; this.log('You are set ablaze!', 'log-hit'); }
     if (enemyHitFreezes(e, special, this.rng)) { this.player.statuses.frozen = 1; this.log('You are frozen!', 'log-hit'); SFX.freeze(); }
+    if (special?.weakenSure || (special?.weaken && this.rng.chance(special.weaken))) { this.player.statuses.weaken = 3; this.log('You feel weakened!', 'log-hit'); }
+    if (special?.frailSure || (special?.frail && this.rng.chance(special.frail))) { this.player.statuses.frail = 3; this.log('You feel frail!', 'log-hit'); }
+    if (special?.tormentedSure || (special?.tormented && this.rng.chance(special.tormented))) { this.player.statuses.tormented = 3; this.log('Torment claws at you!', 'log-hit'); }
+    if (special?.confusedSure || (special?.confused && this.rng.chance(special.confused))) { this.player.statuses.confused = 1; this.log('Your thoughts tangle!', 'log-hit'); }
+    if (special?.lazySure || (special?.lazy && this.rng.chance(special.lazy))) { this.player.statuses.lazy = 2; this.log('Your limbs grow heavy!', 'log-hit'); }
 
     if (this.run.hp <= 0) this.deathSaves();
 
@@ -1811,6 +1947,9 @@ class Fight {
         ops?.push({ type: 'edot', uid: e.uid, dmg, hpAfter: e.hp, kind: 'burn' });
       }
       if (e.statuses.hexed) { e.statuses.hexed--; if (e.statuses.hexed <= 0) delete e.statuses.hexed; }
+      for (const k of ['weaken', 'frail', 'tormented', 'lazy']) {
+        if (e.statuses[k]) { e.statuses[k]--; if (e.statuses[k] <= 0) delete e.statuses[k]; }
+      }
       if (e.regen && e.hp > 0 && e.hp < e.maxHp) {
         const amt = Math.round(e.maxHp * e.regen);
         e.hp = Math.min(e.maxHp, e.hp + amt);
@@ -1842,6 +1981,9 @@ class Fight {
       if (this.run.hp <= 0) { this.deathSaves(); if (this.shared && this.run.hp <= 0) this.goDown(); }
     }
     if (st.shield) { st.shield.turns--; if (st.shield.turns <= 0) delete st.shield; }
+    for (const k of ['weaken', 'frail', 'tormented', 'lazy', 'confused']) {
+      if (st[k]) { st[k]--; if (st[k] <= 0) delete st[k]; }
+    }
     if (this.run.combatTaunt) {
       this.run.combatTaunt--;
       if (this.run.combatTaunt <= 0) {
@@ -1850,6 +1992,7 @@ class Fight {
       }
     }
     this.player.buffs = this.player.buffs.filter(b => --b.turns > 0);
+    this.player.partyBuffs = (this.player.partyBuffs || []).filter(b => --b.turns > 0);
     if (this.mod.hpDrainPct && !this.run.down && this.run.hp > 0) {
       const drain = Math.max(1, Math.round(this.run.maxHp * this.mod.hpDrainPct));
       this.run.hp = Math.max(0, this.run.hp - drain);

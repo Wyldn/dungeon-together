@@ -28,7 +28,7 @@ export function enemySpriteHtml(id, { boss = false, elite = false, summon = fals
   const a = ENEMY_ART[id];
   if (!a) return null;
   const frames = a.frames || 2;
-  const target = boss ? 168 : summon ? 64 : elite ? 84 : 68;
+  const target = boss ? 152 : summon ? 64 : elite ? 84 : 68;
   const s = scaleFor(a.h, target);
   const fw = a.w * s, fh = a.h * s;
   const anim = frames > 1 ? '' : 'animation:none;';

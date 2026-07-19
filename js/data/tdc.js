@@ -81,9 +81,13 @@ export const TDC = {
     throne: { hp: 1.12, atk: 1.10, spd: 1.04, chargeGain: 1.12 },
   },
 
-  /* ---- legacy party HP mult (deprecated — encounter budgets own co-op) ---- */
+  /* ---- party levers ----
+     Encounter budgets own co-op body-count / residual HP.
+     Boss ATK still needs a party bump: single-target damage is diluted
+     across random allies, so solo-tuned ATK feels soft in co-op. */
   party: {
     hpPerExtra: 0, // was 0.28; dual-scaling removed in favor of budgets
+    bossAtkPerExtra: 0.11, // +11% boss ATK per ally (2p +11%, 3p +22%, 4p +33%) — ~3 ST hits to down a mid climber
   },
 
   /* ---- player soft caps (breadth over runaway numbers) ---- */
@@ -195,6 +199,12 @@ export function enemyScale(floor, biomeStart, biomeId, { boss = false, elite = f
 export function partyHpMult(partySize = 1) {
   const extra = Math.max(0, (partySize || 1) - 1);
   return 1 + TDC.party.hpPerExtra * extra;
+}
+
+/** Co-op boss outgoing damage mult — offsets random single-target dilution. */
+export function partyBossAtkMult(partySize = 1) {
+  const extra = Math.max(0, (partySize || 1) - 1);
+  return 1 + (TDC.party.bossAtkPerExtra || 0) * extra;
 }
 
 export function rewardMult(floor) {
