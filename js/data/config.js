@@ -15,16 +15,20 @@ export const CONFIG = {
      unprepared player loses roughly 40% of even-floor fights. Gear, training,
      and events are how you bend those odds. */
   combat: {
-    playerStatWeight: 0.9,   // damage per point of governing stat
-    playerAtkWeight: 1.5,    // damage per point of weapon atk
-    playerLevelWeight: 0.8,
-    playerFlat: 1,
-    enemyAtkMult: 1.5,       // enemy atk → damage multiplier
+    playerStatWeight: 1.0,   // damage per point of governing stat
+    playerAtkWeight: 1.7,    // damage per point of weapon atk
+    playerLevelWeight: 0.9,
+    playerFlat: 2,
+    enemyAtkMult: 1.35,      // enemy atk → damage (was 1.5; early packs overkilled)
     lifestealCapPct: 0.04,   // max heal per hit from any single lifesteal source
     hexTakenMult: 1.25,      // hexed targets take +25% damage
     floatMs: 1200,           // how long hit/heal numbers linger
     hitPauseMs: 340,         // pause after each skill hit so the number reads
     skillResolveMs: 950,     // pause after a full skill before the turn advances
+    /* Defense: diminishing-returns % mitigation (not flat subtract).
+       mit = softCap * def / (def + k). Extra DEF past ~k softens hard. */
+    defMitigationK: 10,      // inflection — half of softCap at def == k
+    defMitigationCap: 0.88,  // max fraction of a hit DEF can erase
   },
 
   /* ---- combat: Battle Charge ---- */
@@ -66,9 +70,9 @@ export const CONFIG = {
   /* ---- recovery (lean: the tower is not a spa; see TDC.clearRate) ---- */
   recovery: {
     levelUpMissingPct: 0.5,      // restore 50% of MISSING hp/resource on level up
-    victoryHealPct: 0.15,        // % max hp after any combat win
-    bossVictoryHealPct: 0.42,    // gate blessing after bosses
-    floorHealPct: 0.11,          // catching your breath between floors
+    victoryHealPct: 0.09,        // % max hp after any combat win
+    bossVictoryHealPct: 0.26,    // gate blessing after bosses
+    floorHealPct: 0.05,          // catching your breath between floors
     floorManaPct: 0.06,          // class resource stays scarce between floors
   },
 

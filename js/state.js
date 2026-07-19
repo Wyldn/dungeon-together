@@ -14,6 +14,8 @@ const PREFS_KEY = 'dt_prefs_v1';
 /* ------------------------- UI PREFS ------------------------- */
 const defaultPrefs = () => ({
   combatLaneDivider: true, // vertical bar separating party from the field
+  // Per-device only (never synced in co-op) — each climber toggles their own.
+  autoPlay: false,
 });
 
 export function loadPrefs() {
@@ -36,6 +38,17 @@ export function setCombatLaneDivider(on) {
   prefs.combatLaneDivider = !!on;
   savePrefs(prefs);
   return prefs.combatLaneDivider;
+}
+
+export function getAutoPlay() {
+  return !!loadPrefs().autoPlay;
+}
+
+export function setAutoPlayPref(on) {
+  const prefs = loadPrefs();
+  prefs.autoPlay = !!on;
+  savePrefs(prefs);
+  return prefs.autoPlay;
 }
 
 /* ------------------------- META (permanent) ------------------------- */
@@ -402,6 +415,8 @@ function migrateRun(run) {
   run.bossPicks = run.bossPicks || {};
   run.appearanceId = run.appearanceId || defaultAppearanceId(run.classId);
   run.foodBuff = run.foodBuff || null;
+  run.climb = run.climb || null;
+  run.pending = run.pending || null;
   run.equipment = {
     weapon: null, helmet: null, chest: null, legs: null, boots: null,
     accessory1: null, accessory2: null, accessory3: null,

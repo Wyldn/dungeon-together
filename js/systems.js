@@ -77,3 +77,18 @@ export function applyGuard(dmg, guarding, pierces = false) {
   if (!guarding || pierces) return dmg;
   return Math.max(1, Math.round(dmg * (1 - CONFIG.guard.blockPct)));
 }
+
+/**
+ * Apply defense with diminishing returns.
+ * mitigation = cap * def / (def + k) — early DEF matters a lot; stacking softens.
+ */
+export function applyDefense(rawDmg, def, { ignoreDef = false } = {}) {
+  const raw = Number(rawDmg) || 0;
+  if (ignoreDef || raw <= 0) return Math.max(1, Math.round(raw));
+  const d = Math.max(0, Number(def) || 0);
+  if (d <= 0) return Math.max(1, Math.round(raw));
+  const k = CONFIG.combat.defMitigationK ?? 12;
+  const cap = CONFIG.combat.defMitigationCap ?? 0.85;
+  const mit = cap * (d / (d + k));
+  return Math.max(1, Math.round(raw * (1 - mit)));
+}

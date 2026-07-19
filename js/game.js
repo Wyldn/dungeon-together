@@ -5,7 +5,7 @@ import { CLASSES, SUBCLASSES, RANDOM_NAMES, subclassOptions } from './data/class
 import { RACES, applyRacePromotion } from './data/races.js';
 import { ORIGINS, originById } from './data/origins.js';
 import { SKILLS } from './data/skills.js';
-import { BIOMES, biomeForFloor, ENEMIES, BOSSES, ALT_BOSSES, MODIFIERS, pickBossForFloor, bossById, findEnemySpec, NPC_ENEMIES } from './data/enemies.js';
+import { BIOMES, biomeForFloor, ENEMIES, BOSSES, ALT_BOSSES, MODIFIERS, pickBossForFloor, bossById, findEnemySpec, NPC_ENEMIES, mimicSpec } from './data/enemies.js';
 import { EVENTS, CATEGORY_META, drawEvent, NPC_EVENTS } from './data/events.js';
 import { appearancesFor, defaultAppearanceId } from './data/appearances.js';
 import { CONFIG } from './data/config.js';
@@ -14,9 +14,19 @@ import { rankFor } from './data/ranks.js';
 import { CONSUMABLES, itemById, resolveItem, rollEquipment, rollRelic, rollUnique, rollWrld, markWrldClaimed, EQUIP_SLOTS, RELICS, ALL_EQUIPMENT, WEAPONS, itemUsefulForClass, itemIncompatibleForClass } from './data/items.js';
 import { applyTagOutcomeMods } from './data/eventtags.js';
 import { loadMeta, saveMeta, upgradeRank, award, UPGRADES, ACHIEVEMENTS, newRun, saveRun, loadRun, clearRun, runRng, rollStart, startDescriptor, awakenMonolith, fateGrowthBoost, fateGrowthPct, fateGrowthPctOne, randomRaceId, randomClassId, unlockedCosmetics, climberNameHtml, resetSanctumUpgrades } from './state.js';
-import { derived, classTitle, skillTier, gainXp, learnableSkills, heal, restoreMana, relicItems, equippedItems, changeFame, resourceName, appraiseRun, revealLevel, applySubclass as applySubclassFn, APPRAISABLE, allowedWeaponTypes, weaponCompatible, skillCapacity, applySkillBreakpoints } from './character.js';
-import { startCombat, buildEnemy } from './combat.js';
+import {
+  derived, classTitle, skillTier, gainXp, learnableSkills, heal, restoreMana, relicItems,
+  equippedItems, changeFame, resourceName, appraiseRun, revealLevel,
+  applySubclass as applySubclassFn, APPRAISABLE, allowedWeaponTypes, weaponCompatible,
+  skillCapacity, applySkillBreakpoints, grantClassWeightedStats, pickClassWeightedStat,
+} from './character.js';
+import { startCombat, buildEnemy, snapshotActiveCombat } from './combat.js';
 import { partyBossAtkMult, partyBossHpMult } from './data/tdc.js';
+import {
+  ensureClimbStats, samplePower, noteBossCleared, buildClimbSummary, pushRunHistory,
+  loadRunHistory, powerGraphSvg, statPentagonSvg,
+  appendChronicle, chronicleHtml, powerChronicleFields,
+} from './runlog.js';
 import { ICONS } from './icons.js';
 import { SFX, toggleMute, isMuted } from './audio.js';
 import { setParticles, setBiomeGlow, flash, walkTransition } from './fx.js';
@@ -28,6 +38,7 @@ import { defaultServerUrl, isMixedContentBlocked, PUBLIC_GAME_URL } from './net.
 import { CoopSession, connectCoop } from './coop.js';
 import { Music } from './music.js';
 import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl, raceArtHtml, originArtHtml, raceIconUrl, originIconUrl, eventCatUrl, npcArtUrl, enemySpriteHtml } from './art.js';
+import { isAutoPlay, setAutoPlay, syncAutoPlayLoop } from './autoplay.js';
 
 let meta = loadMeta();
 let run = null;
@@ -52,6 +63,7 @@ const NPC_DUELS = new Set(['crimson_stranger', 'frost_revenant', ...NPC_EVENTS])
 export function boot() {
   setParticles('dust');
   setBiomeGlow('#3f3a58');
+  syncAutoPlayLoop();
   if (devJump()) return;
   titleScreen();
 }
@@ -75,6 +87,50 @@ function devJump() {
   }
   if (p === 'map') { enterFloorScreen(true); return true; }
   if (p === 'debug') { debugScreen(); return true; }
+  if (p === 'summary') {
+    const mock = {
+      outcome: 'win', name: 'Elba', raceName: 'Human', classId: 'archer',
+      title: 'Archer', seed: 44718291, floor: 51, level: 48, kills: 26,
+      fame: 93, gold: 1879, overall: 'A',
+      stats: { str: 28, dex: 49, int: 20, wis: 15, lk: 42 },
+      skills: ['steady_draw', 'lightning_arrow', 'evasive_roll', 'volley', 'one_shot'].filter(id => SKILLS[id]),
+      relics: [
+        { name: 'Eternal Whetstone', desc: '+12% damage dealt.' },
+        { name: 'Moon Dial', desc: 'Restore +1 class resource each combat turn. Rare clockwork.' },
+        { name: 'Coat of Thorns', desc: 'Attackers take 25% of the damage they deal to you, straight back.' },
+      ],
+      equipment: [
+        { name: 'Precise Infernal Lash of Fortune', rarity: 'rare', desc: '+DEX · crit chance · lash', wtype: 'dagger', slot: 'weapon' },
+        { name: "Titan Reinforced Dragonbone Helm", rarity: 'legendary', desc: '+HP · +DEF · titan', slot: 'helmet' },
+        { name: "Tower Scholar's Robe", rarity: 'legendary', desc: '+INT · mana · scholar', slot: 'chest' },
+        { name: "Reinforced Scout's Boots", rarity: 'uncommon', desc: '+DEX · move', slot: 'boots' },
+        { name: 'Warlike Polished Bloodied Crown Seal', rarity: 'legendary', desc: '+STR · fame · seal', slot: 'accessory' },
+        { name: "Polished Scholarly Phoenix Feather", rarity: 'epic', desc: '+WIS · revive spark', slot: 'accessory' },
+      ],
+      climb: {
+        damageDealt: 8082, damageTaken: 839, healed: 120,
+        buffsApplied: 4, debuffsApplied: 7,
+        bossesCleared: [
+          { floor: 10, name: 'The Thornbeast' },
+          { floor: 20, name: 'Lich of the Fallen King' },
+          { floor: 30, name: 'Jarl of the White Grave' },
+          { floor: 40, name: 'The Putrid Prince' },
+          { floor: 50, name: 'Arch-Cyclops Vex' },
+        ],
+        powerLog: Array.from({ length: 26 }, (_, i) => {
+          const floor = 1 + i * 2;
+          const expected = 2 + floor * 0.12;
+          const power = expected * (0.95 + i * 0.035);
+          return { floor, power: +power.toFixed(2), expected: +expected.toFixed(2), deltaPct: Math.round(((power / expected) - 1) * 100) };
+        }),
+      },
+      power: { deltaPct: 48 },
+    };
+    // Fill technique ids from real skill list if mock ids missing.
+    if (!mock.skills.length) mock.skills = Object.keys(SKILLS).slice(0, 5);
+    showClimbSummary(mock, { shards: 12, wasCoop: false, myName: 'Elba', isWin: true }).then(() => titleScreen());
+    return true;
+  }
   return false;
 }
 
@@ -344,6 +400,7 @@ function titleScreen() {
         </div>
         <div class="title-rail">
           <button class="btn ghost small" id="btn-sanctum">Sanctum ◈ ${meta.shards}</button>
+          <button class="btn ghost small" id="btn-history">Run History</button>
           <button class="btn ghost small" id="btn-debug">Compendium</button>
           <div class="title-audio">
             <button class="btn ghost small" id="btn-mute">${isMuted() ? 'Sound Off' : 'Sound On'}</button>
@@ -371,9 +428,10 @@ function titleScreen() {
     clearRun(); run = null;
     flash(() => creationFlow(), { biomeId: 'title', partySize: 2 });
   };
-  if (saved) document.getElementById('btn-continue').onclick = () => { SFX.click(); run = saved; enterFloorScreen(); };
+  if (saved) document.getElementById('btn-continue').onclick = () => { SFX.click(); run = saved; resumeRun(); };
   document.getElementById('btn-coop').onclick = () => { SFX.click(); coopMenu(); };
   document.getElementById('btn-sanctum').onclick = () => { SFX.click(); sanctumScreen(); };
+  document.getElementById('btn-history').onclick = () => { SFX.click(); showRunHistoryBrowser(); };
   document.getElementById('btn-mute').onclick = e => {
     const m = toggleMute();
     Music.syncMute();
@@ -382,6 +440,76 @@ function titleScreen() {
   document.getElementById('btn-debug').onclick = () => { SFX.click(); debugScreen(); };
   wireVolumeSlider(document.getElementById('vol-slider'), document.getElementById('vol-val'));
   Music.play('title');
+}
+
+/** Pause / settings — shared by floor HUD, travel map, and combat. */
+async function openPauseMenu() {
+  SFX.click();
+  const p = modal(`
+    <h3>Pause</h3>
+    <div class="audio-row pause-audio">
+      <span>🎵 Music</span>
+      <input type="range" id="pause-vol" class="vol-slider" min="0" max="100" value="${Math.round(Music.getVolume() * 100)}" aria-label="Music volume" />
+      <span id="pause-vol-val" class="vol-val">${Math.round(Music.getVolume() * 100)}</span>
+      <button class="btn small ghost" id="pause-mute">${isMuted() ? '🔇' : '🔊'}</button>
+    </div>
+    <label class="audio-row pause-audio pause-autoplay">
+      <span>🧪 Auto-play</span>
+      <input type="checkbox" id="pause-autoplay" ${isAutoPlay() ? 'checked' : ''} />
+      <span class="pause-autoplay-hint">${coopS
+        ? 'This device only — your turns &amp; votes (not a party setting)'
+        : 'Testing — auto-pick cards &amp; combat'}</span>
+    </label>
+    <div class="pick-grid">
+      <button class="pick-option" data-close="resume"><span class="po-name">Resume the climb</span></button>
+      ${coopS ? '' : `<button class="pick-option" data-close="save"><span class="po-name">Save &amp; return to title</span><span class="po-desc">Your climb waits where you left it.</span></button>`}
+      <button class="pick-option" data-close="abandon"><span class="po-name" style="color:var(--blood)">${coopS ? 'Leave the party & abandon run' : 'Abandon run'}</span><span class="po-desc">The tower claims another. Shards are still awarded.</span></button>
+    </div>`, { dismissible: true });
+  wireVolumeSlider(document.getElementById('pause-vol'), document.getElementById('pause-vol-val'));
+  const mb = document.getElementById('pause-mute');
+  if (mb) mb.onclick = () => { const m = toggleMute(); Music.syncMute(); mb.textContent = m ? '🔇' : '🔊'; };
+  const ap = document.getElementById('pause-autoplay');
+  if (ap) ap.onchange = () => setAutoPlay(ap.checked);
+  const v = await p;
+  if (v === 'save') { persistRunForLeave(); titleScreen(); }
+  if (v === 'abandon') endRun('abandon');
+}
+
+/** Callbacks shared by combat / map chrome that covers the floor HUD. */
+function runOverlayUi() {
+  return {
+    onCharacter: () => { SFX.click(); characterSheet({ locked: sheetCombatLock }); },
+    onSettings: () => { openPauseMenu(); },
+  };
+}
+
+function showRunHistoryBrowser() {
+  const list = loadRunHistory();
+  modalCustom((m, close) => {
+    m.innerHTML = `<h3>Run History</h3>
+      <p class="modal-sub">Last ${list.length || 0} climbs kept on this device.</p>
+      <div class="pick-grid">
+        ${list.length ? list.map((s, i) => `
+          <button class="pick-option" data-i="${i}">
+            <span class="po-tag tag">${s.outcome || '?'}</span>
+            <div class="po-name">${s.name || 'Climber'} — F${s.floor} · ${s.overall || '?'}</div>
+            <div class="po-desc">${s.raceName || ''} ${s.title || ''} · Lv ${s.level} · ${s.kills || 0} slain
+              ${s.at ? ` · ${new Date(s.at).toLocaleDateString()}` : ''}</div>
+          </button>`).join('') : '<div style="color:var(--ink-faint);padding:12px">No climbs recorded yet.</div>'}
+        <button class="pick-option" data-close="1"><span class="po-name" style="color:var(--ink-dim)">Close</span></button>
+      </div>`;
+    m.querySelector('[data-close]')?.addEventListener('click', () => close());
+    m.querySelectorAll('[data-i]').forEach(b => b.onclick = async () => {
+      close();
+      const s = list[+b.dataset.i];
+      if (!s) return;
+      await showClimbSummary(s, {
+        shards: 0, wasCoop: false, myName: s.name,
+        isWin: s.outcome === 'win', fromHistory: true,
+      });
+      titleScreen();
+    });
+  });
 }
 
 // Shared music-volume slider wiring (title + pause). Live-updates the playing
@@ -1163,15 +1291,43 @@ function coopLobby(myName) {
       origin: { title: 'Origin', items: ORIGINS.map(o => ({ id: o.id, glyph: o.glyph, icon: originIconUrl(o.id) && `<img class="px-icon" src="${originIconUrl(o.id)}" style="width:40px;height:40px" alt="">`, name: o.name, desc: o.blurb })) },
     };
     const def = defs[kind];
+    const boost = fateGrowthPctOne();
+    const fateLabel = kind === 'origin'
+      ? '🎲 Tempt fate'
+      : `🎲 Tempt fate (+${boost}%)`;
+    const fateHint = kind === 'origin'
+      ? 'Lock in a random origin.'
+      : 'Seal a random pick for +growth — revealed on the climb.';
     modalCustom((m, close) => {
-      m.innerHTML = `<h3>Choose your ${def.title}</h3>
+      m.classList.add('sheet-modal', 'picker-modal');
+      m.innerHTML = `
+        <button type="button" class="sheet-close-x" id="picker-x" title="Close" aria-label="Close">✕</button>
+        <h3>Choose your ${def.title}</h3>
         <div class="picker-grid">${def.items.map(it => `
           <button class="picker-card" data-id="${it.id}" ${it.accent ? `style="--accent:${it.accent}"` : ''}>
             <div class="pk-glyph">${it.icon || `<span style="font-size:34px">${it.glyph}</span>`}</div>
             <div class="pk-name">${it.name}</div>
             <div class="pk-desc">${it.desc}</div>
           </button>`).join('')}
+        </div>
+        <div class="picker-fate-bar">
+          <button type="button" class="btn small" id="picker-fate">${fateLabel}</button>
+          <span class="picker-fate-hint">${fateHint}</span>
         </div>`;
+      m.querySelector('#picker-x').onclick = () => { SFX.click(); close(); };
+      m.querySelector('#picker-fate').onclick = () => {
+        if (kind === 'origin') {
+          myPick.originId = ORIGINS[Math.floor(Math.random() * ORIGINS.length)].id;
+          SFX.unlock();
+          toast('Fate chooses your origin.', 'good');
+          close();
+          updatePickTiles();
+          sendLobby();
+          return;
+        }
+        close();
+        trustFate(kind);
+      };
       m.querySelectorAll('.picker-card').forEach(b => b.onclick = () => {
         myPick[kind + 'Id'] = b.dataset.id;
         if (kind === 'race') myPick.fateRace = false;
@@ -1232,7 +1388,7 @@ function coopLobby(myName) {
     return `
       <div class="panel pick-tile" id="pick-race"><div class="pt-art">${raceArt}</div><b>${raceSealed ? '???' : RACES[myPick.raceId].name}${raceSealed ? ' <span class="fate-badge">FATE</span>' : ''}</b><div class="pt-hint">${raceSealed ? 'sealed until the climb' : 'change race'}</div>${raceSealed || myReady ? '' : `<button class="btn small fate-mini" id="fate-race" type="button">🎲 Trust fate (+${boost}%)</button>`}</div>
       <div class="panel pick-tile" id="pick-class"><div class="pt-art">${classArt}</div><b>${classSealed ? '???' : CLASSES[myPick.classId].name}${classSealed ? ' <span class="fate-badge">FATE</span>' : ''}</b><div class="pt-hint">${classSealed ? 'sealed until the climb' : 'change class'}</div>${lookRow}${classSealed || myReady ? '' : `<button class="btn small fate-mini" id="fate-class" type="button">🎲 Trust fate (+${boost}%)</button>`}</div>
-      <div class="panel pick-tile" id="pick-origin"><div class="pt-art">${originIconUrl(myPick.originId) ? `<img class="px-icon" src="${originIconUrl(myPick.originId)}" style="width:44px;height:44px" alt="">` : `<span style="font-size:32px">${originById(myPick.originId).glyph}</span>`}</div><b style="font-size:13px">${originById(myPick.originId).name}</b><div class="pt-hint">change origin</div></div>`;
+      <div class="panel pick-tile" id="pick-origin"><div class="pt-art">${originIconUrl(myPick.originId) ? `<img class="px-icon" src="${originIconUrl(myPick.originId)}" style="width:44px;height:44px" alt="">` : `<span style="font-size:32px">${originById(myPick.originId).glyph}</span>`}</div><b style="font-size:13px">${originById(myPick.originId).name}</b><div class="pt-hint">change origin</div>${myReady ? '' : `<button class="btn small fate-mini" id="fate-origin" type="button">🎲 Tempt fate</button>`}</div>`;
   }
 
   function updatePickTiles() {
@@ -1248,6 +1404,15 @@ function coopLobby(myName) {
     document.getElementById('pick-origin').onclick = () => openPicker('origin');
     document.getElementById('fate-race')?.addEventListener('click', e => { e.stopPropagation(); trustFate('race'); });
     document.getElementById('fate-class')?.addEventListener('click', e => { e.stopPropagation(); trustFate('class'); });
+    document.getElementById('fate-origin')?.addEventListener('click', e => {
+      e.stopPropagation();
+      if (myReady) return;
+      myPick.originId = ORIGINS[Math.floor(Math.random() * ORIGINS.length)].id;
+      SFX.unlock();
+      toast('Fate chooses your origin.', 'good');
+      updatePickTiles();
+      sendLobby();
+    });
     const cycleLook = dir => {
       const skins = appearancesFor(myPick.classId) || [];
       if (skins.length < 2) return;
@@ -1490,35 +1655,115 @@ function renderHud() {
     </div>
     <div class="hud-buttons">
       <button class="btn small" id="hud-sheet">🎒 Character</button>
-      <button class="btn small ghost" id="hud-quit">☰</button>
+      <button class="btn small ghost" id="hud-quit" title="Settings" aria-label="Settings">☰</button>
     </div>`;
   hud.querySelector('#hud-sheet').onclick = () => {
     SFX.click();
     characterSheet({ locked: sheetCombatLock });
   };
-  hud.querySelector('#hud-quit').onclick = async () => {
-    SFX.click();
-    const p = modal(`
-      <h3>Pause</h3>
-      <div class="audio-row pause-audio">
-        <span>🎵 Music</span>
-        <input type="range" id="pause-vol" class="vol-slider" min="0" max="100" value="${Math.round(Music.getVolume() * 100)}" aria-label="Music volume" />
-        <span id="pause-vol-val" class="vol-val">${Math.round(Music.getVolume() * 100)}</span>
-        <button class="btn small ghost" id="pause-mute">${isMuted() ? '🔇' : '🔊'}</button>
-      </div>
-      <div class="pick-grid">
-        <button class="pick-option" data-close="resume"><span class="po-name">Resume the climb</span></button>
-        ${coopS ? '' : `<button class="pick-option" data-close="save"><span class="po-name">Save &amp; return to title</span><span class="po-desc">Your climb waits where you left it.</span></button>`}
-        <button class="pick-option" data-close="abandon"><span class="po-name" style="color:var(--blood)">${coopS ? 'Leave the party & abandon run' : 'Abandon run'}</span><span class="po-desc">The tower claims another. Shards are still awarded.</span></button>
-      </div>`, { dismissible: true });
-    // modal() appends synchronously — wire the audio controls before awaiting
-    wireVolumeSlider(document.getElementById('pause-vol'), document.getElementById('pause-vol-val'));
-    const mb = document.getElementById('pause-mute');
-    if (mb) mb.onclick = () => { const m = toggleMute(); Music.syncMute(); mb.textContent = m ? '🔇' : '🔊'; };
-    const v = await p;
-    if (v === 'save') { saveRun(run); titleScreen(); }
-    if (v === 'abandon') endRun('abandon');
-  };
+  hud.querySelector('#hud-quit').onclick = () => openPauseMenu();
+}
+
+/* ---- solo mid-floor persistence (no free event rerolls / combat flees) ---- */
+function setPending(kind, data = {}) {
+  if (!run || coopS) return;
+  run.pending = { kind, floor: run.floor, ...data };
+  saveRun(run);
+}
+
+function clearPending() {
+  if (run?.pending) delete run.pending;
+}
+
+/** Snapshot live combat into pending, then save — used on Save & leave. */
+function persistRunForLeave() {
+  if (!run || coopS) return;
+  const snap = snapshotActiveCombat();
+  if (snap) {
+    run.pending = {
+      kind: 'combat',
+      floor: run.floor,
+      ...snap,
+      reward: run.pending?.reward || null,
+      text: snap.introText || run.pending?.text || null,
+    };
+  }
+  saveRun(run);
+}
+
+async function resumeRun() {
+  if (!run) return titleScreen();
+  ensureClimbStats(run);
+  const biome = biomeForFloor(Math.max(1, run.floor));
+  run.biomeId = biome.id;
+  setBiomeGlow(biome.glow);
+  setParticles(biome.particle);
+  Music.play(BIOME_MUSIC[run.biomeId] || 'forest');
+  const stage = floorChrome();
+  const p = run.pending;
+  if (p && p.floor === run.floor) {
+    toast('Resuming where you left off…', 'info');
+    return resumePending(stage, p);
+  }
+  // Old saves with no pending: re-enter this floor without advancing.
+  if (run.floor >= 1) {
+    toast('No mid-floor save found — redrawing this floor.', 'sys');
+    return reenterCurrentFloor(stage);
+  }
+  return enterFloorScreen(true);
+}
+
+async function resumePending(stage, p) {
+  if (p.kind === 'travel' && p.cards?.length) {
+    return renderTravelMap(stage, p.cards, null, travelCtx());
+  }
+  if (p.kind === 'event' && p.eventId) {
+    const ev = EVENTS.find(e => e.id === p.eventId);
+    if (ev) return renderEventCard(stage, ev);
+  }
+  if (p.kind === 'shop' && p.eventId) {
+    const ev = EVENTS.find(e => e.id === p.eventId) || { id: p.eventId, title: 'Merchant', shop: true };
+    return shopScreen(stage, ev, { resumeStock: p.stock || null });
+  }
+  if (p.kind === 'combat' && p.enemies?.length) {
+    if (p.bossId) {
+      const boss = bossById(p.bossId) || pickBossForFloor(run.floor, runRng(run), run);
+      return fightGroupBoss(stage, p.enemies, boss, { resume: p });
+    }
+    return fightGroup(stage, p.enemies, {
+      text: p.text || null,
+      modifier: p.modifier || null,
+      prebuilt: p.enemies,
+      reward: p.reward || null,
+      resume: p,
+    });
+  }
+  if (p.kind === 'boss') return bossFloor(stage, { resume: p });
+  if (p.kind === 'modifier') return modifierFloor(stage);
+  if (p.kind === 'throne') return throneRoom(stage);
+  return reenterCurrentFloor(stage);
+}
+
+/** Replay current floor content without floor++ (solo only). */
+async function reenterCurrentFloor(stage) {
+  if (run.floor === LAST_FLOOR) return throneRoom(stage);
+  if (BOSS_FLOORS.includes(run.floor)) return bossFloor(stage);
+  if (run.floor % 5 === 0) return modifierFloor(stage);
+  if (BOSS_FLOORS.includes(run.floor + 1)) {
+    const campfire = EVENTS.find(e => e.id === 'campfire');
+    setPending('event', { eventId: 'campfire' });
+    return renderEventCard(stage, campfire);
+  }
+  const cards = generateCards(runRng(run));
+  setPending('travel', { cards });
+  return renderTravelMap(stage, cards, null, travelCtx());
+}
+
+// Auto-save mid-run if the tab closes (solo).
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    if (run && !run.over && !coopS) persistRunForLeave();
+  });
 }
 
 function floorStrip() {
@@ -1555,11 +1800,14 @@ async function enterFloorScreen(fresh = false) {
 }
 
 async function nextFloor() {
+  clearPending();
   run.floor++;
+  ensureClimbStats(run);
   const biome = biomeForFloor(run.floor);
   run.biomeId = biome.id;
   setBiomeGlow(biome.glow);
   setParticles(biome.particle);
+  samplePower(run);
 
   // co-op mercy: the fallen rise at the next floor — at a price (handoff §16)
   if (run.down) {
@@ -1632,12 +1880,14 @@ async function nextFloor() {
 
   if (BOSS_FLOORS.includes(run.floor + 1)) {
     const campfire = EVENTS.find(e => e.id === 'campfire');
+    setPending('event', { eventId: 'campfire' });
     saveRun(run);
     return renderEventCard(stage, campfire);
   }
 
   // THE TRAVEL MAP (handoff §6): most floors branch into a choice of paths
   const cards = generateCards(runRng(run));
+  setPending('travel', { cards });
   saveRun(run);
   renderTravelMap(stage, cards, null, travelCtx());
 }
@@ -1657,6 +1907,7 @@ function travelCtx() {
     classTitle: classTitle(run),
     equippedSummary: gear,
     onCharacter: () => { SFX.click(); characterSheet(); },
+    onSettings: () => { openPauseMenu(); },
     onPartnerPeek: (partnerId) => { SFX.click(); partnerSheetModal(partnerId); },
   };
 }
@@ -1875,6 +2126,7 @@ function renderCardChoice(stage, cards, coopCtx = null) {
 function resolveCard(stage, card) {
   if (card.kind === 'encounter') {
     pushEventHistory(run, 'combat');
+    clearPending();
     if (coopS) {
       const enemies = rehydrateEnemies(card.enemies);
       return sharedFightCard(stage, { type: 'encounter', enemies });
@@ -1885,8 +2137,45 @@ function resolveCard(stage, card) {
   run.seenEvents.push(ev.id);
   noteEventTags(ev);
   pushEventHistory(run, ev.category || 'unknown');
+  setPending(ev.shop ? 'shop' : 'event', { eventId: ev.id });
   saveRun(run);
   renderEventCard(stage, ev);
+}
+
+function logCombatStart(enemies, { boss = false, intro = null } = {}) {
+  const entry = {
+    t: 'combat',
+    boss: !!boss,
+    enemies: (enemies || []).map(e => e.name || e.id || '?'),
+    intro: intro || null,
+  };
+  if (boss) Object.assign(entry, powerChronicleFields(run) || {});
+  appendChronicle(run, entry);
+}
+
+function logCombatEnd(enemies, { result, gold = 0, xp = 0, boss = false } = {}) {
+  const entry = {
+    t: 'combatEnd',
+    boss: !!boss,
+    result,
+    gold,
+    xp,
+    enemies: (enemies || []).map(e => e.name || e.id || '?'),
+  };
+  if (boss) Object.assign(entry, powerChronicleFields(run) || {});
+  appendChronicle(run, entry);
+}
+
+/** Midboss / boss gate checkpoint for the balance log. */
+function logBossPowerCheck(boss, { gate = true } = {}) {
+  const fields = powerChronicleFields(run);
+  if (!fields) return;
+  appendChronicle(run, {
+    t: 'power',
+    gate: !!gate,
+    title: boss?.name || `Floor ${run.floor} boss`,
+    ...fields,
+  });
 }
 
 /* ---------- combat encounter card (Fight / Sneak / Bribe) ---------- */
@@ -1947,10 +2236,20 @@ async function encounterFloor(stage, prebuiltGroup = null, hpMult = 1) {
   applyCardBg(stage);
   SFX.cardDeal();
 
+  appendChronicle(run, {
+    t: 'event', id: 'encounter', title: 'Hostiles Ahead',
+    category: 'combat', type: 'encounter',
+    enemies: group.map(g => g.name),
+  });
+
   stage.querySelectorAll('[data-act]').forEach(btn => btn.onclick = async () => {
     SFX.click();
     const act = btn.dataset.act;
     const rng2 = runRng(run);
+    appendChronicle(run, {
+      t: 'choice', eventId: 'encounter', title: 'Hostiles Ahead',
+      label: act === 'fight' ? 'Fight' : act === 'bribe' ? 'Bribe them' : 'Sneak past',
+    });
     if (act === 'fight') {
       rng2.advance();
       return fightGroup(stage, group, { text: 'Steel answers steel.', hpMult: planHp });
@@ -1962,7 +2261,7 @@ async function encounterFloor(stage, prebuiltGroup = null, hpMult = 1) {
       rng2.advance(); saveRun(run);
       return showOutcomePanel(stage, [
         { text: `You toss the purse. They count it — twice, insultingly — and melt back into the dark. (-${bribe} gold)`, cls: 'gold' },
-      ]);
+      ], [], { title: 'Hostiles Ahead', choice: 'Bribe them', source: 'encounter' });
     }
     // sneak: a hidden check — no numbers shown (handoff §5)
     const d = derived(run);
@@ -1975,7 +2274,7 @@ async function encounterFloor(stage, prebuiltGroup = null, hpMult = 1) {
       const ups = gainXp(run, xp, runRng(run));
       await showOutcomePanel(stage, [
         { text: `You move like a rumor — they never knew you were there. +${xp} XP`, cls: 'good' },
-      ], ups);
+      ], ups, { title: 'Hostiles Ahead', choice: 'Sneak past', source: 'encounter' });
     } else {
       await modal(`<h3>Spotted!</h3><p class="modal-sub">A twig. It's always a twig.</p>
         <div class="pick-grid"><button class="pick-option" data-close="x"><span class="po-name">They ambush you</span></button></div>`);
@@ -1988,24 +2287,40 @@ async function encounterFloor(stage, prebuiltGroup = null, hpMult = 1) {
   });
 }
 
-async function fightGroup(stage, specs, { text = null, modifier = null, prebuilt = null, reward = null, hpMult = 1 } = {}) {
+async function fightGroup(stage, specs, {
+  text = null, modifier = null, prebuilt = null, reward = null, hpMult = 1, resume = null,
+} = {}) {
   Music.play('battle');
   const biome = biomeForFloor(run.floor);
   const rng = runRng(run);
   const mult = (modifier?.hpMult || 1) * (hpMult || 1);
-  const enemies = prebuilt || specs.map(s => buildEnemy(s, run.floor, biome.floors[0], { hpMult: mult }));
-  if (modifier?.extraEnemy) {
+  let enemies = prebuilt || specs.map(s => buildEnemy(s, run.floor, biome.floors[0], { hpMult: mult }));
+  if (!resume && modifier?.extraEnemy) {
     const extra = modifier.extraEnemy === true ? 1 : modifier.extraEnemy;
     for (let i = 0; i < extra; i++) {
       enemies.push(buildEnemy(runRng(run).pick(ENEMIES[biome.id].filter(e => !e.elite)), run.floor, biome.floors[0], { hpMult: mult }));
     }
   }
+  // Resume mid-fight: restore HP/status onto the same enemy list.
+  if (resume?.enemies?.length && prebuilt) {
+    enemies = resume.enemies.map(e => ({ ...e, statuses: { ...(e.statuses || {}) } }));
+  }
+  if (!coopS) {
+    setPending('combat', {
+      enemies: enemies.map(e => ({ ...e, statuses: { ...(e.statuses || {}) } })),
+      modifier, text, reward, hpMult,
+    });
+  }
   sheetCombatLock = true; renderHud();
+  logCombatStart(enemies, { intro: text });
   const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
-    container: stage, run, rng, enemies, modifier,
+    container: stage, run, rng, enemies, modifier, introText: text,
     onHud: renderHud,
-    onCharacter: () => characterSheet({ locked: true }),
+    ...runOverlayUi(),
+    resume,
   });
+  logCombatEnd(enemies, { result, gold, xp });
+  clearPending();
   sheetCombatLock = false; renderHud();
   if (result === 'win') { if (noDamage) unlock('untouchable'); if (usedUltimate) unlock('overcharged'); }
 
@@ -2018,13 +2333,15 @@ async function fightGroup(stage, specs, { text = null, modifier = null, prebuilt
       return showOutcomePanel(stage, [{
         text: 'The tower takes you — almost. Your companions refuse to let it finish the job. You will rise on the next floor, battered.',
         cls: 'bad',
-      }]);
+      }], [], { source: 'combat', title: 'Defeat' });
     }
     return endRun('dead');
   }
   if (result === 'fled') {
     saveRun(run);
-    return showOutcomePanel(stage, [{ text: 'You live to climb another floor. The tower notes your pragmatism.', cls: 'good' }]);
+    return showOutcomePanel(stage, [{ text: 'You live to climb another floor. The tower notes your pragmatism.', cls: 'good' }], [], {
+      source: 'combat', title: 'Fled', choice: 'Flee',
+    });
   }
 
   await afterVictory(stage, enemies, gold, xp, { reward });
@@ -2056,11 +2373,13 @@ async function afterVictory(stage, enemies, gold, xp, { boss = null, reward = nu
   const fameRelic = relicItems(run).find(r => r.fameOnVictory);
   if (fameRelic) { changeFame(run, fameRelic.fameOnVictory); lines.push({ text: 'Your lantern carries the tale. (+Fame)', cls: 'good' }); }
   if (boss) {
+    noteBossCleared(run, run.floor, boss.name);
     heal(run, run.maxHp * CONFIG.recovery.bossVictoryHealPct);
     run.mp = run.maxMp;
     changeFame(run, 6);
     lines.push({ text: 'The gate\'s blessing washes over you — wounds knit, strength returns, and the tower learns your name. (+Fame)', cls: 'good' });
     for (const msg of applySkillBreakpoints(run)) lines.push({ text: msg.text, cls: msg.cls || 'good' });
+    logBossPowerCheck(boss, { gate: false });
   } else if (enemies.some(e => e.elite)) {
     // Tiny UNIQUE chance from elite packs on deep floors
     const rngE = runRng(run);
@@ -2079,7 +2398,12 @@ async function afterVictory(stage, enemies, gold, xp, { boss = null, reward = nu
   // §16: exclusive spoils from an optional NPC duel — techniques cost gold here
   const rewardUps = reward ? (await grantReward(reward, lines, { paySkills: true })) || [] : [];
   saveRun(run);
-  await showOutcomePanel(stage, lines, [...ups, ...rewardUps], boss ? { continueLabel: 'Claim your prize', advance: false } : {});
+  await showOutcomePanel(stage, lines, [...ups, ...rewardUps], {
+    ...(boss ? { continueLabel: 'Claim your prize', advance: false } : {}),
+    source: 'combat',
+    title: boss ? boss.name : 'Victory',
+    choice: boss ? 'Boss cleared' : 'Victory',
+  });
   if (boss) await bossRelicPick(stage);
 }
 
@@ -2186,20 +2510,34 @@ async function grantReward(reward, lines, { paySkills = false } = {}) {
       return sk ? (CONFIG.skillReward?.costByTier?.[sk.tier || 1] ?? 0) : 0;
     };
     const anyAffordable = reward.options.some(op => skillCost(op) <= run.gold);
-    await modalCustom((m, close) => {
-      m.innerHTML = `<h3>Spoils</h3><p class="modal-sub">${reward.chooseLabel || 'Take one:'}</p>
-        <div class="pick-grid">${reward.options.map((op, i) => {
-          const nm = op.kind === 'skill' ? SKILLS[op.id]?.name : itemById(op.id)?.name;
-          const desc = op.kind === 'skill' ? SKILLS[op.id]?.desc : itemById(op.id)?.desc;
-          const cost = skillCost(op);
-          const short = anyAffordable && cost > run.gold;
-          return `<button class="pick-option" data-i="${i}" ${short ? 'disabled' : ''}>
-            <span class="po-tag tag">${op.kind}${cost ? ` · ${cost}g` : ''}</span>
-            <div class="po-name">${nm || op.id}</div>
-            <div class="po-desc">${desc || ''}${cost ? `<br/><span style="color:var(--gold-bright)">Learning fee: ${cost} gold${short ? ' — beyond your purse' : ''}.</span>` : ''}</div></button>`;
-        }).join('')}</div>`;
-      m.querySelectorAll('[data-i]:not([disabled])').forEach(b => b.onclick = () => { chosen = reward.options[+b.dataset.i]; close(); });
-    });
+    const affordable = reward.options.filter(op => skillCost(op) <= run.gold);
+    if (isAutoPlay() && (affordable.length || reward.options.length)) {
+      const pool = affordable.length ? affordable : reward.options;
+      chosen = pool.reduce((best, op) => {
+        const score = op.kind === 'skill' || op.skill
+          ? skillAutoScore(SKILLS[op.kind === 'skill' ? op.id : op.skill])
+          : gearScore(itemById(op.id));
+        const bestScore = best.kind === 'skill' || best.skill
+          ? skillAutoScore(SKILLS[best.kind === 'skill' ? best.id : best.skill])
+          : gearScore(itemById(best.id));
+        return score > bestScore ? op : best;
+      }, pool[0]);
+    } else {
+      await modalCustom((m, close) => {
+        m.innerHTML = `<h3>Spoils</h3><p class="modal-sub">${reward.chooseLabel || 'Take one:'}</p>
+          <div class="pick-grid">${reward.options.map((op, i) => {
+            const nm = op.kind === 'skill' ? SKILLS[op.id]?.name : itemById(op.id)?.name;
+            const desc = op.kind === 'skill' ? SKILLS[op.id]?.desc : itemById(op.id)?.desc;
+            const cost = skillCost(op);
+            const short = anyAffordable && cost > run.gold;
+            return `<button class="pick-option" data-i="${i}" ${short ? 'disabled' : ''}>
+              <span class="po-tag tag">${rewardOptionTag(op)}${cost ? ` · ${cost}g` : ''}</span>
+              <div class="po-name">${nm || op.id}</div>
+              <div class="po-desc">${desc || ''}${cost ? `<br/><span style="color:var(--gold-bright)">Learning fee: ${cost} gold${short ? ' — beyond your purse' : ''}.</span>` : ''}</div></button>`;
+          }).join('')}</div>`;
+        m.querySelectorAll('[data-i]:not([disabled])').forEach(b => b.onclick = () => { chosen = reward.options[+b.dataset.i]; close(); });
+      });
+    }
     const fee = Math.min(skillCost(chosen), run.gold);
     if (fee > 0) {
       run.gold -= fee;
@@ -2221,23 +2559,29 @@ async function bossRelicPick(stage) {
   rng2.advance();
   saveRun(run);
   if (choices.length) {
-    await modalCustom((m, close) => {
-      m.innerHTML = `<h3>The Gate Opens</h3><p class="modal-sub">Something glitters in the hoard. Choose one relic.</p>
-        <div class="pick-grid">${choices.map((r, i) => `
-          <button class="pick-option" data-i="${i}">
-            <span class="po-tag tag ${rarityClass(r.rarity)}">${r.rarity}</span>
-            <div class="po-name">${r.name}</div><div class="po-desc">${r.desc}</div>
-          </button>`).join('')}
-        </div>`;
-      m.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
-        const r = choices[+b.dataset.i];
-        run.relics.push(r.id);
-        SFX.unlock();
-        toast(`Relic claimed: ${r.name}`, 'info');
-        saveRun(run);
-        close();
+    const takeRelic = (r) => {
+      run.relics.push(r.id);
+      SFX.unlock();
+      toast(`Relic claimed: ${r.name}`, 'info');
+      saveRun(run);
+    };
+    if (isAutoPlay()) {
+      takeRelic(choices.reduce((a, b) => (gearScore(b) > gearScore(a) ? b : a), choices[0]));
+    } else {
+      await modalCustom((m, close) => {
+        m.innerHTML = `<h3>The Gate Opens</h3><p class="modal-sub">Something glitters in the hoard. Choose one relic.</p>
+          <div class="pick-grid">${choices.map((r, i) => `
+            <button class="pick-option" data-i="${i}">
+              <span class="po-tag tag ${rarityClass(r.rarity)}">${r.rarity}</span>
+              <div class="po-name">${r.name}</div><div class="po-desc">${r.desc}</div>
+            </button>`).join('')}
+          </div>`;
+        m.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
+          takeRelic(choices[+b.dataset.i]);
+          close();
+        });
       });
-    });
+    }
   }
   // §1: the hoard yields gear too — rolled a tier high, luck-weighted toward rarity
   {
@@ -2308,10 +2652,18 @@ async function modifierFloor(stage) {
   };
 }
 
-async function bossFloor(stage) {
+async function bossFloor(stage, { resume = null } = {}) {
   const rngPick = runRng(run);
-  const boss = pickBossForFloor(run.floor, rngPick, run);
-  rngPick.advance(); saveRun(run);
+  const boss = resume?.bossId ? (bossById(resume.bossId) || pickBossForFloor(run.floor, rngPick, run))
+    : pickBossForFloor(run.floor, rngPick, run);
+  if (!resume) rngPick.advance();
+  if (!resume?.enemies?.length) {
+    setPending('boss', { bossId: boss.id });
+    saveRun(run);
+    logBossPowerCheck(boss, { gate: true });
+  } else {
+    return fightGroupBoss(stage, resume.enemies, boss, { resume });
+  }
   stage.innerHTML = `
     <div class="card-stage"><div class="panel event-card">
       <div class="card-art"><div class="card-glyph">${boss.glyph}</div>
@@ -2350,13 +2702,32 @@ async function bossFloor(stage) {
   };
 }
 
-async function fightGroupBoss(stage, enemies, boss) {
+async function fightGroupBoss(stage, enemies, boss, { resume = null } = {}) {
   Music.play('boss');
   const rng = runRng(run);
+  let foes = enemies;
+  if (resume?.enemies?.length) {
+    foes = resume.enemies.map(e => ({ ...e, statuses: { ...(e.statuses || {}) } }));
+  }
+  if (!coopS) {
+    setPending('combat', {
+      enemies: foes.map(e => ({ ...e, statuses: { ...(e.statuses || {}) } })),
+      bossId: boss.id,
+      text: `${boss.name}: "${boss.taunt}"`,
+      modifier: null,
+    });
+  }
   sheetCombatLock = true; renderHud();
+  logCombatStart(foes, { boss: true, intro: `${boss.name}: "${boss.taunt}"` });
   const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
-    container: stage, run, rng, enemies, introText: `${boss.name}: "${boss.taunt}"`, onHud: renderHud, onCharacter: () => characterSheet({ locked: true }),
+    container: stage, run, rng, enemies: foes,
+    introText: `${boss.name}: "${boss.taunt}"`,
+    onHud: renderHud,
+    ...runOverlayUi(),
+    resume,
   });
+  logCombatEnd(foes, { result, gold, xp, boss: true });
+  clearPending();
   sheetCombatLock = false; renderHud();
   if (result === 'dead') return endRun('dead');
   if (noDamage) unlock('untouchable');
@@ -2366,7 +2737,7 @@ async function fightGroupBoss(stage, enemies, boss) {
   if (achMap[run.floor]) unlock(achMap[run.floor]);
   if (run.floor === LAST_FLOOR) return victoryScreen('win');
 
-  await afterVictory(stage, enemies, gold, xp, { boss });
+  await afterVictory(stage, foes, gold, xp, { boss });
 }
 
 /* ============================================================
@@ -2375,7 +2746,8 @@ async function fightGroupBoss(stage, enemies, boss) {
 /** Build live enemies from specs + residual budget HP mult (not party-size HP). */
 function buildPartyEnemies(specs, hpMult = 1) {
   const biome = biomeForFloor(run.floor);
-  return specs.map(s => buildEnemy(s, run.floor, biome.floors[0], { hpMult }));
+  const partySize = coopS?.partySize || 1;
+  return specs.map(s => buildEnemy(s, run.floor, biome.floors[0], { hpMult, partySize }));
 }
 
 function buildSharedEnemies(specs, { boss = false, hpMult = 1, partySize = coopS?.partySize || 1 } = {}) {
@@ -2392,6 +2764,7 @@ function buildSharedEnemies(specs, { boss = false, hpMult = 1, partySize = coopS
         boss: isBoss,
         hpMult: hpMult * (isBoss ? bossHp : 1),
         atkMult: isBoss ? bossAtk : (boss ? 0.55 : 1),
+        partySize,
       },
     );
   });
@@ -2592,7 +2965,12 @@ async function sharedFightCard(stage, content) {
         </div>
       </div>
     </div></div>`;
-  if (boss) SFX.bossIntro(); else SFX.cardDeal();
+  if (boss) {
+    SFX.bossIntro();
+    logBossPowerCheck(boss, { gate: true });
+  } else {
+    SFX.cardDeal();
+  }
 
   document.getElementById('go').onclick = async () => {
     SFX.click();
@@ -2615,13 +2993,16 @@ async function coopFightShared(stage, enemies, { boss = null, mod = null, reward
   coopS.broadcastStatus(statusOf(run, 'fighting'), 'fighting');
   const rng = runRng(run);
   sheetCombatLock = true; renderHud();
+  const intro = introText || (boss ? `${boss.name}: "${boss.taunt}"` : 'Side by side, blades out.');
+  logCombatStart(enemies, { boss: !!boss, intro });
   const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
     container: stage, run, rng, enemies,
     modifier: mod ? { ...mod, goldMult: (mod.goldMult || 1) * 1.5 } : null,
-    introText: introText || (boss ? `${boss.name}: "${boss.taunt}"` : 'Side by side, blades out.'),
-    onHud: renderHud, onCharacter: () => characterSheet({ locked: true }),
+    introText: intro,
+    onHud: renderHud, ...runOverlayUi(),
     coop: coopS,
   });
+  logCombatEnd(enemies, { result, gold, xp, boss: !!boss });
   sheetCombatLock = false; renderHud();
 
   if (result === 'wipe') return endRun('dead');
@@ -2725,6 +3106,14 @@ function renderEventCard(stage, ev, { originIntro = false } = {}) {
   if (ev.shop) return shopScreen(stage, ev);
   if (ev.type === 'rest') Music.play('rest');
   else if (MINIGAME_EVENTS.includes(ev.id)) Music.play('minigame');
+
+  appendChronicle(run, {
+    t: 'event',
+    id: ev.id,
+    title: ev.title,
+    category: ev.category,
+    type: originIntro ? 'origin' : (ev.type || 'event'),
+  });
 
   // Combat-capable events in co-op: party votes on the choice (majority / first-pick).
   if (coopS && !coopS.alone && !originIntro && eventHasCombatPath(ev)) {
@@ -2948,6 +3337,7 @@ async function coopEventFight(stage, ev, specs, { text = null, reward = null, hp
         boss: !!s.boss,
         hpMult: (hpMult || 1) * pad * (s.boss ? partyBossHpMult(partySize, floor) : 1),
         atkMult: s.boss ? partyBossAtkMult(partySize, floor) : 1,
+        partySize,
       },
     ));
     coopS.net.send({ k: 'evfight', floor, eventId, enemies, text, reward });
@@ -2967,6 +3357,13 @@ async function coopEventFight(stage, ev, specs, { text = null, reward = null, hp
 async function resolveChoice(stage, ev, choice, opts = {}) {
   const rng = runRng(run);
   let outcome = applyTagOutcomeMods(choice.outcome, ev, run);
+  appendChronicle(run, {
+    t: 'choice',
+    eventId: ev?.id,
+    title: ev?.title,
+    label: choice.label,
+  });
+  const nextOpts = { ...opts, choiceLabel: choice.label };
 
   if (outcome.roll) {
     const d = derived(run);
@@ -2980,14 +3377,20 @@ async function resolveChoice(stage, ev, choice, opts = {}) {
     // the roll's drama, without the actuarial tables (handoff §5)
     const rollLine = { text: `${({ str: 'Strength', dex: 'Agility', int: 'Intellect', wis: 'Wisdom', lk: 'Luck' }[spec.stat])} is tested… ${ok ? 'and holds. SUCCESS.' : 'and falters. FAILURE.'}`, cls: ok ? 'good' : 'bad' };
     outcome = applyTagOutcomeMods(ok ? outcome.success : outcome.fail, ev, run);
-    await applyOutcome(stage, ev, outcome, rng, [rollLine], opts);
+    await applyOutcome(stage, ev, outcome, rng, [rollLine], nextOpts);
   } else {
-    await applyOutcome(stage, ev, outcome, rng, [], opts);
+    await applyOutcome(stage, ev, outcome, rng, [], nextOpts);
   }
 }
 
 async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
   const d = derived(run);
+  const panelOpts = {
+    eventId: ev?.id,
+    title: ev?.title,
+    choice: opts.choiceLabel,
+    source: 'event',
+  };
 
   if (o.randomOutcome) {
     // random-roll resolution: the tower picks (handoff §3)
@@ -3017,9 +3420,13 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
     }
     if (isMimic) {
       rng.advance(); saveRun(run);
-      const mimic = { id: 'mimic', name: 'Mimic', glyph: '🦷', hp: 30 + run.floor * 4, atk: 6 + run.floor, def: 2, spd: 7, gold: [40 + run.floor * 3, 60 + run.floor * 4], xp: 15 + run.floor * 2 };
+      const mimic = mimicSpec(run.floor);
       if (coopS && !coopS.alone) {
-        if (lines.length) await showOutcomePanel(stage, lines, ups, { continueLabel: 'Steel yourself', advance: false });
+        if (lines.length) {
+          await showOutcomePanel(stage, lines, [], {
+            ...panelOpts, continueLabel: 'Steel yourself', advance: false,
+          });
+        }
         return coopEventFight(stage, ev, [mimic], { text: 'The chest grows TEETH. Of course it does.' });
       }
       return fightGroup(stage, [mimic], { text: 'The chest grows TEETH. Of course it does.' });
@@ -3075,9 +3482,7 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
       : { text: 'Something in you is... lessened. You can\'t name what.', cls: 'bad' });
   }
   if (o.statUpRandom) {
-    for (let i = 0; i < o.statUpRandom; i++) {
-      run.stats[rng.pick(APPRAISABLE)]++;
-    }
+    grantClassWeightedStats(run, rng, o.statUpRandom, { biasChance: 0.7 });
     lines.push({ text: 'Power settles into you — you couldn\'t say where.', cls: 'good' });
     SFX.levelup();
   }
@@ -3091,9 +3496,23 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
   // scaling growth: deeper floors give a bigger permanent gain (build-directed)
   if (o.statUpScaled) {
     const amt = o.statUpScaled + Math.floor(run.floor / 12);
-    const stat = rng.pick(CLASSES[run.classId].growthBias.slice(0, 2));
+    const stat = pickClassWeightedStat(run, rng, { biasChance: 0.85 });
     run.stats[stat] += amt;
     lines.push({ text: 'A surge of growth takes root — stronger for how far you\'ve climbed.', cls: 'good' });
+    SFX.levelup();
+  }
+  // Fame events that don't already grant stats: +1 class-weighted point
+  // (bigger fame moments can grant 2). Keeps early climbs from stalling on gear alone.
+  const hadStatGrant = !!(o.statUp || o.statUpRandom || o.statUpMain || o.statUpScaled);
+  if (!hadStatGrant && (o.fame || 0) > 0) {
+    const n = (o.fame >= 5 || (o.fame >= 3 && run.floor <= 12)) ? 2 : 1;
+    grantClassWeightedStats(run, rng, n, { biasChance: 0.75 });
+    lines.push({
+      text: n > 1
+        ? 'Your name carries weight — and so do your limbs.'
+        : 'Something in you grows stronger.',
+      cls: 'good',
+    });
     SFX.levelup();
   }
 
@@ -3281,7 +3700,11 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
     if (fightReward && o.combat.xp) fightReward.xp = (fightReward.xp || 0) + o.combat.xp;
     rng.advance();
     saveRun(run);
-    if (lines.length) await showOutcomePanel(stage, lines, ups, { continueLabel: 'Steel yourself', advance: false });
+    if (lines.length) {
+      await showOutcomePanel(stage, lines, ups, {
+        ...panelOpts, continueLabel: 'Steel yourself', advance: false,
+      });
+    }
     if (coopS && !coopS.alone) {
       return coopEventFight(stage, ev, specs, { text: o.combat.text, reward: fightReward });
     }
@@ -3294,13 +3717,17 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
   if (coopS) coopS.broadcastStatus(statusOf(run, 'choosing'), 'choosing');
 
   if (o.coopTrade) {
-    if (lines.length) await showOutcomePanel(stage, lines, ups, { continueLabel: 'Open the exchange', advance: false });
+    if (lines.length) {
+      await showOutcomePanel(stage, lines, ups, {
+        ...panelOpts, continueLabel: 'Open the exchange', advance: false,
+      });
+    }
     const tradeLines = await runCoopTrade();
     lines.push(...tradeLines);
     saveRun(run);
     renderHud();
     if (coopS) coopS.broadcastStatus(statusOf(run, 'choosing'), 'choosing');
-    return showOutcomePanel(stage, lines, ups);
+    return showOutcomePanel(stage, lines, ups, panelOpts);
   }
 
   if (run.hp <= 0) {
@@ -3309,18 +3736,20 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
       saveRun(run);
       coopS.broadcastStatus(statusOf(run, 'waiting'), 'waiting');
       lines.push({ text: 'The tower takes you — almost. Your companions refuse to let it finish the job.', cls: 'bad' });
-      return showOutcomePanel(stage, lines, ups);
+      return showOutcomePanel(stage, lines, ups, panelOpts);
     }
     return endRun('dead');
   }
 
   // origin intros lead into floor 1 instead of "the next floor"
   if (opts.originIntro) {
-    await showOutcomePanel(stage, lines, ups, { continueLabel: 'The tower awaits — Floor 1', advance: false });
+    await showOutcomePanel(stage, lines, ups, {
+      ...panelOpts, continueLabel: 'The tower awaits — Floor 1', advance: false,
+    });
     return enterFloorScreen(true);
   }
 
-  await showOutcomePanel(stage, lines, ups);
+  await showOutcomePanel(stage, lines, ups, panelOpts);
 }
 
 function noteEventTags(ev) {
@@ -3662,8 +4091,30 @@ function slotFor(item) {
 
 function slotLabel(slot) {
   if (!slot) return '';
-  if (slot.startsWith('accessory')) return `RING ${slot.slice(-1)}`;
+  if (slot.startsWith('accessory')) return `ACCESSORY ${slot.slice(-1)}`;
   return String(slot).toUpperCase();
+}
+
+/** Short type tag for spoils / choice UI (mace, chestplate, accessory…). */
+function itemKindLabel(item) {
+  if (!item) return 'item';
+  if (item.slot === 'weapon' && item.wtype) return item.wtype;
+  if (item.slot === 'chest') return 'chestplate';
+  if (item.slot === 'helmet') return 'helmet';
+  if (item.slot === 'legs') return 'leggings';
+  if (item.slot === 'boots') return 'boots';
+  if (item.slot === 'accessory') return 'accessory';
+  return item.slot || 'item';
+}
+
+function rewardOptionTag(op) {
+  if (op.kind === 'skill' || op.skill) return 'technique';
+  if (op.kind === 'relic' || op.relic) return 'relic';
+  if (op.kind === 'item' || op.id) {
+    const it = itemById(op.id);
+    return itemKindLabel(it);
+  }
+  return op.kind || 'item';
 }
 
 function accessorySlots() {
@@ -3698,12 +4149,114 @@ function unequipSlot(slot) {
   run.equipment[slot] = null;
 }
 
+/** Rough power score for auto-play loot decisions (testing). */
+function gearScore(item) {
+  if (!item) return -1;
+  const rarity = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, unique: 6, wrld: 7 };
+  let s = (rarity[item.rarity] || 1) * 25 + (item.tier || 1) * 4;
+  const weights = {
+    atk: 3, def: 2.5, hp: 0.15, mp: 0.12, str: 2, dex: 2, int: 2, wis: 2,
+    crit: 0.8, initiative: 2, dodge: 0.5,
+  };
+  for (const [k, w] of Object.entries(weights)) {
+    if (typeof item[k] === 'number') s += item[k] * w;
+  }
+  for (const k of ['burn', 'freeze', 'poison', 'lifesteal', 'weaken', 'frail', 'tormented']) {
+    if (typeof item[k] === 'number') s += item[k] * 30;
+  }
+  if (item.price) s += item.price * 0.01;
+  return s;
+}
+
+function skillAutoScore(sk) {
+  if (!sk) return -1;
+  return (sk.tier || 1) * 12 + (sk.power || 0) * 0.55 + (sk.charge ? 6 : 0)
+    + (sk.healPct || 0) * 45 + (sk.target === 'all' ? 8 : 0);
+}
+
+/** Auto-play: equip upgrades (incl. best accessory swap), sell junk. */
+function autoPlayTakeEquipment(item, lines) {
+  const sellPrice = Math.round((item.price || 20) * 0.6);
+  const sellIt = () => {
+    run.gold += sellPrice;
+    run.goldEarned += sellPrice;
+    if (run.gearBag && item.instanceId) delete run.gearBag[item.id];
+    lines.push({ text: `Sold ${item.name} for ${sellPrice}g`, cls: 'gold' });
+    SFX.gold();
+  };
+
+  if (item.slot === 'weapon' && !weaponFitsClass(item)) {
+    sellIt();
+    renderHud();
+    return;
+  }
+
+  if (item.slot === 'accessory') {
+    const slots = accessorySlots();
+    const free = slots.find(s => !run.equipment[s]);
+    if (free) {
+      equipItem(item, free);
+      lines.push({ text: `Equipped: ${item.name} (${slotLabel(free)})`, cls: 'item' });
+    } else {
+      let worstSlot = slots[0];
+      let worst = Infinity;
+      for (const s of slots) {
+        const cur = run.equipment[s] ? resolveItem(run, run.equipment[s]) : null;
+        const sc = gearScore(cur);
+        if (sc < worst) { worst = sc; worstSlot = s; }
+      }
+      if (gearScore(item) > worst) {
+        equipItem(item, worstSlot);
+        lines.push({ text: `Equipped: ${item.name} (replaced ${slotLabel(worstSlot)})`, cls: 'item' });
+      } else {
+        sellIt();
+      }
+    }
+    renderHud();
+    return;
+  }
+
+  if (!item.slot) {
+    run.inventory.push(item.id);
+    lines.push({ text: `Stashed: ${item.name}`, cls: 'item' });
+    renderHud();
+    return;
+  }
+
+  const cur = run.equipment[item.slot] ? resolveItem(run, run.equipment[item.slot]) : null;
+  if (!cur || gearScore(item) >= gearScore(cur) - 0.5) {
+    equipItem(item, item.slot);
+    lines.push({ text: `Equipped: ${item.name} (${slotLabel(item.slot)})`, cls: 'item' });
+  } else {
+    sellIt();
+  }
+  renderHud();
+}
+
 /** Ask which slot to fill/replace. Returns slot id, or null if cancelled. */
 async function chooseEquipSlot(item) {
   const isAcc = item.slot === 'accessory';
   const slots = isAcc ? accessorySlots() : [item.slot];
   // Empty non-accessory slot — no choice needed
   if (!isAcc && !run.equipment[item.slot]) return item.slot;
+
+  if (isAutoPlay()) {
+    if (isAcc) {
+      const free = slots.find(s => !run.equipment[s]);
+      if (free) return free;
+      let worstSlot = slots[0];
+      let worst = Infinity;
+      for (const s of slots) {
+        const cur = run.equipment[s] ? resolveItem(run, run.equipment[s]) : null;
+        const sc = gearScore(cur);
+        if (sc < worst) { worst = sc; worstSlot = s; }
+      }
+      return gearScore(item) > worst ? worstSlot : null;
+    }
+    const cur = run.equipment[item.slot] ? resolveItem(run, run.equipment[item.slot]) : null;
+    if (!cur || gearScore(item) >= gearScore(cur) - 0.5) return item.slot;
+    return null;
+  }
 
   return await new Promise(resolve => {
     modalCustom((m, close) => {
@@ -3712,10 +4265,11 @@ async function chooseEquipSlot(item) {
         return `<button class="pick-option" data-slot="${s}">
           <span class="po-name">${cur ? `Replace ${slotLabel(s)}` : `Equip to ${slotLabel(s)}`}</span>
           <span class="po-desc">${cur ? `${cur.name} → pack` : 'Empty slot'}</span>
+          ${cur ? `<div class="po-desc" style="margin-top:4px;color:var(--ink)">${cur.desc}</div>` : ''}
         </button>`;
       }).join('');
-      m.innerHTML = `<h3>Choose a slot</h3>
-        <p class="modal-sub">${item.name}</p>
+      m.innerHTML = `<h3>Choose an ${isAcc ? 'accessory' : 'equip'} slot</h3>
+        <p class="modal-sub">${item.name}${item.desc ? ` — ${item.desc}` : ''}</p>
         <div class="pick-grid">
           ${rows}
           <button class="pick-option" data-cancel="1"><span class="po-name" style="color:var(--ink-dim)">Cancel</span></button>
@@ -3727,6 +4281,10 @@ async function chooseEquipSlot(item) {
 }
 
 async function offerEquipment(item, lines) {
+  if (isAutoPlay()) {
+    autoPlayTakeEquipment(item, lines);
+    return;
+  }
   const sellPrice = Math.round(item.price * 0.6);
   const isAcc = item.slot === 'accessory';
   const slots = isAcc ? accessorySlots() : [item.slot];
@@ -3737,20 +4295,32 @@ async function offerEquipment(item, lines) {
       let slotBtns = '';
       let compareRight = '';
       if (isAcc) {
-        for (const s of slots) {
+        // Clickable equipped cards on the right — replace any slot; Equip uses a free one.
+        const freeSlot = slots.find(s => !run.equipment[s]) || null;
+        const worn = slots.map(s => {
           const cur = run.equipment[s] ? resolveItem(run, run.equipment[s]) : null;
-          slotBtns += `<button class="pick-option" data-act="equip" data-slot="${s}">
-            <span class="po-name">${cur ? `Replace ${slotLabel(s)}` : `Equip to ${slotLabel(s)}`}</span>
-            <span class="po-desc">${cur ? `${cur.name} → pack` : 'Empty slot'}</span>
-          </button>`;
-        }
-        compareRight = `<div class="gear-card equipped"><div class="gc-label">RINGS</div>
-          <div class="gc-desc" style="margin:0">Choose which ring slot to fill. Replaced gear goes into your pack.</div></div>`;
+          const card = gearCard(cur, slotLabel(s));
+          return `<button type="button" class="accessory-slot-pick" data-act="equip" data-slot="${s}" title="${cur ? `Replace ${cur.name}` : 'Equip here'}">${card}</button>`;
+        }).join('');
+        compareRight = `<div class="gear-card equipped accessory-compare">
+          <div class="gc-label">ACCESSORIES</div>
+          <div class="gc-desc" style="margin:0 0 8px">Click a worn piece to replace it. Replaced gear goes into your pack.</div>
+          <div class="accessory-worn">${worn}</div>
+        </div>`;
+        slotBtns = freeSlot
+          ? `<button class="pick-option loot-equip" data-act="equip" data-slot="${freeSlot}">
+              <span class="po-name">Equip it</span>
+              <span class="po-desc">Wear in empty ${slotLabel(freeSlot)}.</span>
+            </button>`
+          : `<button class="pick-option loot-equip" disabled aria-disabled="true">
+              <span class="po-name">Equip it</span>
+              <span class="po-desc">No free accessory slot — click a worn piece to replace, or stash it.</span>
+            </button>`;
       } else {
         const s = item.slot;
         const cur = run.equipment[s] ? resolveItem(run, run.equipment[s]) : null;
         const misfit = !weaponFitsClass(item);
-        slotBtns = `<button class="pick-option" data-act="equip" data-slot="${s}">
+        slotBtns = `<button class="pick-option loot-equip" data-act="equip" data-slot="${s}">
           <span class="po-name">${cur ? 'Replace it' : 'Equip it'}${misfit ? ' ⚠' : ''}</span>
           <span class="po-desc">${misfit ? 'Incompatible with your training — only Strike and Guard while wielded.' : (cur ? `${cur.name} → pack` : '')}</span>
         </button>`;
@@ -3763,12 +4333,17 @@ async function offerEquipment(item, lines) {
           <div class="gear-vs">vs</div>
           ${compareRight}
         </div>
-        <div class="pick-grid">
+        <div class="pick-grid loot-actions">
           ${slotBtns}
-          <button class="pick-option" data-act="stash"><span class="po-name">Stash it</span><span class="po-desc">Keep it in your pack — swap anytime from the Character screen.</span></button>
-          <button class="pick-option" data-act="sell"><span class="po-name">Sell it — ${sellPrice}g</span></button>
+          <button class="pick-option loot-stash" data-act="stash"><span class="po-name">Stash it</span><span class="po-desc">Keep it in your pack — swap anytime from the Character screen.</span></button>
+          <button class="pick-option loot-sell" data-act="sell"><span class="po-name">Sell it — ${sellPrice}g</span></button>
         </div>`;
-      m.querySelectorAll('[data-act]').forEach(b => b.onclick = () => finish(b.dataset.act, b.dataset.slot || null));
+      m.querySelectorAll('[data-act]').forEach(b => {
+        b.onclick = () => {
+          if (b.disabled || b.getAttribute('aria-disabled') === 'true') return;
+          finish(b.dataset.act, b.dataset.slot || null);
+        };
+      });
     });
   });
 
@@ -3789,7 +4364,20 @@ async function offerEquipment(item, lines) {
 }
 
 /* ---------- outcome panel + level-ups ---------- */
-async function showOutcomePanel(stage, lines, ups = [], { continueLabel = 'Ascend to the next floor', advance = true } = {}) {
+async function showOutcomePanel(stage, lines, ups = [], {
+  continueLabel = 'Ascend to the next floor', advance = true,
+  eventId = null, title = null, choice = null, source = 'event', chronicle = true,
+} = {}) {
+  if (chronicle && run && lines?.length) {
+    appendChronicle(run, {
+      t: 'outcome',
+      eventId,
+      title,
+      choice,
+      source,
+      lines,
+    });
+  }
   for (const up of ups) await levelUpModal(up);
 
   const panel = el(`
@@ -3855,56 +4443,72 @@ const SKILL_OFFER_LEVELS = [5, 9, 13, 17, 21];
 
 async function levelUpModal(up) {
   SFX.levelup();
-  await modal(`
-    <div class="levelup-burst">✨</div>
-    <h3 style="text-align:center">Level ${up.level}!</h3>
-    <p class="modal-sub" style="text-align:center">${LEVEL_FLAVOR[up.level % LEVEL_FLAVOR.length]}</p>
-    <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">Continue</span></button></div>`);
+  if (!isAutoPlay()) {
+    await modal(`
+      <div class="levelup-burst">✨</div>
+      <h3 style="text-align:center">Level ${up.level}!</h3>
+      <p class="modal-sub" style="text-align:center">${LEVEL_FLAVOR[up.level % LEVEL_FLAVOR.length]}</p>
+      <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">Continue</span></button></div>`);
+  }
 
   // level 6: the subclass choice — secret options appear unannounced
   if (up.evolutionChoice?.length) {
-    await modalCustom((m, close) => {
-      m.innerHTML = `<h3>The Path Divides</h3>
-        <p class="modal-sub">The tower recognizes what you are becoming — and offers a choice it will hold you to. This cannot be undone this climb.</p>
-        <div class="pick-grid">
-          ${up.evolutionChoice.map((s, i) => `
-            <button class="pick-option ${s.secret ? 'secret-path' : ''}" data-i="${i}">
-              ${s.secret ? '<span class="po-tag tag" style="border-color:var(--gold);color:var(--gold-bright)">✦ hidden path</span>' : ''}
-              <div class="po-name">${s.name}</div>
-              <div class="po-desc">${s.hint}</div>
-              ${subclassSkillGrantHtml(s)}
-            </button>`).join('')}
-        </div>`;
-      m.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
-        const sub = up.evolutionChoice[+b.dataset.i];
-        applySubclassFn(run, sub);
-        if (sub.secret) { unlock('secret_class'); glitchScreen(1500); }
-        SFX.evolve();
-        close();
-        modal(`
-          <div class="levelup-burst">🌟</div>
-          <h3 style="text-align:center">EVOLUTION — ${sub.name}!</h3>
-          <p class="modal-sub" style="text-align:center">${sub.blurb}</p>
-          ${sub.skill && SKILLS[sub.skill] ? `<div class="panel" style="padding:12px 14px;margin:12px 0;border:1px solid rgba(232,182,74,.35);text-align:left">${skillPickHtml(SKILLS[sub.skill])}</div>` : ''}
-          <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">Rise</span></button></div>`).then(async () => {
-          if (sub.skill) await maybeEquipSkill(SKILLS[sub.skill]);
-          saveRun(run);
-          renderHud();
+    const applyEvo = async (sub) => {
+      applySubclassFn(run, sub);
+      if (sub.secret) { unlock('secret_class'); glitchScreen(1500); }
+      SFX.evolve();
+      if (isAutoPlay()) {
+        if (sub.skill) await maybeEquipSkill(SKILLS[sub.skill]);
+        saveRun(run);
+        renderHud();
+        return;
+      }
+      await modal(`
+        <div class="levelup-burst">🌟</div>
+        <h3 style="text-align:center">EVOLUTION — ${sub.name}!</h3>
+        <p class="modal-sub" style="text-align:center">${sub.blurb}</p>
+        ${sub.skill && SKILLS[sub.skill] ? `<div class="panel" style="padding:12px 14px;margin:12px 0;border:1px solid rgba(232,182,74,.35);text-align:left">${skillPickHtml(SKILLS[sub.skill])}</div>` : ''}
+        <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">Rise</span></button></div>`);
+      if (sub.skill) await maybeEquipSkill(SKILLS[sub.skill]);
+      saveRun(run);
+      renderHud();
+    };
+    if (isAutoPlay()) {
+      const pool = up.evolutionChoice;
+      await applyEvo(pool[Math.floor(Math.random() * pool.length)]);
+    } else {
+      await modalCustom((m, close) => {
+        m.innerHTML = `<h3>The Path Divides</h3>
+          <p class="modal-sub">The tower recognizes what you are becoming — and offers a choice it will hold you to. This cannot be undone this climb.</p>
+          <div class="pick-grid">
+            ${up.evolutionChoice.map((s, i) => `
+              <button class="pick-option ${s.secret ? 'secret-path' : ''}" data-i="${i}">
+                ${s.secret ? '<span class="po-tag tag" style="border-color:var(--gold);color:var(--gold-bright)">✦ hidden path</span>' : ''}
+                <div class="po-name">${s.name}</div>
+                <div class="po-desc">${s.hint}</div>
+                ${subclassSkillGrantHtml(s)}
+              </button>`).join('')}
+          </div>`;
+        m.querySelectorAll('[data-i]').forEach(b => b.onclick = async () => {
+          close();
+          await applyEvo(up.evolutionChoice[+b.dataset.i]);
         });
       });
-    });
+    }
   }
 
   // level 13: the deeper branch arrives on its own
   if (up.deeper) {
     applySubclassFn(run, up.deeper);
     SFX.evolve();
-    await modal(`
-      <div class="levelup-burst">🌟</div>
-      <h3 style="text-align:center">EVOLUTION — ${up.deeper.name}!</h3>
-      <p class="modal-sub" style="text-align:center">${up.deeper.blurb}</p>
-      ${up.deeper.skill && SKILLS[up.deeper.skill] ? `<div class="panel" style="padding:12px 14px;margin:12px 0;border:1px solid rgba(232,182,74,.35);text-align:left">${skillPickHtml(SKILLS[up.deeper.skill])}</div>` : ''}
-      <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">Rise</span></button></div>`);
+    if (!isAutoPlay()) {
+      await modal(`
+        <div class="levelup-burst">🌟</div>
+        <h3 style="text-align:center">EVOLUTION — ${up.deeper.name}!</h3>
+        <p class="modal-sub" style="text-align:center">${up.deeper.blurb}</p>
+        ${up.deeper.skill && SKILLS[up.deeper.skill] ? `<div class="panel" style="padding:12px 14px;margin:12px 0;border:1px solid rgba(232,182,74,.35);text-align:left">${skillPickHtml(SKILLS[up.deeper.skill])}</div>` : ''}
+        <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">Rise</span></button></div>`);
+    }
     if (up.deeper.skill) await maybeEquipSkill(SKILLS[up.deeper.skill]);
     saveRun(run);
     renderHud();
@@ -3967,6 +4571,13 @@ async function offerSkillChoice() {
     const pool = rng.shuffle(learnableSkills(run)).slice(0, 3);
     rng.advance();
     if (!pool.length) return;
+    if (isAutoPlay()) {
+      const sk = pool.reduce((a, b) => (skillAutoScore(b) > skillAutoScore(a) ? b : a), pool[0]);
+      run.knownSkills.push(sk.id);
+      await maybeEquipSkill(sk);
+      saveRun(run);
+      return;
+    }
     await modalCustom((m, close) => {
       m.innerHTML = `<h3>New Technique</h3><p class="modal-sub">The climb teaches. Choose one skill to learn.</p>
         <div class="pick-grid">
@@ -3989,23 +4600,49 @@ async function maybeEquipSkill(sk) {
   if (!sk) return;
   if (!run.knownSkills.includes(sk.id)) run.knownSkills.push(sk.id);
   if (run.skills.includes(sk.id)) return; // never carry duplicates (§10)
-  if (run.skills.length < skillCapacity(run)) {
+  const cap = skillCapacity(run);
+  if (run.skills.length < cap) {
     run.skills.push(sk.id);
-    toast(`Learned ${sk.name}`, 'info');
+    toast(`Learned ${sk.name} (${run.skills.length}/${cap} equipped)`, 'info');
   } else {
     await swapSkillModal(sk);
   }
 }
 
 async function swapSkillModal(newSkill) {
+  const cap = skillCapacity(run);
+  const openSlots = Math.max(0, cap - run.skills.length);
+  if (isAutoPlay()) {
+    if (openSlots > 0 && !run.skills.includes(newSkill.id)) {
+      run.skills.push(newSkill.id);
+      toast(`${newSkill.name} equipped`, 'info');
+      return;
+    }
+    let worstI = 0;
+    let worst = Infinity;
+    run.skills.forEach((id, i) => {
+      const sc = skillAutoScore(SKILLS[id]);
+      if (sc < worst) { worst = sc; worstI = i; }
+    });
+    if (skillAutoScore(newSkill) > worst) {
+      run.skills[worstI] = newSkill.id;
+      toast(`${newSkill.name} equipped`, 'info');
+    }
+    return;
+  }
   await modalCustom((m, close) => {
     m.innerHTML = `<h3>Equip ${newSkill.name}?</h3>
-      <p class="modal-sub">You can carry ${skillCapacity(run)} techniques into battle (plus Strike and Guard, always). Replace one, or keep it in reserve.</p>
+      <p class="modal-sub">You can carry ${cap} techniques into battle (plus Strike and Guard, always).
+        ${openSlots ? ` You have <b>${openSlots}</b> open slot${openSlots > 1 ? 's' : ''}.` : ' Replace one, or keep it in reserve.'}</p>
       <div class="panel" style="padding:12px 14px;margin-bottom:12px;border:1px solid rgba(232,182,74,.35)">
         <div style="font-family:var(--font-display);font-size:12px;color:var(--gold-bright);margin-bottom:4px">NEW</div>
         ${skillPickHtml(newSkill)}
       </div>
       <div class="pick-grid">
+        ${openSlots ? `<button class="pick-option" data-add="1">
+          <div class="po-name">Add as new technique</div>
+          <div class="po-desc">Fill an open slot (${run.skills.length + 1}/${cap}).</div>
+        </button>` : ''}
         ${run.skills.map((id, i) => {
           const s = SKILLS[id];
           return `<button class="pick-option" data-i="${i}">
@@ -4016,6 +4653,13 @@ async function swapSkillModal(newSkill) {
         }).join('')}
         <button class="pick-option" data-skip="1"><div class="po-name" style="color:var(--ink-dim)">Keep in reserve</div></button>
       </div>`;
+    m.querySelector('[data-add]')?.addEventListener('click', () => {
+      if (run.skills.length < skillCapacity(run) && !run.skills.includes(newSkill.id)) {
+        run.skills.push(newSkill.id);
+        toast(`${newSkill.name} equipped`, 'info');
+      }
+      close();
+    });
     m.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
       run.skills[+b.dataset.i] = newSkill.id;
       toast(`${newSkill.name} equipped`, 'info');
@@ -4028,51 +4672,57 @@ async function swapSkillModal(newSkill) {
 /* ============================================================
    SHOP
    ============================================================ */
-async function shopScreen(stage, ev) {
+async function shopScreen(stage, ev, { resumeStock = null } = {}) {
   Music.play('rest');
   const rng = runRng(run);
   const tier = biomeTier();
-  const stock = [];
-  const cons = rng.shuffle(CONSUMABLES.filter(c => !c.appraisal)).slice(0, 3);
-  cons.forEach(c => stock.push({ kind: 'consumable', item: c, price: c.price }));
-  if (rng.chance(0.4)) stock.push({ kind: 'consumable', item: CONSUMABLES.find(c => c.appraisal), price: 90 });
-  // Bias toward class-useful gear (~78%). Early/mid climb always keeps ≥1 useful equip.
-  const earlyOrMid = run.floor < 35;
-  for (let i = 0; i < 2; i++) {
-    const item = rollEquipment(rng, tier, 2, {
-      floor: run.floor, run, classId: run.classId, usefulBias: 4,
-      requireUseful: earlyOrMid && i === 0,
-    });
-    if (item) stock.push({ kind: 'equip', item, price: item.price });
-  }
-  if (earlyOrMid) {
-    const hasUseful = stock.some(s => s.kind === 'equip' && itemUsefulForClass(s.item, run.classId));
-    if (!hasUseful) {
-      const forced = rollEquipment(rng, Math.max(tier, 2), 3, {
-        floor: run.floor, run, classId: run.classId, requireUseful: true, usefulBias: 8,
+  let stock = [];
+  if (resumeStock?.length) {
+    stock = resumeStock;
+  } else {
+    const cons = rng.shuffle(CONSUMABLES.filter(c => !c.appraisal)).slice(0, 3);
+    cons.forEach(c => stock.push({ kind: 'consumable', item: c, price: c.price }));
+    if (rng.chance(0.4)) stock.push({ kind: 'consumable', item: CONSUMABLES.find(c => c.appraisal), price: 90 });
+    // Bias toward class-useful gear (~78%). Early/mid climb always keeps ≥1 useful equip.
+    const earlyOrMid = run.floor < 35;
+    for (let i = 0; i < 2; i++) {
+      const item = rollEquipment(rng, tier, 2, {
+        floor: run.floor, run, classId: run.classId, usefulBias: 4,
+        requireUseful: earlyOrMid && i === 0,
       });
-      if (forced) {
-        const idx = stock.findIndex(s => s.kind === 'equip');
-        if (idx >= 0) stock[idx] = { kind: 'equip', item: forced, price: forced.price };
-        else stock.push({ kind: 'equip', item: forced, price: forced.price });
+      if (item) stock.push({ kind: 'equip', item, price: item.price });
+    }
+    if (earlyOrMid) {
+      const hasUseful = stock.some(s => s.kind === 'equip' && itemUsefulForClass(s.item, run.classId));
+      if (!hasUseful) {
+        const forced = rollEquipment(rng, Math.max(tier, 2), 3, {
+          floor: run.floor, run, classId: run.classId, requireUseful: true, usefulBias: 8,
+        });
+        if (forced) {
+          const idx = stock.findIndex(s => s.kind === 'equip');
+          if (idx >= 0) stock[idx] = { kind: 'equip', item: forced, price: forced.price };
+          else stock.push({ kind: 'equip', item: forced, price: forced.price });
+        }
       }
     }
+    // Vanishingly rare UNIQUE listing on deep floors
+    if (run.floor >= 18 && rng.chance(0.035 + Math.min(0.04, run.floor * 0.0008))) {
+      const u = rollUnique(rng, run, { preferUseful: true });
+      if (u) stock.push({ kind: 'equip', item: u, price: Math.round(u.price * 1.15) });
+    }
+    // Near-mythic WRLD listing — floor 35+, ~1%
+    if (run.floor >= 35 && rng.chance(0.01 + Math.min(0.015, (run.floor - 35) * 0.0005))) {
+      const w = rollWrld(rng, run, { preferUseful: true, kind: 'equip', coop: coopS, claim: false });
+      if (w) stock.push({ kind: 'equip', item: w, price: Math.round(w.price * 1.25) });
+    }
+    if (rng.chance(0.5)) {
+      const r = rollRelic(rng, run.relics);
+      if (r) stock.push({ kind: 'relic', item: r, price: 120 + tier * 40 });
+    }
+    rng.advance();
   }
-  // Vanishingly rare UNIQUE listing on deep floors
-  if (run.floor >= 18 && rng.chance(0.035 + Math.min(0.04, run.floor * 0.0008))) {
-    const u = rollUnique(rng, run, { preferUseful: true });
-    if (u) stock.push({ kind: 'equip', item: u, price: Math.round(u.price * 1.15) });
-  }
-  // Near-mythic WRLD listing — floor 35+, ~1%
-  if (run.floor >= 35 && rng.chance(0.01 + Math.min(0.015, (run.floor - 35) * 0.0005))) {
-    const w = rollWrld(rng, run, { preferUseful: true, kind: 'equip', coop: coopS, claim: false });
-    if (w) stock.push({ kind: 'equip', item: w, price: Math.round(w.price * 1.25) });
-  }
-  if (rng.chance(0.5)) {
-    const r = rollRelic(rng, run.relics);
-    if (r) stock.push({ kind: 'relic', item: r, price: 120 + tier * 40 });
-  }
-  rng.advance(); saveRun(run);
+  setPending('shop', { eventId: ev.id, stock });
+  saveRun(run);
 
   // fame opens wallets and lowers prices (handoff §18)
   const discount = run.fame >= CONFIG.fame.shopDiscountAt ? CONFIG.fame.shopDiscountPct : 0;
@@ -4087,6 +4737,7 @@ async function shopScreen(stage, ev) {
     return `<div class="si-tags"><span class="si-tag incompatible">⚠ incompatible</span></div>`;
   }
 
+  shopRefreshHook = () => render();
   function render() {
     const healCost = Math.max(10, Math.round((run.maxHp - run.hp) * 0.8 * (CONFIG.economy.merchantPriceMult || 1) * (1 - discount)));
     stage.innerHTML = `
@@ -4141,6 +4792,7 @@ async function shopScreen(stage, ev) {
         await offerEquipment(s.item, lines);
       }
       stock.splice(+btn.dataset.i, 1);
+      setPending('shop', { eventId: ev.id, stock });
       saveRun(run); renderHud(); render();
     });
     stage.querySelector('#buy-heal').onclick = () => {
@@ -4152,6 +4804,8 @@ async function shopScreen(stage, ev) {
     };
     stage.querySelector('#leave').onclick = async () => {
       SFX.click();
+      shopRefreshHook = null;
+      clearPending();
       if (coopS) {
         const btn = stage.querySelector('#leave');
         btn.disabled = true;
@@ -4178,9 +4832,17 @@ function statDisplay(stat) {
   return '<span style="color:var(--ink-faint)">?</span>';
 }
 
+/** Optional hook so the shop can re-render after a pack sell (gold updates). */
+let shopRefreshHook = null;
+
 function characterSheet({ locked = false } = {}) {
   modalCustom((m, close) => {
     m.classList.add('sheet-modal');
+    const prevClose = close;
+    close = () => {
+      prevClose();
+      shopRefreshHook?.();
+    };
     function render() {
       const eq = run.equipment;
       const compatible = weaponCompatible(run);
@@ -4189,6 +4851,7 @@ function characterSheet({ locked = false } = {}) {
         ? `<p class="modal-sub" style="color:var(--crit)">In combat — gear, pack swaps, and consumables are locked. Use ITEMS on your turn to drink potions.</p>`
         : `<p class="modal-sub">Floor ${run.floor} · ${run.kills} kills · Origin: ${run.originId ? originById(run.originId)?.name : 'Unknown'}</p>`;
       m.innerHTML = `
+        <button type="button" class="sheet-close-x" id="sheet-close-x" title="Close" aria-label="Close">✕</button>
         <h3>${climberNameHtml(run.name, { title: meta.equippedTitle, nameStyle: meta.equippedNameStyle })} — Lv ${run.level} ${run.raceName} ${classTitle(run)}
           <button class="btn small ghost" id="sheet-look" title="Cycle your look — companions see it too">🎭 Look</button></h3>
         ${lockNote}
@@ -4205,7 +4868,7 @@ function characterSheet({ locked = false } = {}) {
               <tr><td>Wisdom</td><td>${statDisplay('wis')}</td></tr>
               <tr><td>Luck</td><td>${statDisplay('lk')}</td></tr>
               <tr><td>Growth potential</td><td><span style="color:var(--ink-faint)">?</span></td></tr>
-              ${appr ? `<tr><td>Overall (appraised)</td><td><b>${appr.overall}</b></td></tr>` : ''}
+              <tr><td>Overall (appraised)</td><td>${appr ? `<b>${appr.overall}</b>` : '<span style="color:var(--ink-faint)">?</span>'}</td></tr>
             </table>
             <h4 style="margin-top:14px">Equipped ${!compatible ? '<span class="tag" style="color:var(--crit);border-color:var(--crit)">⚠ weapon incompatible</span>' : ''}</h4>
             ${EQUIP_SLOTS.map(slot => {
@@ -4221,7 +4884,7 @@ function characterSheet({ locked = false } = {}) {
             ${run.weaponBonus ? `<div style="font-size:13px;color:var(--ink-dim)">Forge-honed: +${run.weaponBonus} weapon damage</div>` : ''}
           </div>
           <div class="sheet-section">
-            <h4>Techniques (${skillCapacity(run)} + Strike &amp; Guard)</h4>
+            <h4>Techniques (${run.skills.length}/${skillCapacity(run)} + Strike &amp; Guard)</h4>
             <p class="modal-sub" style="margin-top:-4px;margin-bottom:8px">Use ↑↓ to rearrange battle order.</p>
             ${run.skills.map((id, idx) => {
               const s = SKILLS[id];
@@ -4234,15 +4897,20 @@ function characterSheet({ locked = false } = {}) {
                 <div class="po-cost" style="margin:2px 0">${skillCostTip(s)} · ${skillEffectTip(s)}</div>
                 <div class="item-desc">${s.desc}</div></div>${reorder}</div>`;
             }).join('')}
+            ${Array.from({ length: Math.max(0, skillCapacity(run) - run.skills.length) }, (_, i) => `
+              <div class="inv-item empty-skill-slot"><div><div class="item-name" style="color:var(--ink-faint)">— open technique slot —</div>
+                <div class="item-desc">Equip a technique from Reserve to fill this slot.</div></div>
+                <span class="tag slot-tag">SLOT ${run.skills.length + i + 1}</span></div>`).join('')}
             ${!locked && run.knownSkills.filter(id => !run.skills.includes(id)).length ? `
               <h4 style="margin-top:12px">Reserve</h4>
               ${run.knownSkills.filter(id => !run.skills.includes(id)).map(id => {
                 const s = SKILLS[id];
+                const canAdd = run.skills.length < skillCapacity(run);
                 return `
                 <div class="inv-item"><div><div class="item-name">${s.name}</div>
                 <div class="po-cost" style="margin:2px 0">${skillCostTip(s)} · ${skillEffectTip(s)}</div>
                 <div class="item-desc">${s.desc}</div></div>
-                <button class="btn small" data-swap="${id}">Equip</button></div>`;
+                <button class="btn small" data-swap="${id}">${canAdd ? 'Add' : 'Equip'}</button></div>`;
               }).join('')}` : ''}
             <h4 style="margin-top:14px">Pack</h4>
             ${run.inventory.length ? run.inventory.map((id, i) => {
@@ -4273,6 +4941,7 @@ function characterSheet({ locked = false } = {}) {
         <div style="text-align:right"><button class="btn small" id="sheet-close">Close</button></div>`;
 
       m.querySelector('#sheet-close').onclick = () => close();
+      m.querySelector('#sheet-close-x')?.addEventListener('click', () => close());
       // Cosmetic — allowed any time, mid-run and mid-party. Partners see the
       // new look through the regular status broadcast.
       m.querySelector('#sheet-look')?.addEventListener('click', () => {
@@ -4312,9 +4981,19 @@ function characterSheet({ locked = false } = {}) {
         SFX.heal(); saveRun(run); renderHud(); render();
       });
       m.querySelectorAll('[data-swap]').forEach(b => b.onclick = async () => {
+        const sk = SKILLS[b.dataset.swap];
+        if (!sk) return;
+        if (run.skills.length < skillCapacity(run) && !run.skills.includes(sk.id)) {
+          run.skills.push(sk.id);
+          toast(`${sk.name} equipped`, 'info');
+          SFX.unlock?.();
+          saveRun(run); renderHud(); render();
+          return;
+        }
         close();
-        await swapSkillModal(SKILLS[b.dataset.swap]);
+        await swapSkillModal(sk);
         saveRun(run);
+        characterSheet({ locked });
       });
       m.querySelectorAll('[data-skill-up]').forEach(b => b.onclick = () => {
         const i = +b.dataset.skillUp;
@@ -4354,6 +5033,7 @@ function characterSheet({ locked = false } = {}) {
         if (run.gearBag && run.gearBag[id]) delete run.gearBag[id];
         run.gold += Math.round(it.price * 0.5);
         SFX.gold(); saveRun(run); renderHud(); render();
+        shopRefreshHook?.();
       });
     }
     render();
@@ -4496,12 +5176,16 @@ async function victoryScreen(type) {
   Music.play('victory');
   const wasCoop = !!coopS;
   const myName = run?.name || localStorage.getItem('dt_coop_name') || 'Climber';
-  const snap = run ? { name: run.name, raceName: run.raceName, floor: run.floor, kills: run.kills, level: run.level, fame: run.fame, title: classTitle(run) } : null;
+  const summary = run ? buildClimbSummary(run, type === 'win' ? 'win' : 'escape', runRng(run)) : null;
+  if (summary) pushRunHistory(summary);
+  const snap = summary || (run ? {
+    name: run.name, raceName: run.raceName, floor: run.floor, kills: run.kills,
+    level: run.level, fame: run.fame, title: classTitle(run),
+  } : null);
   if (!wasCoop) teardownCoop();
   else {
     coopS.floorContent.clear();
     coopS.gates.clear();
-    // Keep requeueVotes — a partner may have voted before this client reached the end screen.
   }
   const shards = shardsFor(type === 'win' ? 'win' : 'escape');
   meta.shards += shards;
@@ -4514,29 +5198,18 @@ async function victoryScreen(type) {
   const isWin = type === 'win';
   setBiomeGlow(isWin ? '#d9a53f' : '#5a9ec9');
   setParticles(isWin ? 'embers' : 'leaves');
-  app.innerHTML = '';
-  app.appendChild(el(`
-    <div class="screen end-screen">
-      <div class="end-glyph">${isWin ? '👑' : '🌀'}</div>
-      <h1 class="end-title victory">${isWin ? 'THE KING IS DEAD' : 'YOU WENT HOME'}</h1>
-      <p class="end-epitaph">${isWin
-        ? `Vorath falls to one knee, then both — and he is <i>smiling</i>. "The interesting kind after all." The tower shudders as its crown changes... no. You sheathe your weapon and walk past the throne without sitting down. Let the next century wonder why the top floor stands empty.<br/><br/>${snap?.name || 'A climber'} the ${snap?.raceName || ''} ${snap?.title || ''} conquered all fifty-one floors.`
-        : `The portal closes behind you, and the world is suddenly, absurdly ordinary: weather, birdsong, a road. You are alive. Every scar came home with you, and so did every story.<br/><br/>The tower still stands on the horizon. You don't look at it. Mostly.<br/><br/>${snap?.name || 'A climber'} the ${snap?.title || ''} survived ${snap?.floor || '?'} floors — and chose to keep living.`}</p>
-      <div class="end-stats">
-        <div><b>${snap?.floor ?? '—'}</b>floors</div>
-        <div><b>${snap?.kills ?? '—'}</b>slain</div>
-        <div><b>${snap?.level ?? '—'}</b>level</div>
-        <div><b>${snap?.fame ?? '—'}</b>fame</div>
-      </div>
-      <div class="shard-award">◈ <b>+${shards}</b> Soul Shards for the Sanctum</div>
-      <div id="requeue-status" style="min-height:22px;color:var(--ink-dim);font-style:italic;margin:8px 0"></div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
-        ${wasCoop ? '<button class="btn primary" id="btn-party-again">Propose Party Climb</button>' : '<button class="btn primary" id="btn-again">Climb Again</button>'}
-        <button class="btn" id="btn-title">Title Screen</button>
-      </div>
-    </div>`));
   SFX.victory();
-  wireEndButtons(wasCoop, myName);
+  if (summary) {
+    await showClimbSummary(summary, { shards, wasCoop, myName, isWin });
+  }
+  showFinalEndScreen({
+    wasCoop, myName, shards, isWin, snap,
+    title: isWin ? 'THE KING IS DEAD' : 'YOU WENT HOME',
+    glyph: isWin ? '👑' : '🌀',
+    epitaph: isWin
+      ? `Vorath falls to one knee, then both — and he is <i>smiling</i>. "The interesting kind after all." The tower shudders as its crown changes... no. You sheathe your weapon and walk past the throne without sitting down. Let the next century wonder why the top floor stands empty.<br/><br/>${snap?.name || 'A climber'} the ${snap?.raceName || ''} ${snap?.title || ''} conquered all fifty-one floors.`
+      : `The portal closes behind you, and the world is suddenly, absurdly ordinary: weather, birdsong, a road. You are alive. Every scar came home with you, and so did every story.<br/><br/>The tower still stands on the horizon. You don't look at it. Mostly.<br/><br/>${snap?.name || 'A climber'} the ${snap?.title || ''} survived ${snap?.floor || '?'} floors — and chose to keep living.`,
+  });
 }
 
 const EPITAPHS = {
@@ -4553,11 +5226,13 @@ const EPITAPHS = {
 async function endRun(cause) {
   const wasCoop = !!coopS;
   const myName = run?.name || localStorage.getItem('dt_coop_name') || 'Climber';
+  const deadRun = run;
+  const summary = deadRun ? buildClimbSummary(deadRun, cause, runRng(deadRun)) : null;
+  if (summary) pushRunHistory(summary);
   if (!wasCoop) teardownCoop();
   else {
     coopS.floorContent.clear();
     coopS.gates.clear();
-    // Keep requeueVotes — a partner may have voted before this client reached the end screen.
   }
   Music.stop(1.2);
   SFX.death();
@@ -4565,24 +5240,236 @@ async function endRun(cause) {
   meta.shards += shards;
   saveMeta(meta);
   clearRun();
-  const deadRun = run;
   run = null;
 
   setBiomeGlow('#8a2f2f');
-  app.innerHTML = '';
   const epitaph = EPITAPHS[cause] ? EPITAPHS[cause][Math.floor(Math.random() * EPITAPHS[cause].length)] : EPITAPHS.dead[0];
+  if (summary) {
+    await showClimbSummary(summary, { shards, wasCoop, myName, isWin: false });
+  }
+  showFinalEndScreen({
+    wasCoop, myName, shards, isWin: false,
+    snap: summary || deadRun,
+    title: cause === 'abandon' ? 'THE CLIMB ENDS' : 'YOU DIED',
+    glyph: '💀',
+    epitaph: `${deadRun.name} the ${deadRun.raceName} ${deadRun.subclassId ? SUBCLASSES[deadRun.subclassId].name : CLASSES[deadRun.classId].name} — Floor ${deadRun.floor}, ${biomeForFloor(deadRun.floor).name}.<br/><br/>${epitaph}`,
+    defeat: true,
+  });
+}
+
+function showClimbSummary(summary, { shards, wasCoop, myName, isWin, fromHistory = false }) {
+  const c = summary.climb || {};
+  const st = summary.stats || {};
+  const resultLabel = isWin ? 'VICTORY' : (summary.outcome === 'escape' ? 'ESCAPED' : 'DEFEAT');
+  const resultClass = isWin ? 'victory' : 'defeat';
+  const seedTxt = summary.seed != null ? ` · Seed ${String(summary.seed).slice(0, 8)}` : '';
+  const classLabel = (summary.title || CLASSES[summary.classId]?.name || 'Climber').toUpperCase();
+  const heroName = climberNameHtml(summary.name || 'Climber', {
+    title: meta?.equippedTitle,
+    nameStyle: meta?.equippedNameStyle,
+  });
+  const heroLine = summary.raceName
+    ? `${heroName} <span class="cs-hero-race">the ${summary.raceName}</span>`
+    : heroName;
+
+  const bosses = (c.bossesCleared || []).map(b =>
+    `<div class="cs-boss"><span class="cs-boss-f">F${b.floor}</span><span class="cs-boss-dot">·</span><span>${b.name}</span></div>`
+  ).join('') || '<div class="cs-muted">No gatekeepers felled.</div>';
+
+  const gear = (summary.equipment || []).map(it =>
+    `<div class="cs-gear-card rarity-${it.rarity || 'common'}">
+      <div class="cs-gear-main">
+        <div class="item-name ${rarityClass(it.rarity)}">${it.name}</div>
+        <div class="item-desc">${it.desc || ''}</div>
+      </div>
+      <span class="cs-slot-tag">${(it.wtype || it.slot || '').toUpperCase()}</span>
+    </div>`
+  ).join('') || '<div class="cs-muted">Traveling light.</div>';
+
+  const tipEsc = (s) => String(s || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const tipCard = (name, desc, chipClass) => {
+    const n = tipEsc(name);
+    const d = tipEsc(desc);
+    if (!desc) return `<span class="${chipClass}">${n}</span>`;
+    return `<span class="cs-tip ${chipClass}" tabindex="0">
+      <span class="cs-tip-label">${n}</span>
+      <span class="cs-tip-card" role="tooltip">
+        <span class="cs-tip-name">${n}</span>
+        <span class="cs-tip-desc">${d}</span>
+      </span>
+    </span>`;
+  };
+
+  const techChips = (summary.skills || []).map(id => {
+    const sk = SKILLS[id];
+    return tipCard(sk?.name || id, sk?.desc || '', 'cs-tech-chip');
+  }).join('') || '<span class="cs-muted">—</span>';
+
+  const relicEntries = (summary.relics || []).map(r => {
+    if (r && typeof r === 'object') return { name: r.name, desc: r.desc || '' };
+    const found = RELICS.find(x => x.name === r || x.id === r);
+    return { name: found?.name || r, desc: found?.desc || '' };
+  });
+  const relics = relicEntries.length
+    ? relicEntries.map(r => tipCard(r.name, r.desc, 'relic-chip')).join('')
+    : '<span class="cs-muted">None carried.</span>';
+
+  const logEntries = c.chronicle || [];
+  const logHtml = chronicleHtml(logEntries);
+
+  return new Promise(resolve => {
+    let page = 1;
+    const pageCount = 3;
+    app.innerHTML = '';
+    app.appendChild(el(`
+      <div class="screen climb-summary${fromHistory ? ' from-history' : ''}" id="climb-summary">
+        ${fromHistory ? '<button type="button" class="btn small ghost cs-back" id="cs-back">← Title</button>' : ''}
+        <header class="cs-header">
+          <div class="cs-h-left">
+            <div class="cs-class">${classLabel}</div>
+            <div class="cs-meta">Lv ${summary.level}${seedTxt}</div>
+          </div>
+          <div class="cs-h-center">
+            <div class="cs-banner ${resultClass}">${resultLabel}</div>
+            <div class="cs-hero">${heroLine}</div>
+            <div class="cs-sub" id="cs-sub">Floor ${summary.floor} · Overview</div>
+          </div>
+          <div class="cs-h-right">
+            <div class="summary-rank-badge">${summary.overall || '?'} <span>class</span></div>
+          </div>
+        </header>
+
+        <div class="cs-body">
+          <div class="cs-page" id="cs-page-1">
+            <div class="cs-overview">
+              <div class="cs-col-left">
+                ${statPentagonSvg(st, { size: 260 })}
+                <div class="cs-stat-row">
+                  <div><b>${st.str ?? '?'}</b>STR</div>
+                  <div><b>${st.dex ?? '?'}</b>DEX</div>
+                  <div><b>${st.int ?? '?'}</b>INT</div>
+                  <div><b>${st.wis ?? '?'}</b>WIS</div>
+                  <div><b>${st.lk ?? '?'}</b>LK</div>
+                </div>
+                <h4 class="cs-h4">Techniques</h4>
+                <div class="cs-tech-row">${techChips}</div>
+              </div>
+              <div class="cs-col-right">
+                <div class="cs-combat-row">
+                  <div class="cs-stat dealt"><b>${c.damageDealt || 0}</b>dealt</div>
+                  <div class="cs-stat taken"><b>${c.damageTaken || 0}</b>taken</div>
+                  <div class="cs-stat healed"><b>${c.healed || 0}</b>healed</div>
+                  <div class="cs-stat slain"><b>${summary.kills || 0}</b>slain</div>
+                </div>
+                <div class="cs-meta-line">
+                  Buffs applied: ${c.buffsApplied || 0} · Debuffs applied: ${c.debuffsApplied || 0}<br/>
+                  Fame ${summary.fame ?? 0} · Gold ${summary.gold ?? 0}
+                </div>
+                <h4 class="cs-h4">Bosses conquered</h4>
+                <div class="cs-boss-list">${bosses}</div>
+                <h4 class="cs-h4">Power curve</h4>
+                <div class="cs-power-wrap">${powerGraphSvg(c.powerLog || [], { w: 420, h: 120 })}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cs-page" id="cs-page-2" hidden>
+            <h4 class="cs-h4">Gear</h4>
+            <div class="cs-gear-grid">${gear}</div>
+            <h4 class="cs-h4">Relics</h4>
+            <div class="relic-row">${relics}</div>
+            <div class="cs-shard-note">◈ <b>+${shards}</b> Soul Shards await on the next screen</div>
+          </div>
+
+          <div class="cs-page" id="cs-page-3" hidden>
+            <h4 class="cs-h4">Balance log <span class="cs-log-count">${logEntries.length} entries</span></h4>
+            <p class="cs-log-blurb">Event choices, gains/losses, and combat results for tuning.</p>
+            <div class="cs-log-list">${logHtml}</div>
+          </div>
+        </div>
+
+        <footer class="cs-footer">
+          <div class="cs-f-left">
+            <button class="btn" id="cs-left" type="button">Skip to ending</button>
+          </div>
+          <div class="cs-pager" aria-label="Pages">
+            <span class="cs-dot active" data-p="1"></span>
+            <span class="cs-dot" data-p="2"></span>
+            <span class="cs-dot" data-p="3"></span>
+          </div>
+          <div class="cs-f-right">
+            <button class="btn primary" id="cs-right" type="button">Gear ▸</button>
+          </div>
+        </footer>
+      </div>`));
+
+    const subEl = document.getElementById('cs-sub');
+    const pages = [1, 2, 3].map(n => document.getElementById(`cs-page-${n}`));
+    const leftBtn = document.getElementById('cs-left');
+    const rightBtn = document.getElementById('cs-right');
+    const dots = [...document.querySelectorAll('.cs-dot')];
+    const done = () => { SFX.click(); resolve(); };
+    const subs = {
+      1: `Floor ${summary.floor} · Overview`,
+      2: 'Gear & Relics',
+      3: 'Balance log',
+    };
+    const rightLabels = {
+      1: 'Gear ▸',
+      2: 'Log ▸',
+      3: fromHistory ? '← Title' : 'Continue ▸',
+    };
+
+    document.getElementById('cs-back')?.addEventListener('click', done);
+
+    const paint = () => {
+      pages.forEach((el, i) => { if (el) el.hidden = page !== i + 1; });
+      subEl.textContent = subs[page] || '';
+      leftBtn.textContent = page === 1
+        ? (fromHistory ? '← Title' : 'Skip to ending')
+        : '◂ Back';
+      rightBtn.textContent = rightLabels[page] || 'Continue ▸';
+      dots.forEach(d => d.classList.toggle('active', Number(d.dataset.p) === page));
+    };
+
+    leftBtn.onclick = () => {
+      SFX.click();
+      if (page === 1) resolve();
+      else { page -= 1; paint(); }
+    };
+    rightBtn.onclick = () => {
+      SFX.click();
+      if (page < pageCount) { page += 1; paint(); }
+      else resolve();
+    };
+    dots.forEach(d => {
+      d.onclick = () => {
+        const p = Number(d.dataset.p);
+        if (p === page) return;
+        SFX.click();
+        page = p;
+        paint();
+      };
+    });
+    paint();
+  });
+}
+
+function showFinalEndScreen({ wasCoop, myName, shards, isWin, snap, title, glyph, epitaph, defeat = false }) {
+  app.innerHTML = '';
   app.appendChild(el(`
     <div class="screen end-screen">
-      <div class="end-glyph">💀</div>
-      <h1 class="end-title defeat">${cause === 'abandon' ? 'THE CLIMB ENDS' : 'YOU DIED'}</h1>
-      <p class="end-epitaph">${deadRun.name} the ${deadRun.raceName} ${deadRun.subclassId ? SUBCLASSES[deadRun.subclassId].name : CLASSES[deadRun.classId].name} — Floor ${deadRun.floor}, ${biomeForFloor(deadRun.floor).name}.<br/><br/>${epitaph}</p>
+      <div class="end-glyph">${glyph}</div>
+      <h1 class="end-title ${defeat ? 'defeat' : 'victory'}">${title}</h1>
+      <p class="end-epitaph">${epitaph}</p>
       <div class="end-stats">
-        <div><b>${deadRun.floor}</b>floors</div>
-        <div><b>${deadRun.kills}</b>slain</div>
-        <div><b>${deadRun.level}</b>level</div>
-        <div><b>${deadRun.fame}</b>fame</div>
+        <div><b>${snap?.floor ?? '—'}</b>floors</div>
+        <div><b>${snap?.kills ?? '—'}</b>slain</div>
+        <div><b>${snap?.level ?? '—'}</b>level</div>
+        <div><b>${snap?.fame ?? '—'}</b>fame</div>
       </div>
-      <div class="shard-award">◈ <b>+${shards}</b> Soul Shards carried back to the Sanctum</div>
+      <div class="shard-award">◈ <b>+${shards}</b> Soul Shards${defeat ? ' carried back to the Sanctum' : ' for the Sanctum'}</div>
       <div id="requeue-status" style="min-height:22px;color:var(--ink-dim);font-style:italic;margin:8px 0"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
         ${wasCoop ? '<button class="btn primary" id="btn-party-again">Propose Party Climb</button>' : '<button class="btn primary" id="btn-again">Climb Again</button>'}

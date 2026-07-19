@@ -6,7 +6,7 @@ import { resolveItem, RELICS, EQUIP_SLOTS } from './data/items.js';
 import { SKILLS } from './data/skills.js';
 import { CONFIG } from './data/config.js';
 import { rankFor, appraisalRange, growthMult } from './data/ranks.js';
-import { cappedDmgTakenMult, softHpGain, resourceRegen } from './data/tdc.js';
+import { cappedDmgTakenMult, softHpGain, levelDefBonus, resourceRegen } from './data/tdc.js';
 
 export function equippedItems(run) {
   return EQUIP_SLOTS
@@ -42,7 +42,8 @@ function gearMaxNum(run, prop, base = 0) {
 export function skillCapacity(run) {
   let n = 4 + gearSum(run, 'extraSkillSlots');
   for (const bp of CONFIG.skillBreakpoints || []) {
-    if (run.flags?.[bp.flag] || (run.floor > bp.floor)) n += bp.slots;
+    // Flag from boss clear, or already past that floor (legacy saves).
+    if (run.flags?.[bp.flag] || run.floor > bp.floor) n += bp.slots;
   }
   return n;
 }
@@ -103,7 +104,13 @@ export function derived(run) {
     wis: s.wis + gearSum(run, 'wis'),
     lk: s.lk + gearSum(run, 'lk'),
     atk: (weapon ? weapon.atk : 0) + run.weaponBonus,
-    def: gearSum(run, 'def') + (race.def || 0) + (run.raceDef || 0),
+    // Level DEF + gear/race; combat applies diminishing-returns mitigation.
+    def: Math.round(
+      levelDefBonus(run.level)
+      + gearSum(run, 'def')
+      + (race.def || 0)
+      + (run.raceDef || 0)
+    ),
     crit: 5 + s.dex * 0.35 + s.lk * 0.5 + gearSum(run, 'crit') + (run.foodBuff?.crit || 0),
     dodge: Math.min(35, 3 + s.dex * 0.45 + gearSum(run, 'dodge') + (run.foodBuff?.dodge || 0)),
     lifesteal: gearSum(run, 'lifesteal'),
@@ -151,6 +158,28 @@ export function revealLevel(run) {
 
 /* ---------------- appraisal ---------------- */
 export const APPRAISABLE = ['str', 'dex', 'int', 'wis', 'lk'];
+
+/**
+ * Pick a random stat, weighted toward the class growthBias (and its secondary).
+ * `biasChance` = odds of landing in the class's preferred stats.
+ */
+export function pickClassWeightedStat(run, rng, { biasChance = 0.7 } = {}) {
+  const bias = CLASSES[run.classId]?.growthBias || APPRAISABLE;
+  if (rng.chance(biasChance) && bias.length) return rng.pick(bias);
+  return rng.pick(APPRAISABLE);
+}
+
+/** Grant N class-weighted permanent stats. Returns the tally map. */
+export function grantClassWeightedStats(run, rng, count = 1, opts = {}) {
+  const n = Math.max(0, count | 0);
+  const gained = {};
+  for (let i = 0; i < n; i++) {
+    const st = pickClassWeightedStat(run, rng, opts);
+    run.stats[st] = (run.stats[st] || 0) + 1;
+    gained[st] = (gained[st] || 0) + 1;
+  }
+  return gained;
+}
 
 export function appraiseRun(rng, run, { partial = false, location = 'the tower' } = {}) {
   const d = derived(run);
@@ -214,14 +243,13 @@ export function gainXp(run, amount, rng) {
     run.level++;
     run.xpNext = xpForLevel(run.level);
 
-    const hpGain = softHpGain(run.level, Math.round((6 + rng.int(0, 4)) * gMult));
+    // Lean HP curve (~150 late); tankiness comes from level+gear DEF instead.
+    const hpGain = softHpGain(run.level, Math.round((4 + rng.int(0, 2)) * gMult));
     const mpGain = Math.round((3 + rng.int(0, 2)) * gMult); // resource pools stay linear
-    const statPoints = Math.max(1, Math.round(2 * gMult + (rng.chance(0.3) ? 1 : 0)));
-    const bias = CLASSES[run.classId].growthBias;
-    for (let i = 0; i < statPoints; i++) {
-      const st = rng.chance(0.6) ? rng.pick(bias) : rng.pick(APPRAISABLE);
-      run.stats[st]++;
-    }
+    // Early levels get an extra point — forest climbs need more than 2 rares of power.
+    const earlyBonus = run.level <= 8 ? 1 : 0;
+    const statPoints = Math.max(1, Math.round(2 * gMult + (rng.chance(0.35) ? 1 : 0))) + earlyBonus;
+    grantClassWeightedStats(run, rng, statPoints, { biasChance: 0.72 });
     run.maxHp += hpGain;
     run.maxMp += mpGain;
     // level-up recovery: 50% of MISSING health/resource (handoff §15)

@@ -398,17 +398,22 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
         <div class="tm-sub">Choose your path, Awakened — step ${r.floor}</div>
       </div>
       ${partyHtml}
-      <div class="tm-status" id="tm-status" role="button" tabindex="0" title="Open character sheet" aria-label="Open character sheet">
-        <div class="tm-st-head">
-          <div class="tm-st-name">${r.name}</div>
-          <div class="tm-st-open">◈ CHARACTER</div>
+      <div class="tm-corner">
+        <div class="tm-status" id="tm-status" role="button" tabindex="0" title="Open character sheet" aria-label="Open character sheet">
+          <div class="tm-st-head">
+            <div class="tm-st-name">${r.name}</div>
+            <div class="tm-st-open">◈ CHARACTER</div>
+          </div>
+          <div class="tm-st-meta">Lv.${r.level} ${r.raceName || ''} ${ctx.classTitle || r.className || ''} · 🪙 ${r.gold} · ★ ${r.fame}</div>
+          <div class="tm-st-bars">
+            <div class="tm-st-bar hp"><i style="width:${Math.max(0, Math.min(100, r.hp / r.maxHp * 100))}%"></i><span>HP ${Math.round(r.hp)}/${Math.round(r.maxHp)}</span></div>
+            <div class="tm-st-bar mp"><i style="width:${Math.max(0, Math.min(100, r.mp / Math.max(1, r.maxMp) * 100))}%"></i><span>${resLabel} ${Math.round(r.mp)}/${Math.round(r.maxMp)}</span></div>
+          </div>
+          <div class="tm-st-gear">${gearBits.length ? gearBits.map(g => g).join(' · ') : 'No gear equipped yet'}</div>
         </div>
-        <div class="tm-st-meta">Lv.${r.level} ${r.raceName || ''} ${ctx.classTitle || r.className || ''} · 🪙 ${r.gold} · ★ ${r.fame}</div>
-        <div class="tm-st-bars">
-          <div class="tm-st-bar hp"><i style="width:${Math.max(0, Math.min(100, r.hp / r.maxHp * 100))}%"></i><span>HP ${Math.round(r.hp)}/${Math.round(r.maxHp)}</span></div>
-          <div class="tm-st-bar mp"><i style="width:${Math.max(0, Math.min(100, r.mp / Math.max(1, r.maxMp) * 100))}%"></i><span>${resLabel} ${Math.round(r.mp)}/${Math.round(r.maxMp)}</span></div>
+        <div class="tm-corner-tools">
+          <button type="button" class="tm-tool-btn ghost" id="tm-settings" title="Settings" aria-label="Settings">☰</button>
         </div>
-        <div class="tm-st-gear">${gearBits.length ? gearBits.map(g => g).join(' · ') : 'No gear equipped yet'}</div>
       </div>
       <svg class="tm-svg" viewBox="0 0 1280 720" preserveAspectRatio="none">${hintLines}${lines}</svg>
       ${hintsHtml}
@@ -436,6 +441,11 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
   statusEl?.addEventListener('click', openSheet);
   statusEl?.addEventListener('keydown', (ev) => {
     if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); openSheet(ev); }
+  });
+  stage.querySelector('#tm-settings')?.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    ctx.onSettings?.();
   });
   stage.querySelectorAll('[data-partner]').forEach(btn => {
     btn.addEventListener('click', (ev) => {

@@ -10,15 +10,15 @@ import { CLASSES } from './classes.js';
 export const EQUIP_SLOTS = ['weapon', 'helmet', 'chest', 'legs', 'boots', 'accessory1', 'accessory2', 'accessory3'];
 
 export const WEAPONS = [
-  // ---- starting weapons (one per class) ----
-  { id: 'rusty_sword', name: 'Rusty Sword', slot: 'weapon', wtype: 'sword', rarity: 'common', tier: 1, atk: 2, desc: 'Sword · +2 damage. Tetanus sold separately.', price: 25 },
-  { id: 'runed_shortsword', name: 'Runed Shortsword', slot: 'weapon', wtype: 'sword', rarity: 'common', tier: 1, atk: 2, int: 1, desc: 'Sword · +2 damage, +1 INT. A practice blade that still remembers its grammar.', price: 30 },
-  { id: 'oak_staff', name: 'Oak Staff', slot: 'weapon', wtype: 'staff', rarity: 'common', tier: 1, atk: 1, int: 2, desc: 'Staff · +1 damage, +2 INT.', price: 30 },
-  { id: 'hunting_bow', name: 'Hunting Bow', slot: 'weapon', wtype: 'bow', rarity: 'common', tier: 1, atk: 2, dex: 1, desc: 'Bow · +2 damage, +1 DEX.', price: 30 },
-  { id: 'runed_dagger_worn', name: 'Worn Dagger', slot: 'weapon', wtype: 'dagger', rarity: 'common', tier: 1, atk: 2, crit: 3, desc: 'Dagger · +2 damage, +3% crit.', price: 25 },
-  { id: 'hand_axe', name: 'Notched Hand Axe', slot: 'weapon', wtype: 'axe', rarity: 'common', tier: 1, atk: 2, str: 1, desc: 'Axe · +2 damage, +1 STR. The notches are not decorative.', price: 28 },
-  { id: 'novice_mace', name: 'Novice\'s Mace', slot: 'weapon', wtype: 'mace', rarity: 'common', tier: 1, atk: 2, wis: 1, desc: 'Mace · +2 damage, +1 WIS.', price: 25 },
-  { id: 'wraps', name: 'Cloth Wraps', slot: 'weapon', wtype: 'fist', rarity: 'common', tier: 1, atk: 2, dex: 1, desc: 'Fist · +2 damage, +1 DEX. Your hands were always the weapon.', price: 20 },
+  // ---- starting weapons (one per class) — starter: true excludes shops/events/loot ----
+  { id: 'rusty_sword', name: 'Rusty Sword', slot: 'weapon', wtype: 'sword', rarity: 'common', tier: 1, atk: 2, starter: true, desc: 'Sword · +2 damage. Tetanus sold separately.', price: 25 },
+  { id: 'runed_shortsword', name: 'Runed Shortsword', slot: 'weapon', wtype: 'sword', rarity: 'common', tier: 1, atk: 2, int: 1, starter: true, desc: 'Sword · +2 damage, +1 INT. A practice blade that still remembers its grammar.', price: 30 },
+  { id: 'oak_staff', name: 'Oak Staff', slot: 'weapon', wtype: 'staff', rarity: 'common', tier: 1, atk: 1, int: 2, starter: true, desc: 'Staff · +1 damage, +2 INT.', price: 30 },
+  { id: 'hunting_bow', name: 'Hunting Bow', slot: 'weapon', wtype: 'bow', rarity: 'common', tier: 1, atk: 2, dex: 1, starter: true, desc: 'Bow · +2 damage, +1 DEX.', price: 30 },
+  { id: 'runed_dagger_worn', name: 'Worn Dagger', slot: 'weapon', wtype: 'dagger', rarity: 'common', tier: 1, atk: 2, crit: 3, starter: true, desc: 'Dagger · +2 damage, +3% crit.', price: 25 },
+  { id: 'hand_axe', name: 'Notched Hand Axe', slot: 'weapon', wtype: 'axe', rarity: 'common', tier: 1, atk: 2, str: 1, starter: true, desc: 'Axe · +2 damage, +1 STR. The notches are not decorative.', price: 28 },
+  { id: 'novice_mace', name: 'Novice\'s Mace', slot: 'weapon', wtype: 'mace', rarity: 'common', tier: 1, atk: 2, wis: 1, starter: true, desc: 'Mace · +2 damage, +1 WIS.', price: 25 },
+  { id: 'wraps', name: 'Cloth Wraps', slot: 'weapon', wtype: 'fist', rarity: 'common', tier: 1, atk: 2, dex: 1, starter: true, desc: 'Fist · +2 damage, +1 DEX. Your hands were always the weapon.', price: 20 },
 
   // ---- found/shop weapons ----
   { id: 'steel_blade', name: 'Steel Blade', slot: 'weapon', wtype: 'sword', rarity: 'uncommon', tier: 2, atk: 4, desc: 'Sword · +4 damage. Honest work.', price: 70 },
@@ -107,7 +107,8 @@ export const HELMETS = [
 ];
 
 export const CHEST_ARMOR = [
-  { id: 'cloth_garb', name: 'Traveler\'s Garb', slot: 'chest', rarity: 'common', tier: 1, def: 1, desc: '+1 defense. Fashionably doomed.', price: 20 },
+  // Starter kit only — excluded from shops/events/loot via starter: true.
+  { id: 'cloth_garb', name: 'Traveler\'s Garb', slot: 'chest', rarity: 'common', tier: 1, def: 1, starter: true, desc: '+1 defense. Fashionably doomed.', price: 20 },
   { id: 'leather_jerkin', name: 'Leather Jerkin', slot: 'chest', rarity: 'common', tier: 1, def: 2, desc: '+2 defense.', price: 40 },
   { id: 'chainmail', name: 'Chainmail Hauberk', slot: 'chest', rarity: 'uncommon', tier: 2, def: 4, desc: '+4 defense. Jingles ominously.', price: 90 },
   { id: 'wardweave', name: 'Wardweave Robe', slot: 'chest', rarity: 'rare', tier: 3, def: 3, int: 3, mp: 12, desc: '+3 defense, +3 INT, +12 max resource.', price: 150 },
@@ -400,9 +401,10 @@ export function rollEquipment(rng, tier, luckBonus = 0, opts = {}) {
   const requireUseful = !!opts.requireUseful && classId;
   const wantSlot = opts.slot || null;
   const wantWtype = opts.wtype || null;
-  // event-exclusive + UNIQUE + WRLD never surface in ordinary loot/shops
+  // event-exclusive + starter kit + UNIQUE + WRLD never surface in ordinary loot/shops
   const matches = (i, looseTier = false) => {
     if (i.exclusive) return false;
+    if (i.starter) return false;
     if (i.rarity === 'unique' || i.unique) return false;
     if (i.rarity === 'wrld' || i.wrld) return false;
     if (wantSlot && i.slot !== wantSlot) return false;

@@ -6,10 +6,15 @@
 export const TDC = {
   lastFloor: 51,
 
-  /* ---- expected relative power (global floor benchmark spine) ---- */
+  /* ---- expected relative power (global floor benchmark spine) ----
+     Anchored to estimatePlayerPower(synthetic mid climber). The climb
+     summary graph compares live power to this — not a win-rate promise.
+     curvePow > 1 = slow early gear ramp, steeper late (shops/boss drops). */
   expected: {
-    powerAt1: 1,
-    powerAt51: 4.2,
+    // Slightly softer spine — real climbs were tracking chronically under.
+    powerAt1: 1.75,
+    powerAt51: 9.3,
+    curvePow: 1.30,
   },
 
   /* ---- encounter outcome bands (P50 climber) ---- */
@@ -28,15 +33,18 @@ export const TDC = {
     base: 1.42,              // solo F1 pack ≈ this × expectedPower
     // Co-op trash threat — per-size table (linear perExtra overpunished 3p/4p AOE).
     // Fallback: solo * (1 + perExtraPlayer * (n-1)) if a size is missing.
-    budgetBySize: { 1: 1, 2: 2.30, 3: 3.55, 4: 4.58 },
+    // Sized for body bands (2p 2–3 / 3p 3–4 / 4p 4–5), not old 4–5 swarms.
+    // Softened for real-loot run_sim clear-rate (15/85/60/40 targets).
+    budgetBySize: { 1: 1, 2: 1.80, 3: 2.70, 4: 3.50 },
     perExtraPlayer: 1.05,
-    residualHpCap: 0.16,     // unused/overspend budget → at most ±16% HP
-    residualHpFactor: 0.55,  // conversion rate |remaining|/budget → HP
+    residualHpCap: 0.10,     // unused/overspend budget → at most ±10% HP
+    residualHpFactor: 0.40,  // conversion rate |remaining|/budget → HP
+    coopResidualHpScale: 0.55, // further softens leftover→HP in co-op
     fillThreshold: 0.55,     // add another body if ≥55% of its cost remains
-    swarmChance: 0.22,       // chance a trash pack rolls as a swarm (many cheap bodies)
+    swarmChance: 0.18,       // chance a trash pack rolls as a swarm (many cheap bodies)
     swarmMaxBodies: 5,       // hard ceiling on swarm size (UI + turn-length sanity)
     bossBudgetMult: 1.35,    // bosses claim a larger slice of party budget
-    bossEscortMinFrac: 0.40, // leftover must clear this before an escort spawns
+    bossEscortMinFrac: 0.28, // leftover must clear this before an escort spawns
     refHp: 28,               // F1 wolf hp — threat cost denominator
     refAtk: 6,
     refDef: 2,
@@ -44,21 +52,26 @@ export const TDC = {
 
   /* ---- per-boss RTK / HP-loss overrides (tune after sims) ---- */
   bossTargets: {
-    10: { rounds: [7, 12], hpLoss: [0.15, 0.40] },
-    20: { rounds: [8, 13], hpLoss: [0.18, 0.50] },
-    30: { rounds: [9, 14], hpLoss: [0.20, 0.48] },
-    40: { rounds: [10, 15], hpLoss: [0.22, 0.52] },
-    50: { rounds: [10, 16], hpLoss: [0.25, 0.65] },
-    51: { rounds: [11, 16], hpLoss: [0.30, 0.70] },
+    // On-curve solo: leave ~40–60% HP (hpLoss 0.40–0.60). Under-curve costs more.
+    10: { rounds: [6, 11], hpLoss: [0.35, 0.60] },
+    15: { rounds: [6, 11], hpLoss: [0.35, 0.60] },
+    20: { rounds: [8, 13], hpLoss: [0.35, 0.58] },
+    30: { rounds: [9, 14], hpLoss: [0.35, 0.58] },
+    40: { rounds: [10, 15], hpLoss: [0.38, 0.62] },
+    50: { rounds: [10, 16], hpLoss: [0.40, 0.65] },
+    51: { rounds: [11, 16], hpLoss: [0.40, 0.70] },
   },
 
   /* ---- full-run survival CDF for 1p–4p (tools/run_sim.js) ----
      Same bands for every party size — co-op pads/eases keep the curve aligned.
      Re-check with `node tools/run_sim.js` after changing recovery, budgets, or boss pads. */
   clearRate: {
-    brickBy10: [0.07, 0.19], // die on floors 1–10 (~12–15% typical; ±sim noise)
-    reach30: [0.43, 0.58],   // “long run” ≈ F30+
-    clear51: [0.22, 0.36],   // defeat F51 (Ashkar or Vorath); ~30% ±6
+    // Exclusive-ish buckets: ~15% brick, ~25% medium-only, ~20% long-only, ~40% win
+    // → cum: 85% medium (pass F10), 60% long (F30+), 40% clear F51.
+    // Bands include ~±3pts sim noise; tools/test.js allows an extra soft pad.
+    brickBy10: [0.10, 0.20],
+    reach30: [0.52, 0.68],
+    clear51: [0.30, 0.48],
   },
 
   /* ---- enemy scaling (replaces ad-hoc depth * 0.045) ----
@@ -66,20 +79,29 @@ export const TDC = {
      (depth → 0) doesn't soft-reset toughness vs a geared climber.
      Bosses stay hand-tuned via RTK sims + mild bossFloor* only. */
   enemy: {
-    depthHp: 0.046,
-    depthAtk: 0.040,
+    depthHp: 0.043,
+    depthAtk: 0.0375,
     depthDef: 0.018,
-    // Absolute floor HP for non-bosses — balanced for clear-rate CDF mid deaths.
-    floorHp: 0.024,
-    floorAtk: 0.004,
-    bossFloorHp: 0.009,
-    bossFloorAtk: 0.005,
-    // Boss roles: big HP bars (early~200 / mid~500 / end~1000 scaled) with DEF
-    // tuned so solo player HTK stays ~7–15 turns; co-op pads HP via bossHpPerExtra.
-    // ATK kept mild so longer HP bars stay winnable (boss HTK ≳ player HTK race).
-    boss: { hp: 1.0, atk: 0.20, def: 1.0 },
-    common: { hp: 1.04, atk: 0.82, def: 1.0 },
-    elite: { hp: 1.26, atk: 1.00, def: 1.03 },
+    floorHp: 0.0145,
+    floorAtk: 0.0065,
+    // Soft late ramp (solo ~40% win); F10 brick from soloBoss* early.
+    bossFloorHp: 0.0043,
+    bossFloorAtk: 0.0038,
+    bossAtkFullFloor: 36,
+    bossAtkEarly: 0.58,
+    soloBossHpFullFloor: 22,
+    soloBossHpEarly: 0.51,
+    soloBossAtkFullFloor: 22,
+    soloBossAtkEarly: 0.57,
+    soloBossChargeCap: 3,
+    soloBossChargeCapFullFloor: 20,
+    trashAtkFullFloor: 16,
+    trashAtkEarly: 0.54,
+    soloTrashAtkFullFloor: 22,
+    soloTrashAtkEarly: 0.62,
+    boss: { hp: 0.86, atk: 0.54, def: 0.93 },
+    common: { hp: 0.92, atk: 0.94, def: 1.0 },
+    elite: { hp: 1.14, atk: 1.06, def: 1.03 },
   },
 
   /* ---- biome multipliers (multiplicative flavor, not additive piles) ---- */
@@ -102,26 +124,32 @@ export const TDC = {
     // Linear per-extra failed (2p too easy / 4p wiped); tables are hand-tuned.
     // AOE still uses partyBossAoeMult = 1/√n per target.
     // Early floors only apply a fraction of the ATK/budget pad (F10 bricks otherwise).
-    easeFullFloor: 20,
-    easeAtStart: 0.325,
-    // Pad ramp shape: 1 = linear, 2 = square (softer early). Tuned with clearRate.
-    easePow: 1.24,
-    // AOE per-target share = n^(-aoeExp). 0.5 = 1/√n; lower = harsher on large parties.
-    aoeExp: 0.42,
-    bossAtkBySize: { 1: 1, 2: 1.88, 3: 2.46, 4: 2.88 },
-    bossHpBySize: { 1: 1, 2: 2.52, 3: 3.92, 4: 5.08 },
+    // Tuned to soft±5 of 15/85/60/40 across 1p–4p (real-loot run_sim).
+    easeFullFloor: 22,
+    easeAtStart: 0.23,
+    easePow: 1.15,
+    aoeExp: 0.48,
+    bossAtkBySize: { 1: 1, 2: 1.28, 3: 1.48, 4: 1.72 },
+    bossHpBySize: { 1: 1, 2: 1.78, 3: 2.65, 4: 3.70 },
+    bossHpEaseAtStart: 0.54,
     // Fallbacks if a size is missing
     bossAtkPerExtra: 0.55,
     bossHpPerExtra: 1.10,
   },
 
   /* ---- player soft caps (breadth over runaway numbers) ---- */
+  // HP stays lean (~150 late); survivability shifts onto level+gear DEF.
   player: {
-    hpSoftAfterLevel: 10,
-    hpSoftFactor: 0.55,          // HP gains after L10 × this
+    hpSoftAfterLevel: 8,
+    hpSoftFactor: 0.42,          // HP gains after L8 × this
     dmgSoftAfterLevel: 15,
     dmgLevelSoftFactor: 0.45,    // level→damage contribution beyond L15 × this
     mitigationCap: 0.65,         // max damage reduction from stacked dmgTakenMult
+    // Passive DEF from level (before gear). Softens after softAfter so late
+    // levels don't race the mitigation asymptote alone.
+    levelDefPerLevel: 1.05,
+    levelDefSoftAfter: 14,
+    levelDefSoftFactor: 0.45,
   },
 
   /* ---- resource economy targets ---- */
@@ -132,8 +160,9 @@ export const TDC = {
 
   /* ---- combat reward scaling vs floor ---- */
   rewards: {
-    goldFloorFactor: 0.01,       // gold × (1 + floor × factor)
-    xpFloorFactor: 0.008,
+    // Higher floor scaling so real kits catch shops/XP into late climb.
+    goldFloorFactor: 0.016,
+    xpFloorFactor: 0.018,
   },
 
   /* ---- event history (category anti-streak) ---- */
@@ -148,8 +177,8 @@ export const TDC = {
   validators: {
     itemSlack: 1.08,
     loadoutSlack: 1.12,
-    loadoutScoreAt1: 35,
-    loadoutScoreAt51: 220,
+    loadoutScoreAt1: 28,
+    loadoutScoreAt51: 260,
     maxDmgMult: 1.85,
     bossBandSlack: 0.22,
   },
@@ -183,9 +212,16 @@ export const TDC = {
   },
 };
 
-export function expectedPower(floor) {
+/** 0..1 climb progress with late-weighted gear cadence (see TDC.expected.curvePow). */
+export function expectedCurveT(floor) {
   const f = Math.max(1, Math.min(TDC.lastFloor, floor));
-  const t = (f - 1) / (TDC.lastFloor - 1);
+  const linear = (f - 1) / (TDC.lastFloor - 1);
+  const pow = TDC.expected.curvePow ?? 1;
+  return pow === 1 ? linear : Math.pow(linear, pow);
+}
+
+export function expectedPower(floor) {
+  const t = expectedCurveT(floor);
   return TDC.expected.powerAt1 + (TDC.expected.powerAt51 - TDC.expected.powerAt1) * t;
 }
 
@@ -193,8 +229,44 @@ function biomeMods(biomeId) {
   return TDC.biome[biomeId] || TDC.biome.forest;
 }
 
+function easeRamp(floor, fullFloor, early) {
+  if (early >= 1) return 1;
+  const full = fullFloor || 28;
+  const t = full <= 1 ? 1 : Math.min(1, Math.max(0, (floor - 1) / (full - 1)));
+  return early + (1 - early) * t;
+}
+
+/** Solo trash ATK ease (1 = no extra softener). Co-op / budgets skip this. */
+export function soloTrashAtkEase(floor) {
+  return easeRamp(floor, TDC.enemy.soloTrashAtkFullFloor || 22, TDC.enemy.soloTrashAtkEarly ?? 1);
+}
+
+/** Solo boss HP ease — F10 ~0.78 → full by soloBossHpFullFloor. */
+export function soloBossHpEase(floor) {
+  return easeRamp(floor, TDC.enemy.soloBossHpFullFloor || 28, TDC.enemy.soloBossHpEarly ?? 1);
+}
+
+/** Solo boss ATK ease — F10 ~0.74 → full by soloBossAtkFullFloor. */
+export function soloBossAtkEase(floor) {
+  return easeRamp(floor, TDC.enemy.soloBossAtkFullFloor || 28, TDC.enemy.soloBossAtkEarly ?? 1);
+}
+
+/**
+ * How much banked charge feeds solo boss special damage.
+ * Early gates were one-shotting with at:6 specials (1 + 0.14×6 = 1.84×).
+ */
+export function soloBossChargeForScale(floor, charge) {
+  const cap = TDC.enemy.soloBossChargeCap;
+  if (cap == null) return charge || 0;
+  const full = TDC.enemy.soloBossChargeCapFullFloor || 22;
+  if ((floor || 1) >= full) return charge || 0;
+  return Math.min(charge || 0, cap);
+}
+
 /** Scale factors applied to a hand-authored enemy spec at a given floor. */
-export function enemyScale(floor, biomeStart, biomeId, { boss = false, elite = false } = {}) {
+export function enemyScale(floor, biomeStart, biomeId, {
+  boss = false, elite = false, partySize = 1, soloEase = true,
+} = {}) {
   const depth = Math.max(0, floor - biomeStart);
   const bio = biomeMods(biomeId);
   const role = boss
@@ -212,10 +284,27 @@ export function enemyScale(floor, biomeStart, biomeId, { boss = false, elite = f
   if (boss) {
     hp *= 1 + (floor - 1) * TDC.enemy.bossFloorHp;
     atk *= 1 + (floor - 1) * TDC.enemy.bossFloorAtk;
+    // Soften early gatekeepers; full bite by bossAtkFullFloor.
+    const full = TDC.enemy.bossAtkFullFloor || 28;
+    const early = TDC.enemy.bossAtkEarly ?? 0.75;
+    const t = full <= 1 ? 1 : Math.min(1, Math.max(0, (floor - 1) / (full - 1)));
+    atk *= early + (1 - early) * t;
+    // Solo gates were overtuned vs on-curve climbers (F10 Thornbeast wipes).
+    if (soloEase && (partySize || 1) <= 1) {
+      hp *= soloBossHpEase(floor);
+      atk *= soloBossAtkEase(floor);
+    }
   } else {
     // Absolute floor pressure — biome depth alone under-tanks mid-climb commons
     hp *= 1 + (floor - 1) * (TDC.enemy.floorHp || 0);
     if (TDC.enemy.floorAtk) atk *= 1 + (floor - 1) * TDC.enemy.floorAtk;
+    // Soft early trash — naked climbers have almost no DEF to soak packs.
+    const full = TDC.enemy.trashAtkFullFloor || 16;
+    const early = TDC.enemy.trashAtkEarly ?? 0.7;
+    const t = full <= 1 ? 1 : Math.min(1, Math.max(0, (floor - 1) / (full - 1)));
+    atk *= early + (1 - early) * t;
+    // Solo packs focus one climber — extra early softener (co-op unchanged).
+    if (soloEase && (partySize || 1) <= 1) atk *= soloTrashAtkEase(floor);
   }
 
   return { hp, atk, def, spd, chargeGain, depth };
@@ -251,8 +340,12 @@ export function partyBossAtkMult(partySize = 1, floor = 51) {
 
 /** Co-op boss HP mult — keeps focus-fire fights ≥5 turns as party size grows. */
 export function partyBossHpMult(partySize = 1, floor = 51) {
-  // HP pad is full from the start so early co-op bosses still take ≥5 focus turns.
-  return partySizePad(TDC.party.bossHpBySize, TDC.party.bossHpPerExtra, partySize);
+  const full = partySizePad(TDC.party.bossHpBySize, TDC.party.bossHpPerExtra, partySize);
+  if (partySize <= 1 || full <= 1) return 1;
+  // Soft early: full 2.2× at F10 felt unwinnable; still multi-turn by F28.
+  const start = TDC.party.bossHpEaseAtStart ?? 0.7;
+  const t = start + (1 - start) * partyPadEase(floor);
+  return 1 + (full - 1) * t;
 }
 
 /** Per-target AOE damage share in co-op — n^(-aoeExp); tuned with clearRate CDF. */
@@ -281,7 +374,18 @@ export function softLevelDamage(level, weight) {
 /** Soft-cap a raw level-up HP gain once past the midpoint climb. */
 export function softHpGain(level, rawGain) {
   if (level <= TDC.player.hpSoftAfterLevel) return rawGain;
-  return Math.max(2, Math.round(rawGain * TDC.player.hpSoftFactor));
+  return Math.max(1, Math.round(rawGain * TDC.player.hpSoftFactor));
+}
+
+/** Innate DEF from climber level (gear stacks on top; both feed applyDefense). */
+export function levelDefBonus(level) {
+  const lv = Math.max(1, level || 1);
+  const per = TDC.player.levelDefPerLevel ?? 0.95;
+  const softAfter = TDC.player.levelDefSoftAfter ?? 14;
+  const softFactor = TDC.player.levelDefSoftFactor ?? 0.4;
+  if (lv <= 1) return 0;
+  if (lv <= softAfter) return (lv - 1) * per;
+  return (softAfter - 1) * per + (lv - softAfter) * per * softFactor;
 }
 
 /** Cap stacked damage-taken multipliers so mitigation ≤ mitigationCap. */

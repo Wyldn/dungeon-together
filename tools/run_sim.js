@@ -1,4 +1,5 @@
 // Full-climb Monte Carlo — solo / co-op clear-rate survival CDF.
+// Uses real newRun progression: gainXp, equipment/relic rolls, headless events.
 //   node tools/run_sim.js [seed] [trials] [partySize]
 // partySize omitted → print 1p–4p. Measures brick / F30+ / F51 clear vs TDC.clearRate.
 
@@ -9,112 +10,161 @@ import {
 } from '../js/data/enemies.js';
 import { planEncounter, planBossEncounter } from '../js/data/balance.js';
 import { makeRng } from '../js/rng.js';
-import { syntheticClimber, simulateFight, percentile } from './combat_sim.js';
+import { simulateFight, percentile } from './combat_sim.js';
+import {
+  createSimRun,
+  climberFromRun,
+  applyFightToRun,
+  grantCombatLoot,
+  estimateCombatRewards,
+  resolveSimEvent,
+  applyCombatRewardHeadless,
+} from './sim_run_state.js';
+import { derived } from '../js/character.js';
 
 const LAST = TDC.lastFloor;
-const BOSS_FLOORS = new Set(Object.keys(BOSSES).map(Number));
+const BOSS_FLOORS = setFromKeys(BOSSES);
+
+function setFromKeys(obj) {
+  return new Set(Object.keys(obj).map(Number));
+}
 
 /** Survival CDF targets (started runs) — authoritative copy on TDC.clearRate. */
 export const CLEAR_RATE_TARGETS = TDC.clearRate;
 
-function healPct(p, pct) {
-  if (pct <= 0 || p.hp <= 0) return;
-  p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * pct));
+function livingRuns(party) {
+  return party.filter(r => r.hp > 0 && !r.down);
 }
 
-function healParty(party, pct) {
-  for (const p of party) healPct(p, pct);
+function healPartyRuns(party, pct) {
+  for (const r of party) {
+    if (r.hp <= 0) continue;
+    r.hp = Math.min(r.maxHp, r.hp + Math.round(r.maxHp * pct));
+  }
 }
 
 function applyFloorBreath(party) {
-  healParty(party, CONFIG.recovery.floorHealPct);
+  healPartyRuns(party, CONFIG.recovery.floorHealPct);
 }
 
-/** Roll start quality band — underdogs + mid + strong kits. */
-function rollBand(rng) {
-  const r = rng.next();
-  if (r < 0.22) return 0.18 + rng.next() * 0.14;
-  if (r < 0.72) return 0.38 + rng.next() * 0.24;
-  return 0.62 + rng.next() * 0.28;
-}
-
-function syncClimber(p, floor, band) {
-  const next = syntheticClimber(floor, band, p.classBias);
-  const gained = Math.max(0, next.maxHp - p.maxHp);
-  p.level = next.level;
-  p.stats = next.stats;
-  p.atk = next.atk;
-  p.def = next.def;
-  p.dmgMult = next.dmgMult;
-  p.dmgTakenMult = next.dmgTakenMult;
-  p.crit = next.crit;
-  p.dodge = next.dodge;
-  p.maxHp = next.maxHp;
-  p.mp = next.mp;
-  p.maxMp = next.maxMp;
-  p.hp = Math.min(p.maxHp, p.hp + gained);
-  p.floor = floor;
-  p.band = band;
-}
-
-function syncParty(party, floor) {
-  for (const p of party) syncClimber(p, floor, p.band);
-}
-
-function living(party) {
-  return party.filter(p => p.hp > 0);
-}
-
-function applyFightResult(party, r) {
-  if (r.hpLeftAll) {
-    for (let i = 0; i < party.length; i++) party[i].hp = Math.max(0, r.hpLeftAll[i] ?? 0);
-  } else if (r.won) {
-    // solo fallback
-    const survivor = party.find(p => p.hp > 0) || party[0];
-    survivor.hp = Math.max(1, r.hpLeft);
+function syncFloorMeta(party, floor) {
+  const biome = biomeForFloor(floor);
+  for (const r of party) {
+    r.floor = floor;
+    r.biomeId = biome.id;
   }
 }
 
-function isBossFloor(f) { return BOSS_FLOORS.has(f); }
-function isCampfireFloor(f) { return isBossFloor(f + 1); }
-function isTrialFloor(f) { return f % 5 === 0 && !isBossFloor(f); }
+/**
+ * Fight with climbers derived from real runs; write vitals/loot/XP back.
+ */
+function fightParty(rng, party, specs, opts) {
+  const aliveIdx = [];
+  const climbers = [];
+  for (let i = 0; i < party.length; i++) {
+    if (party[i].hp > 0 && !party[i].down) {
+      aliveIdx.push(i);
+      climbers.push(climberFromRun(party[i]));
+    }
+  }
+  if (!climbers.length) {
+    return { won: false, hpLeftAll: party.map(() => 0) };
+  }
+
+  const r = simulateFight(rng, climbers, specs, opts);
+  const { gold, xp } = estimateCombatRewards(specs, opts.floor, rng, { boss: !!opts.boss });
+  const goldEach = Math.round(gold / Math.max(1, climbers.length));
+  const xpEach = Math.round(xp / Math.max(1, climbers.length));
+  const elite = specs.some(s => s.elite);
+
+  for (let j = 0; j < climbers.length; j++) {
+    const run = party[aliveIdx[j]];
+    const won = r.won && climbers[j].hp > 0;
+    applyFightToRun(run, climbers[j], r, {
+      won,
+      xp: r.won ? xpEach : 0,
+      gold: r.won ? Math.round(goldEach * (derived(run).goldMult || 1) * (derived(run).combatGoldMult || 1)) : 0,
+      boss: !!opts.boss,
+    });
+    if (r.won && won) {
+      grantCombatLoot(run, rng, { boss: !!opts.boss, elite });
+    }
+  }
+
+  // Downed allies keep hp 0
+  for (let i = 0; i < party.length; i++) {
+    if (!aliveIdx.includes(i) && party[i].hp <= 0) party[i].down = true;
+  }
+
+  return r;
+}
+
+function resolveEventCombat(rng, run, combatSpecs, floor, biomeStart, fightReward = null) {
+  if (!combatSpecs?.length) return true;
+  // Specs must already be full templates (hp/atk/specials) from resolveEventCombatPack.
+  const climber = climberFromRun(run);
+  const r = simulateFight(rng, climber, combatSpecs, {
+    floor, biomeStart, maxRounds: 35,
+  });
+  const { gold, xp } = estimateCombatRewards(combatSpecs, floor, rng);
+  applyFightToRun(run, climber, r, {
+    won: r.won,
+    xp: r.won ? xp : 0,
+    gold: r.won ? Math.round(gold * (derived(run).goldMult || 1)) : 0,
+    boss: false,
+  });
+  if (r.won) {
+    grantCombatLoot(run, rng, { elite: combatSpecs.some(s => s.elite) });
+    // Event-specific spoils bag (techniques / guaranteed gear / farmer loot).
+    applyCombatRewardHeadless(run, fightReward, rng, { paySkills: true });
+  }
+  return r.won;
+}
 
 /**
- * One synthetic climb for `partySize` climbers (1–4).
- * Wipe = whole party down. Returns { cleared, deathFloor, maxFloor, partySize }.
+ * One climb for `partySize` real runs (1–4 independent kits).
+ * Wipe = whole party down. Returns { cleared, deathFloor, maxFloor, partySize, sample? }.
  */
-export function simulateRun(rng, { band = null, partySize = 1 } = {}) {
+export function simulateRun(rng, { partySize = 1, trackProgress = false } = {}) {
   const n = Math.max(1, Math.min(4, partySize | 0));
   const party = [];
   for (let i = 0; i < n; i++) {
-    const q = band ?? rollBand(rng);
-    const classBias = rng.pick(['str', 'dex', 'int']);
-    const snap = syntheticClimber(1, q, classBias);
-    party.push({ ...snap, hp: snap.maxHp, classBias, band: q });
+    party.push(createSimRun(rng));
   }
+
   const runMeta = { bossPicks: {} };
+  // Share boss picks across party for consistent encounters
+  for (const r of party) r.bossPicks = runMeta.bossPicks;
+
   let maxFloor = 0;
+  const progress = trackProgress ? [] : null;
 
   for (let floor = 1; floor <= LAST; floor++) {
     maxFloor = floor;
-    syncParty(party, floor);
-    // Wipe only if everyone is down (co-op carry). Downed stay out until campfire.
-    if (!living(party).length) {
-      return { cleared: false, deathFloor: floor, maxFloor, partySize: n };
+    syncFloorMeta(party, floor);
+
+    if (!livingRuns(party).length) {
+      return {
+        cleared: false, deathFloor: floor, maxFloor, partySize: n,
+        sample: trackProgress ? snapshotParty(party, progress) : undefined,
+      };
     }
 
     const biome = biomeForFloor(floor);
     const biomeStart = isBossFloor(floor) ? floor : biome.floors[0];
 
     if (isCampfireFloor(floor)) {
-      // Campfire: revive downed allies, then Sleep heal.
       if (n > 1) {
-        for (const p of party) {
-          if (p.hp <= 0) p.hp = Math.max(1, Math.round(p.maxHp * CONFIG.death.respawnHpPct));
+        for (const r of party) {
+          if (r.hp <= 0 || r.down) {
+            r.down = false;
+            r.hp = Math.max(1, Math.round(r.maxHp * CONFIG.death.respawnHpPct));
+          }
         }
       }
-      healParty(party, 0.40);
+      healPartyRuns(party, 0.40);
       applyFloorBreath(party);
+      if (trackProgress) progress.push(snapFloor(party, floor, 'camp'));
       continue;
     }
 
@@ -123,9 +173,7 @@ export function simulateRun(rng, { band = null, partySize = 1 } = {}) {
       const plan = planBossEncounter(rng, {
         floor, boss, pool: ENEMIES[biome.id] || [], partySize: n,
       });
-      const r = simulateFight(rng, party, plan.specs, {
-        // Escorts use the boss floor as biomeStart (depth 0) — absolute floorHp
-        // still applies; avoids double-dipping biome depth on gatekeepers.
+      const r = fightParty(rng, party, plan.specs, {
         floor,
         biomeStart: floor,
         hpMult: plan.hpMult * partyBossHpMult(n, floor),
@@ -134,13 +182,20 @@ export function simulateRun(rng, { band = null, partySize = 1 } = {}) {
         boss: true,
         maxRounds: 60,
       });
-      applyFightResult(party, r);
-      if (!r.won || !living(party).length) {
-        return { cleared: false, deathFloor: floor, maxFloor, partySize: n };
+      if (!r.won || !livingRuns(party).length) {
+        return {
+          cleared: false, deathFloor: floor, maxFloor, partySize: n,
+          sample: trackProgress ? snapshotParty(party, progress) : undefined,
+        };
       }
-      healParty(living(party), CONFIG.recovery.bossVictoryHealPct);
-      applyFloorBreath(party);
-      if (floor === LAST) return { cleared: true, deathFloor: null, maxFloor, partySize: n };
+      applyFloorBreath(livingRuns(party));
+      if (trackProgress) progress.push(snapFloor(party, floor, 'boss'));
+      if (floor === LAST) {
+        return {
+          cleared: true, deathFloor: null, maxFloor, partySize: n,
+          sample: trackProgress ? snapshotParty(party, progress) : undefined,
+        };
+      }
       continue;
     }
 
@@ -150,15 +205,17 @@ export function simulateRun(rng, { band = null, partySize = 1 } = {}) {
         floor, biomeStart, pool: ENEMIES[biome.id], partySize: n,
         allowElite: floor - biomeStart >= 3,
       });
-      const r = simulateFight(rng, party, plan.specs, {
+      const r = fightParty(rng, party, plan.specs, {
         floor, biomeStart, hpMult: plan.hpMult * (mod.hpMult || 1), maxRounds: 40,
       });
-      applyFightResult(party, r);
-      if (!r.won || !living(party).length) {
-        return { cleared: false, deathFloor: floor, maxFloor, partySize: n };
+      if (!r.won || !livingRuns(party).length) {
+        return {
+          cleared: false, deathFloor: floor, maxFloor, partySize: n,
+          sample: trackProgress ? snapshotParty(party, progress) : undefined,
+        };
       }
-      healParty(living(party), CONFIG.recovery.victoryHealPct);
-      applyFloorBreath(party);
+      applyFloorBreath(livingRuns(party));
+      if (trackProgress) progress.push(snapFloor(party, floor, 'trial'));
       continue;
     }
 
@@ -168,29 +225,106 @@ export function simulateRun(rng, { band = null, partySize = 1 } = {}) {
         floor, biomeStart, pool: ENEMIES[biome.id], partySize: n,
         allowElite: floor - biomeStart >= 4,
       });
-      const r = simulateFight(rng, party, plan.specs, {
+      const r = fightParty(rng, party, plan.specs, {
         floor, biomeStart, hpMult: plan.hpMult, maxRounds: 40,
       });
-      applyFightResult(party, r);
-      if (!r.won || !living(party).length) {
-        return { cleared: false, deathFloor: floor, maxFloor, partySize: n };
+      if (!r.won || !livingRuns(party).length) {
+        return {
+          cleared: false, deathFloor: floor, maxFloor, partySize: n,
+          sample: trackProgress ? snapshotParty(party, progress) : undefined,
+        };
       }
-      healParty(living(party), CONFIG.recovery.victoryHealPct);
-    } else if (roll < 0.66) {
-      // Risky event — tax one random climber (others can carry).
-      const victim = rng.pick(living(party));
-      const drain = 0.08 + rng.next() * 0.14;
-      victim.hp = Math.max(0, victim.hp - Math.round(victim.maxHp * drain));
-      if (!living(party).length) {
-        return { cleared: false, deathFloor: floor, maxFloor, partySize: n };
+    } else {
+      // Real event draws + headless outcomes (incl. fight choices + combat.reward).
+      for (const run of livingRuns(party)) {
+        const result = resolveSimEvent(run, rng, { partySize: n });
+        if (result.combatSpecs?.length) {
+          const ok = resolveEventCombat(
+            rng, run, result.combatSpecs, floor, biomeStart, result.fightReward,
+          );
+          if (!ok && !livingRuns(party).length) {
+            return {
+              cleared: false, deathFloor: floor, maxFloor, partySize: n,
+              sample: trackProgress ? snapshotParty(party, progress) : undefined,
+            };
+          }
+        }
       }
-    } else if (rng.chance(0.55)) {
-      healParty(living(party), 0.10 + rng.next() * 0.12);
+      if (!livingRuns(party).length) {
+        return {
+          cleared: false, deathFloor: floor, maxFloor, partySize: n,
+          sample: trackProgress ? snapshotParty(party, progress) : undefined,
+        };
+      }
     }
-    applyFloorBreath(party);
+    applyFloorBreath(livingRuns(party));
+    if (trackProgress && (floor % 5 === 0 || floor <= 3)) {
+      progress.push(snapFloor(party, floor, 'floor'));
+    }
   }
 
-  return { cleared: true, deathFloor: null, maxFloor: LAST, partySize: n };
+  return {
+    cleared: true, deathFloor: null, maxFloor: LAST, partySize: n,
+    sample: trackProgress ? snapshotParty(party, progress) : undefined,
+  };
+}
+
+function isBossFloor(f) { return BOSS_FLOORS.has(f); }
+function isCampfireFloor(f) { return isBossFloor(f + 1); }
+function isTrialFloor(f) { return f % 5 === 0 && !isBossFloor(f); }
+
+function snapFloor(party, floor, kind) {
+  const r = party[0];
+  const d = derived(r);
+  const eq = Object.values(r.equipment || {}).filter(Boolean);
+  return {
+    floor, kind,
+    level: r.level,
+    atk: d.atk,
+    def: d.def,
+    maxHp: r.maxHp,
+    gold: r.gold,
+    relics: (r.relics || []).length,
+    equipped: eq.length,
+    inventory: (r.inventory || []).length,
+    skills: (r.skills || []).length,
+    fame: r.fame || 0,
+    uniques: countUniques(r),
+  };
+}
+
+function countUniques(run) {
+  let n = 0;
+  const ids = [
+    ...Object.values(run.equipment || {}).filter(Boolean),
+    ...(run.inventory || []),
+  ];
+  for (const id of ids) {
+    const it = run.gearBag?.[id];
+    if (it?.rarity === 'unique' || it?.rarity === 'wrld') n++;
+    else if (typeof id === 'string' && (id.includes('unique') || id.startsWith('u_'))) n++;
+  }
+  return n;
+}
+
+function snapshotParty(party, progress) {
+  return {
+    progress,
+    final: party.map(r => ({
+      classId: r.classId,
+      raceId: r.raceId,
+      level: r.level,
+      floor: r.floor,
+      atk: derived(r).atk,
+      def: derived(r).def,
+      maxHp: r.maxHp,
+      gold: r.gold,
+      relics: [...(r.relics || [])],
+      equipment: { ...r.equipment },
+      skills: [...(r.skills || [])],
+      fame: r.fame,
+    })),
+  };
 }
 
 /**
@@ -206,7 +340,6 @@ export function runClearRateSim({ seed = 20260719, trials = 2000, partySize = 1 
   const maxFloors = [];
 
   for (let i = 0; i < trials; i++) {
-    // Keep 1p stream stable; offset co-op sizes so they don't share the same rolls.
     const rng = makeRng((seed + i * 9973 + (n - 1) * 100003) >>> 0);
     const r = simulateRun(rng, { partySize: n });
     maxFloors.push(r.maxFloor);
@@ -266,13 +399,35 @@ export function runClearRateSuite({ seed = 20260719, trials = 2000 } = {}) {
   return [1, 2, 3, 4].map(partySize => runClearRateSim({ seed, trials, partySize }));
 }
 
+/** Smoke: few tracked climbs to verify gear/relics grow with floor. */
+export function smokeProgress({ seed = 42, partySize = 1, trials = 3 } = {}) {
+  const out = [];
+  for (let i = 0; i < trials; i++) {
+    const rng = makeRng((seed + i * 9137 + partySize * 1009) >>> 0);
+    out.push(simulateRun(rng, { partySize, trackProgress: true }));
+  }
+  return out;
+}
+
 // CLI
 const isMain = process.argv[1] && /run_sim\.js/.test(process.argv[1].replace(/\\/g, '/'));
 if (isMain) {
   const seed = Number(process.argv[2] || 20260719);
   const trials = Number(process.argv[3] || 2000);
   const only = process.argv[4] != null ? Number(process.argv[4]) : null;
-  if (only != null && only >= 1 && only <= 4) {
+  if (process.argv[2] === 'smoke') {
+    const ps = Number(process.argv[3] || 1);
+    const n = Number(process.argv[4] || 3);
+    for (const r of smokeProgress({ seed: 42, partySize: ps, trials: n })) {
+      console.log(JSON.stringify({
+        cleared: r.cleared,
+        maxFloor: r.maxFloor,
+        deathFloor: r.deathFloor,
+        progress: r.sample?.progress,
+        final: r.sample?.final?.[0],
+      }, null, 2));
+    }
+  } else if (only != null && only >= 1 && only <= 4) {
     console.log(formatClearReport(runClearRateSim({ seed, trials, partySize: only })));
   } else {
     for (const rep of runClearRateSuite({ seed, trials })) {

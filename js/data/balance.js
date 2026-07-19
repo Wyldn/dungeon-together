@@ -6,7 +6,7 @@
 // expected rounds-to-kill, damage taken, and resource spend.
 
 import { CONFIG } from './config.js';
-import { TDC, expectedPower, enemyScale, partyPadEase } from './tdc.js';
+import { TDC, expectedPower, expectedCurveT, enemyScale, partyPadEase } from './tdc.js';
 import { biomeForFloor } from './enemies.js';
 
 /* ================================================================== */
@@ -140,7 +140,10 @@ export function mechanicBudgetCost(spec) {
 export function enemyThreatCost(spec, floor, biomeStart, { boss = false } = {}) {
   const biome = biomeForFloor(floor);
   const start = biomeStart ?? biome.floors[0];
-  const sc = enemyScale(floor, start, biome.id, { boss: boss || !!spec.boss, elite: !!spec.elite });
+  // Skip solo ATK ease so pack composition stays stable vs co-op budgets.
+  const sc = enemyScale(floor, start, biome.id, {
+    boss: boss || !!spec.boss, elite: !!spec.elite, soloEase: false,
+  });
   const hp = (spec.hp || 1) * sc.hp;
   const atk = (spec.atk || 1) * sc.atk;
   const def = (spec.def || 0) * sc.def;
@@ -166,18 +169,34 @@ export function residualHpMult(remaining, totalBudget) {
 }
 
 /**
- * Fill an encounter from a pool under a threat budget.
- * Prefers additional bodies; leftover budget → mild HP mult only.
- *
- * Solo early tower (first two biomes) caps body count so a lone climber
- * is not handed 1v4 trash packs before they have tools.
+ * Trash pack body bands.
+ *   solo early: 1–2 / 1–3  |  2p: 2–3  |  3p: 3–4  |  4p: 4–5
+ * Co-op bands are permanent (action economy). Solo only caps early tower.
  */
-export function soloEarlyMaxEnemies(floor, partySize = 1) {
-  if ((partySize || 1) > 1) return null;
+export function partyBodyLimits(floor, partySize = 1) {
   const f = floor | 0;
-  if (f <= 10) return 2;  // Whispering Forest
-  if (f <= 20) return 3;  // Sunken Ruins
-  return null;
+  const n = Math.max(1, Math.min(4, partySize | 0));
+  if (n <= 1) {
+    if (f <= 10) return { min: 1, max: 2 };
+    if (f <= 20) return { min: 1, max: 3 };
+    return { min: 1, max: null };
+  }
+  const bands = {
+    2: { min: 2, max: 3 },
+    3: { min: 3, max: 4 },
+    4: { min: 4, max: 5 },
+  };
+  return bands[n] || { min: 1, max: null };
+}
+
+/** Max bodies only — used by planEncounter fill loop. */
+export function earlyMaxEnemies(floor, partySize = 1) {
+  return partyBodyLimits(floor, partySize).max;
+}
+
+/** @deprecated use earlyMaxEnemies / partyBodyLimits */
+export function soloEarlyMaxEnemies(floor, partySize = 1) {
+  return earlyMaxEnemies(floor, partySize);
 }
 
 export function planEncounter(rng, {
@@ -193,8 +212,11 @@ export function planEncounter(rng, {
   const usable = allowElite ? [...pool] : pool.filter(e => !e.elite);
   if (!usable.length) return { specs: [], hpMult: 1, budget, spent: 0 };
 
-  const cap = maxEnemies ?? soloEarlyMaxEnemies(floor, partySize);
+  const limits = partyBodyLimits(floor, partySize);
+  const cap = maxEnemies ?? limits.max;
+  const minBodies = limits.min || 1;
   const roomFor = (n = 1) => !cap || specs.length + n <= cap;
+  const nParty = Math.max(1, partySize | 0);
 
   // Swarm draws (AoE showcase): many cheap pack bodies instead of a heavy
   // lead. Same threat budget — more targets, thinner blood each.
@@ -222,12 +244,13 @@ export function planEncounter(rng, {
   if (lead.pack && roomFor(1)) {
     const depth = Math.max(0, floor - biomeStart);
     let extras;
-    if (cap != null && (partySize || 1) <= 1) {
+    if (nParty <= 1) {
       // Solo early: usually +1 mate, sometimes a lone pack leader
       extras = depth < 4 && rng.chance(0.35) ? 0 : 1;
       if (cap === 2) extras = Math.min(extras, 1);
     } else {
-      extras = depth < 3 ? 1 : rng.int(1, 2);
+      // Co-op: one mate from the pack tag; fill loop / minBodies handles the rest
+      extras = 1;
     }
     if (cap != null) extras = Math.min(extras, Math.max(0, cap - specs.length));
     for (let i = 0; i < extras; i++) {
@@ -246,7 +269,7 @@ export function planEncounter(rng, {
   // Spend remaining budget on more bodies (party scaling lives here).
   // Allow mild overspend (fillThreshold) so co-op buys actions, not just HP pads.
   let guard = 0;
-  const fillAt = TDC.budget.fillThreshold;
+  const fillAt = TDC.budget.fillThreshold ?? 0.55;
   while (guard++ < 8) {
     const bodyCap = swarm ? swarmCap : cap;
     if (bodyCap != null && specs.length >= bodyCap) break;
@@ -255,15 +278,33 @@ export function planEncounter(rng, {
       ? { e: lead, cost: enemyThreatCost(lead, floor, biomeStart) }
       : cheapest();
     if (!next) break;
-    if (next.cost > remaining && next.cost * fillAt > remaining) break;
-    if (!swarm && specs.length >= 2 + Math.max(0, (partySize | 0) - 1) && remaining < next.cost * 0.85 && rng.chance(0.4)) break;
+    // Always allow fills until the party min band is met.
+    if (specs.length >= minBodies && next.cost > remaining && next.cost * fillAt > remaining) break;
+    if (!swarm && specs.length >= minBodies && specs.length >= 2 + Math.max(0, nParty - 1)
+      && remaining < next.cost * 0.85 && rng.chance(0.4)) break;
+    specs.push(next.e);
+    remaining -= next.cost;
+  }
+
+  // Enforce co-op min band (2p≥2, 3p≥3, 4p≥4) even if budget is tight.
+  guard = 0;
+  while (specs.length < minBodies && guard++ < 6) {
+    const next = cheapest();
+    if (!next) break;
+    if (cap != null && specs.length >= cap) break;
     specs.push(next.e);
     remaining -= next.cost;
   }
 
   const spent = budget - remaining;
-  const hpMult = residualHpMult(remaining, budget);
-  return { specs, hpMult, budget, spent, remaining, maxEnemies: cap, swarm };
+  // Cap leftover→HP harder in co-op: body bands leave budget on the table,
+  // and turning that into +16% HP made packs feel immortal.
+  let hpMult = residualHpMult(remaining, budget);
+  if (nParty > 1 && hpMult > 1) {
+    const soften = TDC.budget.coopResidualHpScale ?? 0.55;
+    hpMult = 1 + (hpMult - 1) * soften;
+  }
+  return { specs, hpMult, budget, spent, remaining, maxEnemies: cap, minEnemies: minBodies, swarm };
 }
 
 /**
@@ -390,7 +431,7 @@ export function validateLoadout(items = [], { floor = 1 } = {}) {
   const power = expectedPower(floor);
   const maxScore = TDC.validators.loadoutScoreAt1
     + (TDC.validators.loadoutScoreAt51 - TDC.validators.loadoutScoreAt1)
-      * ((Math.min(TDC.lastFloor, floor) - 1) / (TDC.lastFloor - 1));
+      * expectedCurveT(floor);
   const reasons = [];
   if (score > maxScore * TDC.validators.loadoutSlack) {
     reasons.push(`loadout score ${score.toFixed(1)} > cap ${maxScore.toFixed(1)}`);

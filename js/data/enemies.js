@@ -162,8 +162,8 @@ export const BOSSES = {
     chargeGain: 1,
     specials: [
       { at: 3, name: 'Limb Sweep', mult: 1.35, aoe: true, desc: 'branches groan overhead' },
-      { at: 5, name: 'Falling Canopy', mult: 1.55, aoe: true, desc: 'the whole crown comes down' },
-      { at: 6, name: 'FOREST\'S VERDICT', mult: 2.0, desc: 'ten thousand judged climbers watch through its rings' },
+      { at: 5, name: 'Falling Canopy', mult: 1.5, aoe: true, desc: 'the whole crown comes down' },
+      { at: 6, name: 'FOREST\'S VERDICT', mult: 1.75, desc: 'ten thousand judged climbers watch through its rings' },
     ],
     intro: 'The oldest tree in the forest uproots itself. It has judged ten thousand climbers.\nIt has approved of none.',
     taunt: 'YOU BURN LIKE ALL THE REST.',
@@ -174,7 +174,8 @@ export const BOSSES = {
   // slot the every-5th-floor trial used to hold) and F14 becomes a campfire.
   15: {
     id: 'crowned_revenant', name: 'The Crowned Revenant', glyph: '🗡️', biome: 'ruins',
-    hp: 260, atk: 26, def: 5, spd: 6, gold: [75, 110], xp: 75, boss: true,
+    // Midboss — tuned under F20; solo ease + this HP keep on-curve clears ~40%+ HP.
+    hp: 235, atk: 26, def: 5, spd: 6, gold: [75, 110], xp: 75, boss: true,
     chargeGain: 1,
     specials: [
       { at: 3, name: 'Oathbreaker', mult: 1.35, desc: 'the greatsword drags a line through the dust' },
@@ -257,12 +258,13 @@ export const BOSSES = {
 export const ALT_BOSSES = {
   10: {
     id: 'heartwood', name: 'The Thornbeast', glyph: '🦔', biome: 'forest',
-    hp: 190, atk: 27, def: 5, spd: 2, gold: [60, 90], xp: 60, regen: 0.025, boss: true,
+    // Parity with Elderwood — was def5/regen2.5% and noticeably harder at equal power.
+    hp: 190, atk: 27, def: 4, spd: 2, gold: [60, 90], xp: 60, regen: 0.02, boss: true,
     chargeGain: 1,
     specials: [
-      { at: 3, name: 'Bristle Storm', mult: 1.4, aoe: true, desc: 'spines fan out like a crown' },
-      { at: 5, name: 'Quill Nova', mult: 1.6, aoe: true, desc: 'the whole hide fires at once' },
-      { at: 6, name: 'CANOPY IMPALE', mult: 1.9, desc: 'every thorn remembers a climber' },
+      { at: 3, name: 'Bristle Storm', mult: 1.35, aoe: true, desc: 'spines fan out like a crown' },
+      { at: 5, name: 'Quill Nova', mult: 1.5, aoe: true, desc: 'the whole hide fires at once' },
+      { at: 6, name: 'CANOPY IMPALE', mult: 1.7, desc: 'every thorn remembers a climber' },
     ],
     intro: 'Where the Guardian judges with rings, this beast judges with spines.\nIt has been waiting under the roots for something soft enough to pierce.',
     taunt: 'THE FOREST WEARS ME LIKE ARMOR.',
@@ -376,36 +378,53 @@ export function bossById(id) {
   return null;
 }
 
-/** Event / social NPCs — harder than mimics at the same floor (elite-leaning). */
+/**
+ * Chest mimic — event-only. Uses elite TDC role; bases stay off the floor budget
+ * so clear-rate targets (brick / long / win) are unaffected.
+ */
+export function mimicSpec(floor) {
+  return {
+    id: 'mimic', name: 'Mimic', glyph: '🦷',
+    hp: 42 + floor * 5, atk: 8 + floor, def: 3, spd: 8,
+    gold: [48 + floor * 4, 72 + floor * 5], xp: 20 + floor * 3,
+    elite: true,
+    specials: [
+      { at: 3, name: 'Lid Bite', mult: 1.55, desc: 'the hinge screams' },
+      { at: 5, name: 'Chest Slam', mult: 1.8, stun: 0.2, desc: 'the lid comes down like a guillotine' },
+    ],
+  };
+}
+
+/** Event / social NPCs — harder than mimics at the same floor (elite-leaning). Farmers stay weak. */
 export const NPC_ENEMIES = {
   // Knight Hero Platformer pack (anim/warrior) — social duel NPC.
   blade_hero: {
-    id: 'blade_hero', name: 'Oathbound Champion', glyph: '⚔️', hp: 50, atk: 11, def: 3, spd: 7,
-    gold: [28, 48], xp: 22, intelligent: true, elite: true,
+    id: 'blade_hero', name: 'Oathbound Champion', glyph: '⚔️', hp: 64, atk: 13, def: 4, spd: 7,
+    gold: [34, 58], xp: 28, intelligent: true, elite: true,
     specials: [
-      { at: 3, name: 'Oath Swing', mult: 1.55, desc: 'raises a well-kept blade' },
-      { at: 5, name: 'Shield Answer', mult: 1.35, desc: 'plants and answers' },
+      { at: 3, name: 'Oath Swing', mult: 1.7, desc: 'raises a well-kept blade' },
+      { at: 5, name: 'Shield Answer', mult: 1.5, desc: 'plants and answers' },
     ],
   },
   // Blue-mage pack (anim/mage) — a scholar who slid into forbidden work.
   dark_mage: {
-    id: 'dark_mage', name: 'Apostate Channeler', glyph: '🔮', hp: 44, atk: 12, def: 2, spd: 8,
-    gold: [30, 52], xp: 24, caster: true, intelligent: true, elite: true,
+    id: 'dark_mage', name: 'Apostate Channeler', glyph: '🔮', hp: 56, atk: 14, def: 3, spd: 8,
+    gold: [36, 62], xp: 30, caster: true, intelligent: true, elite: true,
     specials: [
-      { at: 3, name: 'Black Margin', mult: 1.45, aoe: true, desc: 'ink-smoke curls into a hex' },
-      { at: 5, name: 'Unwritten Name', mult: 1.7, desc: 'whispers something the tower forgot' },
+      { at: 3, name: 'Black Margin', mult: 1.6, aoe: true, desc: 'ink-smoke curls into a hex' },
+      { at: 5, name: 'Unwritten Name', mult: 1.85, desc: 'whispers something the tower forgot' },
     ],
   },
   pathfinder_veteran: {
-    id: 'pathfinder_veteran', name: 'Pathfinder Veteran', glyph: '🏹', hp: 44, atk: 11, def: 2, spd: 10,
-    gold: [26, 46], xp: 23, intelligent: true, elite: true,
-    specials: [{ at: 3, name: 'Trail Shot', mult: 1.6, desc: 'nocks without looking' }],
+    id: 'pathfinder_veteran', name: 'Pathfinder Veteran', glyph: '🏹', hp: 56, atk: 13, def: 3, spd: 11,
+    gold: [32, 56], xp: 29, intelligent: true, elite: true,
+    specials: [{ at: 3, name: 'Trail Shot', mult: 1.75, desc: 'nocks without looking' }],
   },
   // Pre-bob Viking class look (viking_axe_pack idle strip).
   axe_northman: {
-    id: 'axe_northman', name: 'Axe-Pack Veteran', glyph: '🪓', hp: 54, atk: 12, def: 3, spd: 6,
-    gold: [34, 58], xp: 26, intelligent: true, elite: true,
-    specials: [{ at: 4, name: 'Bearded Cleave', mult: 1.75, desc: 'hefts an axe that remembers coastlines' }],
+    id: 'axe_northman', name: 'Axe-Pack Veteran', glyph: '🪓', hp: 70, atk: 14, def: 4, spd: 6,
+    gold: [40, 70], xp: 32, intelligent: true, elite: true,
+    specials: [{ at: 4, name: 'Bearded Cleave', mult: 1.9, desc: 'hefts an axe that remembers coastlines' }],
   },
   farmer_a: {
     id: 'farmer_a', name: 'Stubborn Farmer', glyph: '🌾', hp: 26, atk: 5, def: 1, spd: 5,
@@ -438,26 +457,26 @@ export const NPC_ENEMIES = {
     specials: [{ at: 3, name: 'Hedge Pinch', mult: 1.3, poisonSure: true, desc: 'pins a bitter leaf' }],
   },
   roadside_npc: {
-    id: 'roadside_npc', name: 'Roadside Climber', glyph: '🧳', hp: 46, atk: 10, def: 3, spd: 7,
-    gold: [24, 44], xp: 20, intelligent: true, elite: true,
-    specials: [{ at: 3, name: 'Trail Bargain', mult: 1.5, desc: 'draws a travel blade' }],
+    id: 'roadside_npc', name: 'Roadside Climber', glyph: '🧳', hp: 58, atk: 12, def: 4, spd: 7,
+    gold: [30, 54], xp: 26, intelligent: true, elite: true,
+    specials: [{ at: 3, name: 'Trail Bargain', mult: 1.65, desc: 'draws a travel blade' }],
   },
   roadside_npc2: {
-    id: 'roadside_npc2', name: 'Wandering Hireling', glyph: '🗡️', hp: 44, atk: 11, def: 2, spd: 8,
-    gold: [26, 46], xp: 21, intelligent: true, elite: true,
-    specials: [{ at: 3, name: 'Contract Cut', mult: 1.55, desc: 'honors a bloody clause' }],
+    id: 'roadside_npc2', name: 'Wandering Hireling', glyph: '🗡️', hp: 56, atk: 13, def: 3, spd: 9,
+    gold: [32, 56], xp: 27, intelligent: true, elite: true,
+    specials: [{ at: 3, name: 'Contract Cut', mult: 1.7, desc: 'honors a bloody clause' }],
   },
   oldman_gentle: {
-    id: 'oldman_gentle', name: 'Kindly Elder', glyph: '🧓', hp: 40, atk: 8, def: 2, spd: 6,
-    gold: [20, 40], xp: 18, intelligent: true,
-    specials: [{ at: 4, name: 'Cane Tap', mult: 1.35, desc: 'taps the cane once' }],
+    id: 'oldman_gentle', name: 'Kindly Elder', glyph: '🧓', hp: 52, atk: 10, def: 3, spd: 6,
+    gold: [26, 48], xp: 22, intelligent: true, elite: true,
+    specials: [{ at: 4, name: 'Cane Tap', mult: 1.5, desc: 'taps the cane once' }],
   },
   oldman_wrath: {
-    id: 'oldman_wrath', name: 'Trialmaster', glyph: '⚡', hp: 95, atk: 16, def: 5, spd: 9,
-    gold: [80, 140], xp: 55, intelligent: true, elite: true, boss: true,
+    id: 'oldman_wrath', name: 'Trialmaster', glyph: '⚡', hp: 118, atk: 18, def: 6, spd: 9,
+    gold: [95, 165], xp: 68, intelligent: true, elite: true, boss: true,
     specials: [
-      { at: 3, name: 'Lesson One', mult: 1.6, desc: 'the cane becomes a verdict' },
-      { at: 6, name: 'Final Examination', mult: 2.1, aoe: true, stun: 0.25, desc: 'the air itself quizzes you' },
+      { at: 3, name: 'Lesson One', mult: 1.75, desc: 'the cane becomes a verdict' },
+      { at: 6, name: 'Final Examination', mult: 2.25, aoe: true, stun: 0.3, desc: 'the air itself quizzes you' },
     ],
   },
 };

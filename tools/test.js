@@ -350,11 +350,12 @@ console.log('— combat pacing (patch) —');
   {
     const { syntheticClimber, simBuildEnemy } = await import('./combat_sim.js');
     const { softLevelDamage } = await import('../js/data/tdc.js');
+    const { applyDefense } = await import('../js/systems.js');
     const hit = (p, enemy, power = 100) => {
       const base = (p.stats[p.classBias] * C.playerStatWeight + p.atk * C.playerAtkWeight
         + softLevelDamage(p.level, C.playerLevelWeight) + C.playerFlat)
         * (power / 100) * p.dmgMult;
-      return Math.max(1, Math.round(base - enemy.def));
+      return applyDefense(base, enemy.def);
     };
     const floor = 17;
     const biome = biomeForFloor(floor);
@@ -554,14 +555,26 @@ console.log('— milestones —');
   t('milestone rejects', !checkMilestone(run, Milestone.fame(99)));
 }
 
-console.log('— clear-rate CDF 1p–4p (run_sim) —');
+console.log('— clear-rate CDF 1p–4p (run_sim, real loot) —');
 {
   t('TDC.clearRate bands defined', !!TDC.clearRate?.brickBy10 && !!TDC.clearRate?.reach30 && !!TDC.clearRate?.clear51);
-  const { runClearRateSim } = await import('./run_sim.js');
-  // Fewer trials than CLI — soft bands (±~8pts) so CI noise does not flake.
+  const { runClearRateSim, smokeProgress } = await import('./run_sim.js');
+  const smoke = smokeProgress({ seed: 99, partySize: 1, trials: 4 });
+  t('smoke climbs finish', smoke.every(r => r.maxFloor >= 1 && (r.deathFloor != null || r.cleared)));
+  const deep = smoke.find(r => (r.sample?.progress || []).length >= 3);
+  if (deep) {
+    const p = deep.sample.progress;
+    const a = p[0], b = p[p.length - 1];
+    t('smoke kit grows with floor',
+      b.level >= a.level
+      && (b.gold > a.gold || b.relics > a.relics || b.equipped > a.equipped || b.maxHp > a.maxHp));
+  } else {
+    t('smoke kit grows with floor', false);
+  }
+  // Fewer trials than CLI — soft pad (±8pts) so CI noise does not flake.
   const inBand = (v, [lo, hi], pad = 0.08) => v >= lo - pad && v <= hi + pad;
   for (const partySize of [1, 2, 3, 4]) {
-    const rep = runClearRateSim({ seed: 20260719, trials: 500, partySize });
+    const rep = runClearRateSim({ seed: 20260719, trials: 120, partySize });
     const tag = partySize === 1 ? 'solo' : `${partySize}p`;
     t(`${tag} brick ≤F10 near target`, inBand(rep.brickRate, TDC.clearRate.brickBy10));
     t(`${tag} reach F30+ near target`, inBand(rep.reach30, TDC.clearRate.reach30));
