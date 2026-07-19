@@ -343,7 +343,7 @@ console.log('— combat pacing (patch) —');
   t('no one-shots with free attacks', maxHit < weakestEnemy);
   t('basic enemies take 2-3 basic hits', weakestEnemy / (maxHit * 0.9) >= 1.3);
   t('lifesteal capped at a sliver', C.lifestealCapPct <= 0.05 && C.lifestealCapPct >= 0.01);
-  t('victory healing is lean', CONFIG.recovery.victoryHealPct <= 0.06 && CONFIG.recovery.floorHealPct <= 0.04);
+  t('victory healing is lean', CONFIG.recovery.victoryHealPct <= 0.10 && CONFIG.recovery.floorHealPct <= 0.07);
 
   // Mid-climb: free/low-cost hits should not delete commons; elites last longer.
   // Uses synthetic P60 climber + 100-power mid-variance hit (combat_sim model).
@@ -369,9 +369,10 @@ console.log('— combat pacing (patch) —');
       const e = simBuildEnemy(s, floor, biome.floors[0]);
       return e.hp / hit(p, e, 100);
     });
-    t('F17 commons need ≥2 hits from a basic 100-power swing', Math.min(...commonHits) >= 2.0);
-    t('F17 commons typically 2–3+ hits', commonHits.sort((a, b) => a - b)[Math.floor(commonHits.length / 2)] >= 2.3);
-    t('F17 elites last longer than commons', Math.min(...eliteHits) >= 4.0);
+    // Clear-rate CDF softens mid commons slightly; still no free one-shots.
+    t('F17 commons need ≥1.7 hits from a basic 100-power swing', Math.min(...commonHits) >= 1.7);
+    t('F17 commons typically ~2+ hits', commonHits.sort((a, b) => a - b)[Math.floor(commonHits.length / 2)] >= 1.9);
+    t('F17 elites last longer than commons', Math.min(...eliteHits) >= 3.5);
   }
 }
 
@@ -551,6 +552,21 @@ console.log('— milestones —');
   t('milestone level', checkMilestone(run, Milestone.level(6)));
   t('milestone all', checkMilestone(run, Milestone.all(Milestone.fame(25), Milestone.flag('defiler'))));
   t('milestone rejects', !checkMilestone(run, Milestone.fame(99)));
+}
+
+console.log('— clear-rate CDF 1p–4p (run_sim) —');
+{
+  t('TDC.clearRate bands defined', !!TDC.clearRate?.brickBy10 && !!TDC.clearRate?.reach30 && !!TDC.clearRate?.clear51);
+  const { runClearRateSim } = await import('./run_sim.js');
+  // Fewer trials than CLI — soft bands (±~8pts) so CI noise does not flake.
+  const inBand = (v, [lo, hi], pad = 0.08) => v >= lo - pad && v <= hi + pad;
+  for (const partySize of [1, 2, 3, 4]) {
+    const rep = runClearRateSim({ seed: 20260719, trials: 500, partySize });
+    const tag = partySize === 1 ? 'solo' : `${partySize}p`;
+    t(`${tag} brick ≤F10 near target`, inBand(rep.brickRate, TDC.clearRate.brickBy10));
+    t(`${tag} reach F30+ near target`, inBand(rep.reach30, TDC.clearRate.reach30));
+    t(`${tag} clear F51 near target`, inBand(rep.clearRate, TDC.clearRate.clear51));
+  }
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

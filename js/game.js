@@ -16,7 +16,7 @@ import { applyTagOutcomeMods } from './data/eventtags.js';
 import { loadMeta, saveMeta, upgradeRank, award, UPGRADES, ACHIEVEMENTS, newRun, saveRun, loadRun, clearRun, runRng, rollStart, startDescriptor, awakenMonolith, fateGrowthBoost, fateGrowthPct, fateGrowthPctOne, randomRaceId, randomClassId, unlockedCosmetics, climberNameHtml, resetSanctumUpgrades } from './state.js';
 import { derived, classTitle, skillTier, gainXp, learnableSkills, heal, restoreMana, relicItems, equippedItems, changeFame, resourceName, appraiseRun, revealLevel, applySubclass as applySubclassFn, APPRAISABLE, allowedWeaponTypes, weaponCompatible, skillCapacity, applySkillBreakpoints } from './character.js';
 import { startCombat, buildEnemy } from './combat.js';
-import { partyBossAtkMult } from './data/tdc.js';
+import { partyBossAtkMult, partyBossHpMult } from './data/tdc.js';
 import { ICONS } from './icons.js';
 import { SFX, toggleMute, isMuted } from './audio.js';
 import { setParticles, setBiomeGlow, flash, walkTransition } from './fx.js';
@@ -494,7 +494,7 @@ function sanctumScreen() {
   for (const a of ACHIEVEMENTS) {
     const got = meta.achievements.includes(a.id);
     const badge = got && (a.title || a.nameStyle)
-      ? `<div class="ach-reward">${a.title ? `Title: ${a.title}` : ''}${a.title && a.nameStyle ? ' · ' : ''}${a.nameStyle ? 'Name style' : ''}</div>`
+      ? `<div class="ach-reward">${a.title ? `Title: <span class="climber-title ${a.titleStyle || ''}">${a.title}</span>` : ''}${a.title && a.nameStyle ? ' · ' : ''}${a.nameStyle ? 'Name style' : ''}</div>`
       : '';
     achList.appendChild(el(`<div class="achievement ${got ? '' : 'locked'}">
       <div class="ach-icon">${a.icon}</div>
@@ -2338,10 +2338,14 @@ async function bossFloor(stage) {
       partySize: 1,
     });
     rng.advance(); saveRun(run);
-    const enemies = plan.specs.map((s, i) => buildEnemy(
-      s, run.floor, i === 0 ? run.floor : biome.floors[0],
-      { boss: i === 0 || !!s.boss, hpMult: plan.hpMult },
-    ));
+    const enemies = plan.specs.map((s, i) => {
+      const isBoss = i === 0 || !!s.boss;
+      return buildEnemy(
+        // Escorts share the boss floor (depth 0); hit softer than open-floor trash.
+        s, run.floor, run.floor,
+        { boss: isBoss, hpMult: plan.hpMult, atkMult: isBoss ? 1 : 0.55 },
+      );
+    });
     await fightGroupBoss(stage, enemies, boss);
   };
 }
@@ -2376,13 +2380,19 @@ function buildPartyEnemies(specs, hpMult = 1) {
 
 function buildSharedEnemies(specs, { boss = false, hpMult = 1, partySize = coopS?.partySize || 1 } = {}) {
   const biome = biomeForFloor(run.floor);
-  const bossAtk = boss ? partyBossAtkMult(partySize) : 1;
+  const bossAtk = boss ? partyBossAtkMult(partySize, run.floor) : 1;
+  const bossHp = boss ? partyBossHpMult(partySize, run.floor) : 1;
   return specs.map((s, i) => {
     const isBoss = boss && (i === 0 || !!s.boss);
     return buildEnemy(
       s, run.floor,
-      isBoss ? run.floor : biome.floors[0],
-      { boss: isBoss, hpMult, atkMult: isBoss ? bossAtk : 1 },
+      // Boss escorts: depth 0 at this floor (same as solo bossFloor builder).
+      boss ? run.floor : biome.floors[0],
+      {
+        boss: isBoss,
+        hpMult: hpMult * (isBoss ? bossHp : 1),
+        atkMult: isBoss ? bossAtk : (boss ? 0.55 : 1),
+      },
     );
   });
 }
@@ -2936,8 +2946,8 @@ async function coopEventFight(stage, ev, specs, { text = null, reward = null, hp
       s, floor, biome.floors[0],
       {
         boss: !!s.boss,
-        hpMult: (hpMult || 1) * pad,
-        atkMult: s.boss ? partyBossAtkMult(partySize) : 1,
+        hpMult: (hpMult || 1) * pad * (s.boss ? partyBossHpMult(partySize, floor) : 1),
+        atkMult: s.boss ? partyBossAtkMult(partySize, floor) : 1,
       },
     ));
     coopS.net.send({ k: 'evfight', floor, eventId, enemies, text, reward });
@@ -4652,7 +4662,9 @@ function glitchScreen(ms = 1400) {
 function unlock(id) {
   const a = award(meta, id);
   if (a) {
-    const extra = a.title ? ` — title “${a.title}”` : (a.nameStyle ? ' — name style unlocked' : '');
+    const extra = a.title
+      ? ` — title <span class="climber-title ${a.titleStyle || ''}">${a.title}</span>`
+      : (a.nameStyle ? ' — name style unlocked' : '');
     toast(`${a.icon} Achievement: ${a.name}${extra}`, 'info');
     SFX.unlock();
   }

@@ -63,12 +63,12 @@ export const CONFIG = {
     beginnerPlayerBonus: 1,          // bosses/fast foes can still outspeed players
   },
 
-  /* ---- recovery (lean: the tower is not a spa; TDC tension dial) ---- */
+  /* ---- recovery (lean: the tower is not a spa; see TDC.clearRate) ---- */
   recovery: {
     levelUpMissingPct: 0.5,      // restore 50% of MISSING hp/resource on level up
-    victoryHealPct: 0.05,        // % max hp after any combat win
-    bossVictoryHealPct: 0.2,     // gate blessing after bosses
-    floorHealPct: 0.04,          // catching your breath between floors
+    victoryHealPct: 0.15,        // % max hp after any combat win
+    bossVictoryHealPct: 0.42,    // gate blessing after bosses
+    floorHealPct: 0.11,          // catching your breath between floors
     floorManaPct: 0.06,          // class resource stays scarce between floors
   },
 

@@ -2,31 +2,32 @@
 // Used by tools/sim.js and tools/test.js. No DOM.
 
 import { CONFIG } from '../js/data/config.js';
-import { softLevelDamage, enemyScale } from '../js/data/tdc.js';
+import { softLevelDamage, enemyScale, partyBossAoeMult } from '../js/data/tdc.js';
 import { biomeForFloor } from '../js/data/enemies.js';
 import { applyGuard, addCharge, tickEnemyCharge, pickEnemySpecial } from '../js/systems.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 /** Pure enemy builder (mirrors combat.buildEnemy without DOM imports). */
-export function simBuildEnemy(spec, floor, biomeStart, { boss = false, hpMult = 1 } = {}) {
+export function simBuildEnemy(spec, floor, biomeStart, { boss = false, hpMult = 1, atkMult = 1 } = {}) {
   const isBoss = boss || !!spec.boss;
   const biome = biomeForFloor(floor);
   const sc = enemyScale(floor, biomeStart, biome.id, { boss: isBoss, elite: !!spec.elite });
   const spd = Math.max(1, Math.round((spec.spd || 5) * sc.spd));
+  const atkScale = sc.atk * (atkMult || 1);
   return {
     ...spec,
     boss: isBoss,
     elite: !!spec.elite,
     maxHp: Math.round(spec.hp * sc.hp * hpMult),
     hp: Math.round(spec.hp * sc.hp * hpMult),
-    atk: Math.round(spec.atk * sc.atk),
+    atk: Math.round(spec.atk * atkScale),
     def: Math.round(spec.def * sc.def),
     spd,
     chargeGain: (spec.chargeGain || 1) * sc.chargeGain,
     charge: 0,
     statuses: {},
-    _m: { hp: sc.hp * hpMult, atk: sc.atk, def: sc.def },
+    _m: { hp: sc.hp * hpMult, atk: atkScale, def: sc.def },
   };
 }
 
@@ -97,43 +98,64 @@ function enemyHit(e, p, rng, { special = null, chargeScale = 1, playerGuarding =
  * Policy: mostly Strike; spend charge on a 140-power hit when ≥3 charge;
  * Guard when below 35% HP and an enemy telegraphs. Models kit use without DOM.
  */
-export function simulateFight(rng, player, enemySpecs, {
+/**
+ * Solo or party fight. `players` may be one climber or an array.
+ * Enemies pick a random living target; AOE specials hit everyone.
+ * Wipe when every climber is down. Returns per-player hpLeft[].
+ */
+export function simulateFight(rng, playerOrParty, enemySpecs, {
   floor = 1,
   biomeStart = 1,
   hpMult = 1,
+  escortHpMult = null,
+  escortAtkMult = 0.55, // boss-floor adds hit softer than open-floor trash
+  atkMult = 1,
   boss = false,
   maxRounds = 40,
 } = {}) {
-  const enemies = enemySpecs.map(s => simBuildEnemy(s, floor, biomeStart, { boss: boss || !!s.boss, hpMult }));
-  const p = {
-    ...player,
-    hp: player.hp ?? player.maxHp,
-    maxHp: player.maxHp ?? player.hp,
+  const partyIn = Array.isArray(playerOrParty) ? playerOrParty : [playerOrParty];
+  const enemies = enemySpecs.map((s, i) => {
+    // Only the lead (or flagged) enemy is the boss — escorts keep trash scaling.
+    const isBoss = !!s.boss || (boss && i === 0);
+    return simBuildEnemy(s, floor, isBoss ? floor : biomeStart, {
+      boss: isBoss,
+      hpMult: isBoss ? hpMult : (escortHpMult ?? 1),
+      atkMult: isBoss ? atkMult : (boss ? escortAtkMult : 1),
+    });
+  });
+  const party = partyIn.map(pl => ({
+    ...pl,
+    hp: pl.hp ?? pl.maxHp,
+    maxHp: pl.maxHp ?? pl.hp,
     charge: 0,
     guarding: false,
-  };
-  const startHp = p.hp;
+    usedPotion: false,
+  }));
+  const startHp = party.reduce((s, p) => s + p.hp, 0);
   let rounds = 0;
-  let usedPotion = false;
+
+  const livingPlayers = () => party.filter(p => p.hp > 0);
+  const livingEnemies = () => enemies.filter(e => e.hp > 0);
 
   while (rounds < maxRounds) {
     rounds++;
-    p.guarding = false;
-    const alive = () => enemies.filter(e => e.hp > 0);
-    if (!alive().length) break;
+    for (const p of party) p.guarding = false;
+    if (!livingEnemies().length) break;
+    if (!livingPlayers().length) break;
 
-    // One potion — models consumable spend in the resource budget.
-    if (!usedPotion && p.hp / p.maxHp < 0.4) {
-      usedPotion = true;
-      p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * 0.35));
-    }
-
-    const threatened = alive().some(e => (e.specials || []).some(s => (e.charge || 0) >= s.at - 1));
-    if (p.hp / p.maxHp < 0.35 && threatened) {
-      p.guarding = true;
-      p.charge = addCharge(p.charge, CONFIG.guard.chargeGain);
-    } else {
-      const target = alive().sort((a, b) => a.hp - b.hp)[0];
+    for (const p of livingPlayers()) {
+      if (!livingEnemies().length) break;
+      if (!p.usedPotion && p.hp / p.maxHp < 0.4) {
+        p.usedPotion = true;
+        p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * 0.35));
+      }
+      const threatened = livingEnemies().some(e => (e.specials || []).some(s => (e.charge || 0) >= s.at - 1));
+      if (p.hp / p.maxHp < 0.35 && threatened) {
+        p.guarding = true;
+        p.charge = addCharge(p.charge, CONFIG.guard.chargeGain);
+        continue;
+      }
+      const target = livingEnemies().sort((a, b) => a.hp - b.hp)[0];
       const heavy = p.charge >= 3;
       const power = heavy ? 140 : 100;
       target.hp = Math.max(0, target.hp - playerHit(p, target, rng, { power }));
@@ -143,10 +165,10 @@ export function simulateFight(rng, player, enemySpecs, {
       if (target.hp <= 0) p.charge = addCharge(p.charge, CONFIG.charge.gainOnKill);
     }
 
-    if (!alive().length) break;
+    if (!livingEnemies().length) break;
 
-    for (const e of alive()) {
-      // Simple regen / lifesteal pressure on long fights
+    for (const e of livingEnemies()) {
+      if (!livingPlayers().length) break;
       if (e.regen && e.hp > 0) e.hp = Math.min(e.maxHp, e.hp + Math.round(e.maxHp * e.regen));
       tickEnemyCharge(e);
       const special = pickEnemySpecial(e);
@@ -154,31 +176,42 @@ export function simulateFight(rng, player, enemySpecs, {
       if (special && e.boss) {
         chargeScale = 1 + CONFIG.boss.chargeDamageScale * (e.charge || 0);
       }
-      if (rng.chance(clamp(p.dodge, 0, 35) / 100)) {
-        if (special) e.charge = 0;
-        continue;
+      const living = livingPlayers();
+      if (!living.length) break;
+      const targets = special?.aoe ? living : [rng.pick(living)];
+      const aoeShare = special?.aoe ? partyBossAoeMult(living.length) : 1;
+      let landed = false;
+      for (const p of targets) {
+        if (p.hp <= 0) continue;
+        if (rng.chance(clamp(p.dodge, 0, 35) / 100)) continue;
+        landed = true;
+        let dmg = enemyHit(e, p, rng, { special, chargeScale, playerGuarding: p.guarding });
+        if (aoeShare !== 1) dmg = Math.max(1, Math.round(dmg * aoeShare));
+        p.hp = Math.max(0, p.hp - dmg);
+        if (e.lifesteal) e.hp = Math.min(e.maxHp, e.hp + Math.round(dmg * e.lifesteal));
       }
-      const dmg = enemyHit(e, p, rng, { special, chargeScale, playerGuarding: p.guarding });
-      p.hp = Math.max(0, p.hp - dmg);
-      if (e.lifesteal) e.hp = Math.min(e.maxHp, e.hp + Math.round(dmg * e.lifesteal));
       if (special) {
         e.charge = 0;
         if (special.heal) e.hp = Math.min(e.maxHp, e.hp + Math.round(e.maxHp * special.heal));
+        if (!landed && !special.aoe) { /* dodge ate the special */ }
       }
-      if (p.hp <= 0) break;
     }
-    p.guarding = false;
-    if (p.hp <= 0) break;
+    for (const p of party) p.guarding = false;
   }
 
-  const won = enemies.every(e => e.hp <= 0) && p.hp > 0;
-  const hpLost = Math.max(0, startHp - Math.max(0, p.hp));
+  const survivors = livingPlayers();
+  const won = enemies.every(e => e.hp <= 0) && survivors.length > 0;
+  const hpLeftTotal = party.reduce((s, p) => s + Math.max(0, p.hp), 0);
+  const hpLost = Math.max(0, startHp - hpLeftTotal);
   return {
     won,
     rounds,
     hpLost,
-    hpLossPct: Math.min(1, hpLost / startHp),
+    hpLeft: survivors.length ? Math.max(1, Math.round(hpLeftTotal / survivors.length)) : 0,
+    hpLeftAll: party.map(p => Math.max(0, p.hp)),
+    hpLossPct: startHp > 0 ? Math.min(1, hpLost / startHp) : 1,
     enemiesLeft: enemies.filter(e => e.hp > 0).length,
+    survivors: survivors.length,
   };
 }
 

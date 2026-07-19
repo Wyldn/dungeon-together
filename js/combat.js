@@ -10,7 +10,7 @@
 import { SKILLS } from './data/skills.js';
 import { CONSUMABLES } from './data/items.js';
 import { CONFIG } from './data/config.js';
-import { enemyScale, softLevelDamage, rewardMult } from './data/tdc.js';
+import { enemyScale, softLevelDamage, rewardMult, partyBossAoeMult } from './data/tdc.js';
 import { derived, gearHas, heal, restoreMana, usableSkillIds, resourceName, changeFame, classTitle } from './character.js';
 import { initiativeOrder, addCharge, tickEnemyCharge, canAfford, pickEnemySpecial, enemyTelegraph, applyGuard } from './systems.js';
 import { biomeForFloor, ENEMIES } from './data/enemies.js';
@@ -354,7 +354,46 @@ class Fight {
   showTurnBanner(show) {
     const b = this.el.querySelector('#turn-banner');
     if (b) b.style.display = show ? '' : 'none';
-    if (show) SFX.yourTurn();
+    if (show) {
+      SFX.yourTurn();
+      this.setTabTurnAlert(true);
+    } else {
+      this.setTabTurnAlert(false);
+    }
+  }
+
+  /** Flash the browser tab title while it's your turn (esp. when the tab is in the background). */
+  setTabTurnAlert(on) {
+    this._tabFlashActive = !!on;
+    if (!on) {
+      this._stopTabFlash();
+      return;
+    }
+    if (!this._baseTitle) this._baseTitle = document.title.replace(/^(⚔ YOUR TURN! · )+/, '');
+    if (this._tabFlashTimer) return;
+    let lit = false;
+    this._tabFlashTimer = setInterval(() => {
+      if (!this._tabFlashActive || this.ended) { this._stopTabFlash(); return; }
+      if (!document.hidden) {
+        document.title = this._baseTitle;
+        lit = false;
+        return;
+      }
+      lit = !lit;
+      document.title = lit ? '⚔ YOUR TURN!' : this._baseTitle;
+    }, 900);
+  }
+
+  _stopTabFlash() {
+    if (this._tabFlashTimer) {
+      clearInterval(this._tabFlashTimer);
+      this._tabFlashTimer = null;
+    }
+    this._tabFlashActive = false;
+    if (this._baseTitle != null) {
+      document.title = this._baseTitle;
+      this._baseTitle = null;
+    }
   }
 
   // per-skill-type visual: a brief overlay on the target sprite
@@ -468,12 +507,15 @@ class Fight {
       <div class="combat-screen cx-full">
         <div class="battlefield cx-bg">
           ${this.mod.name ? `<div class="modifier-banner cx-mod">⚠ ${this.mod.name} — ${this.mod.desc}</div>` : ''}
-          <!-- top bar: floor plate (centre) + hero plate + CHARACTER -->
           <div class="cx-topbar">
             <div class="cx-side"></div>
-            <div class="cx-floor">
-              <div class="cx-floor-biome">${biome.name}</div>
-              <div class="cx-floor-num">FLOOR ${this.run.floor} <span>/</span> ${LAST_FLOOR}</div>
+            <div class="cx-top-center">
+              <div class="cx-floor">
+                <div class="cx-floor-biome">${biome.name}</div>
+                <div class="cx-floor-num">FLOOR ${this.run.floor} <span>/</span> ${LAST_FLOOR}</div>
+              </div>
+              <div class="charge-tray cx-charge" id="charge-tray"></div>
+              <div class="turn-banner cx-banner" id="turn-banner" style="display:none">⚔ YOUR TURN</div>
             </div>
             <div class="cx-hero">
               <div class="cx-hero-plate">
@@ -484,9 +526,8 @@ class Fight {
             </div>
           </div>
           <div class="turn-order cx-turnorder" id="turn-order"></div>
-          <div class="charge-tray cx-charge" id="charge-tray"></div>
-          <div class="turn-banner cx-banner" id="turn-banner" style="display:none">⚔ YOUR TURN</div>
           <div class="enemy-row cx-monsters"></div>
+          <div class="cx-lane-divider" aria-hidden="true"></div>
           <div class="player-row cx-party"></div>
           <div class="combat-fx-layer" id="combat-fx"></div>
           <div class="combat-log cx-log"></div>
@@ -506,10 +547,13 @@ class Fight {
     this.fxLayer = this.el.querySelector('#combat-fx');
     this.turnOrderEl = this.el.querySelector('#turn-order');
     this.chargeTray = this.el.querySelector('#charge-tray');
+    this.laneDivider = this.el.querySelector('.cx-lane-divider');
     this.logEl = this.el.querySelector('.combat-log');
     this.actionBar = this.el.querySelector('.action-bar');
     this.utilBar = this.el.querySelector('.combat-utility');
     this._bindCombatLog();
+    this._onCombatResize = () => this.syncCombatLayout();
+    window.addEventListener('resize', this._onCombatResize);
 
     SpriteAnim.reset(); // fresh animation state for this fight
     this.rollBattleOrder();
@@ -518,12 +562,36 @@ class Fight {
     this.renderTurnOrder();
     this.renderCharge();
     if (this.introText) this.log(this.introText, 'log-sys');
+    requestAnimationFrame(() => this.syncCombatLayout());
 
     const anyBoss = this.enemies.some(e => e.boss);
     if (anyBoss) SFX.bossIntro(); else SFX.cardDeal();
 
     if (this.shared) this.sharedLoop();
     else this.soloLoop();
+  }
+
+  partyCount() {
+    return 1 + (this.allies?.size || 0);
+  }
+
+  /**
+   * Align turn order with Battle Charge. Party-lane bar is CSS on `.cx-party`
+   * (scales with stack height). Crowded 4-player fights get a compact class.
+   */
+  syncCombatLayout() {
+    const bf = this.el?.querySelector?.('.battlefield');
+    if (!bf) return;
+
+    const n = this.partyCount();
+    bf.classList.toggle('cx-party-3', n === 3);
+    bf.classList.toggle('cx-party-4', n >= 4);
+
+    const bfRect = bf.getBoundingClientRect();
+    if (this.chargeTray && this.turnOrderEl) {
+      const chargeTop = this.chargeTray.getBoundingClientRect().top - bfRect.top;
+      this.turnOrderEl.style.top = `${Math.max(8, Math.round(chargeTop))}px`;
+    }
   }
 
   chargePips(current, max = CONFIG.charge.max, cls = '') {
@@ -541,10 +609,10 @@ class Fight {
 
   renderCharge() {
     if (!this.chargeTray) return;
+    // Pip fill only — match enemy FOC (no "0/6" suffix).
     this.chargeTray.innerHTML = `
       <span class="charge-label">${CONFIG.charge.displayName}</span>
-      ${this.chargePips(this.charge)}
-      <span class="charge-num">${this.charge}/${CONFIG.charge.max}</span>`;
+      ${this.chargePips(this.charge)}`;
   }
 
   renderTurnOrder(activeKey = null) {
@@ -662,7 +730,7 @@ class Fight {
           <div class="cx-head"><span class="fighter-name">${climberNameHtml(this.run.name, { title: this._nameTitle, nameStyle: this._nameStyle })}${this.run.down ? ' (down)' : ''}</span></div>
           <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${hpW}%"></div><span class="cx-bar-num">${Math.round(this.run.hp)}/${Math.round(this.run.maxHp)}</span></div></div>
           <div class="cx-bar-row"><span class="cx-blabel mp" title="${resName}">${resShort}</span><div class="bar cx-thin"><div class="bar-fill mp" style="width:${mpW}%"></div><span class="cx-bar-num">${Math.round(this.run.mp)}/${Math.round(this.run.maxMp)}</span></div></div>
-          <div class="cx-bar-row"><span class="cx-blabel foc">FOC</span>${this.focPips(this.charge)}<span class="cx-bar-num cx-foc-num">${this.charge}/${CONFIG.charge.max}</span></div>
+          <div class="cx-bar-row"><span class="cx-blabel foc">FOC</span>${this.focPips(this.charge)}</div>
         </div>
         <div class="fighter-statuses">
           ${this.player.guarding ? '<span class="status-pip guard-pip">🛡 GUARD</span>' : ''}
@@ -681,6 +749,7 @@ class Fight {
     }
     this.playerRow.innerHTML = html;
     this.onHud?.();
+    requestAnimationFrame(() => this.syncCombatLayout());
   }
 
   statusPips(st) {
@@ -1224,6 +1293,7 @@ class Fight {
           continue;
         }
         let dmg = e.atk * CONFIG.combat.enemyAtkMult * (0.85 + this.rng.next() * 0.3) * (this.mod.dmgMult || 1) * (special?.mult || 1) * chargeScale;
+        if (special?.aoe) dmg *= partyBossAoeMult(targets.length);
         if (e.statuses.weaken) dmg *= 0.7;
         if (this.rng.chance(this.d().enemyCrit / 100)) dmg *= 1.5;
         if (e.caster && !special && e.turnCount % 2 === 0) dmg *= 1.4;
@@ -1519,6 +1589,8 @@ class Fight {
     if (this.ended) return;
     this.ended = true;
     this.locked = true;
+    this._stopTabFlash();
+    if (this._onCombatResize) window.removeEventListener('resize', this._onCombatResize);
     clearTimeout(this._afkTimer);
     delete this.run.combatTaunt;
     for (const off of this.offs) off();
@@ -2051,6 +2123,8 @@ class Fight {
   finishSolo(result, extra = {}) {
     this.locked = true;
     this.ended = true;
+    this._stopTabFlash();
+    if (this._onCombatResize) window.removeEventListener('resize', this._onCombatResize);
     delete this.run.combatTaunt;
     if (CONFIG.charge.resetAfterCombat) this.charge = 0;
     this.rng.advance?.();

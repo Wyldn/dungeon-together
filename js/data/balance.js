@@ -6,7 +6,7 @@
 // expected rounds-to-kill, damage taken, and resource spend.
 
 import { CONFIG } from './config.js';
-import { TDC, expectedPower, enemyScale } from './tdc.js';
+import { TDC, expectedPower, enemyScale, partyPadEase } from './tdc.js';
 import { biomeForFloor } from './enemies.js';
 
 /* ================================================================== */
@@ -74,7 +74,13 @@ export function soloEncounterBudget(floor) {
 export function encounterBudget(floor, partySize = 1) {
   const n = Math.max(1, partySize | 0);
   const solo = soloEncounterBudget(floor);
-  return solo * (1 + TDC.budget.perExtraPlayer * (n - 1));
+  const table = TDC.budget.budgetBySize;
+  const full = (table && table[n] != null)
+    ? table[n]
+    : (1 + TDC.budget.perExtraPlayer * (n - 1));
+  if (n <= 1 || full <= 1) return solo * full;
+  // Early co-op trash eases in with the same pad curve as boss ATK.
+  return solo * (1 + (full - 1) * partyPadEase(floor));
 }
 
 /* ================================================================== */

@@ -25,15 +25,18 @@ export const TDC = {
 
   /* ---- encounter budgets (replaces stacked party HP + body count) ---- */
   budget: {
-    base: 1.48,              // solo F1 pack ≈ this × expectedPower (padded with tankier commons)
-    perExtraPlayer: 0.88,    // each ally adds nearly a full solo budget of threat
+    base: 1.42,              // solo F1 pack ≈ this × expectedPower
+    // Co-op trash threat — per-size table (linear perExtra overpunished 3p/4p AOE).
+    // Fallback: solo * (1 + perExtraPlayer * (n-1)) if a size is missing.
+    budgetBySize: { 1: 1, 2: 2.30, 3: 3.55, 4: 4.58 },
+    perExtraPlayer: 1.05,
     residualHpCap: 0.16,     // unused/overspend budget → at most ±16% HP
     residualHpFactor: 0.55,  // conversion rate |remaining|/budget → HP
     fillThreshold: 0.55,     // add another body if ≥55% of its cost remains
     swarmChance: 0.22,       // chance a trash pack rolls as a swarm (many cheap bodies)
     swarmMaxBodies: 5,       // hard ceiling on swarm size (UI + turn-length sanity)
     bossBudgetMult: 1.35,    // bosses claim a larger slice of party budget
-    bossEscortMinFrac: 0.22, // leftover must clear this before an escort spawns
+    bossEscortMinFrac: 0.40, // leftover must clear this before an escort spawns
     refHp: 28,               // F1 wolf hp — threat cost denominator
     refAtk: 6,
     refDef: 2,
@@ -41,12 +44,21 @@ export const TDC = {
 
   /* ---- per-boss RTK / HP-loss overrides (tune after sims) ---- */
   bossTargets: {
-    10: { rounds: [6, 10], hpLoss: [0.15, 0.40] },
-    20: { rounds: [6, 11], hpLoss: [0.18, 0.50] },
-    30: { rounds: [8, 12], hpLoss: [0.20, 0.48] },
-    40: { rounds: [8, 13], hpLoss: [0.22, 0.52] },
-    50: { rounds: [8, 14], hpLoss: [0.25, 0.65] },
-    51: { rounds: [10, 16], hpLoss: [0.30, 0.70] },
+    10: { rounds: [7, 12], hpLoss: [0.15, 0.40] },
+    20: { rounds: [8, 13], hpLoss: [0.18, 0.50] },
+    30: { rounds: [9, 14], hpLoss: [0.20, 0.48] },
+    40: { rounds: [10, 15], hpLoss: [0.22, 0.52] },
+    50: { rounds: [10, 16], hpLoss: [0.25, 0.65] },
+    51: { rounds: [11, 16], hpLoss: [0.30, 0.70] },
+  },
+
+  /* ---- full-run survival CDF for 1p–4p (tools/run_sim.js) ----
+     Same bands for every party size — co-op pads/eases keep the curve aligned.
+     Re-check with `node tools/run_sim.js` after changing recovery, budgets, or boss pads. */
+  clearRate: {
+    brickBy10: [0.07, 0.19], // die on floors 1–10 (~12–15% typical; ±sim noise)
+    reach30: [0.43, 0.58],   // “long run” ≈ F30+
+    clear51: [0.22, 0.36],   // defeat F51 (Ashkar or Vorath); ~30% ±6
   },
 
   /* ---- enemy scaling (replaces ad-hoc depth * 0.045) ----
@@ -54,31 +66,30 @@ export const TDC = {
      (depth → 0) doesn't soft-reset toughness vs a geared climber.
      Bosses stay hand-tuned via RTK sims + mild bossFloor* only. */
   enemy: {
-    depthHp: 0.052,
-    depthAtk: 0.045,
-    depthDef: 0.02,
-    // Absolute floor HP for non-bosses — keeps free/low-cost hits at 2–3
-    // swings on commons through mid-climb (verified vs combat_sim climbers).
-    floorHp: 0.030,
-    floorAtk: 0.006,
-    bossFloorHp: 0.010,
-    // Bosses must out-punch mimics; mild floor ATK was leaving late bosses
-    // in the single digits after player DEF grew.
-    bossFloorAtk: 0.014,
-    // Commons sit a notch under forced mimic fights; bosses punch harder.
-    boss: { hp: 1.08, atk: 1.5, def: 1.05 },
-    common: { hp: 1.12, atk: 0.92, def: 1.0 },
-    elite: { hp: 1.38, atk: 1.08, def: 1.05 },
+    depthHp: 0.046,
+    depthAtk: 0.040,
+    depthDef: 0.018,
+    // Absolute floor HP for non-bosses — balanced for clear-rate CDF mid deaths.
+    floorHp: 0.024,
+    floorAtk: 0.004,
+    bossFloorHp: 0.009,
+    bossFloorAtk: 0.005,
+    // Boss roles: big HP bars (early~200 / mid~500 / end~1000 scaled) with DEF
+    // tuned so solo player HTK stays ~7–15 turns; co-op pads HP via bossHpPerExtra.
+    // ATK kept mild so longer HP bars stay winnable (boss HTK ≳ player HTK race).
+    boss: { hp: 1.0, atk: 0.20, def: 1.0 },
+    common: { hp: 1.04, atk: 0.82, def: 1.0 },
+    elite: { hp: 1.26, atk: 1.00, def: 1.03 },
   },
 
   /* ---- biome multipliers (multiplicative flavor, not additive piles) ---- */
   biome: {
     forest: { hp: 1.00, atk: 1.00, spd: 1.00, chargeGain: 1.00 },
-    ruins:  { hp: 1.03, atk: 1.02, spd: 0.98, chargeGain: 1.00 },
-    frost:  { hp: 1.05, atk: 1.03, spd: 0.92, chargeGain: 0.95 },
-    swamp:  { hp: 1.07, atk: 1.04, spd: 0.95, chargeGain: 1.05 },
-    hell:   { hp: 1.10, atk: 1.08, spd: 1.02, chargeGain: 1.08 },
-    throne: { hp: 1.12, atk: 1.10, spd: 1.04, chargeGain: 1.12 },
+    ruins:  { hp: 1.02, atk: 1.02, spd: 0.98, chargeGain: 1.00 },
+    frost:  { hp: 1.045, atk: 1.025, spd: 0.92, chargeGain: 0.95 },
+    swamp:  { hp: 1.05, atk: 1.025, spd: 0.95, chargeGain: 1.03 },
+    hell:   { hp: 1.04, atk: 1.02, spd: 1.02, chargeGain: 1.03 },
+    throne: { hp: 1.08, atk: 1.06, spd: 1.04, chargeGain: 1.08 },
   },
 
   /* ---- party levers ----
@@ -86,8 +97,22 @@ export const TDC = {
      Boss ATK still needs a party bump: single-target damage is diluted
      across random allies, so solo-tuned ATK feels soft in co-op. */
   party: {
-    hpPerExtra: 0, // was 0.28; dual-scaling removed in favor of budgets
-    bossAtkPerExtra: 0.11, // +11% boss ATK per ally (2p +11%, 3p +22%, 4p +33%) — ~3 ST hits to down a mid climber
+    hpPerExtra: 0, // trash co-op HP lives in encounter budgets
+    // Per-size boss pads so 2p–4p clear-rate CDF ≈ solo (tools/run_sim.js).
+    // Linear per-extra failed (2p too easy / 4p wiped); tables are hand-tuned.
+    // AOE still uses partyBossAoeMult = 1/√n per target.
+    // Early floors only apply a fraction of the ATK/budget pad (F10 bricks otherwise).
+    easeFullFloor: 20,
+    easeAtStart: 0.325,
+    // Pad ramp shape: 1 = linear, 2 = square (softer early). Tuned with clearRate.
+    easePow: 1.24,
+    // AOE per-target share = n^(-aoeExp). 0.5 = 1/√n; lower = harsher on large parties.
+    aoeExp: 0.42,
+    bossAtkBySize: { 1: 1, 2: 1.88, 3: 2.46, 4: 2.88 },
+    bossHpBySize: { 1: 1, 2: 2.52, 3: 3.92, 4: 5.08 },
+    // Fallbacks if a size is missing
+    bossAtkPerExtra: 0.55,
+    bossHpPerExtra: 1.10,
   },
 
   /* ---- player soft caps (breadth over runaway numbers) ---- */
@@ -201,10 +226,40 @@ export function partyHpMult(partySize = 1) {
   return 1 + TDC.party.hpPerExtra * extra;
 }
 
+/** Fraction of co-op ATK/budget pad applied at this floor (ramps to 1 by easeFullFloor). */
+export function partyPadEase(floor = 1) {
+  const full = TDC.party.easeFullFloor || 30;
+  const start = TDC.party.easeAtStart ?? 0.5;
+  if (full <= 1) return 1;
+  const t = Math.min(1, Math.max(0, (Math.max(1, floor) - 1) / (full - 1)));
+  const pow = TDC.party.easePow ?? 1;
+  return start + (1 - start) * (t ** pow);
+}
+
+function partySizePad(table, fallbackPerExtra, partySize = 1) {
+  const n = Math.max(1, Math.min(4, partySize | 0));
+  if (table && table[n] != null) return table[n];
+  return 1 + (fallbackPerExtra || 0) * (n - 1);
+}
+
 /** Co-op boss outgoing damage mult — offsets random single-target dilution. */
-export function partyBossAtkMult(partySize = 1) {
-  const extra = Math.max(0, (partySize || 1) - 1);
-  return 1 + (TDC.party.bossAtkPerExtra || 0) * extra;
+export function partyBossAtkMult(partySize = 1, floor = 51) {
+  const full = partySizePad(TDC.party.bossAtkBySize, TDC.party.bossAtkPerExtra, partySize);
+  if (partySize <= 1 || full <= 1) return 1;
+  return 1 + (full - 1) * partyPadEase(floor);
+}
+
+/** Co-op boss HP mult — keeps focus-fire fights ≥5 turns as party size grows. */
+export function partyBossHpMult(partySize = 1, floor = 51) {
+  // HP pad is full from the start so early co-op bosses still take ≥5 focus turns.
+  return partySizePad(TDC.party.bossHpBySize, TDC.party.bossHpPerExtra, partySize);
+}
+
+/** Per-target AOE damage share in co-op — n^(-aoeExp); tuned with clearRate CDF. */
+export function partyBossAoeMult(partySize = 1) {
+  const n = Math.max(1, partySize | 0);
+  const exp = TDC.party.aoeExp ?? 0.5;
+  return n ** (-exp);
 }
 
 export function rewardMult(floor) {
