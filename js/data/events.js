@@ -52,12 +52,12 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'campfire', biome: 'any', category: 'recovery', type: 'rest', glyph: '🔥', w: 10,
+    id: 'campfire', biome: 'any', category: 'recovery', type: 'rest', glyph: '🔥', w: 8,
     title: 'A Moment of Peace',
     text: 'A sheltered alcove, dry wood, and — miraculously — no immediate threats. The tower allows rest the way a cat allows a mouse to catch its breath.',
     choices: [
       { label: 'Sleep', hint: 'recover + supplies',
-        outcome: { text: 'You dream of the surface. In the dream, everyone is proud of you. You wake with embers in your hair, strength in your limbs, and a potion that rolled against your boot overnight.', hpPct: 0.4, consumable: 'potion_s' } },
+        outcome: { text: 'You dream of the surface. In the dream, everyone is proud of you. You wake with embers in your hair, strength in your limbs, and a potion that rolled against your boot overnight.', hpPct: 0.36, consumable: 'potion_s' } },
       { label: 'Meditate', hint: 'restore resource — and sharpen',
         outcome: { text: 'You sort your thoughts into neat rows. When you rise, your reserves are full — and a quiet charm rests in your palm, as if the alcove approved.', fullMana: true, xpScaled: 12, itemRoll: { slot: 'accessory' } } },
       { label: 'Train', hint: 'grow, at a cost',
@@ -1482,7 +1482,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'roadside_climbers', biome: 'any', category: 'social', type: 'story', glyph: '🧳', w: 6,
+    id: 'roadside_climbers', biome: 'any', category: 'social', type: 'story', glyph: '🧳', w: 8,
     title: 'Roadside Climbers',
     text: 'Two travelers share a cold meal on the stair. One waves you over. "Company, contest, or quiet — we\'ve got all three priced fair."',
     npc: { art: 'roadside_npc', name: 'Roadside Climbers', blurb: 'Ordinary faces on an extraordinary climb — talk, duel, or pass.' },
@@ -1501,8 +1501,8 @@ export const EVENTS = [
             { kind: 'item', id: 'steel_blade' },
             { kind: 'item', id: 'hawk_charm' },
           ] }, xp: 38 } } },
-      { label: 'Wish them luck', hint: 'XP + random growth',
-        outcome: { text: 'They wish it back. Somehow, it sticks.', xp: 26, statUpRandom: 2 } },
+      { label: 'Wish them luck', req: { gold: 15 }, hint: '-15g for the meal fund — XP + growth',
+        outcome: { text: 'They wish it back — and accept the coins. Somehow, it sticks.', gold: -15, xp: 26, statUpRandom: 2 } },
     ],
   },
   {
@@ -1558,9 +1558,9 @@ export const EVENTS = [
       { label: 'Ask how strong you seem', hint: 'full appraisal + a little growth',
         outcome: { text: 'He looks through you the way a jeweler looks through glass — then names what he sees.',
           appraisal: 'full', statUpRandom: 2 } },
-      { label: 'Ask for teachings', hint: 'more growth, full restore, XP',
-        outcome: { text: 'He teaches without standing. Your bones rearrange their opinions.',
-          statUpRandom: 4, fullHeal: true, fullMana: true, xp: 55 } },
+      { label: 'Ask for teachings', hint: 'more growth, partial mend, XP',
+        outcome: { text: 'He teaches without standing. Your bones rearrange their opinions — wounds only half-listen.',
+          statUpRandom: 4, hpPct: 0.35, fullMana: true, xp: 55 } },
     ],
   },
 ];

@@ -9,7 +9,7 @@
 import { CONFIG } from '../js/data/config.js';
 import {
   softLevelDamage, enemyScale, partyBossAoeMult, expectedCurveT, soloBossChargeForScale,
-  levelDefBonus, resourceRegen,
+  levelDefBonus, resourceRegen, partyTrashAtkMult, TDC,
 } from '../js/data/tdc.js';
 import { biomeForFloor } from '../js/data/enemies.js';
 import {
@@ -30,6 +30,7 @@ export function simBuildEnemy(spec, floor, biomeStart, {
   const biome = biomeForFloor(floor);
   const sc = enemyScale(floor, biomeStart, biome.id, {
     boss: isBoss, elite: !!spec.elite, partySize,
+    eliteAtkRole: !!spec.eliteAtkRole,
   });
   const spd = Math.max(1, Math.round((spec.spd || 5) * sc.spd));
   const atkScale = sc.atk * (atkMult || 1);
@@ -45,6 +46,7 @@ export function simBuildEnemy(spec, floor, biomeStart, {
     chargeGain: (spec.chargeGain || 1) * sc.chargeGain,
     charge: 0,
     statuses: {},
+    baseAtk: Math.round(spec.atk * atkScale),
     _m: { hp: sc.hp * hpMult, atk: atkScale, def: sc.def },
   };
 }
@@ -258,20 +260,22 @@ export function simulateFight(rng, playerOrParty, enemySpecs, {
   biomeStart = 1,
   hpMult = 1,
   escortHpMult = null,
-  escortAtkMult = 0.55, // boss-floor adds hit softer than open-floor trash
+  escortAtkMult = null, // boss-floor adds; default CONFIG.boss.escortAtkMult
   atkMult = 1,
   boss = false,
   maxRounds = 40,
 } = {}) {
   const partyIn = Array.isArray(playerOrParty) ? playerOrParty : [playerOrParty];
   const partySize = partyIn.length;
+  const trashAtk = partyTrashAtkMult(partySize, floor);
+  const escort = escortAtkMult ?? CONFIG.boss.escortAtkMult ?? 0.55;
   const enemies = enemySpecs.map((s, i) => {
     // Only the lead (or flagged) enemy is the boss — escorts keep trash scaling.
     const isBoss = !!s.boss || (boss && i === 0);
     return simBuildEnemy(s, floor, isBoss ? floor : biomeStart, {
       boss: isBoss,
       hpMult: isBoss ? hpMult : (escortHpMult ?? 1),
-      atkMult: isBoss ? atkMult : (boss ? escortAtkMult : 1),
+      atkMult: isBoss ? atkMult : (boss ? escort : trashAtk),
       partySize,
     });
   });
@@ -298,6 +302,20 @@ export function simulateFight(rng, playerOrParty, enemySpecs, {
     for (const p of party) p.guarding = false;
     if (!livingEnemies().length) break;
     if (!livingPlayers().length) break;
+
+    // Stall enrage — bosses and event elites ramp if the fight drags.
+    for (const e of livingEnemies()) {
+      const bossR = e.enrageAtRound ?? (e.boss ? TDC.enrage?.bossAtRound : null);
+      const eventR = e.enrageAtRound ?? ((e.elite && !e.boss) ? TDC.enrage?.eventAtRound : null);
+      const at = bossR ?? eventR;
+      if (at != null && rounds >= at && !e._enraged) {
+        const mult = e.boss
+          ? (TDC.enrage?.bossAtkMult || 1.25)
+          : (TDC.enrage?.eventAtkMult || 1.25);
+        e.atk = Math.round((e.baseAtk || e.atk) * mult);
+        e._enraged = true;
+      }
+    }
 
     for (const p of livingPlayers()) {
       if (!livingEnemies().length) break;

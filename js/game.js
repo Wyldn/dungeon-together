@@ -21,7 +21,10 @@ import {
   skillCapacity, applySkillBreakpoints, grantClassWeightedStats, pickClassWeightedStat,
 } from './character.js';
 import { startCombat, buildEnemy, snapshotActiveCombat } from './combat.js';
-import { partyBossAtkMult, partyBossHpMult } from './data/tdc.js';
+import {
+  partyBossAtkMult, partyBossHpMult, partyTrashAtkMult,
+  eventFightHpMult, eventFightAtkMult,
+} from './data/tdc.js';
 import {
   ensureClimbStats, samplePower, noteBossCleared, buildClimbSummary, pushRunHistory,
   loadRunHistory, powerGraphSvg, statPentagonSvg,
@@ -2362,8 +2365,10 @@ async function afterVictory(stage, enemies, gold, xp, { boss = null, reward = nu
 
   const lines = [{ text: `Victory! +${gold} gold, +${xp} XP`, cls: 'gold' }];
 
-  // victory recovery (handoff §15) — more generous than the old build
-  const vh = heal(run, run.maxHp * CONFIG.recovery.victoryHealPct);
+  // No free victory heal — HP stays a resource (relics / potions / skills only).
+  const vh = CONFIG.recovery.victoryHealPct
+    ? heal(run, run.maxHp * CONFIG.recovery.victoryHealPct)
+    : 0;
   if (vh > 0) lines.push({ text: `You bind your wounds in the quiet after. (+${vh} HP)`, cls: 'good' });
   const victoryHeal = relicItems(run).find(r => r.victoryHeal);
   if (victoryHeal) {
@@ -2690,12 +2695,13 @@ async function bossFloor(stage, { resume = null } = {}) {
       partySize: 1,
     });
     rng.advance(); saveRun(run);
+    const escortAtk = CONFIG.boss.escortAtkMult ?? 0.55;
     const enemies = plan.specs.map((s, i) => {
       const isBoss = i === 0 || !!s.boss;
       return buildEnemy(
         // Escorts share the boss floor (depth 0); hit softer than open-floor trash.
         s, run.floor, run.floor,
-        { boss: isBoss, hpMult: plan.hpMult, atkMult: isBoss ? 1 : 0.55 },
+        { boss: isBoss, hpMult: plan.hpMult, atkMult: isBoss ? 1 : escortAtk },
       );
     });
     await fightGroupBoss(stage, enemies, boss);
@@ -2747,13 +2753,19 @@ async function fightGroupBoss(stage, enemies, boss, { resume = null } = {}) {
 function buildPartyEnemies(specs, hpMult = 1) {
   const biome = biomeForFloor(run.floor);
   const partySize = coopS?.partySize || 1;
-  return specs.map(s => buildEnemy(s, run.floor, biome.floors[0], { hpMult, partySize }));
+  const trashAtk = partyTrashAtkMult(partySize, run.floor);
+  return specs.map(s => buildEnemy(s, run.floor, biome.floors[0], {
+    hpMult, atkMult: trashAtk, partySize,
+  }));
 }
 
 function buildSharedEnemies(specs, { boss = false, hpMult = 1, partySize = coopS?.partySize || 1 } = {}) {
   const biome = biomeForFloor(run.floor);
   const bossAtk = boss ? partyBossAtkMult(partySize, run.floor) : 1;
   const bossHp = boss ? partyBossHpMult(partySize, run.floor) : 1;
+  const trashAtk = partyTrashAtkMult(partySize, run.floor);
+  // Escorts use escortAtkMult only — trashAtk pad already hits open-floor packs.
+  const escortAtk = CONFIG.boss.escortAtkMult ?? 0.55;
   return specs.map((s, i) => {
     const isBoss = boss && (i === 0 || !!s.boss);
     return buildEnemy(
@@ -2763,10 +2775,35 @@ function buildSharedEnemies(specs, { boss = false, hpMult = 1, partySize = coopS
       {
         boss: isBoss,
         hpMult: hpMult * (isBoss ? bossHp : 1),
-        atkMult: isBoss ? bossAtk : (boss ? 0.55 : 1),
+        atkMult: isBoss ? bossAtk : (boss ? escortAtk : trashAtk),
         partySize,
       },
     );
+  });
+}
+
+function isSpecialEventFoe(s) {
+  if (!s?.id) return false;
+  if (s.id === 'mimic') return true;
+  return !!(NPC_ENEMIES[s.id] && !String(s.id).startsWith('farmer_'));
+}
+
+/** Mimic / non-farmer NPC duel enemies — TDC.eventFight pads (farmers stay weak). */
+function buildEventFightEnemies(specs, { partySize = 1, hpMult = 1 } = {}) {
+  const biome = biomeForFloor(run.floor);
+  const special = specs.some(isSpecialEventFoe);
+  const evHp = special ? eventFightHpMult(partySize) : 1;
+  const evAtk = special ? eventFightAtkMult(partySize) : 1;
+  const trashAtk = special ? 1 : partyTrashAtkMult(partySize, run.floor);
+  return specs.map(s => {
+    const isBoss = !!s.boss;
+    return buildEnemy(s, run.floor, biome.floors[0], {
+      boss: isBoss,
+      hpMult: (hpMult || 1) * evHp * (isBoss ? partyBossHpMult(partySize, run.floor) : 1),
+      atkMult: (special ? evAtk : trashAtk)
+        * (isBoss && !s.eliteAtkRole ? partyBossAtkMult(partySize, run.floor) : 1),
+      partySize,
+    });
   });
 }
 
@@ -3318,9 +3355,7 @@ async function coopEventFight(stage, ev, specs, { text = null, reward = null, hp
   const floor = run.floor;
   const eventId = ev?.id || 'event';
   const gateTag = `evfight-${floor}-${eventId}`;
-  const biome = biomeForFloor(floor);
   const partySize = coopS.partySize;
-  const pad = 1 + 0.10 * Math.max(0, partySize - 1);
 
   const runShared = async (enemies, fightReward) => {
     await coopS.gate(gateTag);
@@ -3331,15 +3366,7 @@ async function coopEventFight(stage, ev, specs, { text = null, reward = null, hp
   };
 
   if (coopS.isHost) {
-    const enemies = specs.map(s => buildEnemy(
-      s, floor, biome.floors[0],
-      {
-        boss: !!s.boss,
-        hpMult: (hpMult || 1) * pad * (s.boss ? partyBossHpMult(partySize, floor) : 1),
-        atkMult: s.boss ? partyBossAtkMult(partySize, floor) : 1,
-        partySize,
-      },
-    ));
+    const enemies = buildEventFightEnemies(specs, { partySize, hpMult });
     coopS.net.send({ k: 'evfight', floor, eventId, enemies, text, reward });
     if (text) toast(text, 'sys');
     return runShared(enemies, reward);
@@ -3429,7 +3456,11 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
         }
         return coopEventFight(stage, ev, [mimic], { text: 'The chest grows TEETH. Of course it does.' });
       }
-      return fightGroup(stage, [mimic], { text: 'The chest grows TEETH. Of course it does.' });
+      const foes = buildEventFightEnemies([mimic], { partySize: 1 });
+      return fightGroup(stage, [mimic], {
+        text: 'The chest grows TEETH. Of course it does.',
+        prebuilt: foes,
+      });
     }
     const gold = Math.round((30 + run.floor * 4 + rng.int(0, 25)) * d.goldMult);
     run.gold += gold; run.goldEarned += gold;
@@ -3695,7 +3726,16 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
         for (let i = 0; i < n; i++) enemyIds.push(rng.pick(pe.pool));
       }
     }
-    const specs = enemyIds.map(id => findEnemySpec(id) || ENEMIES[biome.id][0]);
+    let specs = enemyIds.map(id => findEnemySpec(id) || ENEMIES[biome.id][0]);
+    const partySize = (coopS && !coopS.alone) ? coopS.partySize : 1;
+    // Duo+: soft escort on solo NPC duels after the first gate (roadside already packs two).
+    if (partySize >= 2 && specs.length === 1 && (run.floor || 1) >= 12) {
+      const id = specs[0]?.id || '';
+      if (/^(blade_hero|dark_mage|pathfinder_veteran|axe_northman|oldman_gentle|oldman_wrath)$/.test(id)) {
+        const escort = NPC_ENEMIES.roadside_npc2 || ENEMIES[biome.id]?.[0];
+        if (escort) specs = [specs[0], { ...escort, hp: Math.round((escort.hp || 40) * 0.7), atk: Math.round((escort.atk || 10) * 0.85) }];
+      }
+    }
     const fightReward = o.combat.reward || o.combat.xp ? { ...(o.combat.reward || {}) } : null;
     if (fightReward && o.combat.xp) fightReward.xp = (fightReward.xp || 0) + o.combat.xp;
     rng.advance();
@@ -3708,7 +3748,8 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
     if (coopS && !coopS.alone) {
       return coopEventFight(stage, ev, specs, { text: o.combat.text, reward: fightReward });
     }
-    return fightGroup(stage, specs, { text: o.combat.text, reward: fightReward });
+    const foes = buildEventFightEnemies(specs, { partySize: 1 });
+    return fightGroup(stage, specs, { text: o.combat.text, reward: fightReward, prebuilt: foes });
   }
 
   rng.advance();

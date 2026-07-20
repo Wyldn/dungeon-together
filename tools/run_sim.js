@@ -4,9 +4,12 @@
 // partySize omitted → print 1p–4p. Measures brick / F30+ / F51 clear vs TDC.clearRate.
 
 import { CONFIG } from '../js/data/config.js';
-import { TDC, partyBossAtkMult, partyBossHpMult } from '../js/data/tdc.js';
 import {
-  ENEMIES, BOSSES, biomeForFloor, pickBossForFloor, MODIFIERS,
+  TDC, partyBossAtkMult, partyBossHpMult, partyTrashAtkMult,
+  eventFightHpMult, eventFightAtkMult,
+} from '../js/data/tdc.js';
+import {
+  ENEMIES, BOSSES, biomeForFloor, pickBossForFloor, MODIFIERS, NPC_ENEMIES,
 } from '../js/data/enemies.js';
 import { planEncounter, planBossEncounter } from '../js/data/balance.js';
 import { makeRng } from '../js/rng.js';
@@ -99,12 +102,23 @@ function fightParty(rng, party, specs, opts) {
   return r;
 }
 
-function resolveEventCombat(rng, run, combatSpecs, floor, biomeStart, fightReward = null) {
+function isSpecialEventFoe(s) {
+  if (!s?.id) return false;
+  if (s.id === 'mimic') return true;
+  return !!(NPC_ENEMIES[s.id] && !String(s.id).startsWith('farmer_'));
+}
+
+function resolveEventCombat(rng, run, combatSpecs, floor, biomeStart, fightReward = null, partySize = 1) {
   if (!combatSpecs?.length) return true;
   // Specs must already be full templates (hp/atk/specials) from resolveEventCombatPack.
   const climber = climberFromRun(run);
+  const special = combatSpecs.some(isSpecialEventFoe);
+  const hpMult = special ? eventFightHpMult(partySize) : 1;
+  const atkMult = special
+    ? eventFightAtkMult(partySize)
+    : partyTrashAtkMult(partySize, floor);
   const r = simulateFight(rng, climber, combatSpecs, {
-    floor, biomeStart, maxRounds: 35,
+    floor, biomeStart, hpMult, atkMult, maxRounds: 35,
   });
   const { gold, xp } = estimateCombatRewards(combatSpecs, floor, rng);
   applyFightToRun(run, climber, r, {
@@ -239,8 +253,10 @@ export function simulateRun(rng, { partySize = 1, trackProgress = false } = {}) 
       for (const run of livingRuns(party)) {
         const result = resolveSimEvent(run, rng, { partySize: n });
         if (result.combatSpecs?.length) {
+          // Headless events are fought per-climber (solo), not as a shared party pack.
+          // Use partySize 1 pads here; live coopEventFight applies co-op pads correctly.
           const ok = resolveEventCombat(
-            rng, run, result.combatSpecs, floor, biomeStart, result.fightReward,
+            rng, run, result.combatSpecs, floor, biomeStart, result.fightReward, 1,
           );
           if (!ok && !livingRuns(party).length) {
             return {

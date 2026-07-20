@@ -11,9 +11,9 @@ export const TDC = {
      summary graph compares live power to this — not a win-rate promise.
      curvePow > 1 = slow early gear ramp, steeper late (shops/boss drops). */
   expected: {
-    // Slightly softer spine — real climbs were tracking chronically under.
-    powerAt1: 1.75,
-    powerAt51: 9.3,
+    // Mild bump so “on curve” tracks fatter specials + trash ATK pads.
+    powerAt1: 1.85,
+    powerAt51: 9.8,
     curvePow: 1.30,
   },
 
@@ -34,14 +34,13 @@ export const TDC = {
     // Co-op trash threat — per-size table (linear perExtra overpunished 3p/4p AOE).
     // Fallback: solo * (1 + perExtraPlayer * (n-1)) if a size is missing.
     // Sized for body bands (2p 2–3 / 3p 3–4 / 4p 4–5), not old 4–5 swarms.
-    // Softened for real-loot run_sim clear-rate (15/85/60/40 targets).
     budgetBySize: { 1: 1, 2: 1.80, 3: 2.70, 4: 3.50 },
     perExtraPlayer: 1.05,
     residualHpCap: 0.10,     // unused/overspend budget → at most ±10% HP
     residualHpFactor: 0.40,  // conversion rate |remaining|/budget → HP
-    coopResidualHpScale: 0.55, // further softens leftover→HP in co-op
+    coopResidualHpScale: 0.55, // leftover→HP in co-op
     fillThreshold: 0.55,     // add another body if ≥55% of its cost remains
-    swarmChance: 0.18,       // chance a trash pack rolls as a swarm (many cheap bodies)
+    swarmChance: 0.20,       // slight swarm bump (duo overhaul #23)
     swarmMaxBodies: 5,       // hard ceiling on swarm size (UI + turn-length sanity)
     bossBudgetMult: 1.35,    // bosses claim a larger slice of party budget
     bossEscortMinFrac: 0.28, // leftover must clear this before an escort spawns
@@ -96,9 +95,10 @@ export const TDC = {
     soloBossChargeCap: 3,
     soloBossChargeCapFullFloor: 20,
     trashAtkFullFloor: 16,
-    trashAtkEarly: 0.54,
+    trashAtkEarly: 0.52,
     soloTrashAtkFullFloor: 22,
-    soloTrashAtkEarly: 0.62,
+    soloTrashAtkEarly: 0.60,
+    // Near pre-overhaul roles; duo feel from party pads + eventFight.
     boss: { hp: 0.86, atk: 0.54, def: 0.93 },
     common: { hp: 0.92, atk: 0.94, def: 1.0 },
     elite: { hp: 1.14, atk: 1.06, def: 1.03 },
@@ -121,24 +121,45 @@ export const TDC = {
   party: {
     hpPerExtra: 0, // trash co-op HP lives in encounter budgets
     // Per-size boss pads so 2p–4p clear-rate CDF ≈ solo (tools/run_sim.js).
-    // Linear per-extra failed (2p too easy / 4p wiped); tables are hand-tuned.
-    // AOE still uses partyBossAoeMult = 1/√n per target.
-    // Early floors only apply a fraction of the ATK/budget pad (F10 bricks otherwise).
-    // Tuned to soft±5 of 15/85/60/40 across 1p–4p (real-loot run_sim).
+    // Mild duo ATK bump vs old 1.28/1.48/1.72 (no floor heal → keep early soft).
+    // Soft early F10/F15; full pad by easeFullFloor (clear-rate CDF).
     easeFullFloor: 22,
-    easeAtStart: 0.23,
+    easeAtStart: 0.18,
     easePow: 1.15,
     aoeExp: 0.48,
-    bossAtkBySize: { 1: 1, 2: 1.28, 3: 1.48, 4: 1.72 },
-    bossHpBySize: { 1: 1, 2: 1.78, 3: 2.65, 4: 3.70 },
-    bossHpEaseAtStart: 0.54,
+    // Near pre-overhaul pads; trashAtk + eventFight carry live duo bite.
+    bossAtkBySize: { 1: 1, 2: 1.26, 3: 1.46, 4: 1.66 },
+    bossHpBySize: { 1: 1, 2: 1.76, 3: 2.60, 4: 3.50 },
+    bossHpEaseAtStart: 0.52,
+    // Co-op trash swing damage (budgets own body count).
+    trashAtkBySize: { 1: 1, 2: 1.05, 3: 1.10, 4: 1.14 },
+    trashAtkPerExtra: 0.05,
     // Fallbacks if a size is missing
     bossAtkPerExtra: 0.55,
     bossHpPerExtra: 1.10,
   },
 
+  /* ---- event / mimic / NPC duel pads (off encounter budget) ---- */
+  eventFight: {
+    // Live co-op shared fights; headless sim uses size-1 pads per climber.
+    hpBySize: { 1: 1, 2: 1.45, 3: 1.90, 4: 2.40 },
+    atkBySize: { 1: 1, 2: 1.22, 3: 1.38, 4: 1.52 },
+    hpPerExtra: 0.40,
+    atkPerExtra: 0.18,
+  },
+
+  /* ---- stall enrage (bosses + event elites) ---- */
+  enrage: {
+    // Late stall check — early enrage crushed 3p/4p clear-rate CDF.
+    bossAtRound: 12,
+    bossAtkMult: 1.15,
+    // Event elites: only if authored `enrageAtRound` (global default off — CDF).
+    eventAtRound: null,
+    eventAtkMult: 1.15,
+  },
+
   /* ---- player soft caps (breadth over runaway numbers) ---- */
-  // HP stays lean (~150 late); survivability shifts onto level+gear DEF.
+  // Leaner HP; DEF soak mildly nerfed so chip lands harder without F10 bricks.
   player: {
     hpSoftAfterLevel: 8,
     hpSoftFactor: 0.42,          // HP gains after L8 × this
@@ -266,6 +287,8 @@ export function soloBossChargeForScale(floor, charge) {
 /** Scale factors applied to a hand-authored enemy spec at a given floor. */
 export function enemyScale(floor, biomeStart, biomeId, {
   boss = false, elite = false, partySize = 1, soloEase = true,
+  /** Use elite ATK role while keeping boss HP pads (e.g. oldman_wrath). */
+  eliteAtkRole = false,
 } = {}) {
   const depth = Math.max(0, floor - biomeStart);
   const bio = biomeMods(biomeId);
@@ -274,9 +297,10 @@ export function enemyScale(floor, biomeStart, biomeId, {
     : elite
       ? TDC.enemy.elite
       : (TDC.enemy.common || { hp: 1, atk: 1, def: 1 });
+  const atkRole = (boss && eliteAtkRole) ? (TDC.enemy.elite || role) : role;
 
   let hp = (1 + depth * TDC.enemy.depthHp) * bio.hp * role.hp;
-  let atk = (1 + depth * TDC.enemy.depthAtk) * bio.atk * role.atk;
+  let atk = (1 + depth * TDC.enemy.depthAtk) * bio.atk * atkRole.atk;
   let def = (1 + depth * TDC.enemy.depthDef) * role.def;
   const spd = bio.spd;
   const chargeGain = bio.chargeGain;
@@ -346,6 +370,23 @@ export function partyBossHpMult(partySize = 1, floor = 51) {
   const start = TDC.party.bossHpEaseAtStart ?? 0.7;
   const t = start + (1 - start) * partyPadEase(floor);
   return 1 + (full - 1) * t;
+}
+
+/** Co-op trash/elite swing damage (bodies still come from encounter budgets). */
+export function partyTrashAtkMult(partySize = 1, floor = 51) {
+  const full = partySizePad(TDC.party.trashAtkBySize, TDC.party.trashAtkPerExtra, partySize);
+  if (partySize <= 1 || full <= 1) return 1;
+  return 1 + (full - 1) * partyPadEase(floor);
+}
+
+/** Event/mimic/NPC duel HP pad by party size (off floor budget). */
+export function eventFightHpMult(partySize = 1) {
+  return partySizePad(TDC.eventFight?.hpBySize, TDC.eventFight?.hpPerExtra, partySize);
+}
+
+/** Event/mimic/NPC duel ATK pad by party size. */
+export function eventFightAtkMult(partySize = 1) {
+  return partySizePad(TDC.eventFight?.atkBySize, TDC.eventFight?.atkPerExtra, partySize);
 }
 
 /** Per-target AOE damage share in co-op — n^(-aoeExp); tuned with clearRate CDF. */

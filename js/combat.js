@@ -11,7 +11,7 @@ import { SKILLS } from './data/skills.js';
 import { CONSUMABLES } from './data/items.js';
 import { CONFIG } from './data/config.js';
 import {
-  enemyScale, softLevelDamage, rewardMult, partyBossAoeMult, soloBossChargeForScale,
+  enemyScale, softLevelDamage, rewardMult, partyBossAoeMult, soloBossChargeForScale, TDC,
 } from './data/tdc.js';
 import { derived, gearHas, heal, restoreMana, usableSkillIds, resourceName, changeFame, classTitle } from './character.js';
 import { initiativeOrder, addCharge, tickEnemyCharge, canAfford, pickEnemySpecial, enemyTelegraph, applyGuard, applyDefense } from './systems.js';
@@ -120,16 +120,19 @@ export function buildEnemy(spec, floor, biomeStart, {
   const biome = biomeForFloor(floor);
   const sc = enemyScale(floor, biomeStart, biome.id, {
     boss: isBoss, elite: !!spec.elite, partySize,
+    eliteAtkRole: !!spec.eliteAtkRole,
   });
   const spd = Math.max(1, Math.round((spec.spd || 5) * sc.spd));
   const atkScale = sc.atk * (atkMult || 1);
+  const liveAtk = Math.round(spec.atk * atkScale);
   return {
     ...spec,
     boss: isBoss,
     elite: !!spec.elite,
     maxHp: Math.round(spec.hp * sc.hp * hpMult),
     hp: Math.round(spec.hp * sc.hp * hpMult),
-    atk: Math.round(spec.atk * atkScale),
+    atk: liveAtk,
+    baseAtk: liveAtk,
     def: Math.round(spec.def * sc.def),
     spd,
     chargeGain: (spec.chargeGain || 1) * sc.chargeGain,
@@ -1012,11 +1015,29 @@ class Fight {
     this.utilBar.innerHTML = '';
   }
 
+  /** Stall enrage for bosses / event elites (TDC.enrage). */
+  applyEnrage() {
+    for (const e of this.aliveEnemies()) {
+      if (e._enraged) continue;
+      const at = e.enrageAtRound
+        ?? (e.boss ? TDC.enrage?.bossAtRound : null)
+        ?? ((e.elite && !e.boss) ? TDC.enrage?.eventAtRound : null);
+      if (at == null || this.round < at) continue;
+      const mult = e.boss
+        ? (TDC.enrage?.bossAtkMult || 1.25)
+        : (TDC.enrage?.eventAtkMult || 1.25);
+      e.atk = Math.round((e.baseAtk || e.atk) * mult);
+      e._enraged = true;
+      this.log?.(`${e.name} enrages!`, 'log-bad');
+    }
+  }
+
   /* ================= SOLO DRIVER: interleaved initiative ================= */
   async soloLoop() {
     await sleep(600);
     while (!this.ended) {
       this.round++;
+      this.applyEnrage();
       await this.rollRoundInitiative();
       for (const entry of this.order) {
         if (this.ended) return;
@@ -1161,6 +1182,7 @@ class Fight {
     await sleep(700);
     while (!this.ended) {
       this.round++;
+      this.applyEnrage();
       await this.rollRoundInitiative();
       for (const seat of this.sharedSeats) {
         if (this.ended) return;
@@ -2114,6 +2136,11 @@ class Fight {
     }
 
     let dmg = e.atk * CONFIG.combat.enemyAtkMult * (0.85 + this.rng.next() * 0.3) * (this.mod.dmgMult || 1) * (special?.mult || 1) * chargeScale;
+    if (typeof location !== 'undefined' && /(?:\?|&)debugCombat=1(?:&|$)/.test(location.search || '')) {
+      const raw = dmg;
+      const afterDef = applyDefense(raw, this.d().def);
+      console.debug(`[combat] ${e.name} atk=${e.atk} raw=${raw.toFixed(1)} afterDef=${afterDef} def=${this.d().def}`);
+    }
     if (e.statuses.weaken) dmg *= 0.7;
     if (this.rng.chance(d.enemyCrit / 100)) dmg *= 1.5;
     dmg = applyDefense(dmg, d.def);

@@ -57,7 +57,8 @@ export const CONFIG = {
     // Spend this much Battle Charge to break freeze/stun early and still act.
     // Per-boss override via `cleanseCost` on the enemy def.
     cleanseCost: 2,
-    chargeDamageScale: 0.14, // heavy telegraphed hits gain +14% damage per charge segment banked
+    chargeDamageScale: 0.15, // heavy telegraphed hits gain +15% damage per charge segment banked
+    escortAtkMult: 0.55,     // boss-floor escort swing (matches pre-overhaul hardcode)
   },
 
   /* ---- combat: initiative ---- */
@@ -67,10 +68,10 @@ export const CONFIG = {
     beginnerPlayerBonus: 1,          // bosses/fast foes can still outspeed players
   },
 
-  /* ---- recovery (lean: the tower is not a spa; see TDC.clearRate) ---- */
+  /* ---- recovery (HP stays sticky; lean binds so clear-rate CDF holds) ---- */
   recovery: {
     levelUpMissingPct: 0.5,      // restore 50% of MISSING hp/resource on level up
-    victoryHealPct: 0.09,        // % max hp after any combat win
+    victoryHealPct: 0.09,        // bind after wins — specials/pads carry duo bite
     bossVictoryHealPct: 0.26,    // gate blessing after bosses
     floorHealPct: 0.05,          // catching your breath between floors
     floorManaPct: 0.06,          // class resource stays scarce between floors

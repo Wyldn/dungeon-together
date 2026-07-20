@@ -104,6 +104,9 @@ const EVENT_RISK = {
   gambler: 3, blood_altar: 4, mysterious_door: 3, cursed_mirror: 3,
   prodigys_gambit: 4, crimson_stranger: 4, frost_revenant: 4,
   demon_gambler: 4, old_man_wrath: 4,
+  // NPC duels — map shows hard so “on curve” parties pick fights eyes-open.
+  blade_hero_meet: 3, dark_mage_meet: 3, pathfinder_meet: 3, axe_northman_meet: 3,
+  roadside_climbers: 3, oldman_trials: 4, cursed_knight_vigil: 4, crowned_shadow: 4,
 };
 
 function riskInfo(risk) {

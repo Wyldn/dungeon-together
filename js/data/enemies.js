@@ -123,29 +123,29 @@ export const ENEMIES = {
       specials: [{ at: 4, name: 'False Dawn', mult: 1.25, aoe: true, desc: 'burns suddenly brighter' }] },
     { id: 'troll', name: 'Moss Troll', glyph: '👹', hp: 96, atk: 17, def: 8, spd: 2, gold: [30, 52], xp: 38, elite: true, regen: 0.05, intelligent: true,
       specials: [{ at: 4, name: 'Uproot & Swing', mult: 1.5, aoe: true, desc: 'tears a sapling loose' }] },
-    { id: 'mire_abomination', name: 'Mire Abomination', glyph: '👁', hp: 86, atk: 17, def: 6, spd: 3, gold: [28, 48], xp: 36, elite: true, poison: 0.35, regen: 0.03,
+    { id: 'mire_abomination', name: 'Mire Abomination', glyph: '👁', hp: 86, atk: 17, def: 6, spd: 3, gold: [28, 48], xp: 36, elite: true, poison: 0.40, regen: 0.03,
       specials: [{ at: 3, name: 'Toxic Gaze', mult: 1.4, poisonSure: true, desc: 'three eyes blink in wrong order' }, { at: 6, name: 'Green Miasma', mult: 1.75, aoe: true, poisonSure: true, desc: 'the aura thickens into weather' }] },
   ],
   hell: [
-    { id: 'imp', name: 'Cinder Imp', glyph: '👺', hp: 50, atk: 17, def: 5, spd: 11, gold: [26, 46], xp: 34, pack: true, burn: 0.25, intelligent: true,
+    { id: 'imp', name: 'Cinder Imp', glyph: '👺', hp: 50, atk: 17, def: 5, spd: 11, gold: [26, 46], xp: 34, pack: true, burn: 0.30, intelligent: true,
       specials: [{ at: 5, name: 'Spitfire Tantrum', mult: 1.2, aoe: true, burnSure: true, desc: 'giggles and ignites' }] },
-    { id: 'hellhound', name: 'Hellhound', glyph: '🐕‍🦺', hp: 62, atk: 18, def: 5, spd: 10, gold: [28, 48], xp: 38, pack: true, burn: 0.3,
+    { id: 'hellhound', name: 'Hellhound', glyph: '🐕‍🦺', hp: 62, atk: 18, def: 5, spd: 10, gold: [28, 48], xp: 38, pack: true, burn: 0.34,
       specials: [{ at: 4, name: 'Immolating Lunge', mult: 1.6, burnSure: true, desc: 'flame gutters between its teeth' }] },
     { id: 'tormentor', name: 'Chain Tormentor', glyph: '⛓️', hp: 78, atk: 19, def: 7, spd: 5, gold: [34, 56], xp: 44, elite: true, intelligent: true,
       specials: [{ at: 3, name: 'Lash Volley', mult: 1.3, aoe: true, frail: 0.4, desc: 'chains rise like serpents' }, { at: 6, name: 'Penance', mult: 2.0, tormentedSure: true, desc: 'selects an instrument with care' }] },
-    { id: 'pit_mage', name: 'Pit Magus', glyph: '🔮', hp: 58, atk: 20, def: 5, spd: 8, gold: [32, 54], xp: 42, caster: true, burn: 0.35, intelligent: true,
+    { id: 'pit_mage', name: 'Pit Magus', glyph: '🔮', hp: 58, atk: 20, def: 5, spd: 8, gold: [32, 54], xp: 42, caster: true, burn: 0.40, intelligent: true,
       specials: [{ at: 4, name: 'Brimstone Sermon', mult: 1.5, aoe: true, burnSure: true, desc: 'opens a book that screams' }] },
     { id: 'brute', name: 'Obsidian Brute', glyph: '🌋', hp: 100, atk: 20, def: 10, spd: 3, gold: [38, 64], xp: 50, elite: true,
       specials: [{ at: 5, name: 'Magma Haymaker', mult: 1.45, aoe: true, desc: 'knuckles glow white-hot' }] },
     { id: 'sin_eater', name: 'Sin-Eater', glyph: '👄', hp: 70, atk: 19, def: 6, spd: 9, gold: [34, 58], xp: 46, lifesteal: 0.28, intelligent: true,
       specials: [{ at: 3, name: 'Devour', mult: 1.6, heal: 0.08, desc: 'unhinges a doorway of a mouth' }] },
-    { id: 'magma_golem', name: 'Magma Golem', glyph: '🪨', hp: 95, atk: 19, def: 11, spd: 2, gold: [36, 60], xp: 48, elite: true, burn: 0.25,
+    { id: 'magma_golem', name: 'Magma Golem', glyph: '🪨', hp: 95, atk: 19, def: 11, spd: 2, gold: [36, 60], xp: 48, elite: true, burn: 0.30,
       specials: [{ at: 3, name: 'Furnace Punch', mult: 1.65, burnSure: true, desc: 'fists glow white' }, { at: 5, name: 'Furnace Burst', mult: 1.35, aoe: true, burnSure: true, desc: 'vents a wave of slag-heat' }] },
     { id: 'eye_horror', name: 'Eye Horror', glyph: '👀', hp: 74, atk: 20, def: 5, spd: 6, gold: [32, 54], xp: 45, caster: true, elite: true,
       specials: [{ at: 3, name: 'Burning Gaze', mult: 1.45, burnSure: true, desc: 'eight pupils ignite' }, { at: 6, name: 'Chorus of Sight', mult: 1.9, aoe: true, confusedSure: true, desc: 'every eye speaks a different doom' }] },
     { id: 'crimson_wretch', name: 'Crimson Wretch', glyph: '🩸', hp: 58, atk: 18, def: 4, spd: 10, gold: [28, 50], xp: 40, lifesteal: 0.25, pack: true,
       specials: [{ at: 4, name: 'Frenzy Bite', mult: 1.55, heal: 0.06, desc: 'bloodshot eyes lock on' }] },
-    { id: 'slag_knight', name: 'Slag Knight', glyph: '⚔️', hp: 88, atk: 20, def: 9, spd: 4, gold: [36, 62], xp: 50, elite: true, intelligent: true, burn: 0.18,
+    { id: 'slag_knight', name: 'Slag Knight', glyph: '⚔️', hp: 88, atk: 20, def: 9, spd: 4, gold: [36, 62], xp: 50, elite: true, intelligent: true, burn: 0.22,
       specials: [{ at: 3, name: 'Molten Arc', mult: 1.35, aoe: true, desc: 'a blade of cooling iron swings' }, { at: 6, name: 'Core Detonation', mult: 1.55, aoe: true, burnSure: true, desc: 'the chest-runes overbrighten' }] },
   ],
 };
@@ -382,49 +382,55 @@ export function bossById(id) {
  * Chest mimic — event-only. Uses elite TDC role; bases stay off the floor budget
  * so clear-rate targets (brick / long / win) are unaffected.
  */
+/**
+ * Chest mimic — event-only. Uses elite TDC role; bases stay off the floor budget
+ * so clear-rate targets (brick / long / win) are unaffected.
+ */
 export function mimicSpec(floor) {
   return {
     id: 'mimic', name: 'Mimic', glyph: '🦷',
-    hp: 42 + floor * 5, atk: 8 + floor, def: 3, spd: 8,
-    gold: [48 + floor * 4, 72 + floor * 5], xp: 20 + floor * 3,
+    // Mild bump vs old 42+5f / 8+f; co-op uses TDC.eventFight pads.
+    hp: 46 + floor * 5.25, atk: 8 + Math.round(floor * 1.05), def: 3, spd: 8,
+    gold: [48 + floor * 4, 74 + floor * 5], xp: 21 + floor * 3,
     elite: true,
     specials: [
-      { at: 3, name: 'Lid Bite', mult: 1.55, desc: 'the hinge screams' },
-      { at: 5, name: 'Chest Slam', mult: 1.8, stun: 0.2, desc: 'the lid comes down like a guillotine' },
+      { at: 3, name: 'Lid Bite', mult: 1.6, desc: 'the hinge screams' },
+      { at: 5, name: 'Chest Slam', mult: 1.85, stun: 0.2, desc: 'the lid comes down like a guillotine' },
     ],
   };
 }
+
 
 /** Event / social NPCs — harder than mimics at the same floor (elite-leaning). Farmers stay weak. */
 export const NPC_ENEMIES = {
   // Knight Hero Platformer pack (anim/warrior) — social duel NPC.
   blade_hero: {
-    id: 'blade_hero', name: 'Oathbound Champion', glyph: '⚔️', hp: 64, atk: 13, def: 4, spd: 7,
-    gold: [34, 58], xp: 28, intelligent: true, elite: true,
+    id: 'blade_hero', name: 'Oathbound Champion', glyph: '⚔️', hp: 74, atk: 14, def: 4, spd: 7,
+    gold: [36, 60], xp: 30, intelligent: true, elite: true, enrageAtRound: 6,
     specials: [
-      { at: 3, name: 'Oath Swing', mult: 1.7, desc: 'raises a well-kept blade' },
-      { at: 5, name: 'Shield Answer', mult: 1.5, desc: 'plants and answers' },
+      { at: 3, name: 'Oath Swing', mult: 1.8, desc: 'raises a well-kept blade' },
+      { at: 5, name: 'Shield Answer', mult: 1.6, desc: 'plants and answers' },
     ],
   },
   // Blue-mage pack (anim/mage) — a scholar who slid into forbidden work.
   dark_mage: {
-    id: 'dark_mage', name: 'Apostate Channeler', glyph: '🔮', hp: 56, atk: 14, def: 3, spd: 8,
-    gold: [36, 62], xp: 30, caster: true, intelligent: true, elite: true,
+    id: 'dark_mage', name: 'Apostate Channeler', glyph: '🔮', hp: 64, atk: 15, def: 3, spd: 8,
+    gold: [38, 64], xp: 32, caster: true, intelligent: true, elite: true, enrageAtRound: 6,
     specials: [
-      { at: 3, name: 'Black Margin', mult: 1.6, aoe: true, desc: 'ink-smoke curls into a hex' },
-      { at: 5, name: 'Unwritten Name', mult: 1.85, desc: 'whispers something the tower forgot' },
+      { at: 3, name: 'Black Margin', mult: 1.7, aoe: true, desc: 'ink-smoke curls into a hex' },
+      { at: 5, name: 'Unwritten Name', mult: 1.95, desc: 'whispers something the tower forgot' },
     ],
   },
   pathfinder_veteran: {
-    id: 'pathfinder_veteran', name: 'Pathfinder Veteran', glyph: '🏹', hp: 56, atk: 13, def: 3, spd: 11,
-    gold: [32, 56], xp: 29, intelligent: true, elite: true,
-    specials: [{ at: 3, name: 'Trail Shot', mult: 1.75, desc: 'nocks without looking' }],
+    id: 'pathfinder_veteran', name: 'Pathfinder Veteran', glyph: '🏹', hp: 64, atk: 14, def: 3, spd: 11,
+    gold: [34, 58], xp: 31, intelligent: true, elite: true,
+    specials: [{ at: 3, name: 'Trail Shot', mult: 1.85, desc: 'nocks without looking' }],
   },
   // Pre-bob Viking class look (viking_axe_pack idle strip).
   axe_northman: {
-    id: 'axe_northman', name: 'Axe-Pack Veteran', glyph: '🪓', hp: 70, atk: 14, def: 4, spd: 6,
-    gold: [40, 70], xp: 32, intelligent: true, elite: true,
-    specials: [{ at: 4, name: 'Bearded Cleave', mult: 1.9, desc: 'hefts an axe that remembers coastlines' }],
+    id: 'axe_northman', name: 'Axe-Pack Veteran', glyph: '🪓', hp: 80, atk: 15, def: 4, spd: 6,
+    gold: [42, 72], xp: 34, intelligent: true, elite: true,
+    specials: [{ at: 4, name: 'Bearded Cleave', mult: 2.0, desc: 'hefts an axe that remembers coastlines' }],
   },
   farmer_a: {
     id: 'farmer_a', name: 'Stubborn Farmer', glyph: '🌾', hp: 26, atk: 5, def: 1, spd: 5,
@@ -452,31 +458,33 @@ export const NPC_ENEMIES = {
     specials: [{ at: 4, name: 'Churn Bash', mult: 1.35, desc: 'brandishes a churn' }],
   },
   farmer_f: {
-    id: 'farmer_f', name: 'Hedge Witch\'s Kin', glyph: '🌿', hp: 24, atk: 6, def: 1, spd: 7,
+    id: 'farmer_f', name: "Hedge Witch's Kin", glyph: '🌿', hp: 24, atk: 6, def: 1, spd: 7,
     gold: [5, 12], xp: 8, pack: true, intelligent: true, caster: true,
     specials: [{ at: 3, name: 'Hedge Pinch', mult: 1.3, poisonSure: true, desc: 'pins a bitter leaf' }],
   },
   roadside_npc: {
-    id: 'roadside_npc', name: 'Roadside Climber', glyph: '🧳', hp: 58, atk: 12, def: 4, spd: 7,
-    gold: [30, 54], xp: 26, intelligent: true, elite: true,
-    specials: [{ at: 3, name: 'Trail Bargain', mult: 1.65, desc: 'draws a travel blade' }],
+    id: 'roadside_npc', name: 'Roadside Climber', glyph: '🧳', hp: 66, atk: 13, def: 4, spd: 7,
+    gold: [32, 56], xp: 28, intelligent: true, elite: true,
+    specials: [{ at: 3, name: 'Trail Bargain', mult: 1.75, desc: 'draws a travel blade' }],
   },
   roadside_npc2: {
-    id: 'roadside_npc2', name: 'Wandering Hireling', glyph: '🗡️', hp: 56, atk: 13, def: 3, spd: 9,
-    gold: [32, 56], xp: 27, intelligent: true, elite: true,
-    specials: [{ at: 3, name: 'Contract Cut', mult: 1.7, desc: 'honors a bloody clause' }],
+    id: 'roadside_npc2', name: 'Wandering Hireling', glyph: '🗡️', hp: 64, atk: 14, def: 3, spd: 9,
+    gold: [34, 58], xp: 29, intelligent: true, elite: true,
+    specials: [{ at: 3, name: 'Contract Cut', mult: 1.8, desc: 'honors a bloody clause' }],
   },
   oldman_gentle: {
-    id: 'oldman_gentle', name: 'Kindly Elder', glyph: '🧓', hp: 52, atk: 10, def: 3, spd: 6,
-    gold: [26, 48], xp: 22, intelligent: true, elite: true,
-    specials: [{ at: 4, name: 'Cane Tap', mult: 1.5, desc: 'taps the cane once' }],
+    id: 'oldman_gentle', name: 'Kindly Elder', glyph: '🧓', hp: 58, atk: 11, def: 3, spd: 6,
+    gold: [28, 50], xp: 24, intelligent: true, elite: true,
+    specials: [{ at: 4, name: 'Cane Tap', mult: 1.55, desc: 'taps the cane once' }],
   },
   oldman_wrath: {
-    id: 'oldman_wrath', name: 'Trialmaster', glyph: '⚡', hp: 118, atk: 18, def: 6, spd: 9,
-    gold: [95, 165], xp: 68, intelligent: true, elite: true, boss: true,
+    // boss:true for UI/rewards; eliteAtkRole avoids crushed boss.atk role scale.
+    id: 'oldman_wrath', name: 'Trialmaster', glyph: '⚡', hp: 130, atk: 19, def: 6, spd: 9,
+    gold: [100, 170], xp: 72, intelligent: true, elite: true, boss: true, eliteAtkRole: true,
+    enrageAtRound: 6, chargeGain: 1.1,
     specials: [
-      { at: 3, name: 'Lesson One', mult: 1.75, desc: 'the cane becomes a verdict' },
-      { at: 6, name: 'Final Examination', mult: 2.25, aoe: true, stun: 0.3, desc: 'the air itself quizzes you' },
+      { at: 3, name: 'Lesson One', mult: 1.85, desc: 'the cane becomes a verdict' },
+      { at: 6, name: 'Final Examination', mult: 2.3, aoe: true, stun: 0.3, desc: 'the air itself quizzes you' },
     ],
   },
 };

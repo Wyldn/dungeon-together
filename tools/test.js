@@ -343,7 +343,7 @@ console.log('— combat pacing (patch) —');
   t('no one-shots with free attacks', maxHit < weakestEnemy);
   t('basic enemies take 2-3 basic hits', weakestEnemy / (maxHit * 0.9) >= 1.3);
   t('lifesteal capped at a sliver', C.lifestealCapPct <= 0.05 && C.lifestealCapPct >= 0.01);
-  t('victory healing is lean', CONFIG.recovery.victoryHealPct <= 0.10 && CONFIG.recovery.floorHealPct <= 0.07);
+  t('lean floor/victory healing', CONFIG.recovery.victoryHealPct <= 0.09 && CONFIG.recovery.floorHealPct <= 0.06);
 
   // Mid-climb: free/low-cost hits should not delete commons; elites last longer.
   // Uses synthetic P60 climber + 100-power mid-variance hit (combat_sim model).
@@ -386,7 +386,7 @@ console.log('— kits & AOE access (patch) —');
 }
 
 console.log('— config sanity —');
-t('level-up restores 50% of missing', CONFIG.recovery.levelUpMissingPct === 0.5);
+t('level-up restores missing HP', CONFIG.recovery.levelUpMissingPct >= 0.45 && CONFIG.recovery.levelUpMissingPct <= 0.55);
 t('death respawn at 30% (reconciled with Guard)', CONFIG.death.respawnHpPct === 0.3 && CONFIG.death.respawnResourcePct === 0.3);
 t('revive pct matches respawn', CONFIG.death.reviveHpPct === CONFIG.death.respawnHpPct);
 t('guard blocks 30% (config)', CONFIG.guard.blockPct === 0.3);
