@@ -21,6 +21,36 @@ function scaleFor(fh, target) {
   return Math.max(1, Math.round(target / fh));
 }
 
+// Visible ink height inside the frame (many boss sheets are heavily padded).
+// Used so bosses fill the ~200px combat box instead of looking tiny in empty canvas.
+const BOSS_INK_H = {
+  bogmother: 11,
+  elderwood: 45,
+  lich: 22,
+  frost_queen: 59,
+  hydra: 23,
+  infernal_duke: 75,
+  ashen_sovereign: 76,
+  heartwood: 82,
+  ossuary_king: 78,
+  jarl_whitegrave: 72,
+  arch_tormentor: 77,
+  demon_king: 22, // static fallback sheet; anim path uses animmap inkH
+};
+
+const BOSS_CONTENT_TARGET = 176; // aim for this many CSS px of visible character
+const BOSS_BOX = 200;            // combat boss sprite box (~min-height)
+const BOSS_SCALE_CAP = 14;
+
+function bossScale(a, id) {
+  const inkH = a.inkH || BOSS_INK_H[id] || a.h;
+  const target = a.bossContent || BOSS_CONTENT_TARGET;
+  // Padded sheets: size by ink. Full-frame sheets: grow to fill the box.
+  const fromInk = Math.round(target / inkH);
+  const fromBox = Math.max(1, Math.ceil(BOSS_BOX / a.h));
+  return Math.max(1, Math.min(a.bossScaleCap || BOSS_SCALE_CAP, Math.max(fromInk, fromBox)));
+}
+
 // Two-frame (or N-frame) idle strips animate via background-position (CSS .px-sprite).
 // Bosses read large on the field; elites mid-size; summons/commons stay compact.
 export function enemySpriteHtml(id, { boss = false, elite = false, summon = false } = {}) {
@@ -28,8 +58,9 @@ export function enemySpriteHtml(id, { boss = false, elite = false, summon = fals
   const a = ENEMY_ART[id];
   if (!a) return null;
   const frames = a.frames || 2;
-  const target = boss ? 152 : summon ? 64 : elite ? 84 : 68;
-  const s = scaleFor(a.h, target);
+  const s = boss
+    ? bossScale(a, id)
+    : scaleFor(a.h, summon ? 64 : elite ? 84 : 68);
   const fw = a.w * s, fh = a.h * s;
   const anim = frames > 1 ? '' : 'animation:none;';
   return `<div class="px-sprite" style="width:${fw}px;height:${fh}px;--fw:${fw}px;--frames:${frames};background-image:url('${a.f}');background-size:${fw * frames}px ${fh}px;${anim}"></div>`;

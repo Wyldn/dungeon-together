@@ -53,18 +53,75 @@ export function canAfford(skill, mp, charge) {
   return mp >= (skill.cost || 0) && charge >= (skill.charge || 0);
 }
 
-// Enemy special selection: highest special the enemy can afford, else null.
-export function pickEnemySpecial(enemy) {
-  if (!enemy.specials) return null;
-  const affordable = enemy.specials.filter(s => (enemy.charge || 0) >= s.at);
+/**
+ * Effective offensive power for a skill.
+ * Authored `power` alone under-rewards high cost/charge spends vs cheap hits.
+ * Under-tuned skills are lifted toward a spend expectation curve; already-strong
+ * finishers (high authored power) are left alone.
+ *
+ * Spend units: cost/14 + charge  (bread-and-butter ≈ 14 cost + 1⚡ → 2.0)
+ */
+export function skillEffectivePower(sk) {
+  const power = sk?.power;
+  if (power == null || power <= 0) return power || 0;
+  const cost = sk.cost || 0;
+  const charge = sk.charge || 0;
+  const spend = cost / 14 + charge;
+  let expected = 100 + 12 * spend + 0.85 * spend * spend;
+  if (sk.target === 'all') expected *= 0.66;
+  if (power >= expected) return power;
+  // Close more of the gap on heavy spends so ultimates clearly beat mid skills.
+  const close = spend >= 5 ? 0.82 : spend >= 3 ? 0.72 : 0.55;
+  return Math.round(power + (expected - power) * close);
+}
+
+/**
+ * Enemy special selection: highest affordable special.
+ * Bosses (and `bankCharge` elites) may return null to bank toward a heavier
+ * special when close — so finishers at 5–6 actually fire instead of forever
+ * dumping charge on the lightest threshold.
+ *
+ * @param {object} enemy
+ * @param {{ chance: (p: number) => boolean } | null} [rng]  required for banking
+ */
+export function pickEnemySpecial(enemy, rng = null) {
+  if (!enemy.specials?.length) return null;
+  const charge = enemy.charge || 0;
+  const affordable = enemy.specials.filter(s => charge >= s.at);
   if (!affordable.length) return null;
-  return affordable.reduce((best, s) => (s.at > best.at ? s : best), affordable[0]);
+  const best = affordable.reduce((a, b) => (b.at > a.at ? b : a));
+  const maxAt = enemy.specials.reduce((m, s) => Math.max(m, s.at || 0), 0);
+  const next = enemy.specials.filter(s => s.at > charge).sort((a, b) => a.at - b.at)[0];
+  const canBank = !!(enemy.boss || enemy.bankCharge);
+  if (canBank && next && best.at < maxAt && rng && typeof rng.chance === 'function') {
+    const gap = next.at - charge;
+    const base = enemy.bankChance ?? CONFIG.boss?.bankChance ?? 0.55;
+    // Strong urge when one segment from a heavier move; softer at gap 2–3.
+    let p = 0;
+    if (gap === 1) p = base;
+    else if (gap === 2) p = base * 0.8;
+    else if (gap === 3) p = base * 0.4;
+    if (p > 0 && rng.chance(p)) return null;
+  }
+  return best;
 }
 
 // Is a dangerous enemy move one segment away (or ready)? → telegraph.
+// Bosses telegraph the heavier upcoming special when they are banking toward it.
 export function enemyTelegraph(enemy) {
-  if (!enemy.specials) return null;
+  if (!enemy.specials?.length) return null;
   const c = enemy.charge || 0;
+  const maxAt = enemy.specials.reduce((m, s) => Math.max(m, s.at || 0), 0);
+  const canBank = !!(enemy.boss || enemy.bankCharge);
+  if (canBank) {
+    // Prefer the heaviest special within 2 segments (what the boss is saving for).
+    const heavy = enemy.specials
+      .filter(s => s.at - c <= 2 && s.at >= Math.max(c, maxAt - 2))
+      .sort((a, b) => b.at - a.at)[0];
+    if (heavy) {
+      return { ready: c >= heavy.at, name: heavy.name, desc: heavy.desc, aoe: !!heavy.aoe };
+    }
+  }
   const next = enemy.specials.filter(s => s.at - c <= 1).sort((a, b) => b.at - a.at)[0];
   if (!next) return null;
   return { ready: c >= next.at, name: next.name, desc: next.desc, aoe: !!next.aoe };

@@ -39,36 +39,46 @@ export function appraisalRange(rng, value) {
 }
 
 /* ---- growth ranks (hidden) ----
-   Growth rank maps to a multiplier on level-up gains. */
+   Hidden growth potential (0.7–1.5). Mostly scales XP gained; a mild
+   residue still touches level-up HP/MP/stat gains. Revealed as a rank
+   only after a full (non-partial) appraisal. Common band is ~0.9–1.1
+   (D–B); WRLD (1.5) is rare and tends to finish climbs at WRLD power. */
 export const GROWTH_RANKS = [
-  { rank: 'WRLD', mult: 2.4 },
-  { rank: 'EX', mult: 2.0 },
-  { rank: 'S', mult: 1.7 },
-  { rank: 'A', mult: 1.4 },
-  { rank: 'B', mult: 1.2 },
+  { rank: 'WRLD', mult: 1.5 },
+  { rank: 'EX', mult: 1.4 },
+  { rank: 'S', mult: 1.3 },
+  { rank: 'A', mult: 1.2 },
+  { rank: 'B', mult: 1.1 },
   { rank: 'C', mult: 1.0 },
-  { rank: 'D', mult: 0.85 },
-  { rank: 'E', mult: 0.75 },
-  { rank: 'F', mult: 0.65 },
+  { rank: 'D', mult: 0.9 },
+  { rank: 'E', mult: 0.8 },
+  { rank: 'F', mult: 0.7 },
 ];
 
 export function growthMult(rank) {
   return GROWTH_RANKS.find(g => g.rank === rank)?.mult ?? 1.0;
 }
 
+/** Mild residue of growth on level-up body gains (XP is the main lever). */
+export function growthGainMult(rank, boost = 1) {
+  const g = growthMult(rank) * (boost || 1);
+  return 1 + (g - 1) * 0.35;
+}
+
+// Mid-start base weights (WRLD→F). Tuned so ~1% WRLD and ~70% land in
+// D–B (0.9–1.1). Weak starts shift mass upward; strong starts downward.
+const GROWTH_WEIGHTS = [1.0, 2.0, 4.0, 10, 22, 32, 18, 8, 3];
+
 // Roll a hidden growth rank, inversely correlated with starting power.
 // startPercentile: 0 = weakest possible start, 1 = strongest.
-// Bell-curve via 2 dice; strong starts shift the curve down, weak starts up.
-// Rare exceptions (S start with S+ growth) remain possible but very unlikely.
 export function rollGrowthRank(rng, startPercentile) {
-  // triangular roll centered on C (index 5), shifted INVERSELY to start power:
-  // weak starts drift toward A/S, strong starts toward D/E (handoff §6)
-  const dice = rng.int(0, 2) + rng.int(0, 2); // 0..4, triangular around 2
-  const inverse = Math.round((startPercentile - 0.5) * 4); // -2..+2
-  let idx = 5 + (dice - 2) + inverse;
-  // miracle rolls keep EX/WRLD (and strong-start S+) possible but very rare
-  if (rng.chance(0.02)) idx -= 2;
-  if (rng.chance(0.005)) idx -= 3;
-  idx = Math.max(0, Math.min(RANK_ORDER.length - 1, idx));
-  return RANK_ORDER[idx];
+  const p = Math.max(0, Math.min(1, Number(startPercentile) || 0.5));
+  // >0 for strong starts → favor worse growth (higher index)
+  const shift = (p - 0.5) * 2;
+  const center = 5; // C
+  const items = GROWTH_WEIGHTS.map((w, i) => ({
+    rank: RANK_ORDER[i],
+    w: Math.max(0.01, w * Math.exp(shift * (i - center) * 0.55)),
+  }));
+  return rng.weighted(items).rank;
 }

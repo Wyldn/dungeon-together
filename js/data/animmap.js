@@ -59,6 +59,7 @@ export const ENEMY_ANIM = {
   "fw": 100,
   "fh": 100,
   "disp": 100,
+  "inkH": 15,
   "states": {
    "idle": {
     "f": "assets/img/anim/demon_slime/idle.png",
@@ -109,6 +110,7 @@ export const ENEMY_ANIM = {
   "fw": 288,
   "fh": 160,
   "disp": 168,
+  "inkH": 105,
   "states": {
    "idle": {
     "f": "assets/img/anim/demon_king/idle.png",
@@ -261,6 +263,7 @@ export const ENEMY_ANIM = {
   "fw": 164,
   "fh": 158,
   "disp": 158,
+  "inkH": 82,
   "states": {
    "idle": {
     "f": "assets/img/anim/crowned_revenant/idle.png",

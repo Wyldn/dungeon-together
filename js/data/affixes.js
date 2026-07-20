@@ -13,7 +13,7 @@ export const WEAPON_AFFIXES = [
   { id: 'savage', name: 'Savage', pools: ['weapon'], props: { atk: 3 }, weight: 4 },
   { id: 'brutal', name: 'Brutal', pools: ['weapon'], props: { dmgMult: 1.06 }, weight: 6 },
   { id: 'ruthless', name: 'Ruthless', pools: ['weapon'], props: { dmgMult: 1.1 }, weight: 3 },
-  { id: 'charged', name: 'Charged', pools: ['weapon'], props: { startCharge: 1 }, weight: 5 },
+  // Opening Battle Charge is relic-mutex only — no random gear affix for it.
   { id: 'swift', name: 'Swift', pools: ['weapon'], props: { initiative: 1 }, weight: 8 },
   { id: 'hasty', name: 'Hasty', pools: ['weapon'], props: { initiative: 2 }, weight: 4 },
   { id: 'vampiric', name: 'Vampiric', pools: ['weapon'], props: { lifesteal: 0.05 }, weight: 5 },

@@ -331,9 +331,10 @@ export function newRun(meta, { classId, raceId = 'human', originId = null, name,
     level: 1,
     xp: 0,
     xpNext: 32,
-    // hidden values — never rendered directly (handoff §5)
+    // hidden values — growth rank stays sealed until a full appraisal
     growthRank: gen.growthRank,
     growthBoost: fateGrowthBoost(opts.fateRace, opts.fateClass),
+    growthRevealed: false,
     fateRace: !!opts.fateRace,
     fateClass: !!opts.fateClass,
     startPercentile: gen.percentile,
@@ -408,6 +409,10 @@ function migrateRun(run) {
   run.fame = run.fame ?? CONFIG.fame.start;
   run.growthRank = run.growthRank || 'C';
   run.growthBoost = run.growthBoost || 1;
+  run.growthRevealed = !!(run.growthRevealed || (run.appraisal && !run.appraisal.partial));
+  if (run.growthRevealed && run.appraisal && !run.appraisal.growthRank) {
+    run.appraisal.growthRank = run.growthRank;
+  }
   run.guardCount = run.guardCount || 0;
   run.appraisal = run.appraisal || null;
   run.recentCategories = run.recentCategories || [];

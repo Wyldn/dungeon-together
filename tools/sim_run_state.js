@@ -438,7 +438,10 @@ export function applyOutcomeHeadless(run, outcome, rng, ev = null, { partySize =
     else run.hp = Math.max(0, run.hp + amt);
   }
   if (o.maxHp) { run.maxHp += o.maxHp; run.hp += o.maxHp; }
-  if (o.fullHeal) run.hp = run.maxHp;
+  if (o.fullHeal) {
+    const miss = Math.max(0, run.maxHp - run.hp);
+    heal(run, Math.round(miss * (CONFIG.recovery.eventFullHealMissingPct ?? 0.4)));
+  }
   if (o.mana) restoreMana(run, o.mana);
   if (o.manaPct) restoreMana(run, run.maxMp * o.manaPct);
   if (o.fullMana) run.mp = run.maxMp;

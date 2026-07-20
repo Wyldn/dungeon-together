@@ -14,7 +14,7 @@ import {
   enemyScale, softLevelDamage, rewardMult, partyBossAoeMult, soloBossChargeForScale, TDC,
 } from './data/tdc.js';
 import { derived, gearHas, heal, restoreMana, usableSkillIds, resourceName, changeFame, classTitle } from './character.js';
-import { initiativeOrder, addCharge, tickEnemyCharge, canAfford, pickEnemySpecial, enemyTelegraph, applyGuard, applyDefense } from './systems.js';
+import { initiativeOrder, addCharge, tickEnemyCharge, canAfford, skillEffectivePower, pickEnemySpecial, enemyTelegraph, applyGuard, applyDefense } from './systems.js';
 import { biomeForFloor, ENEMIES } from './data/enemies.js';
 import { ICONS } from './icons.js';
 import { enemySpriteHtml, heroSpriteHtml, playHeroAnim, heroHasAnim, heroCombatSize, biomeBgUrl } from './art.js';
@@ -110,7 +110,50 @@ function enemyHitFreezes(e, special, rng) {
   if (e.freezeEvery) {
     return e.turnCount > 0 && e.turnCount % e.freezeEvery === 0;
   }
-  return (e.freeze && rng.chance(e.freeze)) || !!special?.freezeSure;
+  return (e.freeze && rng.chance(e.freeze))
+    || !!special?.freezeSure
+    || !!(special?.freeze && rng.chance(special.freeze));
+}
+
+/** Outgoing damage mult from weaken + burn (burn also DoTs separately). */
+function statusOutgoingMult(statuses = {}) {
+  const C = CONFIG.combat;
+  let m = 1;
+  if (statuses.weaken) m *= C.weakenDmgMult ?? 0.7;
+  if (statuses.burn) m *= C.burnDmgMult ?? 0.85;
+  return m;
+}
+
+/** Status riders an enemy hit may apply to a climber. */
+function collectEnemyRiders(e, special, rng) {
+  const C = CONFIG.combat;
+  const riders = {};
+  if ((e.poison && rng.chance(e.poison)) || special?.poisonSure
+    || (special?.poison && rng.chance(special.poison))) {
+    riders.poison = C.poisonTurns ?? 3;
+  }
+  if ((e.burn && rng.chance(e.burn)) || special?.burnSure
+    || (special?.burn && rng.chance(special.burn))) {
+    riders.burn = C.burnTurns ?? 2;
+  }
+  if (enemyHitFreezes(e, special, rng)) riders.freeze = 1;
+  if (special?.weakenSure || (special?.weaken && rng.chance(special.weaken))) riders.weaken = 3;
+  if (special?.frailSure || (special?.frail && rng.chance(special.frail))) riders.frail = 3;
+  if (special?.tormentedSure || (special?.tormented && rng.chance(special.tormented))) riders.tormented = 3;
+  if (special?.confusedSure || (special?.confused && rng.chance(special.confused))) riders.confused = C.confuseTurns ?? 2;
+  if (special?.lazySure || (special?.lazy && rng.chance(special.lazy))) riders.lazy = 2;
+  // Enemy `stun` was dead data — it now applies soft paralyze (initiative penalty).
+  if (special?.paralyzeSure || special?.stunSure
+    || (special?.paralyze && rng.chance(special.paralyze))
+    || (special?.stun && rng.chance(special.stun))) {
+    riders.paralyze = C.paralyzeTurns ?? 2;
+  }
+  return riders;
+}
+
+function initiativePenaltyFromStatuses(statuses = {}) {
+  if (!statuses.paralyzed) return 0;
+  return -(CONFIG.combat.paralyzeInitPenalty ?? 4);
 }
 
 export function buildEnemy(spec, floor, biomeStart, {
@@ -480,7 +523,9 @@ class Fight {
         if (sid === this.coop.you) {
           return {
             key: sid, name: this.run.name, glyph: null,
-            spdStat: Math.round(4 + d.dex * 0.3), mod: d.initiative + (this.mod.enemyFirst ? -100 : 0),
+            spdStat: Math.round(4 + d.dex * 0.3),
+            mod: d.initiative + (this.mod.enemyFirst ? -100 : 0)
+              + initiativePenaltyFromStatuses(this.player.statuses),
             isPlayer: true, stableId: sid,
           };
         }
@@ -488,18 +533,31 @@ class Fight {
         const spd = a?.spdStat ?? (a?.dex != null ? Math.round(4 + a.dex * 0.3) : 8);
         return {
           key: sid, name: a?.name || 'Companion', glyph: null,
-          spdStat: spd, mod: a?.initiative || 0,
+          spdStat: spd,
+          mod: (a?.initiative || 0) + initiativePenaltyFromStatuses(a?.statuses),
           isPlayer: true, stableId: sid,
         };
       });
       const foes = this.aliveEnemies().map(e => ({
-        key: e.uid, name: e.name, glyph: null, spdStat: e.spd, mod: 0, isPlayer: false, stableId: e.uid,
+        key: e.uid, name: e.name, glyph: null, spdStat: e.spd,
+        mod: initiativePenaltyFromStatuses(e.statuses),
+        isPlayer: false, stableId: e.uid,
       }));
       return [...players, ...foes];
     }
     return [
-      { key: 'player', name: this.run.name, glyph: null, spdStat: Math.round(4 + d.dex * 0.3), mod: d.initiative + (this.mod.enemyFirst ? -100 : 0), isPlayer: true, stableId: 'p-me' },
-      ...this.aliveEnemies().map(e => ({ key: e.uid, name: e.name, glyph: null, spdStat: e.spd, mod: 0, isPlayer: false, stableId: e.uid })),
+      {
+        key: 'player', name: this.run.name, glyph: null,
+        spdStat: Math.round(4 + d.dex * 0.3),
+        mod: d.initiative + (this.mod.enemyFirst ? -100 : 0)
+          + initiativePenaltyFromStatuses(this.player.statuses),
+        isPlayer: true, stableId: 'p-me',
+      },
+      ...this.aliveEnemies().map(e => ({
+        key: e.uid, name: e.name, glyph: null, spdStat: e.spd,
+        mod: initiativePenaltyFromStatuses(e.statuses),
+        isPlayer: false, stableId: e.uid,
+      })),
     ];
   }
 
@@ -844,6 +902,7 @@ class Fight {
             <div class="cx-head"><span class="fighter-name">${climberNameHtml(a.name, { title: a.title, nameStyle: a.nameStyle })}${a.down ? ' (down)' : ''}</span></div>
             <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${clamp(a.hp / a.maxHp * 100, 0, 100)}%"></div><span class="cx-bar-num">${Math.round(a.hp)}/${Math.round(a.maxHp)}</span></div></div>
           </div>
+          <div class="fighter-statuses">${this.statusPips(a.statuses || {})}</div>
         </div>`;
     }
     this.playerRow.innerHTML = html;
@@ -857,12 +916,13 @@ class Fight {
     if (st.burn) pips.push(`<span class="status-pip">burn ${st.burn}</span>`);
     if (st.frozen) pips.push(`<span class="status-pip">frozen</span>`);
     if (st.stunned) pips.push(`<span class="status-pip">stunned</span>`);
+    if (st.paralyzed) pips.push(`<span class="status-pip">paralyze ${st.paralyzed}</span>`);
     if (st.shield) pips.push(`<span class="status-pip">ward ${st.shield.turns}</span>`);
     if (st.hexed) pips.push(`<span class="status-pip">hex ${st.hexed}</span>`);
     if (st.weaken) pips.push(`<span class="status-pip">weaken ${st.weaken}</span>`);
     if (st.frail) pips.push(`<span class="status-pip">frail ${st.frail}</span>`);
     if (st.tormented) pips.push(`<span class="status-pip">torment ${st.tormented}</span>`);
-    if (st.confused) pips.push(`<span class="status-pip">confused</span>`);
+    if (st.confused) pips.push(`<span class="status-pip">confused ${st.confused}</span>`);
     if (st.lazy) pips.push(`<span class="status-pip">lazy ${st.lazy}</span>`);
     return pips.join('');
   }
@@ -919,10 +979,12 @@ class Fight {
     const d = this.d();
     const statVal = skillStatValue(sk, d);
     const C = CONFIG.combat;
+    const power = skillEffectivePower(sk);
     const base = (statVal * C.playerStatWeight + d.atk * C.playerAtkWeight + softLevelDamage(this.run.level, C.playerLevelWeight) + C.playerFlat)
-      * (sk.power / 100) * this.buffValue('str').mult;
+      * (power / 100) * this.buffValue('str').mult
+      * statusOutgoingMult(this.player.statuses);
     const label = sk.stat === 'best' ? 'best stat' : sk.stat.toUpperCase();
-    return { avg: Math.max(1, Math.round(base)), label, stat: sk.stat };
+    return { avg: Math.max(1, Math.round(base)), label, stat: sk.stat, power };
   }
 
   renderSkillMode(enabled) {
@@ -943,7 +1005,7 @@ class Fight {
       const est = this.estimateSkill(sk);
       // damage-formula hint (§4): "≈42 dmg · 130% DEX + weapon"
       const formula = est
-        ? `≈${est.avg}${sk.target === 'all' ? ' ea' : ''} dmg · ${sk.power}% ${est.label}`
+        ? `≈${est.avg}${sk.target === 'all' ? ' ea' : ''} dmg · ${est.power}% ${est.label}`
         : '';
       const btn = document.createElement('button');
       btn.className = `skill-btn ${sk.class === 'universal' ? 'universal' : ''} ${!isUsable ? 'incompatible' : ''}`;
@@ -1072,10 +1134,11 @@ class Fight {
     // guard expires at the start of your turn
     this.player.guarding = false;
     const st = this.player.statuses;
-    if (st.frozen || st.stunned || st.lazy || st.confused) {
-      const why = st.frozen ? 'frozen solid' : st.stunned ? 'stunned' : st.lazy ? 'too lazy to act' : 'too confused to act';
+    // Confuse no longer skips — offensive skills may whiff or hit allies instead.
+    if (st.frozen || st.stunned || st.lazy) {
+      const why = st.frozen ? 'frozen solid' : st.stunned ? 'stunned' : 'too lazy to act';
       this.log(`You are ${why} — turn lost!`, 'log-foe');
-      delete st.frozen; delete st.stunned; delete st.lazy; delete st.confused;
+      delete st.frozen; delete st.stunned; delete st.lazy;
       // a lost turn still ends: charge + resource tick over as usual
       this.gainCharge(CONFIG.charge.gainPerTurn);
       restoreMana(this.run, this.d().manaRegen);
@@ -1083,6 +1146,8 @@ class Fight {
       await sleep(700);
       return;
     }
+    if (st.confused) this.log('Your thoughts tangle — choose carefully. Attacks may go astray.', 'log-foe');
+    if (st.paralyzed) this.log('Paralysis weighs on you — you will act later in the round.', 'log-foe');
     this.locked = false;
     this.showTurnBanner(true);
     this.renderActions(true);
@@ -1123,10 +1188,34 @@ class Fight {
         if (d.initiative != null) a.initiative = d.initiative;
         if (d.dex != null) a.dex = d.dex;
         a.taunt = d.taunt || 0;
+        if (d.statuses) a.statuses = { ...d.statuses };
         if (d.appearanceId) a.appearanceId = d.appearanceId;
         if (d.title !== undefined) a.title = d.title;
         if (d.nameStyle !== undefined) a.nameStyle = d.nameStyle;
         if (d.name) a.name = d.name;
+      }
+      this.renderPlayers(this._actingKey);
+    }));
+    // Confused climber struck a companion — victim applies real HP loss.
+    this.offs.push(this.coop.net.on('cff', (d, from) => {
+      const attacker = this.allies.get(from)?.name || 'A companion';
+      if (d.to === this.coop.you) {
+        const dmg = Math.max(1, Math.round(d.dmg || 0));
+        this.run.hp = Math.max(0, this.run.hp - dmg);
+        this._taken(dmg);
+        this.float(this.playerFloatHost(), `-${dmg}`, 'incoming');
+        this.log(`${attacker} strikes YOU in confusion for ${dmg}!`, 'log-foe');
+        SFX.hit();
+        if (this.run.hp <= 0) { this.deathSaves(); if (this.run.hp <= 0) this.goDown(); }
+        this.coop.broadcastStatus(this.runStatus(), 'fighting');
+        this.onHud?.();
+      } else {
+        const a = this.allies.get(d.to);
+        if (a) {
+          a.hp = Math.max(0, a.hp - Math.max(1, Math.round(d.dmg || 0)));
+          this.float(this.allyFloatHost(d.to), `-${Math.round(d.dmg || 0)}`, 'incoming');
+          this.log(`${attacker} strikes ${a.name} in confusion!`, 'log-foe');
+        }
       }
       this.renderPlayers(this._actingKey);
     }));
@@ -1218,6 +1307,7 @@ class Fight {
       ...r, def: d.def, dodge: d.dodge,
       spdStat: Math.round(4 + d.dex * 0.3),
       initiative: d.initiative,
+      statuses: { ...(this.player.statuses || {}) },
     };
   }
 
@@ -1253,9 +1343,10 @@ class Fight {
     }
     this.player.guarding = false;
     const st = this.player.statuses;
-    if (st.frozen || st.stunned) {
-      this.log(`You are ${st.frozen ? 'frozen solid' : 'stunned'} — turn lost!`, 'log-foe');
-      delete st.frozen; delete st.stunned;
+    if (st.frozen || st.stunned || st.lazy) {
+      const why = st.frozen ? 'frozen solid' : st.stunned ? 'stunned' : 'too lazy to act';
+      this.log(`You are ${why} — turn lost!`, 'log-foe');
+      delete st.frozen; delete st.stunned; delete st.lazy;
       // a lost turn still ends: charge + resource tick over as usual
       this.gainCharge(CONFIG.charge.gainPerTurn);
       restoreMana(this.run, this.d().manaRegen);
@@ -1264,6 +1355,8 @@ class Fight {
       await sleep(600);
       return;
     }
+    if (st.confused) this.log('Your thoughts tangle — attacks may strike a companion instead.', 'log-foe');
+    if (st.paralyzed) this.log('Paralysis weighs on you — you will act later in the round.', 'log-foe');
     this.locked = false;
     this.showTurnBanner(true);
     this.renderActions(true);
@@ -1334,7 +1427,7 @@ class Fight {
       .map(id => SKILLS[id])
       .filter(sk => sk && usable.includes(sk.id) && !sk.allyTarget && sk.id !== 'guard')
       .filter(afford)
-      .sort((a, b) => (b.power || 0) - (a.power || 0) || (b.charge || 0) - (a.charge || 0));
+      .sort((a, b) => skillEffectivePower(b) - skillEffectivePower(a) || (b.charge || 0) - (a.charge || 0));
     const sk = pool[0] || SKILLS.basic_attack;
 
     let best = -1;
@@ -1451,18 +1544,33 @@ class Fight {
       }
       this.bossPhaseChecks(e, ops);
 
-      if (e.statuses.frozen || e.statuses.stunned || e.statuses.lazy || e.statuses.confused) {
-        const why = e.statuses.frozen ? 'frozen' : e.statuses.stunned ? 'stunned' : e.statuses.lazy ? 'lazy' : 'confused';
+      if (e.statuses.frozen || e.statuses.stunned || e.statuses.lazy) {
+        const why = e.statuses.frozen ? 'frozen' : e.statuses.stunned ? 'stunned' : 'lazy';
         ops.push({ type: 'skip', uid: e.uid, why });
         this.log(`${e.name} is ${why} — it cannot act.`, 'log-foe');
         delete e.statuses.frozen; delete e.statuses.stunned;
-        delete e.statuses.lazy; delete e.statuses.confused;
+        delete e.statuses.lazy;
+        this.renderEnemies();
+        await sleep(350);
+        continue;
+      }
+      if (e.statuses.confused) {
+        delete e.statuses.confused;
+        if (this.aliveEnemies().length > 1) {
+          await this.enemyConfusedStrike(e);
+          ops.push({ type: 'confused', uid: e.uid });
+          this.renderEnemies();
+          await sleep(350);
+          continue;
+        }
+        ops.push({ type: 'skip', uid: e.uid, why: 'confused' });
+        this.log(`${e.name} is confused — it flails and hits nothing.`, 'log-foe');
         this.renderEnemies();
         await sleep(350);
         continue;
       }
 
-      const special = pickEnemySpecial(e);
+      const special = pickEnemySpecial(e, this.rng);
       const targets = [{ id: this.coop.you, def: this.d().def, dodge: this.d().dodge, down: this.run.down, taunt: this.run.combatTaunt || 0 },
         ...[...this.allies.entries()].map(([id, a]) => ({ id, def: a.def, dodge: a.dodge, down: a.down, taunt: a.taunt || 0 }))]
         .filter(t => !t.down);
@@ -1500,19 +1608,11 @@ class Fight {
         }
         let dmg = e.atk * CONFIG.combat.enemyAtkMult * (0.85 + this.rng.next() * 0.3) * (this.mod.dmgMult || 1) * (special?.mult || 1) * chargeScale;
         if (special?.aoe) dmg *= partyBossAoeMult(targets.length);
-        if (e.statuses.weaken) dmg *= 0.7;
+        dmg *= statusOutgoingMult(e.statuses);
         if (this.rng.chance(this.d().enemyCrit / 100)) dmg *= 1.5;
         if (e.caster && !special && e.turnCount % 2 === 0) dmg *= 1.4;
         dmg = applyDefense(dmg, target.def);
-        const riders = {};
-        if ((e.poison && this.rng.chance(e.poison)) || special?.poisonSure) riders.poison = 3;
-        if ((e.burn && this.rng.chance(e.burn)) || special?.burnSure) riders.burn = 2;
-        if (enemyHitFreezes(e, special, this.rng)) riders.freeze = 1;
-        if (special?.weakenSure || (special?.weaken && this.rng.chance(special.weaken))) riders.weaken = 3;
-        if (special?.frailSure || (special?.frail && this.rng.chance(special.frail))) riders.frail = 3;
-        if (special?.tormentedSure || (special?.tormented && this.rng.chance(special.tormented))) riders.tormented = 3;
-        if (special?.confusedSure || (special?.confused && this.rng.chance(special.confused))) riders.confused = 1;
-        if (special?.lazySure || (special?.lazy && this.rng.chance(special.lazy))) riders.lazy = 2;
+        const riders = collectEnemyRiders(e, special, this.rng);
         if (e.lifesteal || special?.heal) e.hp = Math.min(e.maxHp, e.hp + Math.round(e.maxHp * (special?.heal || 0)) + Math.round(dmg * (e.lifesteal || 0)));
         const op = { type: 'hit', uid: e.uid, target: target.id, dmg, riders, special: special?.name };
         ops.push(op);
@@ -1558,6 +1658,31 @@ class Fight {
     }
   }
 
+  applyStatusRiders(r) {
+    if (!r || !Object.keys(r).length) return;
+    const st = this.player.statuses;
+    if (r.poison && !this.rng.chance(this.d().poisonResist)) { st.poison = r.poison; this.log('You are poisoned!', 'log-foe'); }
+    if (r.burn) { st.burn = r.burn; this.log('You are set ablaze!', 'log-foe'); }
+    if (r.freeze) { st.frozen = 1; this.log('You are frozen!', 'log-foe'); SFX.freeze(); }
+    if (r.weaken) { st.weaken = r.weaken; this.log('You feel weakened!', 'log-foe'); }
+    if (r.frail) { st.frail = r.frail; this.log('You feel frail!', 'log-foe'); }
+    if (r.tormented) { st.tormented = r.tormented; this.log('Torment claws at you!', 'log-foe'); }
+    if (r.confused) { st.confused = r.confused; this.log('Your thoughts tangle!', 'log-foe'); }
+    if (r.lazy) { st.lazy = r.lazy; this.log('Your limbs grow heavy!', 'log-foe'); }
+    if (r.paralyze) { st.paralyzed = r.paralyze; this.log('Your nerves seize — paralysis!', 'log-foe'); }
+  }
+
+  /** Rough strike damage for confused friendly-fire (no crit / buff variance). */
+  estimateConfusedStrikeDmg(sk, d) {
+    const C = CONFIG.combat;
+    const statVal = skillStatValue(sk, d);
+    const power = sk.power || 100;
+    const base = (statVal * C.playerStatWeight + d.atk * C.playerAtkWeight
+      + softLevelDamage(this.run.level, C.playerLevelWeight) + C.playerFlat)
+      * (power / 100) * statusOutgoingMult(this.player.statuses);
+    return Math.max(1, Math.round(base * 0.85));
+  }
+
   applyHitOp(op, enemyRef = null) {
     const e = enemyRef || this.enemyByUid(op.uid);
     if (op.dodged) {
@@ -1573,7 +1698,9 @@ class Fight {
       if (shield) dmg = Math.max(1, Math.round(dmg * (1 - shield.mult)));
       dmg = applyGuard(dmg, this.player.guarding);
       dmg = Math.max(1, Math.round(dmg * this.d().dmgTakenMult * this.partyBuffMult('dr')));
-      if (this.player.statuses.frail || this.player.statuses.tormented) dmg = Math.max(1, Math.round(dmg * 1.25));
+      if (this.player.statuses.frail || this.player.statuses.tormented) {
+        dmg = Math.max(1, Math.round(dmg * (CONFIG.combat.frailTakenMult ?? 1.25)));
+      }
       this.run.hp = Math.max(0, this.run.hp - dmg);
       this.damageTaken = (this.damageTaken || 0) + dmg;
       this._taken(dmg);
@@ -1584,15 +1711,7 @@ class Fight {
       // §9: tell the party the ACTUAL damage taken (after guard/shield/armor),
       // so companions render the blocked number, not the host's raw estimate.
       this.coop.net.send({ k: 'chit', dmg, guarded: this.player.guarding, by: e?.name, special: op.special });
-      const r = op.riders || {};
-      if (r.poison && !this.rng.chance(this.d().poisonResist)) { this.player.statuses.poison = r.poison; this.log('You are poisoned!', 'log-foe'); }
-      if (r.burn) { this.player.statuses.burn = r.burn; this.log('You are set ablaze!', 'log-foe'); }
-      if (r.freeze) { this.player.statuses.frozen = 1; this.log('You are frozen!', 'log-foe'); SFX.freeze(); }
-      if (r.weaken) { this.player.statuses.weaken = r.weaken; this.log('You feel weakened!', 'log-foe'); }
-      if (r.frail) { this.player.statuses.frail = r.frail; this.log('You feel frail!', 'log-foe'); }
-      if (r.tormented) { this.player.statuses.tormented = r.tormented; this.log('Torment claws at you!', 'log-foe'); }
-      if (r.confused) { this.player.statuses.confused = r.confused; this.log('Your thoughts tangle!', 'log-foe'); }
-      if (r.lazy) { this.player.statuses.lazy = r.lazy; this.log('Your limbs grow heavy!', 'log-foe'); }
+      this.applyStatusRiders(op.riders || {});
       if (this.run.hp <= 0) this.deathSaves();
       if (this.run.hp <= 0) this.goDown();
       this.coop.broadcastStatus(this.runStatus(), 'fighting');
@@ -1720,6 +1839,7 @@ class Fight {
     e.cleanseCost = p2.cleanseCost ?? e.cleanseCost;
     e.phases = !!p2.phases;
     e.taunt = p2.taunt ?? e.taunt;
+    if (p2.bankChance != null) e.bankChance = p2.bankChance;
     e.charge = 0; e.statuses = {}; e.phaseTriggers = [];
     e.twoPhase = false; e.phase = 2;
     this.syncOrderIdentity(e);
@@ -1855,6 +1975,36 @@ class Fight {
       }
     }
 
+    // Confused: offensive skills risk striking a companion (co-op) or whiffing (solo).
+    if (this.player.statuses.confused && sk.power && sk.target !== 'self' && !sk.guard) {
+      const C = CONFIG.combat;
+      if (this.shared) {
+        const living = [...this.allies.entries()].filter(([, a]) => a && !a.down && a.hp > 0);
+        if (living.length && this.rng.chance(C.confuseAllyHitChance ?? 0.55)) {
+          const [to, a] = this.rng.pick(living);
+          const dmg = this.estimateConfusedStrikeDmg(sk, d);
+          this.log(`Confusion takes the wheel — you strike ${a.name} for ${dmg}!`, 'log-foe');
+          SFX.hit();
+          this.float(this.allyFloatHost(to), `-${dmg}`, 'incoming');
+          a.hp = Math.max(0, a.hp - dmg);
+          this.coop.net.send({ k: 'cff', to, dmg, label: sk.name });
+          this.coop.net.send({ k: 'cact', label: sk.name, targets: [], confused: true });
+          this.coop.broadcastStatus(this.runStatus(), 'fighting');
+          this.renderPlayers(this._actingKey);
+          await sleep(CONFIG.combat.skillResolveMs || 950);
+          this.endPlayerAction();
+          return;
+        }
+      } else if (this.rng.chance(C.confuseSoloWhiffChance ?? 0.4)) {
+        this.log('Confusion takes the wheel — you swing at phantoms and hit nothing!', 'log-foe');
+        SFX.miss();
+        this.renderPlayers();
+        await sleep(700);
+        this.endPlayerAction();
+        return;
+      }
+    }
+
     const targets = sk.target === 'all' ? this.aliveEnemies()
       : sk.target === 'self' ? []
       : [this.enemies[this.target]].filter(e => e && e.hp > 0);
@@ -1944,16 +2094,16 @@ class Fight {
     const buff = this.buffValue('str');
     const C = CONFIG.combat;
     let base = (statVal * C.playerStatWeight + d.atk * C.playerAtkWeight + softLevelDamage(this.run.level, C.playerLevelWeight) + C.playerFlat)
-      * (sk.power / 100) * buff.mult;
+      * (skillEffectivePower(sk) / 100) * buff.mult;
     let critChance = d.crit + (sk.critBonus || 0);
     const isCrit = this.rng.chance(clamp(critChance, 0, 85) / 100);
     let dmg = base * (0.85 + this.rng.next() * 0.3);
     if (isCrit) { dmg *= 1.6; this.gainCharge(CONFIG.charge.gainOnCrit); }
     dmg *= d.dmgMult * (this.mod.dmgMult || 1) * this.partyBuffMult('dmg');
-    if (this.player.statuses.weaken) dmg *= 0.7;
+    dmg *= statusOutgoingMult(this.player.statuses);
     if (e.boss) dmg *= d.bossDmgMult;
     if (e.statuses.hexed) dmg *= C.hexTakenMult;
-    if (e.statuses.frail || e.statuses.tormented) dmg *= 1.25;
+    if (e.statuses.frail || e.statuses.tormented) dmg *= (C.frailTakenMult ?? 1.25);
     // The Berserker's Heart: on its chosen round, everything doubles (§15)
     if (d.doubleDmgRound && this.round === d.doubleDmgRound) dmg *= 2;
     dmg = applyDefense(dmg, e.def, { ignoreDef: !!sk.ignoreDef });
@@ -1986,24 +2136,39 @@ class Fight {
     }
 
     const newStatuses = {};
+    const Cstat = CONFIG.combat;
     const burnCh = (sk.burn || 0) + d.burn;
     const freezeCh = (sk.freeze || 0) + d.freeze;
     const poisonCh = (sk.poison || 0) + (d.poison || 0);
     const weakenCh = (sk.weaken || 0) + (d.weaken || 0);
     const frailCh = (sk.frail || 0) + (d.frail || 0);
     if (e.hp > 0) {
-      if (poisonCh && this.rng.chance(poisonCh)) { e.statuses.poison = 3; newStatuses.poison = 3; this.log(`${e.name} is poisoned.`, 'log-ally'); }
-      if (burnCh && this.rng.chance(burnCh)) { e.statuses.burn = 2; newStatuses.burn = 2; this.log(`${e.name} catches fire.`, 'log-ally'); SFX.fire(); }
+      if (poisonCh && this.rng.chance(poisonCh)) {
+        e.statuses.poison = Cstat.poisonTurns ?? 3; newStatuses.poison = e.statuses.poison;
+        this.log(`${e.name} is poisoned.`, 'log-ally');
+      }
+      if (burnCh && this.rng.chance(burnCh)) {
+        e.statuses.burn = Cstat.burnTurns ?? 2; newStatuses.burn = e.statuses.burn;
+        this.log(`${e.name} catches fire.`, 'log-ally'); SFX.fire();
+      }
       if (freezeCh && this.rng.chance(freezeCh)) { e.statuses.frozen = 1; newStatuses.frozen = 1; this.log(`${e.name} is frozen solid.`, 'log-ally'); SFX.freeze(); }
       const stunCh = (sk.stun || 0) + (d.stun || 0);
       if (stunCh && this.rng.chance(stunCh)) { e.statuses.stunned = 1; newStatuses.stunned = 1; this.log(`${e.name} is stunned.`, 'log-ally'); }
+      const paraCh = (sk.paralyze || 0) + (d.paralyze || 0);
+      if (paraCh && this.rng.chance(paraCh)) {
+        e.statuses.paralyzed = Cstat.paralyzeTurns ?? 2; newStatuses.paralyzed = e.statuses.paralyzed;
+        this.log(`${e.name} is paralyzed.`, 'log-ally');
+      }
       if (sk.hex && this.rng.chance(sk.hex)) { e.statuses.hexed = 3; newStatuses.hexed = 3; this.log(`${e.name} is hexed — it will suffer more.`, 'log-ally'); }
       if (weakenCh && this.rng.chance(Math.min(1, weakenCh))) { e.statuses.weaken = 3; newStatuses.weaken = 3; this.log(`${e.name} is weakened.`, 'log-ally'); }
       if (frailCh && this.rng.chance(Math.min(1, frailCh))) { e.statuses.frail = 3; newStatuses.frail = 3; this.log(`${e.name} is frail.`, 'log-ally'); }
       const tormentCh = (sk.tormented || 0) + (d.tormented || 0);
       if (tormentCh && this.rng.chance(Math.min(1, tormentCh))) { e.statuses.tormented = 3; newStatuses.tormented = 3; this.log(`${e.name} is tormented.`, 'log-ally'); }
       const confuseCh = (sk.confused || 0) + (d.confused || 0);
-      if (confuseCh && this.rng.chance(confuseCh)) { e.statuses.confused = 1; newStatuses.confused = 1; this.log(`${e.name} is confused.`, 'log-ally'); }
+      if (confuseCh && this.rng.chance(confuseCh)) {
+        e.statuses.confused = Cstat.confuseTurns ?? 2; newStatuses.confused = e.statuses.confused;
+        this.log(`${e.name} is confused.`, 'log-ally');
+      }
       const lazyCh = (sk.lazy || 0) + (d.lazy || 0);
       if (lazyCh && this.rng.chance(lazyCh)) { e.statuses.lazy = 2; newStatuses.lazy = 2; this.log(`${e.name} grows lazy.`, 'log-ally'); }
     } else {
@@ -2090,11 +2255,23 @@ class Fight {
     }
     this.bossPhaseChecksSolo(e);
 
-    if (e.statuses.frozen || e.statuses.stunned || e.statuses.lazy || e.statuses.confused) {
-      const why = e.statuses.frozen ? 'frozen' : e.statuses.stunned ? 'stunned' : e.statuses.lazy ? 'lazy' : 'confused';
+    if (e.statuses.frozen || e.statuses.stunned || e.statuses.lazy) {
+      const why = e.statuses.frozen ? 'frozen' : e.statuses.stunned ? 'stunned' : 'lazy';
       this.log(`${e.name} is ${why} — it cannot act.`, 'log-foe');
       delete e.statuses.frozen; delete e.statuses.stunned;
-      delete e.statuses.lazy; delete e.statuses.confused;
+      delete e.statuses.lazy;
+      this.renderEnemies();
+      await sleep(350);
+      return;
+    }
+
+    // Confused foes turn on their own when they can; otherwise they thrash uselessly.
+    if (e.statuses.confused) {
+      delete e.statuses.confused;
+      if (this.aliveEnemies().length > 1) {
+        if (await this.enemyConfusedStrike(e)) return;
+      }
+      this.log(`${e.name} is confused — it flails and hits nothing.`, 'log-foe');
       this.renderEnemies();
       await sleep(350);
       return;
@@ -2106,7 +2283,7 @@ class Fight {
       if (await this.enemyConfusedStrike(e)) return;
     }
 
-    const special = pickEnemySpecial(e);
+    const special = pickEnemySpecial(e, this.rng);
     // §12: a boss's heavy telegraphed hit scales with the charge it banked
     let chargeScale = 1;
     if (special) {
@@ -2141,14 +2318,16 @@ class Fight {
       const afterDef = applyDefense(raw, this.d().def);
       console.debug(`[combat] ${e.name} atk=${e.atk} raw=${raw.toFixed(1)} afterDef=${afterDef} def=${this.d().def}`);
     }
-    if (e.statuses.weaken) dmg *= 0.7;
+    dmg *= statusOutgoingMult(e.statuses);
     if (this.rng.chance(d.enemyCrit / 100)) dmg *= 1.5;
     dmg = applyDefense(dmg, d.def);
     if (e.caster && !special && e.turnCount % 2 === 0) { dmg *= 1.4; this.log(`${e.name} channels a darker spell!`, 'log-foe'); }
     const shield = this.player.statuses.shield;
     if (shield) dmg *= (1 - shield.mult);
     dmg = applyGuard(Math.max(1, Math.round(dmg * d.dmgTakenMult * this.partyBuffMult('dr'))), this.player.guarding);
-    if (this.player.statuses.frail || this.player.statuses.tormented) dmg = Math.max(1, Math.round(dmg * 1.25));
+    if (this.player.statuses.frail || this.player.statuses.tormented) {
+      dmg = Math.max(1, Math.round(dmg * (CONFIG.combat.frailTakenMult ?? 1.25)));
+    }
 
     this.run.hp = Math.max(0, this.run.hp - dmg);
     this.damageTaken = (this.damageTaken || 0) + dmg;
@@ -2173,14 +2352,7 @@ class Fight {
       e.hp = Math.min(e.maxHp, e.hp + Math.round(dmg * (e.lifesteal || 0)) + Math.round(e.maxHp * (special?.heal || 0)));
       this.log(`${e.name} drinks deep.`, 'log-foe');
     }
-    if (((e.poison && this.rng.chance(e.poison)) || special?.poisonSure) && !this.rng.chance(d.poisonResist)) { this.player.statuses.poison = 3; this.log('You are poisoned!', 'log-foe'); }
-    if ((e.burn && this.rng.chance(e.burn)) || special?.burnSure) { this.player.statuses.burn = 2; this.log('You are set ablaze!', 'log-foe'); }
-    if (enemyHitFreezes(e, special, this.rng)) { this.player.statuses.frozen = 1; this.log('You are frozen!', 'log-foe'); SFX.freeze(); }
-    if (special?.weakenSure || (special?.weaken && this.rng.chance(special.weaken))) { this.player.statuses.weaken = 3; this.log('You feel weakened!', 'log-foe'); }
-    if (special?.frailSure || (special?.frail && this.rng.chance(special.frail))) { this.player.statuses.frail = 3; this.log('You feel frail!', 'log-foe'); }
-    if (special?.tormentedSure || (special?.tormented && this.rng.chance(special.tormented))) { this.player.statuses.tormented = 3; this.log('Torment claws at you!', 'log-foe'); }
-    if (special?.confusedSure || (special?.confused && this.rng.chance(special.confused))) { this.player.statuses.confused = 1; this.log('Your thoughts tangle!', 'log-foe'); }
-    if (special?.lazySure || (special?.lazy && this.rng.chance(special.lazy))) { this.player.statuses.lazy = 2; this.log('Your limbs grow heavy!', 'log-foe'); }
+    this.applyStatusRiders(collectEnemyRiders(e, special, this.rng));
 
     if (this.run.hp <= 0) this.deathSaves();
 
@@ -2222,9 +2394,10 @@ class Fight {
 
   /* ---- end-of-round upkeep ---- */
   async tickEnemyStatuses(ops = null) {
+    const C = CONFIG.combat;
     for (const e of this.aliveEnemies()) {
       if (e.statuses.poison) {
-        const dmg = Math.max(2, Math.round(e.maxHp * 0.07));
+        const dmg = Math.max(2, Math.round(e.maxHp * (C.poisonPctOnEnemy ?? 0.1)));
         e.hp = Math.max(0, e.hp - dmg);
         this.float(this.sprite(e.uid)?.parentElement, `${dmg}`, 'dmg');
         this.log(`${e.name} suffers ${dmg} poison damage.`);
@@ -2233,7 +2406,7 @@ class Fight {
         ops?.push({ type: 'edot', uid: e.uid, dmg, hpAfter: e.hp, kind: 'poison' });
       }
       if (e.statuses.burn) {
-        const dmg = Math.max(2, Math.round(e.maxHp * 0.055));
+        const dmg = Math.max(2, Math.round(e.maxHp * (C.burnPctOnEnemy ?? 0.055)));
         e.hp = Math.max(0, e.hp - dmg);
         this.float(this.sprite(e.uid)?.parentElement, `${dmg}`, 'dmg');
         this.log(`${e.name} burns for ${dmg}.`);
@@ -2242,7 +2415,7 @@ class Fight {
         ops?.push({ type: 'edot', uid: e.uid, dmg, hpAfter: e.hp, kind: 'burn' });
       }
       if (e.statuses.hexed) { e.statuses.hexed--; if (e.statuses.hexed <= 0) delete e.statuses.hexed; }
-      for (const k of ['weaken', 'frail', 'tormented', 'lazy']) {
+      for (const k of ['weaken', 'frail', 'tormented', 'lazy', 'paralyzed', 'confused']) {
         if (e.statuses[k]) { e.statuses[k]--; if (e.statuses[k] <= 0) delete e.statuses[k]; }
       }
       if (e.regen && e.hp > 0 && e.hp < e.maxHp) {
@@ -2259,8 +2432,9 @@ class Fight {
   async upkeep() {
     if (!this.shared) await this.tickEnemyStatuses();
     const st = this.player.statuses;
+    const C = CONFIG.combat;
     if (st.poison && this.run.hp > 0) {
-      const dmg = Math.max(2, Math.round(this.run.maxHp * 0.05));
+      const dmg = Math.max(2, Math.round(this.run.maxHp * (C.poisonPctOnPlayer ?? 0.08)));
       this.run.hp = Math.max(0, this.run.hp - dmg);
       this._taken(dmg);
       this.float(this.playerFloatHost(), `-${dmg}`, 'incoming');
@@ -2269,7 +2443,7 @@ class Fight {
       if (this.run.hp <= 0) { this.deathSaves(); if (this.shared && this.run.hp <= 0) this.goDown(); }
     }
     if (st.burn && this.run.hp > 0) {
-      const dmg = Math.max(3, Math.round(this.run.maxHp * 0.06));
+      const dmg = Math.max(3, Math.round(this.run.maxHp * (C.burnPctOnPlayer ?? 0.06)));
       this.run.hp = Math.max(0, this.run.hp - dmg);
       this._taken(dmg);
       this.float(this.playerFloatHost(), `-${dmg}`, 'incoming');
@@ -2278,7 +2452,7 @@ class Fight {
       if (this.run.hp <= 0) { this.deathSaves(); if (this.shared && this.run.hp <= 0) this.goDown(); }
     }
     if (st.shield) { st.shield.turns--; if (st.shield.turns <= 0) delete st.shield; }
-    for (const k of ['weaken', 'frail', 'tormented', 'lazy', 'confused']) {
+    for (const k of ['weaken', 'frail', 'tormented', 'lazy', 'confused', 'paralyzed']) {
       if (st[k]) { st[k]--; if (st[k] <= 0) delete st[k]; }
     }
     if (this.run.combatTaunt) {

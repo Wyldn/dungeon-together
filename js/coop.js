@@ -74,10 +74,14 @@ export class CoopSession {
         this.eventResults.set(`${d.floor}:${d.eventId}`, d.idx);
       }
     }));
+    // Buffered host→guest packages so a slow client can't miss them
+    // (classic freeze: host rolls mimic / pack before guests await once()).
     this._pendingEvFight = null;
-    this.offs.push(net.on('evfight', d => {
-      this._pendingEvFight = d;
-    }));
+    this._pendingChestRoll = null;
+    this._pendingEvEnemies = null;
+    this.offs.push(net.on('evfight', d => { this._pendingEvFight = d; }));
+    this.offs.push(net.on('chestroll', d => { this._pendingChestRoll = d; }));
+    this.offs.push(net.on('evenemies', d => { this._pendingEvEnemies = d; }));
     this.offs.push(net.sys('roster', () => {
       this._syncRoster();
       this.onPartnerUpdate?.();
@@ -163,6 +167,48 @@ export class CoopSession {
   waitFloor(floor) {
     if (this.floorContent.has(floor)) return Promise.resolve(this.floorContent.get(floor));
     return new Promise(r => { this.floorWaiters.set(floor, r); });
+  }
+
+  /**
+   * Wait for a host package, using the pending buffer + a re-check after
+   * subscribe so messages that arrive in the race window are not lost.
+   */
+  _waitBuffered(bufKey, msgKey, match) {
+    return new Promise(resolve => {
+      let done = false;
+      const take = (d) => {
+        if (done || !d || (match && !match(d))) return false;
+        done = true;
+        this[bufKey] = null;
+        resolve(d);
+        return true;
+      };
+      if (take(this[bufKey])) return;
+      const off = this.net.on(msgKey, (d) => { if (take(d)) off(); });
+      // Re-check after subscribe — covers host-send-during-await races.
+      if (take(this[bufKey])) off();
+    });
+  }
+
+  waitEvFight(floor, eventId) {
+    return this._waitBuffered(
+      '_pendingEvFight', 'evfight',
+      d => d.floor === floor && d.eventId === eventId,
+    );
+  }
+
+  waitChestRoll(floor, eventId) {
+    return this._waitBuffered(
+      '_pendingChestRoll', 'chestroll',
+      d => d.floor === floor && d.eventId === eventId,
+    );
+  }
+
+  waitEvEnemies(floor, eventId) {
+    return this._waitBuffered(
+      '_pendingEvEnemies', 'evenemies',
+      d => d.floor === floor && d.eventId === eventId,
+    );
   }
 
   broadcastStatus(run, act) {

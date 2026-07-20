@@ -2,6 +2,8 @@
 // Each event keeps its title/text/choices; tags only nudge draw weight (and
 // light outcome hooks) via TAG_RULES. Compose freely; unknown tags are ignored.
 
+import { CONFIG } from './config.js';
+
 /**
  * Canonical tag ids (authoring vocabulary).
  * mentor | gamble | curse | blessing | stat-test | resource-test | fame-test |
@@ -178,6 +180,61 @@ export function applyTagOutcomeMods(outcome, event, state) {
   }
   if (tags.includes('fame-test') && (state.fame || 0) >= 40 && typeof o.gold === 'number' && o.gold > 0) {
     o.gold = Math.round(o.gold * 1.1);
+  }
+  return o;
+}
+
+/**
+ * ✦ star-event blessing — scales loot on every choice of a sparkled path.
+ * High chance to flag equipment rolls for a rarity-tier bump.
+ */
+export function applySparkleOutcomeMods(outcome, { floor = 1, rng = null } = {}) {
+  if (!outcome) return outcome;
+  const S = CONFIG.events?.sparkle || {
+    goldMult: 1.65, xpMult: 1.55, fameMult: 1.5, healMult: 1.3,
+    bonusGold: 18, bonusXp: 14, bonusFame: 1,
+    rarityBumpChance: 0.7, luckBonus: 5,
+  };
+  const o = { ...outcome };
+  if (typeof o.gold === 'number' && o.gold > 0) o.gold = Math.round(o.gold * S.goldMult);
+  if (typeof o.xp === 'number' && o.xp > 0) o.xp = Math.round(o.xp * S.xpMult);
+  if (typeof o.xpScaled === 'number' && o.xpScaled > 0) o.xpScaled = Math.round(o.xpScaled * S.xpMult);
+  if (typeof o.fame === 'number' && o.fame > 0) o.fame = Math.max(1, Math.round(o.fame * S.fameMult));
+  if (typeof o.hp === 'number' && o.hp > 0) o.hp = Math.round(o.hp * S.healMult);
+  if (typeof o.hpPct === 'number' && o.hpPct > 0) o.hpPct = Math.round(o.hpPct * S.healMult * 100) / 100;
+  if (typeof o.mana === 'number' && o.mana > 0) o.mana = Math.round(o.mana * S.healMult);
+  if (typeof o.statUpRandom === 'number' && o.statUpRandom > 0) o.statUpRandom += 1;
+  if (typeof o.statUpMain === 'number' && o.statUpMain > 0) o.statUpMain += 1;
+  if (o.statUp && typeof o.statUp.amt === 'number' && o.statUp.amt > 0) {
+    o.statUp = { ...o.statUp, amt: o.statUp.amt + 1 };
+  }
+
+  const bump = !rng || typeof rng.chance !== 'function'
+    ? true
+    : rng.chance(S.rarityBumpChance ?? 0.7);
+  o._sparkleRarityBump = bump;
+  o._sparkleLuck = S.luckBonus || 5;
+
+  if (o.itemRoll === true) o.itemRoll = { luck: o._sparkleLuck, rarityBump: bump };
+  else if (o.itemRoll && typeof o.itemRoll === 'object') {
+    o.itemRoll = {
+      ...o.itemRoll,
+      luck: (o.itemRoll.luck || 0) + o._sparkleLuck,
+      rarityBump: bump || !!o.itemRoll.rarityBump,
+    };
+  }
+
+  const hasLoot = (typeof o.gold === 'number' && o.gold > 0)
+    || (typeof o.xp === 'number' && o.xp > 0)
+    || (typeof o.xpScaled === 'number' && o.xpScaled > 0)
+    || (typeof o.fame === 'number' && o.fame > 0)
+    || o.itemRoll || o.chest || o.relicRoll || o.consumable || o.consumable2
+    || o.reward || o.classGear || o.uniqueItem || o.wrldItem || o.fameReward
+    || o.enchantedFood || o.upgradeWeapon || o.learnAoe;
+  if (!hasLoot) {
+    o.gold = Math.round((S.bonusGold || 18) + floor * 2);
+    o.xp = Math.round((S.bonusXp || 14) + floor);
+    o.fame = (o.fame || 0) + (S.bonusFame || 1);
   }
   return o;
 }

@@ -22,6 +22,20 @@ export const CONFIG = {
     enemyAtkMult: 1.35,      // enemy atk → damage (was 1.5; early packs overkilled)
     lifestealCapPct: 0.04,   // max heal per hit from any single lifesteal source
     hexTakenMult: 1.25,      // hexed targets take +25% damage
+    frailTakenMult: 1.25,    // frail / tormented incoming damage
+    weakenDmgMult: 0.70,     // weaken outgoing damage
+    burnDmgMult: 0.85,       // burn also blunts outgoing damage (on top of DoT)
+    poisonPctOnEnemy: 0.10,  // poison DoT vs enemies (% max HP / tick)
+    poisonPctOnPlayer: 0.08, // poison DoT vs players
+    burnPctOnEnemy: 0.055,   // burn DoT vs enemies
+    burnPctOnPlayer: 0.06,   // burn DoT vs players
+    poisonTurns: 3,
+    burnTurns: 2,
+    paralyzeTurns: 2,        // soft CC: lower initiative, still act
+    paralyzeInitPenalty: 4,  // subtracted from initiative mod while paralyzed
+    confuseTurns: 2,         // offensive actions risk friendly fire / whiffs
+    confuseAllyHitChance: 0.55, // co-op: chance a confused attack hits an ally
+    confuseSoloWhiffChance: 0.40, // solo: chance a confused attack misses entirely
     floatMs: 1200,           // how long hit/heal numbers linger
     hitPauseMs: 340,         // pause after each skill hit so the number reads
     skillResolveMs: 950,     // pause after a full skill before the turn advances
@@ -57,8 +71,12 @@ export const CONFIG = {
     // Spend this much Battle Charge to break freeze/stun early and still act.
     // Per-boss override via `cleanseCost` on the enemy def.
     cleanseCost: 2,
-    chargeDamageScale: 0.15, // heavy telegraphed hits gain +15% damage per charge segment banked
-    escortAtkMult: 0.55,     // boss-floor escort swing (matches pre-overhaul hardcode)
+    // Heavy telegraphed hits gain this much damage per banked charge segment.
+    // Tuned so at:5–6 finishers land ~⅓–½ HP on a P50 climber after DEF.
+    chargeDamageScale: 0.22,
+    // Chance a boss skips a light affordable special to bank toward a heavier one.
+    bankChance: 0.58,
+    escortAtkMult: 0.88,     // boss-floor escorts contribute real chip in co-op
   },
 
   /* ---- combat: initiative ---- */
@@ -70,11 +88,12 @@ export const CONFIG = {
 
   /* ---- recovery (HP stays sticky; lean binds so clear-rate CDF holds) ---- */
   recovery: {
-    levelUpMissingPct: 0.5,      // restore 50% of MISSING hp/resource on level up
     victoryHealPct: 0.09,        // bind after wins — specials/pads carry duo bite
     bossVictoryHealPct: 0.26,    // gate blessing after bosses
     floorHealPct: 0.05,          // catching your breath between floors
     floorManaPct: 0.06,          // class resource stays scarce between floors
+    // Event `fullHeal` no longer tops off — restores this fraction of MISSING HP.
+    eventFullHealMissingPct: 0.40,
   },
 
   /* ---- economy (§13: gold was too abundant; TDC tension dial) ---- */
@@ -136,7 +155,21 @@ export const CONFIG = {
     // Rare alternate draws (~10% each); remainder uses cardsPerDraw
     cardsPerDrawTwoChance: 0.10,
     cardsPerDrawFourChance: 0.10,
-    sparkleChance: 0.5,        // chance an affinity actually shows its shimmer
+    // ✦ star events: rare affinity shimmer (~10%). When taken, all choices are blessed.
+    sparkleChance: 0.10,
+    sparkle: {
+      goldMult: 1.65,
+      xpMult: 1.55,
+      fameMult: 1.5,
+      healMult: 1.3,
+      // Flat blessing when a choice has little/no loot of its own
+      bonusGold: 18,
+      bonusXp: 14,
+      bonusFame: 1,
+      // Equipment / relic rolls lean harder into higher rarities
+      rarityBumpChance: 0.7,
+      luckBonus: 5,
+    },
     encounterCategoryWeight: 34, // relative weight of Combat cards in draws
     // Face-down "mystery" path: hides identity; underlying draw is any eligible event
     mysteryNodeChance: 0.10,

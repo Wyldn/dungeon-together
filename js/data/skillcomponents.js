@@ -28,11 +28,12 @@ export const COMP = {
   burn: (chance) => ({ burn: chance }),
   freeze: (chance) => ({ freeze: chance }),
   stun: (chance) => ({ stun: chance }),
+  paralyze: (chance) => ({ paralyze: chance }), // soft CC — lower initiative
   hex: (chance) => ({ hex: chance }),
   weaken: (chance) => ({ weaken: chance }),   // less damage dealt
   frail: (chance) => ({ frail: chance }),     // more damage taken
-  tormented: (chance) => ({ tormented: chance }), // DoT + frail
-  confused: (chance) => ({ confused: chance }),   // may skip / hit ally
+  tormented: (chance) => ({ tormented: chance }), // frail-like taken mult
+  confused: (chance) => ({ confused: chance }),   // offensive acts risk ally hits / whiffs
   lazy: (chance) => ({ lazy: chance }),           // delayed / skipped act
 
   /* ---- sustain ---- */

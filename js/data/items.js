@@ -211,7 +211,8 @@ export const RELICS = [
   { id: 'second_wind', name: 'Second Wind Bellows', rarity: 'rare', desc: 'Heal 15% max HP when a floor begins and you are below 30%.', lowHpHeal: 0.15 },
   { id: 'demon_pact', name: 'Pact of the Patient Demon', rarity: 'epic', desc: '+30% damage dealt, but max HP reduced by 10%. Read the fine print.', dmgMult: 1.3, maxHpMult: 0.9 },
   { id: 'hourglass', name: 'Cracked Hourglass', rarity: 'legendary', desc: 'Once per battle, surviving a killing blow leaves you at 1 HP instead.', deathward: true },
-  { id: 'war_drum', name: 'War Drum of the Deep', rarity: 'epic', desc: 'Begin every battle with 3 Battle Charge.', startCharge: 3 },
+  // Opening Battle Charge relics share mutex `start_charge` — one per run.
+  { id: 'war_drum', name: 'War Drum of the Deep', rarity: 'epic', desc: 'Begin every battle with 3 Battle Charge. (Only one opening-charge relic per climb.)', startCharge: 3, mutex: 'start_charge' },
   { id: 'heros_ashes', name: 'Ashes of a Previous Hero', rarity: 'legendary', desc: '+3 to ALL stats. They almost made it. Carry them the rest of the way.', allStats: 3 },
   // ---- wild / legendary effects (§15) ----
   { id: 'berserkers_heart', name: 'The Berserker\'s Heart', rarity: 'legendary', desc: 'On the third round of every battle, your damage DOUBLES.', doubleDmgRound: 3 },
@@ -220,9 +221,9 @@ export const RELICS = [
   { id: 'thornmail', name: 'Coat of Thorns', rarity: 'rare', desc: 'Attackers take 25% of the damage they deal to you, straight back.', thorns: 0.25 },
   { id: 'echo_stone', name: 'The Echoing Stone', rarity: 'legendary', desc: 'Time stutters — each of your turns has a 22% chance to happen twice.', echoChance: 0.22 },
   { id: 'gluttons_chalice', name: 'The Glutton\'s Chalice', rarity: 'rare', desc: 'Doubles the cap on how much a single lifesteal hit can heal you.', lifestealCapMult: 2 },
-  { id: 'first_strike_horn', name: 'Horn of the Vanguard', rarity: 'rare', desc: 'Begin every battle with 2 Battle Charge.', startCharge: 2 },
+  { id: 'first_strike_horn', name: 'Horn of the Vanguard', rarity: 'rare', desc: 'Begin every battle with 2 Battle Charge. (Only one opening-charge relic per climb.)', startCharge: 2, mutex: 'start_charge' },
   // ---- WRLD relics (one of each per run / party) ----
-  { id: 'chronos_heart', name: 'Heart of Chronos', rarity: 'wrld', desc: 'WRLD · time kneels. 35% chance each of your turns happens twice, and you begin battles with 2 Battle Charge.', echoChance: 0.35, startCharge: 2, wrld: true },
+  { id: 'chronos_heart', name: 'Heart of Chronos', rarity: 'wrld', desc: 'WRLD · time kneels. 35% chance each of your turns happens twice, and you begin battles with 2 Battle Charge. (Only one opening-charge relic per climb.)', echoChance: 0.35, startCharge: 2, wrld: true, mutex: 'start_charge' },
   { id: 'world_seed', name: 'The World Seed', rarity: 'wrld', desc: 'WRLD · +5 to ALL stats, +40% XP. A cosmos folded into a kernel.', allStats: 5, xpMult: 1.4, wrld: true },
   { id: 'protagonists_oath', name: 'The Protagonist\'s Oath', rarity: 'wrld', desc: 'WRLD · +35% damage, +15% max HP, fame +50%. The tower writes you into its main plot.', dmgMult: 1.35, maxHpMult: 1.15, fameGainMult: 1.5, wrld: true },
 ];
@@ -352,7 +353,8 @@ export function rollUnique(rng, run = null, { preferUseful = false } = {}) {
  */
 export function rollWrld(rng, run = null, { preferUseful = false, kind = 'any', coop = null, claim = true } = {}) {
   const claimed = claimedWrldIds(run, coop);
-  let pool = wrldCatalog().filter(i => !claimed.has(i.id) && !i.exclusive);
+  const ownedRelics = run?.relics || [];
+  let pool = wrldCatalog().filter(i => !claimed.has(i.id) && !i.exclusive && !relicMutexBlocked(i, ownedRelics));
   if (kind === 'relic') pool = pool.filter(i => !i.slot);
   else if (kind === 'equip') pool = pool.filter(i => !!i.slot);
   else if (kind === 'weapon') pool = pool.filter(i => i.slot === 'weapon');
@@ -419,19 +421,48 @@ export function rollEquipment(rng, tier, luckBonus = 0, opts = {}) {
     if (useful.length) pool = useful;
   }
   if (!pool.length) return null;
+  // ✦ star / blessed rolls: lean hard into the next rarity tier(s).
+  const bumpW = opts.rarityBump
+    ? { common: 0.35, uncommon: 1.6, rare: 3.2, epic: 5.5, legendary: 8 }
+    : null;
   const weighted = pool.map(i => {
     let w = (RARITY_W[i.rarity] || 1) + (i.rarity !== 'common' ? luckBonus : 0);
+    if (bumpW) w *= (bumpW[i.rarity] || 1);
     if (classId && itemUsefulForClass(i, classId)) w *= usefulBias;
     if ((i.tier || 1) >= Math.max(2, tier - 1)) w *= 1.15;
     return { w, item: i };
   });
-  const base = rng.weighted(weighted).item;
+  let base = rng.weighted(weighted).item;
+  // High chance to step the rolled piece up one rarity tier when bumping.
+  if (opts.rarityBump && rng.chance(0.55)) {
+    const order = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+    const idx = order.indexOf(base.rarity);
+    if (idx >= 0 && idx < order.length - 1) {
+      const want = order[idx + 1];
+      const upgraded = pool.filter(i => i.rarity === want
+        && (!wantSlot || i.slot === wantSlot)
+        && (!wantWtype || i.wtype === wantWtype)
+        && (!requireUseful || itemUsefulForClass(i, classId)));
+      if (upgraded.length) base = rng.pick(upgraded);
+    }
+  }
   const affixed = applyAffixes(base, rng, { floor });
   return finalizeLootItem(affixed, rng, run);
 }
 
+/** True if `candidate` shares a mutex group with any already-owned relic. */
+export function relicMutexBlocked(candidate, ownedIds = []) {
+  if (!candidate?.mutex) return false;
+  const owned = new Set(ownedIds);
+  return RELICS.some(r => r.mutex === candidate.mutex && owned.has(r.id));
+}
+
 export function rollRelic(rng, owned = [], luckBonus = 0) {
-  const pool = RELICS.filter(r => !owned.includes(r.id) && r.rarity !== 'wrld' && !r.wrld);
+  const pool = RELICS.filter(r =>
+    !owned.includes(r.id)
+    && r.rarity !== 'wrld' && !r.wrld
+    && !relicMutexBlocked(r, owned)
+  );
   if (!pool.length) return null;
   const weighted = pool.map(i => ({ w: (RARITY_W[i.rarity] || 1) + luckBonus, item: i }));
   return rng.weighted(weighted).item;

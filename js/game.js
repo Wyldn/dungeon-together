@@ -12,7 +12,7 @@ import { CONFIG } from './data/config.js';
 import { planEncounter, planBossEncounter, pushEventHistory } from './data/balance.js';
 import { rankFor } from './data/ranks.js';
 import { CONSUMABLES, itemById, resolveItem, rollEquipment, rollRelic, rollUnique, rollWrld, markWrldClaimed, EQUIP_SLOTS, RELICS, ALL_EQUIPMENT, WEAPONS, itemUsefulForClass, itemIncompatibleForClass } from './data/items.js';
-import { applyTagOutcomeMods } from './data/eventtags.js';
+import { applyTagOutcomeMods, applySparkleOutcomeMods } from './data/eventtags.js';
 import { loadMeta, saveMeta, upgradeRank, award, UPGRADES, ACHIEVEMENTS, newRun, saveRun, loadRun, clearRun, runRng, rollStart, startDescriptor, awakenMonolith, fateGrowthBoost, fateGrowthPct, fateGrowthPctOne, randomRaceId, randomClassId, unlockedCosmetics, climberNameHtml, resetSanctumUpgrades } from './state.js';
 import {
   derived, classTitle, skillTier, gainXp, learnableSkills, heal, restoreMana, relicItems,
@@ -228,7 +228,7 @@ function debugScreen() {
     if (o.hp) parts.push(`${signed(o.hp)} HP`);
     if (o.hpPct) parts.push(`${pct(o.hpPct)} HP`);
     if (o.maxHp) parts.push(`${signed(o.maxHp)} max HP`);
-    if (o.fullHeal) parts.push('full heal');
+    if (o.fullHeal) parts.push('ease wounds');
     if (o.mana) parts.push(`${signed(o.mana)} resource`);
     if (o.manaPct) parts.push(`${pct(o.manaPct)} resource`);
     if (o.fullMana) parts.push('full resource');
@@ -1722,7 +1722,10 @@ async function resumePending(stage, p) {
   }
   if (p.kind === 'event' && p.eventId) {
     const ev = EVENTS.find(e => e.id === p.eventId);
-    if (ev) return renderEventCard(stage, ev);
+    if (ev) {
+      run.eventSparkle = !!p.sparkle;
+      return renderEventCard(stage, ev);
+    }
   }
   if (p.kind === 'shop' && p.eventId) {
     const ev = EVENTS.find(e => e.id === p.eventId) || { id: p.eventId, title: 'Merchant', shop: true };
@@ -1946,6 +1949,7 @@ function partnerSheetModal(partnerId) {
           </div>
           <h4 style="margin-top:12px">Appraisal ${appr ? `<span class="tag">Floor ${appr.floor}</span>` : '<span class="tag">unappraised</span>'}</h4>
           <table class="stat-table">${statRows}
+            ${appr?.growthRank ? `<tr><td>Growth potential</td><td><b>${appr.growthRank}</b></td></tr>` : ''}
             ${appr?.overall ? `<tr><td>Overall</td><td><b>${appr.overall}</b></td></tr>` : ''}
           </table>
         </div>
@@ -2002,7 +2006,7 @@ function generateCards(rng, forParty = null) {
     }
     const ev = drawEvent(rng, run, { exclude: usedEvents });
     usedEvents.push(ev.id);
-    // affinity sparkle: sometimes, never explained (handoff §4)
+    // ✦ star events: rare affinity shimmer (~10%). Blessed rewards when taken.
     let affine = false;
     if (ev.affinity) {
       const classes = forParty?.classes || [run.classId];
@@ -2014,7 +2018,7 @@ function generateCards(rng, forParty = null) {
       kind: 'event',
       category: ev.category || 'unknown',
       eventId: ev.id,
-      sparkle: affine && rng.chance(CONFIG.events.sparkleChance),
+      sparkle: affine && rng.chance(CONFIG.events.sparkleChance ?? 0.1),
     };
     // ~10%: veil the identity. drawEvent already picks from the full eligible
     // pool — mystery is a UI flag, not a separate category filter.
@@ -2035,7 +2039,7 @@ function generateCards(rng, forParty = null) {
           ? buildPartyEnemies(plan.specs, plan.hpMult)
           : plan.specs.map(g => ({ ...g })),
         hpMult: plan.hpMult,
-        sparkle: true,
+        sparkle: false,
       };
       let slot = cards.findIndex(c => c.kind !== 'encounter');
       if (slot < 0) slot = 0;
@@ -2050,7 +2054,18 @@ function generateCards(rng, forParty = null) {
         let slot = cards.findIndex(c => c.kind === 'event' && c.category !== forceCat);
         if (slot < 0) slot = cards.findIndex(c => c.kind === 'event');
         if (slot < 0) slot = 0;
-        cards[slot] = { kind: 'event', category: ev.category || forceCat, eventId: ev.id, sparkle: true };
+        // Waypoints are marked paths, not ✦ star blessings — only affinity can star.
+        let affine = false;
+        if (ev.affinity) {
+          const classes = forParty?.classes || [run.classId];
+          if (ev.affinity.classes?.some(c => classes.includes(c))) affine = true;
+          if (ev.affinity.races?.includes(run.raceId)) affine = true;
+          if (ev.affinity.underdog && run.underdog) affine = true;
+        }
+        cards[slot] = {
+          kind: 'event', category: ev.category || forceCat, eventId: ev.id,
+          sparkle: affine && rng.chance(CONFIG.events.sparkleChance ?? 0.1),
+        };
       }
     }
   }
@@ -2138,9 +2153,10 @@ function resolveCard(stage, card) {
   }
   const ev = EVENTS.find(e => e.id === card.eventId);
   run.seenEvents.push(ev.id);
+  run.eventSparkle = !!card.sparkle;
   noteEventTags(ev);
   pushEventHistory(run, ev.category || 'unknown');
-  setPending(ev.shop ? 'shop' : 'event', { eventId: ev.id });
+  setPending(ev.shop ? 'shop' : 'event', { eventId: ev.id, sparkle: !!card.sparkle });
   saveRun(run);
   renderEventCard(stage, ev);
 }
@@ -3372,25 +3388,23 @@ async function coopEventFight(stage, ev, specs, { text = null, reward = null, hp
     return runShared(enemies, reward);
   }
 
-  const buffered = coopS._pendingEvFight;
-  if (buffered && buffered.floor === floor && buffered.eventId === eventId) {
-    coopS._pendingEvFight = null;
-    return runShared(buffered.enemies, buffered.reward);
-  }
-  const { data } = await coopS.net.once('evfight', d => d.floor === floor && d.eventId === eventId);
+  const data = await coopS.waitEvFight(floor, eventId);
   return runShared(data.enemies, data.reward);
 }
 
 async function resolveChoice(stage, ev, choice, opts = {}) {
   const rng = runRng(run);
+  const sparkle = !!run.eventSparkle;
   let outcome = applyTagOutcomeMods(choice.outcome, ev, run);
+  if (sparkle) outcome = applySparkleOutcomeMods(outcome, { floor: run.floor, rng });
   appendChronicle(run, {
     t: 'choice',
     eventId: ev?.id,
     title: ev?.title,
     label: choice.label,
+    sparkle,
   });
-  const nextOpts = { ...opts, choiceLabel: choice.label };
+  const nextOpts = { ...opts, choiceLabel: choice.label, sparkle };
 
   if (outcome.roll) {
     const d = derived(run);
@@ -3404,6 +3418,7 @@ async function resolveChoice(stage, ev, choice, opts = {}) {
     // the roll's drama, without the actuarial tables (handoff §5)
     const rollLine = { text: `${({ str: 'Strength', dex: 'Agility', int: 'Intellect', wis: 'Wisdom', lk: 'Luck' }[spec.stat])} is tested… ${ok ? 'and holds. SUCCESS.' : 'and falters. FAILURE.'}`, cls: ok ? 'good' : 'bad' };
     outcome = applyTagOutcomeMods(ok ? outcome.success : outcome.fail, ev, run);
+    if (sparkle) outcome = applySparkleOutcomeMods(outcome, { floor: run.floor, rng });
     await applyOutcome(stage, ev, outcome, rng, [rollLine], nextOpts);
   } else {
     await applyOutcome(stage, ev, outcome, rng, [], nextOpts);
@@ -3412,6 +3427,7 @@ async function resolveChoice(stage, ev, choice, opts = {}) {
 
 async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
   const d = derived(run);
+  const sparkle = !!(opts.sparkle || run.eventSparkle);
   const panelOpts = {
     eventId: ev?.id,
     title: ev?.title,
@@ -3422,11 +3438,15 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
   if (o.randomOutcome) {
     // random-roll resolution: the tower picks (handoff §3)
     o = rng.pick(o.randomOutcome);
+    if (sparkle) o = applySparkleOutcomeMods(o, { floor: run.floor, rng });
     lines.push({ text: 'The tower decides…', cls: 'item' });
   }
 
   if (o.escape) return victoryScreen('escape');
 
+  if (sparkle) {
+    lines.push({ text: '✦ The path shimmered — fortune leans your way.', cls: 'item' });
+  }
   if (o.text) lines.push({ text: o.text, cls: '' });
 
   if (o.chest) {
@@ -3434,12 +3454,13 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
     if (!o.safeMimic && !relicItems(run).some(r => r.noMimic)) {
       if (coopS && !coopS.alone) {
         // Host rolls mimic once so the party shares the same chest fate.
+        // Guests use a buffered wait — a bare once() races and freezes the climb.
         if (coopS.isHost) {
           isMimic = rng.chance(ev.mimicChance || 0.25);
           coopS.net.send({ k: 'chestroll', floor: run.floor, eventId: ev.id, mimic: isMimic });
         } else {
-          const { data } = await coopS.net.once('chestroll', d => d.floor === run.floor && d.eventId === ev.id);
-          isMimic = !!data.mimic;
+          const data = await coopS.waitChestRoll(run.floor, ev.id);
+          isMimic = !!data?.mimic;
         }
       } else {
         isMimic = rng.chance(ev.mimicChance || 0.25);
@@ -3462,14 +3483,20 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
         prebuilt: foes,
       });
     }
-    const gold = Math.round((30 + run.floor * 4 + rng.int(0, 25)) * d.goldMult);
+    const sparkleGold = sparkle ? (CONFIG.events.sparkle?.goldMult || 1.65) : 1;
+    const gold = Math.round((30 + run.floor * 4 + rng.int(0, 25)) * d.goldMult * sparkleGold);
     run.gold += gold; run.goldEarned += gold;
     lines.push({ text: `The chest is honest for once. +${gold} gold`, cls: 'gold' });
     SFX.gold();
-    if (rng.chance(0.35)) {
-      const item = rollEquipment(rng, biomeTier(), Math.floor(d.lk / 3), { floor: run.floor, run });
+    const chestFindChance = sparkle ? 0.55 : 0.35;
+    if (rng.chance(chestFindChance)) {
+      const luck = Math.floor(d.lk / 3) + (sparkle ? (o._sparkleLuck || 5) : 0);
+      const item = rollEquipment(rng, biomeTier(), luck, {
+        floor: run.floor, run,
+        rarityBump: sparkle && !!o._sparkleRarityBump,
+      });
       await offerEquipment(item, lines);
-    } else if (rng.chance(0.3)) {
+    } else if (rng.chance(sparkle ? 0.45 : 0.3)) {
       const c = rng.pick(CONSUMABLES);
       run.consumables.push(c.id);
       lines.push({ text: `Tucked in the corner: ${c.name}.`, cls: 'item' });
@@ -3498,7 +3525,12 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
     lines.push({ text: `${amt > 0 ? '+' : ''}${amt} HP`, cls: amt > 0 ? 'good' : 'bad' });
   }
   if (o.maxHp) { run.maxHp += o.maxHp; run.hp += o.maxHp; lines.push({ text: 'You feel your endurance deepen.', cls: 'good' }); }
-  if (o.fullHeal) { run.hp = run.maxHp; lines.push({ text: 'Fully healed.', cls: 'good' }); SFX.heal(); }
+  if (o.fullHeal) {
+    const miss = Math.max(0, run.maxHp - run.hp);
+    const amt = heal(run, Math.round(miss * (CONFIG.recovery.eventFullHealMissingPct ?? 0.4)));
+    lines.push({ text: amt ? `Wounds ease (+${amt} HP).` : 'You are already whole.', cls: 'good' });
+    if (amt) SFX.heal();
+  }
   if (o.mana) restoreMana(run, o.mana);
   if (o.manaPct) { restoreMana(run, run.maxMp * o.manaPct); lines.push({ text: `${resourceName(run)} restored.`, cls: 'good' }); }
   if (o.fullMana) { run.mp = run.maxMp; lines.push({ text: `${resourceName(run)} restored.`, cls: 'good' }); }
@@ -3548,9 +3580,13 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
   }
 
   if (o.appraisal) {
+    const wasHidden = !run.growthRevealed;
     appraiseRun(rng, run, { partial: o.appraisal === 'partial', location: ev.title });
     unlock('assessed');
     lines.push({ text: '📜 The reading is complete. Your character page now carries the appraisal.', cls: 'item' });
+    if (wasHidden && run.growthRevealed) {
+      lines.push({ text: `✦ Growth potential revealed: ${run.growthRank}`, cls: 'good' });
+    }
     SFX.unlock();
     // §15: a deep reading can shake a relic loose — better odds for a full workup
     const relicChance = (o.appraisal === 'full' ? 0.22 : 0.1) + Math.floor(run.floor / 15) * 0.05;
@@ -3589,6 +3625,7 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
       requireUseful: preferUseful,
       slot: spec.slot || null,
       wtype: spec.wtype || null,
+      rarityBump: !!(spec.rarityBump || (sparkle && o._sparkleRarityBump)),
     });
     if (item) await offerEquipment(item, lines);
     else lines.push({ text: 'You rummage — and find only dust and almosts.', cls: 'bad' });
@@ -3604,10 +3641,12 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
   if (o.classGear) {
     // Class-flavored find: usually a usable weapon, else any useful piece
     const wantWeapon = rng.chance(0.6);
-    const item = rollEquipment(rng, Math.max(biomeTier(), 2), Math.floor(d.lk / 3) + 1, {
+    const luck = Math.floor(d.lk / 3) + 1 + (sparkle ? (o._sparkleLuck || 5) : 0);
+    const item = rollEquipment(rng, Math.max(biomeTier(), 2), luck, {
       floor: run.floor, run, classId: run.classId,
       requireUseful: true, usefulBias: 10,
       slot: wantWeapon ? 'weapon' : (rng.chance(0.5) ? 'accessory' : null),
+      rarityBump: sparkle && !!o._sparkleRarityBump,
     });
     if (item) await offerEquipment(item, lines);
   }
@@ -3617,7 +3656,7 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
     else { run.consumables.push(item.id); lines.push({ text: `Received: ${item.name}`, cls: 'item' }); }
   }
   if (o.relicRoll) {
-    const r = rollRelic(rng, run.relics, Math.floor(d.lk / 3));
+    const r = rollRelic(rng, run.relics, Math.floor(d.lk / 3) + (sparkle ? (o._sparkleLuck || 5) : 0));
     if (r) { run.relics.push(r.id); lines.push({ text: `Relic: ${r.name} — ${r.desc}`, cls: 'item' }); SFX.unlock(); }
   }
   if (o.consumable) {
@@ -3717,8 +3756,8 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
           for (let i = 0; i < n; i++) enemyIds.push(rng.pick(pe.pool));
           coopS.net.send({ k: 'evenemies', floor: run.floor, eventId: ev.id, enemyIds });
         } else {
-          const { data } = await coopS.net.once('evenemies', d => d.floor === run.floor && d.eventId === ev.id);
-          enemyIds = data.enemyIds || [];
+          const data = await coopS.waitEvEnemies(run.floor, ev.id);
+          enemyIds = data?.enemyIds || [];
         }
       } else {
         const n = rng.int(cLo, cHi);
@@ -3791,6 +3830,7 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
   }
 
   await showOutcomePanel(stage, lines, ups, panelOpts);
+  run.eventSparkle = false;
 }
 
 function noteEventTags(ev) {
@@ -4815,9 +4855,12 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
       if (s.kind === 'consumable') {
         if (s.item.appraisal) {
           const rng2 = runRng(run);
+          const wasHidden = !run.growthRevealed;
           appraiseRun(rng2, run, { partial: false, location: 'a merchant\'s scroll' });
           rng2.advance();
-          toast('The scroll reads you. Check your Character page.', 'info');
+          toast(wasHidden
+            ? `Growth potential: ${run.growthRank}. Check your Character page.`
+            : 'The scroll reads you. Check your Character page.', 'info');
         } else {
           run.consumables.push(s.item.id);
           toast(`Bought ${s.item.name}`);
@@ -4908,7 +4951,7 @@ function characterSheet({ locked = false } = {}) {
               <tr><td>Intelligence</td><td>${statDisplay('int')}</td></tr>
               <tr><td>Wisdom</td><td>${statDisplay('wis')}</td></tr>
               <tr><td>Luck</td><td>${statDisplay('lk')}</td></tr>
-              <tr><td>Growth potential</td><td><span style="color:var(--ink-faint)">?</span></td></tr>
+              <tr><td>Growth potential</td><td>${run.growthRevealed ? `<b>${run.growthRank || appr?.growthRank || '?'}</b>` : '<span style="color:var(--ink-faint)">?</span>'}</td></tr>
               <tr><td>Overall (appraised)</td><td>${appr ? `<b>${appr.overall}</b>` : '<span style="color:var(--ink-faint)">?</span>'}</td></tr>
             </table>
             <h4 style="margin-top:14px">Equipped ${!compatible ? '<span class="tag" style="color:var(--crit);border-color:var(--crit)">⚠ weapon incompatible</span>' : ''}</h4>

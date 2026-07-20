@@ -14,7 +14,7 @@ import {
 import { biomeForFloor } from '../js/data/enemies.js';
 import {
   applyGuard, applyDefense, addCharge, tickEnemyCharge, pickEnemySpecial,
-  enemyTelegraph, canAfford,
+  enemyTelegraph, canAfford, skillEffectivePower,
 } from '../js/systems.js';
 
 /** Re-export: build a fight snapshot from a real run (derived stats + SKILLS). */
@@ -232,7 +232,7 @@ function simAutoPlayTurn(p, enemies, rng) {
   // 4) Strongest affordable offensive skill → lowest HP foe (or all)
   const pool = skills
     .filter(sk => !sk.healPct && sk.target !== 'self' && afford(sk))
-    .sort((a, b) => (b.power || 0) - (a.power || 0) || (b.charge || 0) - (a.charge || 0));
+    .sort((a, b) => skillEffectivePower(b) - skillEffectivePower(a) || (b.charge || 0) - (a.charge || 0));
   const sk = pool[0] || { id: 'basic_attack', power: 100, cost: 0, charge: 0, target: 'one' };
 
   p.mp = Math.max(0, (p.mp || 0) - (sk.cost || 0));
@@ -242,7 +242,7 @@ function simAutoPlayTurn(p, enemies, rng) {
   const targets = sk.target === 'all' ? foes : (foes[0] ? [foes[0]] : []);
   for (const target of targets) {
     if (target.hp <= 0) continue;
-    target.hp = Math.max(0, target.hp - playerHit(p, target, rng, { power: sk.power || 100 }));
+    target.hp = Math.max(0, target.hp - playerHit(p, target, rng, { power: skillEffectivePower(sk) || 100 }));
     if (target.hp <= 0 && target.twoPhase && target.phase2) simTransform(target);
     if (target.hp <= 0) p.charge = addCharge(p.charge, CONFIG.charge.gainOnKill);
   }
@@ -328,7 +328,7 @@ export function simulateFight(rng, playerOrParty, enemySpecs, {
       if (!livingPlayers().length) break;
       if (e.regen && e.hp > 0) e.hp = Math.min(e.maxHp, e.hp + Math.round(e.maxHp * e.regen));
       tickEnemyCharge(e);
-      const special = pickEnemySpecial(e);
+      const special = pickEnemySpecial(e, rng);
       let chargeScale = 1;
       if (special && e.boss) {
         const banked = party.length <= 1

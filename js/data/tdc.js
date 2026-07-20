@@ -92,8 +92,9 @@ export const TDC = {
     soloBossHpEarly: 0.51,
     soloBossAtkFullFloor: 22,
     soloBossAtkEarly: 0.57,
-    soloBossChargeCap: 3,
-    soloBossChargeCapFullFloor: 20,
+    // Solo early bosses can scale finishers with more of the bank they built.
+    soloBossChargeCap: 5,
+    soloBossChargeCapFullFloor: 15,
     trashAtkFullFloor: 16,
     trashAtkEarly: 0.52,
     soloTrashAtkFullFloor: 22,
@@ -120,22 +121,20 @@ export const TDC = {
      across random allies, so solo-tuned ATK feels soft in co-op. */
   party: {
     hpPerExtra: 0, // trash co-op HP lives in encounter budgets
-    // Per-size boss pads so 2p–4p clear-rate CDF ≈ solo (tools/run_sim.js).
-    // Mild duo ATK bump vs old 1.28/1.48/1.72 (no floor heal → keep early soft).
-    // Soft early F10/F15; full pad by easeFullFloor (clear-rate CDF).
-    easeFullFloor: 22,
-    easeAtStart: 0.18,
-    easePow: 1.15,
-    aoeExp: 0.48,
-    // Near pre-overhaul pads; trashAtk + eventFight carry live duo bite.
-    bossAtkBySize: { 1: 1, 2: 1.26, 3: 1.46, 4: 1.66 },
+    // Co-op chip threat: ATK/AOE pads carry bite; HP pads unchanged (duration ≠ damage).
+    // Ease ramps early so packs/bosses pressure 2p–4p before late climb.
+    easeFullFloor: 16,
+    easeAtStart: 0.40,
+    easePow: 1.05,
+    aoeExp: 0.30, // less AOE dilution → shared specials chip harder
+    bossAtkBySize: { 1: 1, 2: 1.64, 3: 1.95, 4: 2.30 },
     bossHpBySize: { 1: 1, 2: 1.76, 3: 2.60, 4: 3.50 },
     bossHpEaseAtStart: 0.52,
-    // Co-op trash swing damage (budgets own body count).
-    trashAtkBySize: { 1: 1, 2: 1.05, 3: 1.10, 4: 1.14 },
-    trashAtkPerExtra: 0.05,
+    // Open-floor trash/elite swings (bodies still from budgets).
+    trashAtkBySize: { 1: 1, 2: 1.36, 3: 1.58, 4: 1.78 },
+    trashAtkPerExtra: 0.22,
     // Fallbacks if a size is missing
-    bossAtkPerExtra: 0.55,
+    bossAtkPerExtra: 0.62,
     bossHpPerExtra: 1.10,
   },
 
@@ -143,19 +142,18 @@ export const TDC = {
   eventFight: {
     // Live co-op shared fights; headless sim uses size-1 pads per climber.
     hpBySize: { 1: 1, 2: 1.45, 3: 1.90, 4: 2.40 },
-    atkBySize: { 1: 1, 2: 1.22, 3: 1.38, 4: 1.52 },
+    atkBySize: { 1: 1, 2: 1.52, 3: 1.78, 4: 2.05 },
     hpPerExtra: 0.40,
-    atkPerExtra: 0.18,
+    atkPerExtra: 0.28,
   },
 
   /* ---- stall enrage (bosses + event elites) ---- */
   enrage: {
-    // Late stall check — early enrage crushed 3p/4p clear-rate CDF.
-    bossAtRound: 12,
-    bossAtkMult: 1.15,
+    bossAtRound: 9,
+    bossAtkMult: 1.22,
     // Event elites: only if authored `enrageAtRound` (global default off — CDF).
     eventAtRound: null,
-    eventAtkMult: 1.15,
+    eventAtkMult: 1.20,
   },
 
   /* ---- player soft caps (breadth over runaway numbers) ---- */

@@ -10,7 +10,7 @@ import { ORIGINS } from '../js/data/origins.js';
 import { SKILLS } from '../js/data/skills.js';
 import { EVENTS, CATEGORY_META } from '../js/data/events.js';
 import { ENEMIES, BOSSES, MODIFIERS, biomeForFloor, findEnemySpec } from '../js/data/enemies.js';
-import { ALL_EQUIPMENT, RELICS, CONSUMABLES, itemById, EQUIP_SLOTS } from '../js/data/items.js';
+import { ALL_EQUIPMENT, RELICS, CONSUMABLES, itemById, EQUIP_SLOTS, rollRelic, relicMutexBlocked } from '../js/data/items.js';
 import { CONFIG } from '../js/data/config.js';
 import { pathNodeView } from '../js/travelmap.js';
 import {
@@ -24,7 +24,7 @@ import {
   historyCategoryWeight, bossFightTargets, MECHANIC_COSTS,
 } from '../js/data/balance.js';
 import { RANK_ORDER, rankFor, rankAtLeast, appraisalRange, rollGrowthRank, growthMult } from '../js/data/ranks.js';
-import { rollInitiative, initiativeOrder, addCharge, tickEnemyCharge, canAfford, pickEnemySpecial, enemyTelegraph, applyGuard } from '../js/systems.js';
+import { rollInitiative, initiativeOrder, addCharge, tickEnemyCharge, canAfford, skillEffectivePower, pickEnemySpecial, enemyTelegraph, applyGuard } from '../js/systems.js';
 import { makeRng } from '../js/rng.js';
 import { syntheticClimber, simulateFight } from './combat_sim.js';
 
@@ -46,6 +46,7 @@ t('rankFor thresholds ascend', rankFor(3) === 'F' && rankFor(12) === 'D' && rank
   t('appraisal range brackets the true value', r.lo <= 30 && r.hi >= 30 && r.rank === rankFor(30));
 }
 t('growth mult ordered by rank', growthMult('WRLD') > growthMult('S') && growthMult('S') > growthMult('C') && growthMult('C') > growthMult('F'));
+t('growth mult spans 0.7–1.5', growthMult('F') === 0.7 && growthMult('C') === 1.0 && growthMult('WRLD') === 1.5);
 
 console.log('— growth inverse correlation —');
 {
@@ -139,6 +140,18 @@ t('charge caps at six segments', addCharge(5, 4) === 6 && CONFIG.charge.max === 
 t('charge floors at zero', addCharge(1, -5) === 0);
 t('canAfford checks both pools', canAfford({ cost: 10, charge: 3 }, 10, 3) && !canAfford({ cost: 10, charge: 3 }, 9, 3) && !canAfford({ cost: 10, charge: 3 }, 10, 2));
 {
+  // High cost/charge skills must clearly outpace cheap mid skills after spend lift.
+  const free = skillEffectivePower(SKILLS.slash);
+  const mid = skillEffectivePower(SKILLS.shield_bash);
+  const heavy = skillEffectivePower(SKILLS.assassinate);
+  const aoeHeavy = skillEffectivePower(SKILLS.cleave);
+  t('free skills keep authored power', free === SKILLS.slash.power);
+  t('heavy ST spends beat mid by a wide margin', heavy >= mid * 1.55);
+  t('heavy ST spends beat free basics', heavy >= free * 1.7);
+  t('AOE mid spends beat free ST per-target enough to matter', aoeHeavy >= free * 0.95);
+  t('already-strong finishers are not double-buffed', skillEffectivePower(SKILLS.one_shot) === SKILLS.one_shot.power);
+}
+{
   const starters = {
     warrior: 'slash', mage: 'firebolt', archer: 'quick_shot', rogue: 'backstab',
     priest: 'smite', monk: 'palm_strike', warlock: 'eldritch_bolt', bard: 'cutting_quip',
@@ -164,6 +177,21 @@ t('canAfford checks both pools', canAfford({ cost: 10, charge: 3 }, 10, 3) && !c
   t('AOE skills still charge-gated', Object.values(SKILLS).filter(s => s.target === 'all' && (s.charge || 0) < 3 && s.class !== 'special').length === 0);
 }
 
+console.log('— status potency —');
+{
+  const C = CONFIG.combat;
+  t('poison DoT stronger than legacy player 5%', (C.poisonPctOnPlayer ?? 0) >= 0.08);
+  t('burn blunts outgoing damage', (C.burnDmgMult ?? 1) < 1 && (C.burnDmgMult ?? 1) >= 0.8);
+  t('paralyze lowers initiative', (C.paralyzeInitPenalty ?? 0) >= 3);
+  t('confuse risks ally hits in co-op', (C.confuseAllyHitChance ?? 0) >= 0.4);
+  const specials = Object.values(ENEMIES).flat().flatMap(e => e.specials || []);
+  const withRider = specials.filter(s => s.poison || s.poisonSure || s.burn || s.burnSure
+    || s.freeze || s.freezeSure || s.weaken || s.weakenSure || s.frail || s.frailSure
+    || s.confused || s.confusedSure || s.lazy || s.lazySure || s.stun || s.paralyze
+    || s.tormented || s.tormentedSure);
+  t('most enemy specials carry a status rider', withRider.length >= specials.length * 0.55);
+}
+
 console.log('— Guard (handoff §10) —');
 t('guard blocks 30%', applyGuard(100, true) === 70);
 t('guard-piercing ignores guard', applyGuard(100, true, true) === 100);
@@ -181,10 +209,37 @@ console.log('— enemy charge profiles (handoff §12) —');
   e.charge = 3;
   t('special available at threshold', pickEnemySpecial(e)?.name === 'X');
   t('telegraph marks ready', enemyTelegraph(e)?.ready === true);
+  {
+    // Bosses bank toward heavier specials instead of forever dumping at:3.
+    const alwaysSpend = { chance: () => false };
+    const alwaysBank = { chance: () => true };
+    const boss = {
+      boss: true, charge: 3, bankChance: 1,
+      specials: [
+        { at: 3, name: 'Light', mult: 1.3 },
+        { at: 6, name: 'Heavy', mult: 2.2 },
+      ],
+    };
+    t('boss fires light when not banking', pickEnemySpecial(boss, alwaysSpend)?.name === 'Light');
+    t('boss banks when a heavier special is close', pickEnemySpecial(boss, alwaysBank) === null);
+    boss.charge = 6;
+    t('boss fires finisher at full charge', pickEnemySpecial(boss, alwaysBank)?.name === 'Heavy');
+  }
   for (const b of Object.values(BOSSES)) {
     t(`boss ${b.id}: has specials`, Array.isArray(b.specials) && b.specials.length >= 2);
+    const ats = b.specials.map(s => s.at);
+    t(`boss ${b.id}: distinct charge breakpoints`, new Set(ats).size === ats.length);
   }
+  t('boss kits are not all identical ladders', new Set(
+    Object.values(BOSSES).map(b => b.specials.map(s => s.at).join('-')),
+  ).size >= 4);
+  t('finisher mults hit hard', Object.values(BOSSES).every(b => {
+    const top = b.specials.reduce((a, s) => (s.at > a.at ? s : a));
+    return top.mult >= 2.15;
+  }));
   t('slow boss profile (hydra spd < duke spd)', BOSSES[40].spd < BOSSES[50].spd);
+  t('boss bank chance configured', (CONFIG.boss.bankChance ?? 0) >= 0.45);
+  t('charge damage scale rewards banking', (CONFIG.boss.chargeDamageScale ?? 0) >= 0.2);
 }
 
 console.log('— initiative (handoff §14) —');
@@ -228,6 +283,17 @@ console.log('— events (handoff §4) —');
   t('shared secret quest exists', EVENTS.some(e => e.id === 'oath_candle') && EVENTS.some(e => e.id === 'oath_payoff'));
   t('party split event exists', EVENTS.some(e => e.id === 'forked_galleries'));
   t('mystery node chance configured (~10%)', (CONFIG.events.mysteryNodeChance ?? 0) > 0.05 && CONFIG.events.mysteryNodeChance <= 0.2);
+  t('star events are rare (~10%)', (CONFIG.events.sparkleChance ?? 0) > 0.05 && CONFIG.events.sparkleChance <= 0.15);
+  t('star blessing config present', (CONFIG.events.sparkle?.goldMult ?? 0) >= 1.4 && (CONFIG.events.sparkle?.rarityBumpChance ?? 0) >= 0.5);
+  {
+    const { applySparkleOutcomeMods } = await import('../js/data/eventtags.js');
+    const blessed = applySparkleOutcomeMods({ gold: 20, xp: 10, fame: 2 }, { floor: 5, rng: makeRng(1) });
+    t('star blessing scales gold', blessed.gold > 20);
+    t('star blessing scales xp', blessed.xp > 10);
+    t('star blessing scales fame', blessed.fame > 2);
+    const empty = applySparkleOutcomeMods({ text: 'flavor only' }, { floor: 8, rng: makeRng(2) });
+    t('star blessing tops up empty outcomes', (empty.gold || 0) > 0 && (empty.xp || 0) > 0);
+  }
   {
     const shrine = pathNodeView({ kind: 'event', category: 'mystery', eventId: 'old_shrine' });
     t('travel node reveals shrine title', shrine.title === 'The Nameless Shrine');
@@ -386,7 +452,36 @@ console.log('— kits & AOE access (patch) —');
 }
 
 console.log('— config sanity —');
-t('level-up restores missing HP', CONFIG.recovery.levelUpMissingPct >= 0.45 && CONFIG.recovery.levelUpMissingPct <= 0.55);
+{
+  const { gainXp, appraiseRun } = await import('../js/character.js');
+  const { makeRng } = await import('../js/rng.js');
+  const run = {
+    xp: 0, xpNext: 1, level: 1, growthRank: 'C', growthBoost: 1,
+    stats: { str: 5, dex: 5, int: 5, wis: 5, lk: 5 },
+    maxHp: 40, hp: 20, maxMp: 40, mp: 20,
+    knownSkills: [], subclassId: null, classId: 'warrior',
+    floor: 1, equipment: {}, relics: [],
+  };
+  gainXp(run, 1, makeRng(1));
+  const hpPct = run.hp / run.maxHp;
+  const mpPct = run.mp / run.maxMp;
+  t('level-up keeps HP fill %', Math.abs(hpPct - 0.5) < 0.02 && run.maxHp > 40);
+  t('level-up keeps resource fill %', Math.abs(mpPct - 0.5) < 0.02 && run.maxMp > 40);
+
+  const wrld = {
+    xp: 0, xpNext: 9999, level: 1, growthRank: 'WRLD', growthBoost: 1, growthRevealed: false,
+    stats: { str: 20, dex: 20, int: 20, wis: 20, lk: 20 },
+    maxHp: 40, hp: 40, maxMp: 40, mp: 40,
+    knownSkills: [], subclassId: null, classId: 'warrior',
+    floor: 3, equipment: {}, relics: [],
+  };
+  gainXp(wrld, 100, makeRng(2));
+  t('WRLD growth multiplies XP intake', wrld.xp === 150);
+  appraiseRun(makeRng(3), wrld, { partial: true });
+  t('partial appraisal keeps growth sealed', !wrld.growthRevealed && !wrld.appraisal.growthRank);
+  appraiseRun(makeRng(4), wrld, { partial: false });
+  t('full appraisal reveals growth rank', wrld.growthRevealed && wrld.appraisal.growthRank === 'WRLD');
+}
 t('death respawn at 30% (reconciled with Guard)', CONFIG.death.respawnHpPct === 0.3 && CONFIG.death.respawnResourcePct === 0.3);
 t('revive pct matches respawn', CONFIG.death.reviveHpPct === CONFIG.death.respawnHpPct);
 t('guard blocks 30% (config)', CONFIG.guard.blockPct === 0.3);
@@ -394,6 +489,25 @@ t('Guard ↔ revival reconciled', guardReviveReconciled());
 t('charge display name configurable', typeof CONFIG.charge.displayName === 'string');
 t('modifiers have no sanity mechanics', !JSON.stringify(MODIFIERS).includes('sanity'));
 t('relics have no sanity mechanics', !JSON.stringify(RELICS).includes('anity'));
+{
+  const chargeRelics = RELICS.filter(r => r.mutex === 'start_charge');
+  t('opening-charge relics share a mutex', chargeRelics.length >= 2 && chargeRelics.every(r => r.startCharge > 0));
+  t('owning horn blocks war drum', relicMutexBlocked(
+    RELICS.find(r => r.id === 'war_drum'),
+    ['first_strike_horn'],
+  ));
+  t('owning drum blocks chronos', relicMutexBlocked(
+    RELICS.find(r => r.id === 'chronos_heart'),
+    ['war_drum'],
+  ));
+  const rng = makeRng(99);
+  let sawSibling = false;
+  for (let i = 0; i < 80; i++) {
+    const r = rollRelic(rng, ['first_strike_horn']);
+    if (r && r.mutex === 'start_charge') { sawSibling = true; break; }
+  }
+  t('rollRelic never offers a second opening-charge relic', !sawSibling);
+}
 
 console.log('— tower difficulty curve —');
 {

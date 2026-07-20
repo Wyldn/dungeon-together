@@ -5,7 +5,7 @@ import { RACES } from './data/races.js';
 import { resolveItem, RELICS, EQUIP_SLOTS } from './data/items.js';
 import { SKILLS } from './data/skills.js';
 import { CONFIG } from './data/config.js';
-import { rankFor, appraisalRange, growthMult } from './data/ranks.js';
+import { rankFor, appraisalRange, growthMult, growthGainMult } from './data/ranks.js';
 import { cappedDmgTakenMult, softHpGain, levelDefBonus, resourceRegen } from './data/tdc.js';
 
 export function equippedItems(run) {
@@ -187,6 +187,8 @@ export function appraiseRun(rng, run, { partial = false, location = 'the tower' 
   const results = {};
   for (const st of stats) results[st] = appraisalRange(rng, d[st]);
   const total = APPRAISABLE.reduce((s, k) => s + d[k], 0);
+  // Full readings unlock the hidden growth rank; partials leave it sealed.
+  if (!partial) run.growthRevealed = true;
   run.appraisal = {
     floor: run.floor,
     level: run.level,
@@ -194,6 +196,7 @@ export function appraiseRun(rng, run, { partial = false, location = 'the tower' 
     partial,
     results,
     overall: rankFor(Math.round(total / APPRAISABLE.length * 1.6)),
+    growthRank: run.growthRevealed ? (run.growthRank || 'C') : null,
   };
   return run.appraisal;
 }
@@ -232,29 +235,35 @@ export function applySubclass(run, sub) {
   return sub;
 }
 
-// Level up. Gains scale with the HIDDEN growth modifier. Returns records:
+// Level up. Hidden growth mostly multiplies XP intake; a mild residue still
+// scales HP/MP/stat gains. Returns records:
 // {level, evolutionChoice?: [options], deeper?: subclass}
 export function gainXp(run, amount, rng) {
-  run.xp += amount;
+  const rank = run.growthRank || 'C';
+  const boost = run.growthBoost || 1;
+  const xpMult = growthMult(rank) * boost;
+  run.xp += Math.max(0, Math.round((Number(amount) || 0) * xpMult));
   const ups = [];
-  const gMult = growthMult(run.growthRank || 'C') * (run.growthBoost || 1);
+  const gainMult = growthGainMult(rank, boost);
   while (run.xp >= run.xpNext) {
     run.xp -= run.xpNext;
     run.level++;
     run.xpNext = xpForLevel(run.level);
 
     // Lean HP curve (~150 late); tankiness comes from level+gear DEF instead.
-    const hpGain = softHpGain(run.level, Math.round((4 + rng.int(0, 2)) * gMult));
-    const mpGain = Math.round((3 + rng.int(0, 2)) * gMult); // resource pools stay linear
+    const hpGain = softHpGain(run.level, Math.round((4 + rng.int(0, 2)) * gainMult));
+    const mpGain = Math.round((3 + rng.int(0, 2)) * gainMult); // resource pools stay linear
     // Early levels get an extra point — forest climbs need more than 2 rares of power.
     const earlyBonus = run.level <= 8 ? 1 : 0;
-    const statPoints = Math.max(1, Math.round(2 * gMult + (rng.chance(0.35) ? 1 : 0))) + earlyBonus;
+    const statPoints = Math.max(1, Math.round(2 * gainMult + (rng.chance(0.35) ? 1 : 0))) + earlyBonus;
     grantClassWeightedStats(run, rng, statPoints, { biasChance: 0.72 });
+    // Keep the same fill % after max pools grow (e.g. 20/40 → 25/50).
+    const hpRatio = run.hp / Math.max(1, run.maxHp);
+    const mpRatio = run.mp / Math.max(1, run.maxMp);
     run.maxHp += hpGain;
     run.maxMp += mpGain;
-    // level-up recovery: 50% of MISSING health/resource (handoff §15)
-    run.hp = Math.min(run.maxHp, run.hp + Math.round((run.maxHp - run.hp) * CONFIG.recovery.levelUpMissingPct));
-    run.mp = Math.min(run.maxMp, run.mp + Math.round((run.maxMp - run.mp) * CONFIG.recovery.levelUpMissingPct));
+    run.hp = Math.min(run.maxHp, Math.max(0, Math.round(hpRatio * run.maxHp)));
+    run.mp = Math.min(run.maxMp, Math.max(0, Math.round(mpRatio * run.maxMp)));
 
     const up = { level: run.level };
     if (run.level === EVOLUTION_LEVELS.first && !run.subclassId) {

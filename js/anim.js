@@ -17,7 +17,18 @@ const SETS = { ...ENEMY_ANIM, ...HERO_ANIM };
 
 export function hasAnim(mon) { return !!SETS[mon]; }
 
-function scaleFor(set) { return Math.max(1, Math.round((set.disp || set.fh) / set.fh)); }
+const BOSS_CONTENT_TARGET = 176;
+const BOSS_SCALE_CAP = 14;
+
+/** Integer scale. Bosses size to visible ink (`inkH`) so padded sheets fill the box. */
+function scaleFor(set, boss = false) {
+  if (!boss) return Math.max(1, Math.round((set.disp || set.fh) / set.fh));
+  const inkH = set.inkH || set.fh;
+  const target = set.bossContent || BOSS_CONTENT_TARGET;
+  const fromInk = Math.round(target / inkH);
+  const fromDisp = Math.round((set.bossDisp || Math.max(set.disp || set.fh, 200)) / set.fh);
+  return Math.max(1, Math.min(set.bossScaleCap || BOSS_SCALE_CAP, Math.max(fromInk, fromDisp)));
+}
 
 // HTML for an animated sprite. `uid` ties it to a combatant; `mon` is the sprite
 // set key (an enemy's `sprite` override or its `id`). Falls back to null so the
@@ -25,7 +36,7 @@ function scaleFor(set) { return Math.max(1, Math.round((set.disp || set.fh) / se
 export function animSpriteHtml(uid, mon, { boss = false, dead = false } = {}) {
   const set = SETS[mon];
   if (!set) return null;
-  const s = scaleFor(set);
+  const s = scaleFor(set, boss);
   // `ox` is how far the idle body sits from its canvas centre (the canvas is
   // sized to fit the widest attack, so it's lopsided). Shift it back so the
   // character stays centred under its own name/HP bar.
@@ -111,16 +122,17 @@ export function attach(root) {
     const uid = el.dataset.uid, mon = el.dataset.mon;
     if (!uid || !SETS[mon]) continue;
     let rec = recs.get(uid);
+    const boss = el.classList.contains('anim-boss');
     if (!rec || rec.mon !== mon) {
       // brand-new combatant (or a sprite swap, e.g. slime -> king): fresh record
-      rec = { uid, mon, el, scale: scaleFor(SETS[mon]), frame: 0, acc: 0,
+      rec = { uid, mon, el, scale: scaleFor(SETS[mon], boss), frame: 0, acc: 0,
         introDone: false, dead: false, st: null };
       recs.set(uid, rec);
       const intro = role(rec, 'intro');
       if (intro && !el.dataset.dead) { rec.introDone = true; setState(rec, intro, 'idle'); }
       else setState(rec, role(rec, 'idle') || 'idle', 'loop');
     } else {
-      rec.el = el; rec.scale = scaleFor(SETS[mon]);
+      rec.el = el; rec.scale = scaleFor(SETS[mon], boss);
       paint(rec, true); // rebind to the fresh DOM node
     }
     if (el.dataset.dead && !rec.dead) { rec.dead = true; setState(rec, role(rec, 'death') || 'death', 'hold'); }
