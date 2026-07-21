@@ -11,10 +11,24 @@ export class CoopSession {
     this.partners = new Map(); // id -> {name, classId, status, act}
     this.gates = new Map();    // tag -> Set<playerId>
     this.gateWaiters = new Map(); // tag -> resolve fn
+    this.gatePromises = new Map(); // tag -> Promise (idempotent waits)
     this.floorContent = new Map(); // floor -> content msg
     this.floorWaiters = new Map(); // floor -> resolve fn
     this.offs = [];
     this.lastStatus = '';
+
+    // Vote / result buffers — survive late UI entry under dual auto-play.
+    this.cardResults = new Map(); // floor -> idx (first write wins)
+    this.eventResults = new Map(); // `${floor}:${eventId}` -> idx
+    this.pickBuf = new Map(); // floor -> Map(from -> idx)
+    this.pickOrder = new Map(); // floor -> [from, ...] arrival order
+    this.evPickBuf = new Map(); // `${floor}:${eventId}` -> Map(from -> idx)
+    this.evPickOrder = new Map(); // key -> [from, ...]
+
+    this._pendingEvFight = null;
+    this._pendingChestRoll = null;
+    this._pendingEvEnemies = null;
+    this._pendingEvResolves = []; // queue — roll then randomOutcome must not overwrite
 
     for (const p of net.roster) {
       if (p.id !== net.you) this.partners.set(p.id, { name: p.name, classId: null, status: null, act: 'lobby' });
@@ -31,9 +45,29 @@ export class CoopSession {
       this.floorWaiters.get(d.floor)?.(d);
       this.floorWaiters.delete(d.floor);
     }));
-    // buffered so a slow client can't miss a decision that already resolved
-    this.cardResults = new Map(); // floor -> idx
-    this.offs.push(net.on('cardresult', d => this.cardResults.set(d.floor, d.idx)));
+
+    // Results: first write wins so a late duplicate (first-pick race) cannot overwrite.
+    this.offs.push(net.on('cardresult', d => {
+      if (d?.floor == null || this.cardResults.has(d.floor)) return;
+      this.cardResults.set(d.floor, d.idx);
+    }));
+    this.offs.push(net.on('evresult', d => {
+      if (d?.floor == null || d?.eventId == null) return;
+      const key = `${d.floor}:${d.eventId}`;
+      if (this.eventResults.has(key)) return;
+      this.eventResults.set(key, d.idx);
+    }));
+
+    // Buffer picks even when no UI listener is mounted yet (dual auto race).
+    this.offs.push(net.on('pick', (d, from) => {
+      if (d?.floor == null || d?.idx == null) return;
+      this.notePick(d.floor, from, d.idx);
+    }));
+    this.offs.push(net.on('evpick', (d, from) => {
+      if (d?.floor == null || d?.eventId == null || d?.idx == null) return;
+      this.noteEvPick(d.floor, d.eventId, from, d.idx);
+    }));
+
     this.throneMsg = null;
     this.offs.push(net.on('throne', d => { this.throneMsg = d; }));
     // WRLD: one of each catalog id per climb across the whole party
@@ -67,21 +101,13 @@ export class CoopSession {
       else this.requeueVotes.delete(from);
       this.onRequeue?.();
     }));
-    // Buffered event-choice results (combat-capable events)
-    this.eventResults = new Map(); // `${floor}:${eventId}` -> choiceIdx
-    this.offs.push(net.on('evresult', d => {
-      if (d?.floor != null && d?.eventId != null) {
-        this.eventResults.set(`${d.floor}:${d.eventId}`, d.idx);
-      }
-    }));
-    // Buffered host→guest packages so a slow client can't miss them
-    // (classic freeze: host rolls mimic / pack before guests await once()).
-    this._pendingEvFight = null;
-    this._pendingChestRoll = null;
-    this._pendingEvEnemies = null;
+
+    // Host→guest packages (buffered so a slow client cannot miss them).
     this.offs.push(net.on('evfight', d => { this._pendingEvFight = d; }));
     this.offs.push(net.on('chestroll', d => { this._pendingChestRoll = d; }));
     this.offs.push(net.on('evenemies', d => { this._pendingEvEnemies = d; }));
+    this.offs.push(net.on('evresolve', d => { this._pendingEvResolves.push(d); }));
+
     this.offs.push(net.sys('roster', () => {
       this._syncRoster();
       this.onPartnerUpdate?.();
@@ -93,6 +119,104 @@ export class CoopSession {
       this.onPartnerUpdate?.();
       this.onPartnerLeft?.();
     }));
+  }
+
+  /** Clear per-climb buffers so a requeue cannot reuse stale votes / packages. */
+  resetRunBuffers() {
+    this.cardResults.clear();
+    this.eventResults.clear();
+    this.pickBuf.clear();
+    this.pickOrder.clear();
+    this.evPickBuf.clear();
+    this.evPickOrder.clear();
+    this.floorContent.clear();
+    this.gates.clear();
+    this.gateWaiters.clear();
+    this.gatePromises.clear();
+    this.floorWaiters.clear();
+    this._pendingEvFight = null;
+    this._pendingChestRoll = null;
+    this._pendingEvEnemies = null;
+    this._pendingEvResolves = [];
+    this.throneMsg = null;
+    this.lastStatus = '';
+  }
+
+  notePick(floor, from, idx) {
+    if (!this.pickBuf.has(floor)) {
+      this.pickBuf.set(floor, new Map());
+      this.pickOrder.set(floor, []);
+    }
+    const m = this.pickBuf.get(floor);
+    const first = !m.has(from);
+    m.set(from, idx);
+    if (first) this.pickOrder.get(floor).push(from);
+  }
+
+  /** Local send + buffer (relay does not echo back to sender). */
+  emitPick(floor, idx) {
+    this.notePick(floor, this.net.you, idx);
+    this.net.send({ k: 'pick', floor, idx });
+  }
+
+  picksFor(floor) {
+    return this.pickBuf.get(floor) || new Map();
+  }
+
+  /** Earliest buffered pick for first-pick arbitration. */
+  firstBufferedPick(floor) {
+    const order = this.pickOrder.get(floor) || [];
+    const m = this.pickBuf.get(floor);
+    if (!order.length || !m) return null;
+    const from = order[0];
+    return { from, idx: m.get(from) };
+  }
+
+  noteEvPick(floor, eventId, from, idx) {
+    const key = `${floor}:${eventId}`;
+    if (!this.evPickBuf.has(key)) {
+      this.evPickBuf.set(key, new Map());
+      this.evPickOrder.set(key, []);
+    }
+    const m = this.evPickBuf.get(key);
+    const first = !m.has(from);
+    m.set(from, idx);
+    if (first) this.evPickOrder.get(key).push(from);
+  }
+
+  emitEvPick(floor, eventId, idx) {
+    this.noteEvPick(floor, eventId, this.net.you, idx);
+    this.net.send({ k: 'evpick', floor, eventId, idx });
+  }
+
+  evPicksFor(floor, eventId) {
+    return this.evPickBuf.get(`${floor}:${eventId}`) || new Map();
+  }
+
+  firstBufferedEvPick(floor, eventId) {
+    const key = `${floor}:${eventId}`;
+    const order = this.evPickOrder.get(key) || [];
+    const m = this.evPickBuf.get(key);
+    if (!order.length || !m) return null;
+    const from = order[0];
+    return { from, idx: m.get(from) };
+  }
+
+  /** Publish a cardresult once; ignores later calls for the same floor. */
+  publishCardResult(floor, idx, extra = {}) {
+    if (this.cardResults.has(floor)) return false;
+    this.cardResults.set(floor, idx);
+    this.net.send({ k: 'cardresult', floor, idx, ...extra });
+    return true;
+  }
+
+  /** Publish an evresult once. */
+  publishEvResult(floor, eventId, idx, extra = {}) {
+    const key = `${floor}:${eventId}`;
+    if (this.eventResults.has(key)) return false;
+    this.eventResults.set(key, idx);
+    this.net.send({ k: 'evresult', floor, eventId, idx, ...extra });
+    return true;
   }
 
   _syncRoster() {
@@ -133,8 +257,15 @@ export class CoopSession {
   gate(tag) {
     this._gateAdd(tag, this.net.you);
     this.net.send({ k: 'gate', tag });
-    if (this._gateDone(tag)) return Promise.resolve();
-    return new Promise(r => { this.gateWaiters.set(tag, r); });
+    if (this._gateDone(tag)) {
+      this.gatePromises.delete(tag);
+      return Promise.resolve();
+    }
+    // Idempotent: a second call (double #continue under auto) shares the same Promise.
+    if (this.gatePromises.has(tag)) return this.gatePromises.get(tag);
+    const p = new Promise(r => { this.gateWaiters.set(tag, r); });
+    this.gatePromises.set(tag, p);
+    return p;
   }
   _gateAdd(tag, id) {
     if (!this.gates.has(tag)) this.gates.set(tag, new Set());
@@ -152,6 +283,7 @@ export class CoopSession {
     if (this._gateDone(tag) && this.gateWaiters.has(tag)) {
       this.gateWaiters.get(tag)();
       this.gateWaiters.delete(tag);
+      this.gatePromises.delete(tag);
     }
   }
   gateProgress(tag) {
@@ -209,6 +341,42 @@ export class CoopSession {
       '_pendingEvEnemies', 'evenemies',
       d => d.floor === floor && d.eventId === eventId,
     );
+  }
+
+  waitEvResolve(floor, eventId) {
+    return new Promise(resolve => {
+      let done = false;
+      const take = (d) => {
+        if (done || !d || d.floor !== floor || d.eventId !== eventId) return false;
+        done = true;
+        resolve(d);
+        return true;
+      };
+      const idx = this._pendingEvResolves.findIndex(
+        d => d?.floor === floor && d?.eventId === eventId,
+      );
+      if (idx >= 0) {
+        const d = this._pendingEvResolves.splice(idx, 1)[0];
+        if (take(d)) return;
+      }
+      const off = this.net.on('evresolve', (d) => {
+        if (!take(d)) return;
+        // Drop the matching pending copy if the live listener won the race.
+        const i = this._pendingEvResolves.findIndex(
+          x => x?.floor === floor && x?.eventId === eventId && x === d,
+        );
+        if (i >= 0) this._pendingEvResolves.splice(i, 1);
+        off();
+      });
+      // Re-check queue after subscribe.
+      const idx2 = this._pendingEvResolves.findIndex(
+        d => d?.floor === floor && d?.eventId === eventId,
+      );
+      if (idx2 >= 0) {
+        const d = this._pendingEvResolves.splice(idx2, 1)[0];
+        if (take(d)) off();
+      }
+    });
   }
 
   broadcastStatus(run, act) {

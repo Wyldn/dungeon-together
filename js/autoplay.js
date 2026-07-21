@@ -36,7 +36,9 @@ function stopAutoPlayLoop() {
 function clickEl(node) {
   if (!node || node.disabled || node.getAttribute('aria-disabled') === 'true') return false;
   if (node.classList?.contains('locked')) return false;
-  busyUntil = Date.now() + 280;
+  // Longer busy after continue/go so dual-auto cannot re-click before disable sticks.
+  const id = node.id || '';
+  busyUntil = Date.now() + (id === 'continue' || id === 'go' ? 700 : 280);
   node.click();
   return true;
 }

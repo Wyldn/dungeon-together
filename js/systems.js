@@ -67,11 +67,11 @@ export function skillEffectivePower(sk) {
   const cost = sk.cost || 0;
   const charge = sk.charge || 0;
   const spend = cost / 14 + charge;
-  let expected = 100 + 12 * spend + 0.85 * spend * spend;
+  let expected = 100 + 16 * spend + 1.4 * spend * spend;
   if (sk.target === 'all') expected *= 0.66;
   if (power >= expected) return power;
   // Close more of the gap on heavy spends so ultimates clearly beat mid skills.
-  const close = spend >= 5 ? 0.82 : spend >= 3 ? 0.72 : 0.55;
+  const close = spend >= 5 ? 0.95 : spend >= 3 ? 0.80 : 0.55;
   return Math.round(power + (expected - power) * close);
 }
 

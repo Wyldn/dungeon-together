@@ -34,14 +34,14 @@ export const TDC = {
     // Co-op trash threat — per-size table (linear perExtra overpunished 3p/4p AOE).
     // Fallback: solo * (1 + perExtraPlayer * (n-1)) if a size is missing.
     // Sized for body bands (2p 2–3 / 3p 3–4 / 4p 4–5), not old 4–5 swarms.
-    budgetBySize: { 1: 1, 2: 1.80, 3: 2.70, 4: 3.50 },
+    budgetBySize: { 1: 1, 2: 2.10, 3: 3.20, 4: 4.20 },
     perExtraPlayer: 1.05,
     residualHpCap: 0.10,     // unused/overspend budget → at most ±10% HP
     residualHpFactor: 0.40,  // conversion rate |remaining|/budget → HP
     coopResidualHpScale: 0.55, // leftover→HP in co-op
     fillThreshold: 0.55,     // add another body if ≥55% of its cost remains
-    swarmChance: 0.20,       // slight swarm bump (duo overhaul #23)
-    swarmMaxBodies: 5,       // hard ceiling on swarm size (UI + turn-length sanity)
+    swarmChance: 0.35,       // more swarm packs in co-op
+    swarmMaxBodies: 6,       // hard ceiling on swarm size (UI + turn-length sanity)
     bossBudgetMult: 1.35,    // bosses claim a larger slice of party budget
     bossEscortMinFrac: 0.28, // leftover must clear this before an escort spawns
     refHp: 28,               // F1 wolf hp — threat cost denominator
@@ -65,12 +65,11 @@ export const TDC = {
      Same bands for every party size — co-op pads/eases keep the curve aligned.
      Re-check with `node tools/run_sim.js` after changing recovery, budgets, or boss pads. */
   clearRate: {
-    // Exclusive-ish buckets: ~15% brick, ~25% medium-only, ~20% long-only, ~40% win
-    // → cum: 85% medium (pass F10), 60% long (F30+), 40% clear F51.
-    // Bands include ~±3pts sim noise; tools/test.js allows an extra soft pad.
-    brickBy10: [0.10, 0.20],
-    reach30: [0.52, 0.68],
-    clear51: [0.30, 0.48],
+    // Brutal co-op retune: ~80% brick is intentional. Solo softens via soloEase
+    // but still sits in these wide bands. tools/test.js pads further for noise.
+    brickBy10: [0.70, 0.88],
+    reach30: [0.12, 0.32],
+    clear51: [0.04, 0.16],
   },
 
   /* ---- enemy scaling (replaces ad-hoc depth * 0.045) ----
@@ -79,10 +78,10 @@ export const TDC = {
      Bosses stay hand-tuned via RTK sims + mild bossFloor* only. */
   enemy: {
     depthHp: 0.043,
-    depthAtk: 0.0375,
+    depthAtk: 0.043,         // +15% depth ATK pressure
     depthDef: 0.018,
     floorHp: 0.0145,
-    floorAtk: 0.0065,
+    floorAtk: 0.0075,        // +15% absolute-floor ATK
     // Soft late ramp (solo ~40% win); F10 brick from soloBoss* early.
     bossFloorHp: 0.0043,
     bossFloorAtk: 0.0038,
@@ -102,7 +101,7 @@ export const TDC = {
     // Near pre-overhaul roles; duo feel from party pads + eventFight.
     boss: { hp: 0.86, atk: 0.54, def: 0.93 },
     common: { hp: 0.92, atk: 0.94, def: 1.0 },
-    elite: { hp: 1.14, atk: 1.06, def: 1.03 },
+    elite: { hp: 1.14, atk: 1.18, def: 1.03 },
   },
 
   /* ---- biome multipliers (multiplicative flavor, not additive piles) ---- */
@@ -121,20 +120,24 @@ export const TDC = {
      across random allies, so solo-tuned ATK feels soft in co-op. */
   party: {
     hpPerExtra: 0, // trash co-op HP lives in encounter budgets
-    // Co-op chip threat: ATK/AOE pads carry bite; HP pads unchanged (duration ≠ damage).
-    // Ease ramps early so packs/bosses pressure 2p–4p before late climb.
-    easeFullFloor: 16,
-    easeAtStart: 0.40,
+    // Co-op chip threat: ATK pads carry bite; HP pads unchanged (duration ≠ damage).
+    // Ease kicks in early so 2p–4p feel pressure from floor 1.
+    easeFullFloor: 10,
+    easeAtStart: 0.70,
     easePow: 1.05,
-    aoeExp: 0.30, // less AOE dilution → shared specials chip harder
-    bossAtkBySize: { 1: 1, 2: 1.64, 3: 1.95, 4: 2.30 },
+    aoeExp: 0.30, // unchanged — A3 skipped
+    bossAtkBySize: { 1: 1, 2: 2.05, 3: 2.55, 4: 3.15 },
     bossHpBySize: { 1: 1, 2: 1.76, 3: 2.60, 4: 3.50 },
     bossHpEaseAtStart: 0.52,
     // Open-floor trash/elite swings (bodies still from budgets).
-    trashAtkBySize: { 1: 1, 2: 1.36, 3: 1.58, 4: 1.78 },
-    trashAtkPerExtra: 0.22,
+    trashAtkBySize: { 1: 1, 2: 1.65, 3: 2.00, 4: 2.35 },
+    trashAtkPerExtra: 0.28,
+    // Co-op player outgoing damage pad (solo untouched).
+    outgoingDmgBySize: { 1: 1, 2: 0.90, 3: 0.82, 4: 0.75 },
+    // Soft bias: higher-power allies draw slightly more single-target heat.
+    focusPowerBias: 0.10,
     // Fallbacks if a size is missing
-    bossAtkPerExtra: 0.62,
+    bossAtkPerExtra: 0.72,
     bossHpPerExtra: 1.10,
   },
 
@@ -142,15 +145,15 @@ export const TDC = {
   eventFight: {
     // Live co-op shared fights; headless sim uses size-1 pads per climber.
     hpBySize: { 1: 1, 2: 1.45, 3: 1.90, 4: 2.40 },
-    atkBySize: { 1: 1, 2: 1.52, 3: 1.78, 4: 2.05 },
+    atkBySize: { 1: 1, 2: 1.85, 3: 2.25, 4: 2.70 },
     hpPerExtra: 0.40,
-    atkPerExtra: 0.28,
+    atkPerExtra: 0.40,
   },
 
   /* ---- stall enrage (bosses + event elites) ---- */
   enrage: {
-    bossAtRound: 9,
-    bossAtkMult: 1.22,
+    bossAtRound: 7,
+    bossAtkMult: 1.40,
     // Event elites: only if authored `enrageAtRound` (global default off — CDF).
     eventAtRound: null,
     eventAtkMult: 1.20,
@@ -159,10 +162,10 @@ export const TDC = {
   /* ---- player soft caps (breadth over runaway numbers) ---- */
   // Leaner HP; DEF soak mildly nerfed so chip lands harder without F10 bricks.
   player: {
-    hpSoftAfterLevel: 8,
-    hpSoftFactor: 0.42,          // HP gains after L8 × this
+    hpSoftAfterLevel: 6,
+    hpSoftFactor: 0.28,          // HP gains after L6 × this (level-up pool growth)
     dmgSoftAfterLevel: 15,
-    dmgLevelSoftFactor: 0.45,    // level→damage contribution beyond L15 × this
+    dmgLevelSoftFactor: 0.30,    // level→damage contribution beyond L15 × this
     mitigationCap: 0.65,         // max damage reduction from stacked dmgTakenMult
     // Passive DEF from level (before gear). Softens after softAfter so late
     // levels don't race the mitigation asymptote alone.
@@ -392,6 +395,11 @@ export function partyBossAoeMult(partySize = 1) {
   const n = Math.max(1, partySize | 0);
   const exp = TDC.party.aoeExp ?? 0.5;
   return n ** (-exp);
+}
+
+/** Co-op player outgoing damage pad — solo stays 1.0. */
+export function partyOutgoingDmgMult(partySize = 1) {
+  return partySizePad(TDC.party.outgoingDmgBySize, 0, partySize);
 }
 
 export function rewardMult(floor) {

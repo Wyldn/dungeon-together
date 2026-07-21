@@ -1256,8 +1256,7 @@ function coopLobby(myName) {
     offLobby(); offStart(); offMode();
     clearRun();
     coopS.decisionMode = mode || decisionMode;
-    coopS.floorContent.clear();
-    coopS.gates.clear();
+    coopS.resetRunBuffers();
     coopS.requeueVotes = new Set();
     coopS.eliminated.clear();
     coopS._syncRoster?.(); // eliminated climbers from a past run rejoin the roster
@@ -2158,7 +2157,8 @@ function renderCardChoice(stage, cards, coopCtx = null) {
       if (prev === i) return; // same card, nothing to change
       if (prev != null && coopCtx.mode === 'first') return; // first-pick locks your hand
       picks.set(coopS.you, i);
-      coopS.net.send({ k: 'pick', floor: run.floor, idx: i });
+      if (coopS.emitPick) coopS.emitPick(run.floor, i);
+      else coopS.net.send({ k: 'pick', floor: run.floor, idx: i });
       stage.querySelectorAll('.pick-card').forEach(c => c.classList.toggle('picked', +c.dataset.i === i));
       renderVotes();
       coopCtx.onLocalPick(i, picks);
@@ -2968,6 +2968,12 @@ function coopCardChoice(stage, cards) {
     return;
   }
 
+  // Seed picks that arrived before this UI mounted (dual auto race).
+  for (const [id, idx] of coopS.picksFor?.(floor) || []) {
+    if (id === coopS.you) continue;
+    remotePicks.set(id, idx);
+  }
+
   let afkTimer = null;
   const finish = (idx, spinFrom = null) => {
     if (resolved) return;
@@ -2984,8 +2990,7 @@ function coopCardChoice(stage, cards) {
     api?.renderVotes();
     if (mode === 'first' && coopS.isHost) {
       // host arbitrates first-selection: first pick it learns about wins
-      coopS.net.send({ k: 'cardresult', floor, idx: d.idx });
-      finish(d.idx);
+      if (coopS.publishCardResult(floor, d.idx)) finish(d.idx);
     } else if (mode === 'majority' && coopS.isHost) {
       hostTallyIfComplete();
     }
@@ -3008,10 +3013,8 @@ function coopCardChoice(stage, cards) {
     const rng = runRng(run);
     const winner = tied.length === 1 ? tied[0] : rng.pick(tied);
     rng.advance();
-    const msg = { k: 'cardresult', floor, idx: winner };
-    if (tied.length > 1) msg.tied = tied; // clients play the roulette over these
-    coopS.net.send(msg);
-    finish(winner, tied.length > 1 ? tied : null);
+    const extra = tied.length > 1 ? { tied } : {};
+    if (coopS.publishCardResult(floor, winner, extra)) finish(winner, tied.length > 1 ? tied : null);
   }
 
   function hostTallyIfComplete() {
@@ -3035,12 +3038,17 @@ function coopCardChoice(stage, cards) {
 
   renderTravelMap(stage, cards, {
     mode,
-    bind(a) { api = a; },
+    bind(a) {
+      api = a;
+      // Paint buffered remote votes into the live UI.
+      for (const [id, idx] of remotePicks) api.picks.set(id, idx);
+      api.renderVotes();
+    },
     onLocalPick(idx) {
+      if (resolved) return;
       if (mode === 'first') {
         if (coopS.isHost) {
-          coopS.net.send({ k: 'cardresult', floor, idx });
-          finish(idx);
+          if (coopS.publishCardResult(floor, idx)) finish(idx);
         }
         // guests wait for the host's cardresult (their pick may still win the race)
       } else if (coopS.isHost) {
@@ -3048,6 +3056,16 @@ function coopCardChoice(stage, cards) {
       }
     },
   }, travelCtx());
+
+  // Host: if picks were already buffered before UI mounted, resolve now.
+  if (coopS.isHost && !resolved) {
+    if (mode === 'first') {
+      const first = coopS.firstBufferedPick?.(floor);
+      if (first && coopS.publishCardResult(floor, first.idx)) finish(first.idx);
+    } else {
+      hostTallyIfComplete();
+    }
+  }
 }
 
 async function sharedFightCard(stage, content) {
@@ -3278,6 +3296,14 @@ function coopEventChoice(stage, ev) {
   const offs = [];
   let afkTimer = null;
 
+  // Seed picks that arrived before this UI mounted (dual auto race).
+  for (const [id, idx] of coopS.evPicksFor?.(floor, eventId) || []) {
+    if (id === coopS.you) continue;
+    remotePicks.set(id, idx);
+  }
+  const bufferedLocal = coopS.evPicksFor?.(floor, eventId)?.get(coopS.you);
+  if (bufferedLocal != null) localIdx = bufferedLocal;
+
   const npcArt = npcArtUrl(ev.npc);
   const evArt = npcArt || eventCatUrl(ev.category);
   stage.innerHTML = `
@@ -3357,9 +3383,8 @@ function coopEventChoice(stage, ev) {
     const rng = runRng(run);
     const winner = tied.length === 1 ? tied[0] : rng.pick(tied);
     rng.advance();
-    coopS.net.send({ k: 'evresult', floor, eventId, idx: winner, tied: tied.length > 1 ? tied : undefined });
-    coopS.eventResults.set(resultKey, winner);
-    finish(winner);
+    const extra = tied.length > 1 ? { tied } : {};
+    if (coopS.publishEvResult(floor, eventId, winner, extra)) finish(winner);
   }
 
   function hostTallyIfComplete() {
@@ -3384,16 +3409,13 @@ function coopEventChoice(stage, ev) {
     remotePicks.set(from, d.idx);
     renderVotes();
     if (mode === 'first' && coopS.isHost) {
-      coopS.net.send({ k: 'evresult', floor, eventId, idx: d.idx });
-      coopS.eventResults.set(resultKey, d.idx);
-      finish(d.idx);
+      if (coopS.publishEvResult(floor, eventId, d.idx)) finish(d.idx);
     } else if (mode === 'majority' && coopS.isHost) {
       hostTallyIfComplete();
     }
   }));
   offs.push(coopS.net.on('evresult', d => {
     if (d.floor !== floor || d.eventId !== eventId) return;
-    coopS.eventResults.set(resultKey, d.idx);
     finish(d.idx);
   }));
 
@@ -3407,13 +3429,12 @@ function coopEventChoice(stage, ev) {
       if (resolved || localIdx != null || !r.ok) return;
       SFX.click();
       localIdx = idx;
-      coopS.net.send({ k: 'evpick', floor, eventId, idx });
+      if (coopS.emitEvPick) coopS.emitEvPick(floor, eventId, idx);
+      else coopS.net.send({ k: 'evpick', floor, eventId, idx });
       renderVotes();
       if (mode === 'first') {
         if (coopS.isHost) {
-          coopS.net.send({ k: 'evresult', floor, eventId, idx });
-          coopS.eventResults.set(resultKey, idx);
-          finish(idx);
+          if (coopS.publishEvResult(floor, eventId, idx)) finish(idx);
         }
       } else if (coopS.isHost) {
         hostTallyIfComplete();
@@ -3422,6 +3443,16 @@ function coopEventChoice(stage, ev) {
     box.appendChild(btn);
   });
   renderVotes();
+
+  // Host: if picks were already buffered before UI mounted, resolve now.
+  if (coopS.isHost && !resolved) {
+    if (mode === 'first') {
+      const first = coopS.firstBufferedEvPick?.(floor, eventId);
+      if (first && coopS.publishEvResult(floor, eventId, first.idx)) finish(first.idx);
+    } else {
+      hostTallyIfComplete();
+    }
+  }
 }
 
 /** Shared co-op fight for event/mimic combat (host publishes enemy package). */
@@ -3470,9 +3501,31 @@ async function resolveChoice(stage, ev, choice, opts = {}) {
     let bonus = Math.floor(d.lk / 4);
     if (spec.bonusFlag && run.flags[spec.bonusFlag.flag]) bonus += spec.bonusFlag.bonus;
     if (spec.penaltyFlag && run.flags[spec.penaltyFlag.flag]) bonus -= spec.penaltyFlag.penalty;
-    const die = rng.int(1, 8);
-    const total = d[spec.stat] + die + bonus;
-    const ok = total >= spec.dc;
+    let die;
+    let total;
+    let ok;
+    // Party-voted events: host rolls once so both clients share success/fail.
+    if (opts.partyVoted && coopS && !coopS.alone) {
+      if (coopS.isHost) {
+        die = rng.int(1, 8);
+        total = d[spec.stat] + die + bonus;
+        ok = total >= spec.dc;
+        coopS.net.send({
+          k: 'evresolve', floor: run.floor, eventId: ev.id,
+          kind: 'roll', ok, die, total,
+        });
+      } else {
+        const data = await coopS.waitEvResolve(run.floor, ev.id);
+        ok = !!data?.ok;
+        die = data?.die;
+        total = data?.total;
+        rng.advance(); // keep runRng aligned with host's int(1,8)
+      }
+    } else {
+      die = rng.int(1, 8);
+      total = d[spec.stat] + die + bonus;
+      ok = total >= spec.dc;
+    }
     // the roll's drama, without the actuarial tables (handoff §5)
     const rollLine = { text: `${({ str: 'Strength', dex: 'Agility', int: 'Intellect', wis: 'Wisdom', lk: 'Luck' }[spec.stat])} is tested… ${ok ? 'and holds. SUCCESS.' : 'and falters. FAILURE.'}`, cls: ok ? 'good' : 'bad' };
     outcome = applyTagOutcomeMods(ok ? outcome.success : outcome.fail, ev, run);
@@ -3495,7 +3548,24 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
 
   if (o.randomOutcome) {
     // random-roll resolution: the tower picks (handoff §3)
-    o = rng.pick(o.randomOutcome);
+    // Party-voted: host picks the wedge once so both clients share the branch.
+    if (opts.partyVoted && coopS && !coopS.alone) {
+      if (coopS.isHost) {
+        const idx = rng.int(0, o.randomOutcome.length - 1);
+        o = o.randomOutcome[idx];
+        coopS.net.send({
+          k: 'evresolve', floor: run.floor, eventId: ev.id,
+          kind: 'random', idx,
+        });
+      } else {
+        const data = await coopS.waitEvResolve(run.floor, ev.id);
+        const idx = data?.idx ?? 0;
+        o = o.randomOutcome[Math.max(0, Math.min(o.randomOutcome.length - 1, idx))];
+        rng.advance(); // match host's int
+      }
+    } else {
+      o = rng.pick(o.randomOutcome);
+    }
     if (sparkle) o = applySparkleOutcomeMods(o, { floor: run.floor, rng });
     lines.push({ text: 'The tower decides…', cls: 'item' });
   }
@@ -4530,7 +4600,15 @@ async function showOutcomePanel(stage, lines, ups = [], {
   stage.appendChild(panel);
   renderHud();
   Music.play(BIOME_MUSIC[run.biomeId] || 'forest');
-  await new Promise(r => document.getElementById('continue').onclick = () => { SFX.click(); r(); });
+  await new Promise(r => {
+    const btn = document.getElementById('continue');
+    btn.onclick = () => {
+      if (btn.disabled) return;
+      btn.disabled = true; // sync — dual auto must not double-fire
+      SFX.click();
+      r();
+    };
+  });
   if (advance) {
     if (coopS) await coopAdvance(document.getElementById('continue'));
     nextFloor();
@@ -4561,9 +4639,14 @@ function nextFloorButton(stage) {
     </div></div>`);
   stage.innerHTML = '';
   stage.appendChild(panel);
+  let advancing = false;
   document.getElementById('continue').onclick = async () => {
+    if (advancing) return;
+    advancing = true;
+    const btn = document.getElementById('continue');
+    btn.disabled = true;
     SFX.click();
-    if (coopS) await coopAdvance(document.getElementById('continue'));
+    if (coopS) await coopAdvance(btn);
     nextFloor();
   };
 }
@@ -5332,8 +5415,7 @@ async function victoryScreen(type) {
   } : null);
   if (!wasCoop) teardownCoop();
   else {
-    coopS.floorContent.clear();
-    coopS.gates.clear();
+    coopS.resetRunBuffers();
   }
   const shards = shardsFor(type === 'win' ? 'win' : 'escape');
   meta.shards += shards;
@@ -5387,8 +5469,7 @@ async function endRun(cause) {
   if (summary) pushRunHistory(summary);
   if (!wasCoop) teardownCoop();
   else {
-    coopS.floorContent.clear();
-    coopS.gates.clear();
+    coopS.resetRunBuffers();
   }
   Music.stop(1.2);
   SFX.death();

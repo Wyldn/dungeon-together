@@ -257,12 +257,20 @@ export function gainXp(run, amount, rng) {
     const earlyBonus = run.level <= 8 ? 1 : 0;
     const statPoints = Math.max(1, Math.round(2 * gainMult + (rng.chance(0.35) ? 1 : 0))) + earlyBonus;
     grantClassWeightedStats(run, rng, statPoints, { biasChance: 0.72 });
-    // Keep the same fill % after max pools grow (e.g. 20/40 → 25/50).
+    // Level-up healing: by default keep absolute HP (no free mend from pool growth).
+    // levelUpHpFill > 0 restores that fraction of the old proportional-fill delta.
     const hpRatio = run.hp / Math.max(1, run.maxHp);
     const mpRatio = run.mp / Math.max(1, run.maxMp);
+    const prevHp = run.hp;
     run.maxHp += hpGain;
     run.maxMp += mpGain;
-    run.hp = Math.min(run.maxHp, Math.max(0, Math.round(hpRatio * run.maxHp)));
+    const fill = CONFIG.recovery?.levelUpHpFill ?? 0;
+    if (fill <= 0) {
+      run.hp = Math.min(run.maxHp, prevHp);
+    } else {
+      const ratioHp = Math.round(hpRatio * run.maxHp);
+      run.hp = Math.min(run.maxHp, Math.max(0, Math.round(prevHp + (ratioHp - prevHp) * fill)));
+    }
     run.mp = Math.min(run.maxMp, Math.max(0, Math.round(mpRatio * run.maxMp)));
 
     const up = { level: run.level };

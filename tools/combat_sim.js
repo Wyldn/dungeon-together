@@ -8,8 +8,8 @@
 
 import { CONFIG } from '../js/data/config.js';
 import {
-  softLevelDamage, enemyScale, partyBossAoeMult, expectedCurveT, soloBossChargeForScale,
-  levelDefBonus, resourceRegen, partyTrashAtkMult, TDC,
+  softLevelDamage, enemyScale, partyBossAoeMult, partyOutgoingDmgMult, expectedCurveT,
+  soloBossChargeForScale, levelDefBonus, resourceRegen, partyTrashAtkMult, TDC,
 } from '../js/data/tdc.js';
 import { biomeForFloor } from '../js/data/enemies.js';
 import {
@@ -153,15 +153,16 @@ export function syntheticClimber(floor, band = 0.5, classBias = 'str') {
   };
 }
 
-function playerHit(p, enemy, rng, { power = 100 } = {}) {
+function playerHit(p, enemy, rng, { power = 100, partySize = 1 } = {}) {
   const C = CONFIG.combat;
   const statVal = p.stats[p.classBias] || p.stats.str;
   let base = (statVal * C.playerStatWeight + p.atk * C.playerAtkWeight
     + softLevelDamage(p.level, C.playerLevelWeight) + C.playerFlat)
     * (power / 100);
   let dmg = base * (0.85 + rng.next() * 0.3);
-  if (rng.chance(clamp(p.crit, 0, 85) / 100)) dmg *= 1.6;
+  if (rng.chance(clamp(p.crit, 0, 85) / 100)) dmg *= (C.critMult ?? 1.45);
   dmg *= p.dmgMult;
+  dmg *= partyOutgoingDmgMult(partySize);
   return applyDefense(dmg, enemy.def);
 }
 
@@ -183,7 +184,7 @@ function endSimTurn(p) {
  * One player action — thresholds/order match Fight.autoPlayAct.
  * Returns true if the actor spent the turn (always, unless no foes).
  */
-function simAutoPlayTurn(p, enemies, rng) {
+function simAutoPlayTurn(p, enemies, rng, partySize = 1) {
   const living = () => enemies.filter(e => e.hp > 0);
   if (!living().length) return false;
 
@@ -242,7 +243,10 @@ function simAutoPlayTurn(p, enemies, rng) {
   const targets = sk.target === 'all' ? foes : (foes[0] ? [foes[0]] : []);
   for (const target of targets) {
     if (target.hp <= 0) continue;
-    target.hp = Math.max(0, target.hp - playerHit(p, target, rng, { power: skillEffectivePower(sk) || 100 }));
+    target.hp = Math.max(0, target.hp - playerHit(p, target, rng, {
+      power: skillEffectivePower(sk) || 100,
+      partySize,
+    }));
     if (target.hp <= 0 && target.twoPhase && target.phase2) simTransform(target);
     if (target.hp <= 0) p.charge = addCharge(p.charge, CONFIG.charge.gainOnKill);
   }
@@ -319,7 +323,7 @@ export function simulateFight(rng, playerOrParty, enemySpecs, {
 
     for (const p of livingPlayers()) {
       if (!livingEnemies().length) break;
-      simAutoPlayTurn(p, enemies, rng);
+      simAutoPlayTurn(p, enemies, rng, partySize);
     }
 
     if (!livingEnemies().length) break;
@@ -338,7 +342,25 @@ export function simulateFight(rng, playerOrParty, enemySpecs, {
       }
       const living = livingPlayers();
       if (!living.length) break;
-      const targets = special?.aoe ? living : [rng.pick(living)];
+      // Soft power bias: higher-curve climbers draw slightly more single-target heat.
+      const bias = TDC.party?.focusPowerBias ?? 0;
+      let stTarget;
+      if (special?.aoe) {
+        stTarget = null;
+      } else if (bias > 0 && living.length > 1) {
+        const powers = living.map(pl => (pl.level || 1) * 2 + (pl.maxHp || 40) / 10 + (pl.def || 0) * 3);
+        const lo = Math.min(...powers);
+        const hi = Math.max(...powers);
+        const span = hi - lo;
+        const weighted = living.map((pl, i) => ({
+          t: pl,
+          w: 1 + (span > 0 ? bias * ((powers[i] - lo) / span) : 0),
+        }));
+        stTarget = rng.weighted(weighted).t;
+      } else {
+        stTarget = rng.pick(living);
+      }
+      const targets = special?.aoe ? living : [stTarget];
       const aoeShare = special?.aoe ? partyBossAoeMult(living.length) : 1;
       let landed = false;
       for (const p of targets) {

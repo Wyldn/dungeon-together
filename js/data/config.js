@@ -3,10 +3,10 @@
 
 export const CONFIG = {
   /* ---- combat: Guard ----
-     Reconciled with death.reviveHpPct: Guard blocks 30%; revival restores 30%.
-     Do not retune one without the other — both are the same recovery fraction. */
+     Guard block % and revive HP % used to match; Guard is leaner now so chip
+     sticks — revive stays a separate co-op recovery dial. */
   guard: {
-    blockPct: 0.30,        // damage blocked while guarding (= revive fraction)
+    blockPct: 0.22,        // damage blocked while guarding
     chargeGain: 1,         // bonus Battle Charge for guarding
   },
 
@@ -16,13 +16,14 @@ export const CONFIG = {
      and events are how you bend those odds. */
   combat: {
     playerStatWeight: 1.0,   // damage per point of governing stat
-    playerAtkWeight: 1.7,    // damage per point of weapon atk
+    playerAtkWeight: 1.45,   // damage per point of weapon atk (was 1.7)
     playerLevelWeight: 0.9,
-    playerFlat: 2,
+    playerFlat: 0,           // was +2 — early basics slightly leaner
+    critMult: 1.45,          // player crit damage mult (was hard-coded 1.6)
     enemyAtkMult: 1.35,      // enemy atk → damage (was 1.5; early packs overkilled)
     lifestealCapPct: 0.04,   // max heal per hit from any single lifesteal source
-    hexTakenMult: 1.25,      // hexed targets take +25% damage
-    frailTakenMult: 1.25,    // frail / tormented incoming damage
+    hexTakenMult: 1.12,      // hexed targets take +12% damage (was +25%)
+    frailTakenMult: 1.12,    // frail / tormented incoming damage
     weakenDmgMult: 0.70,     // weaken outgoing damage
     burnDmgMult: 0.85,       // burn also blunts outgoing damage (on top of DoT)
     poisonPctOnEnemy: 0.10,  // poison DoT vs enemies (% max HP / tick)
@@ -67,16 +68,18 @@ export const CONFIG = {
   /* ---- boss discipline (§12) ---- */
   boss: {
     // Full shrug of afflictions every N of the boss's turns (not every swing).
-    cleanseEvery: 4,
+    cleanseEvery: 3,
     // Spend this much Battle Charge to break freeze/stun early and still act.
     // Per-boss override via `cleanseCost` on the enemy def.
-    cleanseCost: 2,
+    cleanseCost: 1,
     // Heavy telegraphed hits gain this much damage per banked charge segment.
-    // Tuned so at:5–6 finishers land ~⅓–½ HP on a P50 climber after DEF.
-    chargeDamageScale: 0.22,
+    // At 6 charge: 1 + 0.32×6 = 2.92× on top of special mult.
+    chargeDamageScale: 0.32,
     // Chance a boss skips a light affordable special to bank toward a heavier one.
-    bankChance: 0.58,
-    escortAtkMult: 0.88,     // boss-floor escorts contribute real chip in co-op
+    bankChance: 0.72,
+    // Bosses sometimes shrug taunt and pick freely (after taunt pool exists).
+    ignoreTauntChance: 0.28,
+    escortAtkMult: 1.05,     // boss-floor escorts contribute real chip in co-op
   },
 
   /* ---- combat: initiative ---- */
@@ -86,14 +89,19 @@ export const CONFIG = {
     beginnerPlayerBonus: 1,          // bosses/fast foes can still outspeed players
   },
 
-  /* ---- recovery (HP stays sticky; lean binds so clear-rate CDF holds) ---- */
+  /* ---- recovery (HP stays sticky; lean binds for brutal co-op) ---- */
   recovery: {
-    victoryHealPct: 0.09,        // bind after wins — specials/pads carry duo bite
-    bossVictoryHealPct: 0.26,    // gate blessing after bosses
-    floorHealPct: 0.05,          // catching your breath between floors
+    victoryHealPct: 0.02,        // bind after wins — chip must stick
+    bossVictoryHealPct: 0.08,    // gate blessing after bosses
+    floorHealPct: 0.01,          // catching your breath between floors
     floorManaPct: 0.06,          // class resource stays scarce between floors
+    // At fight start: restore this fraction of max class resource (capped at max).
+    combatStartManaPct: 0.50,
     // Event `fullHeal` no longer tops off — restores this fraction of MISSING HP.
-    eventFullHealMissingPct: 0.40,
+    eventFullHealMissingPct: 0.15,
+    // Level-up: fraction of proportional fill when max HP grows.
+    // 0 = keep absolute HP (no free mend from leveling).
+    levelUpHpFill: 0,
   },
 
   /* ---- economy (§13: gold was too abundant; TDC tension dial) ---- */
@@ -103,10 +111,10 @@ export const CONFIG = {
     merchantPriceMult: 1.05, // mild price pressure (used when shops price stock)
   },
 
-  /* ---- death / revival (reconciled with guard.blockPct = 0.30) ---- */
+  /* ---- death / revival (Guard block is leaner; revive is a separate dial) ---- */
   death: {
-    reviveHpPct: 0.30,         // Phoenix Feather + co-op floor revive (shared)
-    respawnHpPct: 0.30,        // co-op: rejoin next floor at this % max HP
+    reviveHpPct: 0.22,         // Phoenix Feather + co-op floor revive (shared)
+    respawnHpPct: 0.15,        // co-op: rejoin next floor at this % max HP
     respawnResourcePct: 0.30,  // co-op: class resource on revive
     itemsLost: 2,              // lesser items lost on death (co-op)
     protectedRarities: ['epic', 'legendary', 'unique', 'wrld'], // never lost

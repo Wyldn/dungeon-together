@@ -190,16 +190,16 @@ for (const b of Object.values(GALLERY_BOSSES)) applyRosterRename(b);
 for (const n of Object.values(GALLERY_NPCS)) applyRosterRename(n);
 
 /**
- * Party-scaled Band of Knights size: 1p→2, 2p→3–4, 3p→4–5, 4p+→5–6.
+ * Party-scaled Band of Knights size: 1p→2, 2p→3–4, 3p→4–5, 4p+→5–7.
  * Armor variants are rolled at random (with replacement).
  */
 export function knightBandSize(rng, partySize = 1) {
   const n = Math.max(1, partySize | 0);
   if (n <= 1) return 2;
-  if (n === 2) return rng.chance(0.55) ? 3 : 4;
-  if (n === 3) return rng.chance(0.5) ? 4 : 5;
-  if (typeof rng.int === 'function') return rng.int(5, 6);
-  return rng.chance(0.5) ? 5 : 6;
+  if (n === 2) return rng.chance(0.45) ? 3 : 4;
+  if (n === 3) return rng.chance(0.4) ? 4 : 5;
+  if (typeof rng.int === 'function') return rng.int(5, 7);
+  return rng.chance(0.4) ? 5 : rng.chance(0.5) ? 6 : 7;
 }
 
 /** Build a full knight-band encounter (replaces a lone knight elite draw). */
@@ -226,10 +226,10 @@ export const BOSSES = {
     // Scaled ~200 HP; DEF keeps solo HTK ~7–9 turns. Co-op pads via partyBossHpMult.
     hp: 190, atk: 27, def: 4, spd: 3, gold: [60, 90], xp: 60, regen: 0.02, boss: true,
     // Slow bruiser — banks for 4 then 6. No cheap at:3 dump.
-    chargeGain: 1, bankChance: 0.62,
+    chargeGain: 1, bankChance: 0.72,
     specials: [
       { at: 4, name: 'Limb Sweep', mult: 1.55, aoe: true, lazy: 0.35, desc: 'branches groan overhead' },
-      { at: 6, name: 'FOREST\'S VERDICT', mult: 2.25, frail: 0.4, desc: 'ten thousand judged climbers watch through its rings' },
+      { at: 6, name: 'FOREST\'S VERDICT', mult: 2.70, frail: 0.5, desc: 'ten thousand judged climbers watch through its rings' },
     ],
     intro: 'The oldest tree in the forest uproots itself. It has judged ten thousand climbers.\nIt has approved of none.',
     taunt: 'YOU BURN LIKE ALL THE REST.',
@@ -243,11 +243,11 @@ export const BOSSES = {
     // Midboss — tuned under F20; solo ease + this HP keep on-curve clears ~40%+ HP.
     hp: 235, atk: 26, def: 5, spd: 6, gold: [75, 110], xp: 75, boss: true,
     // Tempo: early chip (1), mid pressure (3), then a heavy 6.
-    chargeGain: 1, bankChance: 0.55,
+    chargeGain: 1, bankChance: 0.72,
     specials: [
       { at: 1, name: 'Oathbreaker', mult: 1.2, desc: 'the greatsword drags a line through the dust' },
       { at: 3, name: 'Ring of Ash', mult: 1.55, aoe: true, burn: 0.35, desc: 'the crown sheds a burning halo' },
-      { at: 6, name: 'CROWN OF ASH', mult: 2.3, frailSure: true, desc: 'the dead king remembers he was crowned' },
+      { at: 6, name: 'CROWN OF ASH', mult: 2.75, frailSure: true, desc: 'the dead king remembers he was crowned' },
     ],
     intro: 'A knight kneels in the dust, greatsword planted, crown fused to the helm.\nHe has knelt here for six hundred years, waiting for a king who never came.\nHe stands up for you.',
     taunt: 'I KEPT MY OATH. WHERE IS YOURS?',
@@ -256,10 +256,10 @@ export const BOSSES = {
     id: 'lich', name: 'Lich of the Fallen King', glyph: '👑', biome: 'ruins',
     hp: 340, atk: 30, def: 7, spd: 8, gold: [90, 130], xp: 90, caster: true, summons: 'skeleton', boss: true,
     // Mid-bar pressure only — no free at:3; banks 4→5.
-    chargeGain: 1, bankChance: 0.6,
+    chargeGain: 1, bankChance: 0.72,
     specials: [
       { at: 4, name: 'Soul Tithe', mult: 1.65, heal: 0.06, weaken: 0.5, desc: 'the crown\'s lights burn colder' },
-      { at: 5, name: 'DYNASTY\'S END', mult: 2.15, aoe: true, tormentedSure: true, desc: 'six hundred years of grievance condenses' },
+      { at: 5, name: 'DYNASTY\'S END', mult: 2.60, aoe: true, tormentedSure: true, desc: 'six hundred years of grievance condenses' },
     ],
     intro: 'A crown floats above a throne of dust. Beneath it, two cold lights ignite.\n"Kneel. My kingdom needs subjects."',
     taunt: 'DEATH IS A DOOR. I AM THE KEY.',
@@ -271,11 +271,11 @@ export const BOSSES = {
     freezeEvery: 4,
     cleanseCost: 3, // harder to burn FOC out of ice than most bosses
     // Court tempo: light 2, mid 4, finale 6.
-    chargeGain: 1, bankChance: 0.58,
+    chargeGain: 1, bankChance: 0.72,
     specials: [
       { at: 2, name: 'Glacial Decree', mult: 1.3, freeze: 0.35, desc: 'the temperature plummets' },
       { at: 4, name: 'Courtly Reproach', mult: 1.7, aoe: true, weaken: 0.4, desc: 'the frozen court exhales as one' },
-      { at: 6, name: 'ETERNAL WINTER', mult: 2.2, aoe: true, freezeSure: true, desc: 'the court\'s frozen betrayers turn their heads in unison' },
+      { at: 6, name: 'ETERNAL WINTER', mult: 2.65, aoe: true, freezeSure: true, desc: 'the court\'s frozen betrayers turn their heads in unison' },
     ],
     intro: 'The Frost Queen does not rise from her throne. She merely opens her eyes,\nand the temperature of your blood becomes negotiable.',
     taunt: 'WINTER OUTLASTS EVERYTHING. EVEN HOPE.',
@@ -284,10 +284,10 @@ export const BOSSES = {
     id: 'hydra', name: 'The Grieving Hydra', glyph: '🐉', biome: 'swamp',
     hp: 550, atk: 38, def: 12, spd: 4, gold: [160, 220], xp: 180, regen: 0.02, heads: true, boss: true,
     // Two-step: bite at 3, then bank hard for the 6.
-    chargeGain: 1, bankChance: 0.65,
+    chargeGain: 1, bankChance: 0.75,
     specials: [
       { at: 3, name: 'Threefold Snap', mult: 1.55, poisonSure: true, desc: 'three heads inhale together' },
-      { at: 6, name: 'SORROW UNENDING', mult: 2.55, aoe: true, tormentedSure: true, frail: 0.4, desc: 'the weeping head finally screams' },
+      { at: 6, name: 'SORROW UNENDING', mult: 3.05, aoe: true, tormentedSure: true, frail: 0.5, desc: 'the weeping head finally screams' },
     ],
     intro: 'Three heads surface from the black water. One weeps. One laughs.\nThe third simply opens its jaws.',
     taunt: 'CUT ONE SORROW DOWN. TWO MORE RISE.',
@@ -296,11 +296,11 @@ export const BOSSES = {
     id: 'infernal_duke', name: 'Duke Malgrimm, Gatekeeper of the Throne', glyph: '😈', biome: 'hell',
     hp: 655, atk: 40, def: 14, spd: 10, gold: [220, 300], xp: 250, burn: 0.22, boss: true,
     // Duelist: feint at 2, heavy 5, ultimate 6.
-    chargeGain: 1, bankChance: 0.55,
+    chargeGain: 1, bankChance: 0.72,
     specials: [
       { at: 2, name: 'Sword of Swords', mult: 1.35, weaken: 0.45, desc: 'the blades within his blade align' },
-      { at: 5, name: 'Bladestorm Toll', mult: 2.45, aoe: true, frail: 0.45, desc: 'the sword of swords fans open' },
-      { at: 6, name: 'GATEKEEPER\'S TOLL', mult: 2.7, aoe: true, burnSure: true, tormented: 0.5, desc: 'he stops being polite about it' },
+      { at: 5, name: 'Bladestorm Toll', mult: 2.95, aoe: true, frail: 0.5, desc: 'the sword of swords fans open' },
+      { at: 6, name: 'GATEKEEPER\'S TOLL', mult: 3.25, aoe: true, burnSure: true, tormented: 0.55, desc: 'he stops being polite about it' },
     ],
     intro: '"Fifty floors," the Duke muses, drawing a sword made of other swords.\n"Impressive. The King will want to kill you personally. Let\'s disappoint him."',
     taunt: 'THE THRONE IS A PRIVILEGE. DYING HERE IS FREE.',

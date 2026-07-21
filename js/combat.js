@@ -11,7 +11,8 @@ import { SKILLS } from './data/skills.js';
 import { CONSUMABLES } from './data/items.js';
 import { CONFIG } from './data/config.js';
 import {
-  enemyScale, softLevelDamage, rewardMult, partyBossAoeMult, soloBossChargeForScale, TDC,
+  enemyScale, softLevelDamage, rewardMult, partyBossAoeMult, partyOutgoingDmgMult,
+  soloBossChargeForScale, TDC,
 } from './data/tdc.js';
 import { derived, gearHas, heal, restoreMana, usableSkillIds, resourceName, changeFame, classTitle } from './character.js';
 import { initiativeOrder, addCharge, tickEnemyCharge, canAfford, skillEffectivePower, pickEnemySpecial, enemyTelegraph, applyGuard, applyDefense } from './systems.js';
@@ -196,6 +197,12 @@ export function startCombat({
   resume = null,
 }) {
   return new Promise(resolve => {
+    // Fresh fights top off class resource a bit so mid-kit spends stay usable.
+    // Skip on resume so a reloaded mid-fight doesn't free-refill.
+    if (!resume) {
+      const pct = CONFIG.recovery?.combatStartManaPct ?? 0;
+      if (pct > 0) restoreMana(run, (run.maxMp || 0) * pct);
+    }
     const C = new Fight(container, run, rng, enemies, modifier, introText, onHud, resolve, coop, {
       onCharacter, onSettings,
     });
@@ -258,6 +265,7 @@ class Fight {
           dex: p.status?.stats?.dex ?? p.status?.dex,
           spdStat: p.status?.spdStat,
           initiative: p.status?.initiative ?? 0,
+          level: p.status?.level ?? 1,
           taunt: p.status?.taunt || 0,
           title: p.status?.title || null,
           nameStyle: p.status?.nameStyle || null,
@@ -268,6 +276,41 @@ class Fight {
 
   /* ---------------- helpers ---------------- */
   d() { return derived(this.run); }
+  partySize() {
+    if (!this.shared || !this.coop) return 1;
+    return 1 + (this.coop.partners?.size || 0);
+  }
+  /** Rough power score for co-op single-target bias (higher = slightly more heat). */
+  targetPowerScore(id) {
+    if (!this.coop) return 1;
+    if (id === this.coop.you) {
+      const d = this.d();
+      return (this.run.level || 1) * 2 + (this.run.maxHp || 40) / 10 + (d.def || 0) * 3 + (d.atk || 0);
+    }
+    const a = this.allies.get(id);
+    const p = this.coop.partners.get(id);
+    const s = p?.status;
+    const level = s?.level ?? a?.level ?? 1;
+    const maxHp = s?.maxHp ?? a?.maxHp ?? 40;
+    const def = s?.def ?? a?.def ?? 0;
+    return level * 2 + maxHp / 10 + def * 3;
+  }
+  /** Weighted single-target pick: higher-power allies get +focusPowerBias relative weight. */
+  pickEnemyFocusTarget(pool) {
+    if (!pool?.length) return null;
+    if (pool.length === 1) return pool[0];
+    const bias = TDC.party?.focusPowerBias ?? 0;
+    if (bias <= 0) return this.rng.pick(pool);
+    const powers = pool.map(t => this.targetPowerScore(t.id));
+    const lo = Math.min(...powers);
+    const hi = Math.max(...powers);
+    const span = hi - lo;
+    const weighted = pool.map((t, i) => ({
+      t,
+      w: 1 + (span > 0 ? bias * ((powers[i] - lo) / span) : 0),
+    }));
+    return this.rng.weighted(weighted).t;
+  }
   aliveEnemies() { return this.enemies.filter(e => e.hp > 0); }
   _dealt(n) { trackDamageDealt(this.run, n); }
   _taken(n) { trackDamageTaken(this.run, n); }
@@ -994,7 +1037,8 @@ class Fight {
     const power = skillEffectivePower(sk);
     const base = (statVal * C.playerStatWeight + d.atk * C.playerAtkWeight + softLevelDamage(this.run.level, C.playerLevelWeight) + C.playerFlat)
       * (power / 100) * this.buffValue('str').mult
-      * statusOutgoingMult(this.player.statuses);
+      * statusOutgoingMult(this.player.statuses)
+      * partyOutgoingDmgMult(this.partySize());
     const label = sk.stat === 'best' ? 'best stat' : sk.stat.toUpperCase();
     return { avg: Math.max(1, Math.round(base)), label, stat: sk.stat, power };
   }
@@ -1200,6 +1244,7 @@ class Fight {
         if (d.initiative != null) a.initiative = d.initiative;
         if (d.dex != null) a.dex = d.dex;
         a.taunt = d.taunt || 0;
+        if (d.level != null) a.level = d.level;
         if (d.statuses) a.statuses = { ...d.statuses };
         if (d.appearanceId) a.appearanceId = d.appearanceId;
         if (d.title !== undefined) a.title = d.title;
@@ -1598,9 +1643,15 @@ class Fight {
         .filter(t => !t.down);
       if (!targets.length) break;
 
-      // Taunt: single-target attacks lock onto whoever demanded attention
+      // Taunt: single-target locks onto taunters, unless a boss shrugs it.
+      // Otherwise soft-bias toward higher-power climbers (~focusPowerBias).
+      let focusPool = targets;
       const taunters = targets.filter(t => t.taunt > 0);
-      const hitTargets = special?.aoe ? targets : [this.rng.pick(taunters.length ? taunters : targets)];
+      if (taunters.length) {
+        const ignore = e.boss && this.rng.chance(CONFIG.boss?.ignoreTauntChance ?? 0);
+        if (!ignore) focusPool = taunters;
+      }
+      const hitTargets = special?.aoe ? targets : [this.pickEnemyFocusTarget(focusPool)];
       // §12: heavy boss telegraphs scale with the charge they banked
       let chargeScale = 1;
       if (special) {
@@ -1701,7 +1752,8 @@ class Fight {
     const power = sk.power || 100;
     const base = (statVal * C.playerStatWeight + d.atk * C.playerAtkWeight
       + softLevelDamage(this.run.level, C.playerLevelWeight) + C.playerFlat)
-      * (power / 100) * statusOutgoingMult(this.player.statuses);
+      * (power / 100) * statusOutgoingMult(this.player.statuses)
+      * partyOutgoingDmgMult(this.partySize());
     return Math.max(1, Math.round(base * 0.85));
   }
 
@@ -2147,12 +2199,13 @@ class Fight {
     let critChance = d.crit + (sk.critBonus || 0);
     const isCrit = this.rng.chance(clamp(critChance, 0, 85) / 100);
     let dmg = base * (0.85 + this.rng.next() * 0.3);
-    if (isCrit) { dmg *= 1.6; this.gainCharge(CONFIG.charge.gainOnCrit); }
+    if (isCrit) { dmg *= (C.critMult ?? 1.45); this.gainCharge(CONFIG.charge.gainOnCrit); }
     dmg *= d.dmgMult * (this.mod.dmgMult || 1) * this.partyBuffMult('dmg');
     dmg *= statusOutgoingMult(this.player.statuses);
+    dmg *= partyOutgoingDmgMult(this.partySize());
     if (e.boss) dmg *= d.bossDmgMult;
     if (e.statuses.hexed) dmg *= C.hexTakenMult;
-    if (e.statuses.frail || e.statuses.tormented) dmg *= (C.frailTakenMult ?? 1.25);
+    if (e.statuses.frail || e.statuses.tormented) dmg *= (C.frailTakenMult ?? 1.12);
     // The Berserker's Heart: on its chosen round, everything doubles (§15)
     if (d.doubleDmgRound && this.round === d.doubleDmgRound) dmg *= 2;
     dmg = applyDefense(dmg, e.def, { ignoreDef: !!sk.ignoreDef });

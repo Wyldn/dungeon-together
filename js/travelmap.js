@@ -530,7 +530,8 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
       if (prev === i) return;
       if (prev != null && coopCtx.mode === 'first') return;
       picks.set(coopS.you, i);
-      coopS.net.send({ k: 'pick', floor: run.floor, idx: i });
+      if (coopS.emitPick) coopS.emitPick(run.floor, i);
+      else coopS.net.send({ k: 'pick', floor: run.floor, idx: i });
       stage.querySelectorAll('.tm-node').forEach(c => c.classList.toggle('tm-picked', +c.dataset.i === i));
       renderVotes();
       coopCtx.onLocalPick(i, picks);

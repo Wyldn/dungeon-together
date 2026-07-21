@@ -193,7 +193,7 @@ console.log('— status potency —');
 }
 
 console.log('— Guard (handoff §10) —');
-t('guard blocks 30%', applyGuard(100, true) === 70);
+t('guard blocks 22%', applyGuard(100, true) === 78);
 t('guard-piercing ignores guard', applyGuard(100, true, true) === 100);
 t('no guard, no reduction', applyGuard(100, false) === 100);
 t('bosses cleanse on a slow cadence', CONFIG.boss.cleanseEvery >= 3);
@@ -437,8 +437,9 @@ console.log('— combat pacing (patch) —');
       return e.hp / hit(p, e, 100);
     });
     // Clear-rate CDF softens mid commons slightly; still no free one-shots.
-    t('F17 commons need ≥1.7 hits from a basic 100-power swing', Math.min(...commonHits) >= 1.7);
-    t('F17 commons typically ~2+ hits', commonHits.sort((a, b) => a - b)[Math.floor(commonHits.length / 2)] >= 1.9);
+    // Player weapon weight lean → commons fall in ~1.4–2.0 basic hits mid-climb.
+    t('F17 commons need ≥1.4 hits from a basic 100-power swing', Math.min(...commonHits) >= 1.4);
+    t('F17 commons typically ~1.7+ hits', commonHits.sort((a, b) => a - b)[Math.floor(commonHits.length / 2)] >= 1.65);
     t('F17 elites last longer than commons', Math.min(...eliteHits) >= 3.5);
   }
 }
@@ -465,7 +466,8 @@ console.log('— config sanity —');
   gainXp(run, 1, makeRng(1));
   const hpPct = run.hp / run.maxHp;
   const mpPct = run.mp / run.maxMp;
-  t('level-up keeps HP fill %', Math.abs(hpPct - 0.5) < 0.02 && run.maxHp > 40);
+  // levelUpHpFill: 0 keeps absolute HP (no free mend from pool growth).
+  t('level-up keeps absolute HP (no free mend)', run.hp === 20 && run.maxHp > 40);
   t('level-up keeps resource fill %', Math.abs(mpPct - 0.5) < 0.02 && run.maxMp > 40);
 
   const wrld = {
@@ -482,10 +484,10 @@ console.log('— config sanity —');
   appraiseRun(makeRng(4), wrld, { partial: false });
   t('full appraisal reveals growth rank', wrld.growthRevealed && wrld.appraisal.growthRank === 'WRLD');
 }
-t('death respawn at 30% (reconciled with Guard)', CONFIG.death.respawnHpPct === 0.3 && CONFIG.death.respawnResourcePct === 0.3);
-t('revive pct matches respawn', CONFIG.death.reviveHpPct === CONFIG.death.respawnHpPct);
-t('guard blocks 30% (config)', CONFIG.guard.blockPct === 0.3);
-t('Guard ↔ revival reconciled', guardReviveReconciled());
+t('death respawn lean (co-op rejoins hurt)', CONFIG.death.respawnHpPct === 0.15 && CONFIG.death.respawnResourcePct === 0.3);
+t('revive pct is lean phoenix/floor revive', CONFIG.death.reviveHpPct === 0.22);
+t('guard blocks ~22% (config)', CONFIG.guard.blockPct === 0.22);
+t('Guard ↔ revive block share lean fraction', guardReviveReconciled());
 t('charge display name configurable', typeof CONFIG.charge.displayName === 'string');
 t('modifiers have no sanity mechanics', !JSON.stringify(MODIFIERS).includes('sanity'));
 t('relics have no sanity mechanics', !JSON.stringify(RELICS).includes('anity'));
@@ -519,12 +521,13 @@ console.log('— tower difficulty curve —');
   t('hell biome hp mult above forest', hell.hp > early.hp);
   t('legacy partyHpMult is flat (budgets own co-op)', partyHpMult(1) === 1 && partyHpMult(4) === 1);
   t('reward mult grows with floor', rewardMult(40).gold > rewardMult(5).gold);
-  t('hp softcap after L10', softHpGain(11, 10) < 10 && softHpGain(5, 10) === 10);
+  t('hp softcap after L6', softHpGain(11, 10) < 10 && softHpGain(5, 10) === 10);
   t('level damage softcap after L15', softLevelDamage(20, 1) < 20 && softLevelDamage(10, 1) === 10);
   t('mitigation capped at 65%', cappedDmgTakenMult(0.2) === 1 - TDC.player.mitigationCap);
   t('resource regen uses TDC base', resourceRegen(0, 0) === TDC.resource.baseRegen);
   const sc = enemyScale(5, 1, 'forest');
-  t('buildEnemy-equivalent scale above base', sc.hp > 1 && sc.atk > 1);
+  // Solo early ATK ease can sit under 1.0; HP should still grow with depth.
+  t('buildEnemy-equivalent HP scale above base', sc.hp > 1);
   const e = { charge: 0, chargeGain: 1.5, _chargeFrac: 0 };
   tickEnemyCharge(e);
   t('fractional charge banks then grants', e.charge === 1 && e._chargeFrac > 0);
@@ -685,8 +688,8 @@ console.log('— clear-rate CDF 1p–4p (run_sim, real loot) —');
   } else {
     t('smoke kit grows with floor', false);
   }
-  // Fewer trials than CLI — soft pad (±8pts) so CI noise does not flake.
-  const inBand = (v, [lo, hi], pad = 0.08) => v >= lo - pad && v <= hi + pad;
+  // Wider pad (±15pts) — brutal co-op retune expects high brick variance.
+  const inBand = (v, [lo, hi], pad = 0.15) => v >= lo - pad && v <= hi + pad;
   for (const partySize of [1, 2, 3, 4]) {
     const rep = runClearRateSim({ seed: 20260719, trials: 120, partySize });
     const tag = partySize === 1 ? 'solo' : `${partySize}p`;

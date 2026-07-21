@@ -22,11 +22,9 @@ export function reviveHpPct() {
   return CONFIG.death.reviveHpPct;
 }
 
-/** True when Guard block and revival share the reconciled fraction. */
+/** True when Guard block and Phoenix/floor revive share the same lean fraction. */
 export function guardReviveReconciled() {
-  return Math.abs(CONFIG.guard.blockPct - CONFIG.death.reviveHpPct) < 1e-9
-    && Math.abs(CONFIG.death.respawnHpPct - CONFIG.death.reviveHpPct) < 1e-9
-    && Math.abs(CONFIG.death.respawnResourcePct - CONFIG.death.reviveHpPct) < 1e-9;
+  return Math.abs(CONFIG.guard.blockPct - CONFIG.death.reviveHpPct) < 1e-9;
 }
 
 /* ================================================================== */
@@ -170,7 +168,7 @@ export function residualHpMult(remaining, totalBudget) {
 
 /**
  * Trash pack body bands.
- *   solo early: 1–2 / 1–3  |  2p: 2–3  |  3p: 3–4  |  4p: 4–5
+ *   solo early: 1–2 / 1–3  |  2p: 2–4  |  3p: 3–5  |  4p: 4–6
  * Co-op bands are permanent (action economy). Solo only caps early tower.
  */
 export function partyBodyLimits(floor, partySize = 1) {
@@ -182,9 +180,9 @@ export function partyBodyLimits(floor, partySize = 1) {
     return { min: 1, max: null };
   }
   const bands = {
-    2: { min: 2, max: 3 },
-    3: { min: 3, max: 4 },
-    4: { min: 4, max: 5 },
+    2: { min: 2, max: 4 },
+    3: { min: 3, max: 5 },
+    4: { min: 4, max: 6 },
   };
   return bands[n] || { min: 1, max: null };
 }

@@ -11,8 +11,8 @@ export const WEAPON_AFFIXES = [
   { id: 'keen', name: 'Keen', pools: ['weapon'], props: { atk: 1 }, weight: 12 },
   { id: 'vicious', name: 'Vicious', pools: ['weapon'], props: { atk: 2 }, weight: 8 },
   { id: 'savage', name: 'Savage', pools: ['weapon'], props: { atk: 3 }, weight: 4 },
-  { id: 'brutal', name: 'Brutal', pools: ['weapon'], props: { dmgMult: 1.06 }, weight: 6 },
-  { id: 'ruthless', name: 'Ruthless', pools: ['weapon'], props: { dmgMult: 1.1 }, weight: 3 },
+  { id: 'brutal', name: 'Brutal', pools: ['weapon'], props: { dmgMult: 1.04 }, weight: 6 },
+  { id: 'ruthless', name: 'Ruthless', pools: ['weapon'], props: { dmgMult: 1.06 }, weight: 3 },
   // Opening Battle Charge is relic-mutex only — no random gear affix for it.
   { id: 'swift', name: 'Swift', pools: ['weapon'], props: { initiative: 1 }, weight: 8 },
   { id: 'hasty', name: 'Hasty', pools: ['weapon'], props: { initiative: 2 }, weight: 4 },
@@ -28,7 +28,7 @@ export const WEAPON_AFFIXES = [
   { id: 'ember', name: 'Ember', pools: ['weapon'], props: { burn: 0.08 }, weight: 5 },
   { id: 'rime', name: 'Rime', pools: ['weapon'], props: { freeze: 0.07 }, weight: 5 },
   { id: 'spellblade', name: 'Spellblade', pools: ['weapon'], props: { int: 1, atk: 1 }, weight: 4 },
-  { id: 'berserker', name: 'Berserker', pools: ['weapon'], props: { str: 1, dmgMult: 1.05 }, weight: 4 },
+  { id: 'berserker', name: 'Berserker', pools: ['weapon'], props: { str: 1, dmgMult: 1.03 }, weight: 4 },
   { id: 'siphoning', name: 'Siphoning', pools: ['weapon'], props: { manaRegen: 1 }, weight: 2, minRarity: 'epic' },
 ];
 
