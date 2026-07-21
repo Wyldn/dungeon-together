@@ -61,6 +61,7 @@ function bossScale(a, id) {
 // Bosses read large on the field; elites mid-size; summons/commons stay compact.
 export function enemySpriteHtml(id, { boss = false, elite = false, summon = false, target = null } = {}) {
   // `artId` (set on phase evolve) is looked up the same way as the enemy id.
+  // Zoom/nudge/flip live on the combat .sprite-wrap (see enemyBoxHtml) — same as the box editor.
   const a = ENEMY_ART[id];
   if (!a) return null;
   const frames = a.frames || 2;

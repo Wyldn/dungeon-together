@@ -1463,12 +1463,27 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
   filter: drop-shadow(0 2px 4px rgba(0,0,0,.8)); z-index: 3;
   pointer-events: none;
 }
-.fighter-sprite:has(.px-sprite), .fighter-sprite:has(.anim-sprite) { background: none; border: none; font-size: 0; width: auto; height: auto; min-width: 96px; min-height: 96px; display: grid; place-items: center; }
-.combatant.boss .fighter-sprite:has(.px-sprite), .combatant.boss .fighter-sprite:has(.anim-sprite) {
-  min-width: 200px; min-height: 200px; overflow: hidden; align-items: end;
+/* Combat boxes mirror enemy-boxes.html: fixed frame + .sprite-wrap zoom/nudge. */
+.fighter-sprite:has(.px-sprite),
+.fighter-sprite:has(.anim-sprite),
+.fighter-sprite:has(.sprite-wrap) {
+  font-size: 0; overflow: hidden;
+  display: grid; place-items: center; align-items: center;
+  box-sizing: border-box;
 }
-/* Padded boss sheets (slime / shed-blood / Vorath): keep the ink in the box middle. */
-.combatant.boss .fighter-sprite:has(.sprite-anchor-center) {
+.fighter-sprite .sprite-wrap {
+  transform-origin: center center;
+  line-height: 0;
+}
+.fighter-sprite[data-anchor="feet"] {
+  place-items: end center !important;
+  align-items: end !important;
+}
+.fighter-sprite[data-anchor="center"] {
+  place-items: center !important;
+  align-items: center !important;
+}
+.fighter-sprite:has(.sprite-anchor-center) {
   place-items: center !important;
   align-items: center !important;
 }

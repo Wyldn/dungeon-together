@@ -18,6 +18,7 @@ import { initiativeOrder, addCharge, tickEnemyCharge, canAfford, skillEffectiveP
 import { biomeForFloor, ENEMIES } from './data/enemies.js';
 import { ICONS } from './icons.js';
 import { enemySpriteHtml, heroSpriteHtml, playHeroAnim, heroHasAnim, heroCombatSize, biomeBgUrl } from './art.js';
+import { enemyBoxHtml } from './data/sprite_present.js';
 import * as SpriteAnim from './anim.js';
 import { SFX } from './audio.js';
 import { screenShake } from './fx.js';
@@ -774,28 +775,34 @@ class Fight {
       }).join('');
   }
 
-  /** Play death anim, then pull corpses off the board while the fight continues. */
+  /** Longest death beat among fallen foes (CSS fade and/or sprite death clip). */
+  deathOutroMs() {
+    let ms = 640;
+    for (const e of this.enemies) {
+      if (e.hp > 0) continue;
+      ms = Math.max(ms, SpriteAnim.deathBeatMs(e.artId || e.id) || 0);
+    }
+    return Math.min(2000, ms);
+  }
+
+  /** Play death anim, then pull corpses off the board (mid-fight). Win outro owns the last clear. */
   scheduleClearFallen() {
     for (const e of this.enemies) {
       if (e.hp > 0 || e.cleared || e._clearing) continue;
+      if (e.hp < 0) e.hp = 0;
       e._clearing = true;
       const uid = e.uid;
+      const beat = Math.max(580, SpriteAnim.deathBeatMs(e.artId || e.id) || 0);
       setTimeout(() => {
+        // Win/loss outro clears the board itself — don't fight it.
         if (this.ended) return;
         const foe = this.enemyByUid(uid);
         if (!foe || foe.hp > 0 || foe.cleared) return;
-        // Only remove while other foes remain — last kill settles as a corpse for the victory beat
-        if (this.aliveEnemies().length > 0) {
-          foe.cleared = true;
-          foe._clearing = false;
-          this.renderEnemies();
-          this.renderTurnOrder(this._actingKey);
-        } else {
-          foe._clearing = false;
-          const card = this.el.querySelector(`#sprite-${uid}`)?.closest('.combatant');
-          if (card) { card.classList.remove('dying'); card.classList.add('dead'); }
-        }
-      }, 580);
+        foe.cleared = true;
+        foe._clearing = false;
+        this.renderEnemies();
+        this.renderTurnOrder(this._actingKey);
+      }, beat);
     }
   }
 
@@ -840,12 +847,17 @@ class Fight {
       // Animated multi-state sprite (js/anim.js) when this art id has one; else
       // the friend's N-frame px-sprite / glyph. artId is the phase-swap override.
       const spriteKey = e.artId || e.id;
-      const art = SpriteAnim.hasAnim(spriteKey)
+      // Same pipeline as enemy-boxes.html: native-scale sprite, then .sprite-wrap zoom/nudge/flip.
+      const inner = SpriteAnim.hasAnim(spriteKey)
         ? SpriteAnim.animSpriteHtml(e.uid, spriteKey, { boss: e.boss, dead: e.hp <= 0 })
         : enemySpriteHtml(spriteKey, { boss: e.boss, elite: e.elite, summon: e.summon });
+      const boxed = enemyBoxHtml(spriteKey, inner || e.glyph || '?', {
+        boss: !!e.boss,
+        domId: `sprite-${e.uid}`,
+      });
       div.innerHTML = `
         ${tel ? `<div class="telegraph ${tel.ready ? 'ready' : ''}">${tel.ready ? '⚠ ' + tel.name + '!' : '… ' + tel.desc}</div>` : ''}
-        <div class="fighter-sprite" id="sprite-${e.uid}">${art || e.glyph}</div>
+        ${boxed}
         <div class="cx-info">
           <div class="cx-head"><span class="fighter-name">${e.name}</span><span class="cx-lv">Lv.${this.run.floor}</span></div>
           <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${clamp(e.hp / e.maxHp * 100, 0, 100)}%"></div><span class="cx-bar-num">${Math.max(0, Math.round(e.hp))}/${Math.round(e.maxHp)}</span></div></div>
@@ -1935,7 +1947,34 @@ class Fight {
     delete this.run.combatTaunt;
     for (const off of this.offs) off();
     this.rng.advance?.();
-    setTimeout(() => this.resolve({ result: d.result, gold: d.gold || 0, xp: d.xp || 0, noDamage: !this.damageTaken, usedUltimate: !!this.usedUltimate }), d.result === 'win' ? 500 : 900);
+    const payload = {
+      result: d.result, gold: d.gold || 0, xp: d.xp || 0,
+      noDamage: !this.damageTaken, usedUltimate: !!this.usedUltimate,
+    };
+    if (d.result === 'win') this.resolveAfterEnemyDeaths(payload);
+    else setTimeout(() => this.resolve(payload), 900);
+  }
+
+  /** Drain fallen foes, play death clips, clear the board, then hand off to rewards/victory. */
+  resolveAfterEnemyDeaths(payload) {
+    for (const e of this.enemies) {
+      if (e.hp > 0) continue;
+      e.hp = 0;
+      e._clearing = true;
+      e.cleared = false;
+    }
+    this.renderEnemies();
+    this.renderTurnOrder(this._actingKey);
+    const beat = this.deathOutroMs();
+    setTimeout(() => {
+      for (const e of this.enemies) {
+        if (e.hp > 0) continue;
+        e.cleared = true;
+        e._clearing = false;
+      }
+      this.renderEnemies();
+      setTimeout(() => this.resolve(payload), 140);
+    }, beat);
   }
 
   /* ================= PLAYER ACTIONS (both modes) ================= */
@@ -2539,8 +2578,13 @@ class Fight {
     delete this.run.combatTaunt;
     if (CONFIG.charge.resetAfterCombat) this.charge = 0;
     this.rng.advance?.();
-    const delay = extra._delayMs ?? (result === 'win' ? 500 : 900);
     const { _delayMs, ...rest } = extra;
-    setTimeout(() => this.resolve({ result, noDamage: !this.damageTaken, usedUltimate: !!this.usedUltimate, ...rest }), delay);
+    const payload = { result, noDamage: !this.damageTaken, usedUltimate: !!this.usedUltimate, ...rest };
+    if (result === 'win' && _delayMs == null) {
+      this.resolveAfterEnemyDeaths(payload);
+      return;
+    }
+    const delay = _delayMs ?? 900;
+    setTimeout(() => this.resolve(payload), delay);
   }
 }

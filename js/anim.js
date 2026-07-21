@@ -17,6 +17,16 @@ const SETS = { ...ENEMY_ANIM, ...HERO_ANIM };
 
 export function hasAnim(mon) { return !!SETS[mon]; }
 
+/** Duration of a monster's death clip (ms), or 0 if it has none. */
+export function deathBeatMs(mon) {
+  const set = SETS[mon];
+  if (!set) return 0;
+  const name = set.roles?.death || 'death';
+  const st = set.states?.[name];
+  if (!st?.n) return 0;
+  return Math.ceil((st.n / (st.fps || 12)) * 1000) + 80;
+}
+
 const BOSS_CONTENT_TARGET = 176;
 const BOSS_SCALE_CAP = 14;
 
@@ -40,6 +50,7 @@ export function animSpriteHtml(uid, mon, { boss = false, dead = false } = {}) {
   // `ox`/`oy`: idle body offset from canvas centre (canvas is often padded for
   // wide attacks). Translate by the inverse so the body sits in the box middle.
   // `flip` mirrors player-facing packs (left) for the enemy side (right).
+  // Editor zoom/nudge/flip are applied by combat's .sprite-wrap (enemyBoxHtml).
   // `anchor: 'center'` — heavily padded sheets; don't pin to the box floor.
   const xf = [];
   if (set.flip) xf.push('scaleX(-1)');
