@@ -1467,6 +1467,11 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 .combatant.boss .fighter-sprite:has(.px-sprite), .combatant.boss .fighter-sprite:has(.anim-sprite) {
   min-width: 200px; min-height: 200px; overflow: hidden; align-items: end;
 }
+/* Padded boss sheets (slime / shed-blood / Vorath): keep the ink in the box middle. */
+.combatant.boss .fighter-sprite:has(.sprite-anchor-center) {
+  place-items: center !important;
+  align-items: center !important;
+}
 .combatant.boss .cx-info { margin-top: 4px; position: relative; z-index: 2; }
 /* Multi-state sprites (js/anim.js) are drawn as a background strip and stepped by
    background-position. Unlike .px-sprite they can be scaled up (a 30px-tall knight
@@ -2440,7 +2445,25 @@ body.crystal-holding #app > .screen { transform: scale(.93); transform-origin: 5
 .dbg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
 .dbg-card { border: 2px solid var(--panel-edge); border-left: 4px solid var(--accent, var(--gold)); background: rgba(20,13,38,.6); padding: 12px 14px; }
 .dbg-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-.dbg-sprite { width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; flex: 0 0 52px; }
+/* Thumbnail viewport — must not grow with combat-sized children (min-width:auto). */
+.dbg-sprite {
+  width: 72px; height: 72px;
+  flex: 0 0 72px;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  position: relative;
+}
+.dbg-enemy .dbg-sprite,
+.dbg-head .dbg-sprite {
+  width: 72px; height: 72px;
+  flex: 0 0 72px;
+}
+.dbg-sprite .px-sprite,
+.dbg-sprite .anim-sprite { margin: 0 !important; }
 .dbg-sub { font-size: 15px; margin: 4px 0; padding-left: 6px; border-left: 2px solid rgba(255,255,255,.12); }
 .dbg-sub.secret { border-left-color: var(--gold); }
 .dbg-sub2 { font-size: 14px; color: var(--ink-dim); padding-left: 14px; }

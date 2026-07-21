@@ -14,6 +14,11 @@
 //   phaseArt / phaseName / phaseGlyph / phaseSpecials / phaseText
 //   — at ≤50% HP the sprite (and optional identity) swap mid-fight.
 
+import { ROSTER } from './roster_worlds.js';
+import { GALLERY_ENEMIES, GALLERY_WANDERING, GALLERY_BOSSES, GALLERY_NPCS } from './gallery_units.js';
+
+const PLACEHOLDER_IDS = new Set(ROSTER.placeholders || []);
+
 export const BIOMES = [
   {
     id: 'forest', name: 'Whispering Forest', floors: [1, 10], glow: '#3f7d4a',
@@ -152,13 +157,72 @@ export const ENEMIES = {
   ],
 };
 
+/** Band of Knights elite variants — always fight as a pack (see rollKnightBand). */
+export const KNIGHT_BAND_IDS = [
+  'knight_armor',
+  'knight_knight_sheet_alt_heads',
+  'knight_knight_sheet_alt_heads_nyx8',
+  'knight_knight_sheet_alt_heads_zughy32',
+];
+
+// Drop placeholder units from native pools, then merge gallery adds.
+for (const biome of Object.keys(ENEMIES)) {
+  ENEMIES[biome] = ENEMIES[biome].filter(e => !PLACEHOLDER_IDS.has(e.id));
+  const extra = GALLERY_ENEMIES[biome] || [];
+  for (const e of extra) {
+    if (!ENEMIES[biome].some(x => x.id === e.id)) ENEMIES[biome].push(e);
+  }
+  for (const e of ENEMIES[biome]) {
+    if (ROSTER.renames?.[e.id]) e.name = ROSTER.renames[e.id];
+    if (KNIGHT_BAND_IDS.includes(e.id)) e.band = 'knights';
+  }
+}
+
+/** Trash that can appear in any biome encounter pool. */
+export const WANDERING_ENEMIES = GALLERY_WANDERING.filter(e => !PLACEHOLDER_IDS.has(e.id));
+
+function applyRosterRename(e) {
+  if (e && ROSTER.renames?.[e.id]) e.name = ROSTER.renames[e.id];
+  return e;
+}
+for (const e of WANDERING_ENEMIES) applyRosterRename(e);
+for (const b of Object.values(GALLERY_BOSSES)) applyRosterRename(b);
+for (const n of Object.values(GALLERY_NPCS)) applyRosterRename(n);
+
+/**
+ * Party-scaled Band of Knights size: 1p→2, 2p→3–4, 3p→4–5, 4p+→5–6.
+ * Armor variants are rolled at random (with replacement).
+ */
+export function knightBandSize(rng, partySize = 1) {
+  const n = Math.max(1, partySize | 0);
+  if (n <= 1) return 2;
+  if (n === 2) return rng.chance(0.55) ? 3 : 4;
+  if (n === 3) return rng.chance(0.5) ? 4 : 5;
+  if (typeof rng.int === 'function') return rng.int(5, 6);
+  return rng.chance(0.5) ? 5 : 6;
+}
+
+/** Build a full knight-band encounter (replaces a lone knight elite draw). */
+export function rollKnightBand(rng, partySize = 1) {
+  const variants = (ENEMIES.ruins || []).filter(e => e.band === 'knights');
+  const pool = variants.length
+    ? variants
+    : KNIGHT_BAND_IDS.map(id => ({ id, name: id, elite: true, hp: 60, atk: 13, def: 5, spd: 7, gold: [21, 37], xp: 23 }));
+  const count = knightBandSize(rng, partySize);
+  const specs = [];
+  for (let i = 0; i < count; i++) specs.push(rng.pick(pool));
+  // Soften per-knight HP so multi-elite packs stay fair.
+  const hpMult = count <= 2 ? 0.88 : count <= 4 ? 0.76 : 0.66;
+  return { specs, hpMult, count };
+}
+
 // One boss guards the gate out of each biome. Boss initiative matches
 // identity (§14): trees and hydras are slow; dukes and kings are fast.
 // ATK bases sit well above mimic-tier threats — DEF should never leave a
 // boss swinging for single-digit damage at the end of a biome.
 export const BOSSES = {
   10: {
-    id: 'elderwood', name: 'The Elderwood Guardian', glyph: '🌲', biome: 'forest',
+    id: 'elderwood', name: 'Sylvanor, the Elderwood Guardian', glyph: '🌲', biome: 'forest',
     // Scaled ~200 HP; DEF keeps solo HTK ~7–9 turns. Co-op pads via partyBossHpMult.
     hp: 190, atk: 27, def: 4, spd: 3, gold: [60, 90], xp: 60, regen: 0.02, boss: true,
     // Slow bruiser — banks for 4 then 6. No cheap at:3 dump.
@@ -241,128 +305,23 @@ export const BOSSES = {
     intro: '"Fifty floors," the Duke muses, drawing a sword made of other swords.\n"Impressive. The King will want to kill you personally. Let\'s disappoint him."',
     taunt: 'THE THRONE IS A PRIVILEGE. DYING HERE IS FREE.',
   },
-  // Default throne: Spike Sovereign. The two-phase slime→king Vorath fight lives
-  // on ALT_BOSSES[51] (~50% via pickBossForFloor).
-  51: {
-    id: 'ashen_sovereign', name: 'ASHKAR, THE SPIKE SOVEREIGN', glyph: '🔥', biome: 'throne',
-    hp: 640, atk: 43, def: 14, spd: 12, gold: [0, 0], xp: 0, phases: true, boss: true, burn: 0.35,
-    chargeGain: 1, chargeOnPhase: 2, bankChance: 0.55,
-    cleanseCost: 1,
-    specials: [
-      { at: 3, name: 'Crystal Coronation', mult: 1.6, burnSure: true, desc: 'spine-crystals bloom from its mane' },
-      { at: 5, name: 'Spike Bloom', mult: 2.4, aoe: true, frail: 0.4, desc: 'crystals erupt in a widening ring' },
-      { at: 6, name: 'THE THRONE REMEMBERS SPIKES', mult: 2.75, aoe: true, burnSure: true, desc: 'the room itself chooses a side — puncture' },
-    ],
-    intro: 'Something older than names sits the throne — a sovereign of spikes and molten light.\n"Interesting," it says, and the air crystallizes into knives.',
-    taunt: 'KINGS ARE TEMPORARY. SPIKES ARE FOREVER.',
-  },
+  // Throne: sticky 50/50 between Vorath (primary) and Malqor (ALT_BOSSES[51]).
+  51: GALLERY_BOSSES.tr_mon_demon,
 };
 
 // One alternate gatekeeper per world (and the throne). Seeded pick — same
-// run always faces the same boss once chosen. Unique art from NEW_ASSETS packs.
+// run always faces the same boss once chosen.
 export const ALT_BOSSES = {
-  10: {
-    id: 'heartwood', name: 'The Thornbeast', glyph: '🦔', biome: 'forest',
-    // Parity with Elderwood — was def5/regen2.5% and noticeably harder at equal power.
-    hp: 190, atk: 27, def: 4, spd: 2, gold: [60, 90], xp: 60, regen: 0.02, boss: true,
-    // Pure heavy kit — only 5 and 6.
-    chargeGain: 1, bankChance: 0.7,
-    specials: [
-      { at: 5, name: 'Quill Nova', mult: 1.95, aoe: true, frail: 0.35, desc: 'the whole hide fires at once' },
-      { at: 6, name: 'CANOPY IMPALE', mult: 2.3, stun: 0.4, desc: 'every thorn remembers a climber' },
-    ],
-    intro: 'Where the Guardian judges with rings, this beast judges with spines.\nIt has been waiting under the roots for something soft enough to pierce.',
-    taunt: 'THE FOREST WEARS ME LIKE ARMOR.',
-  },
-  20: {
-    id: 'ossuary_king', name: 'The Void Oracle', glyph: '🧿', biome: 'ruins',
-    hp: 340, atk: 30, def: 8, spd: 7, gold: [90, 130], xp: 90, caster: true, summons: 'skeleton', boss: true,
-    // Skip the mid rung — bite at 3, then commit to 6.
-    chargeGain: 1, bankChance: 0.68,
-    specials: [
-      { at: 3, name: 'Pupil Tax', mult: 1.5, heal: 0.05, confused: 0.4, desc: 'the central eye drinks a memory' },
-      { at: 6, name: 'CATACOMB UNMAKING', mult: 2.25, aoe: true, tormentedSure: true, desc: 'the ruins forget they were ever solid' },
-    ],
-    intro: 'A floating knot of eyes and claws hangs above the ossuary.\n"I do not need subjects," it whispers without a mouth. "I need witnesses."',
-    taunt: 'BLINK AND YOU ARE ALREADY BONE.',
-  },
-  30: {
-    id: 'jarl_whitegrave', name: 'Jarl of the White Grave', glyph: '🧊', biome: 'frost',
-    hp: 395, atk: 35, def: 11, spd: 4, gold: [120, 170], xp: 130, boss: true, freeze: 0.35,
-    freezeEvery: 3,
-    cleanseCost: 3,
-    // Slow bruiser twin — 4 then 6.
-    chargeGain: 1, bankChance: 0.62,
-    specials: [
-      { at: 4, name: 'Grave Hail', mult: 1.75, aoe: true, freeze: 0.35, desc: 'ice axes peel from the ceiling' },
-      { at: 6, name: 'WHITE FUNERAL', mult: 2.35, freezeSure: true, stun: 0.35, desc: 'the jarl raises a horn that freezes the breath in your lungs' },
-    ],
-    intro: 'A horned abomination in a stolen coronet blocks the citadel stair.\nThe Queen\'s court may scheme; this jarl simply ends arguments.',
-    taunt: 'THE GRAVE IS WARM COMPARED TO ME.',
-  },
-  40: {
-    // Multi-phase: starts as a slime prince, evolves into the demon-slime cleaver.
-    id: 'bogmother', name: 'The Putrid Prince', glyph: '🟢', biome: 'swamp',
-    hp: 550, atk: 38, def: 11, spd: 5, gold: [160, 220], xp: 180, poison: 0.35, boss: true,
-    phases: true, summons: 'slime', chargeGain: 1, chargeOnPhase: 2, bankChance: 0.6,
-    phaseArt: 'demon_slime',
-    phaseName: 'PRINCE OF THE INFERNAL SLIME',
-    phaseGlyph: '😈',
-    phaseText: 'The slime splits — and a horned cleaver-fiend climbs out of itself.',
-    // Phase 2 shifts to a heavier 4 / 6 ladder.
-    phaseSpecials: [
-      { at: 4, name: 'Molten Cleave', mult: 1.85, burnSure: true, desc: 'the cleaver drinks swamp-fire' },
-      { at: 6, name: 'THRONE OF OOZE', mult: 2.65, aoe: true, burnSure: true, frailSure: true, desc: 'every droplet becomes a blade' },
-    ],
-    specials: [
-      { at: 3, name: 'Acid Coronation', mult: 1.5, poisonSure: true, desc: 'the blob crowns itself in fumes' },
-      { at: 5, name: 'ROYAL SPLATTER', mult: 2.4, aoe: true, poisonSure: true, desc: 'the prince bursts — on purpose' },
-    ],
-    intro: 'A crown of moss floats atop a quivering green mass blocking the causeway.\n"Bow," it burps, somehow regal. "Or become part of the realm."',
-    taunt: 'EVERY KINGDOM STARTS AS A PUDDLE.',
-  },
-  50: {
-    id: 'arch_tormentor', name: 'Arch-Cyclops Vex', glyph: '🔥', biome: 'hell',
-    hp: 655, atk: 40, def: 14, spd: 9, gold: [220, 300], xp: 250, burn: 0.28, boss: true, summons: 'imp',
-    // Mid-high only — 4 and 5, no ultra-long bank.
-    chargeGain: 1, bankChance: 0.5,
-    specials: [
-      { at: 4, name: 'Solar Pupil', mult: 1.9, burnSure: true, desc: 'the chest-eye overcharges' },
-      { at: 5, name: 'PENANCE ABSOLUTE', mult: 2.55, aoe: true, burnSure: true, tormented: 0.4, desc: 'Vex selects a beam meant for kings' },
-    ],
-    intro: 'The Duke is elsewhere. In his place: a horned cyclops of slag and flame,\npolishing the glow in its chest like a favorite hymn. "Malgrimm sends regrets," it says. "I do not."',
-    taunt: 'THE THRONE CAN WAIT. YOUR ASH CANNOT.',
-  },
-  // Two-phase alternate final boss (~50%). Shed-blood slime shell, then the true
-  // Demon King with a fresh bar (combat.js `twoPhase`). Total HP matches the old
-  // single-bar tuning. Distinct from ≤50% `phases` enrage — which the king keeps.
-  51: {
-    id: 'demon_king', name: 'VORATH — SHED BLOOD', glyph: '🩸', artId: 'demon_slime', biome: 'throne',
-    // Two bars ≈ ~1100 scaled total (shell + king).
-    hp: 260, atk: 44, def: 12, spd: 11, gold: [0, 0], xp: 0, boss: true, twoPhase: true,
-    // Shell: heavy 4 / 6.
-    chargeGain: 1, bankChance: 0.6,
-    specials: [
-      { at: 4, name: 'Arterial Lash', mult: 1.85, aoe: true, frail: 0.35, desc: 'whips of blood find every climber' },
-      { at: 6, name: 'CRIMSON TIDE', mult: 2.7, aoe: true, tormented: 0.45, desc: 'a wave of boiling blood swells to the ceiling' },
-    ],
-    intro: 'The throne room is wrong. No king — only a churning mass of blood that stands up\nand turns its many eyes on you. "He will see you," it gurgles, "if you are worth the walk."',
-    taunt: 'YOU ARE NOT WORTH HIS HANDS. YET.',
-    phase2: {
-      artId: 'demon_king', name: 'VORATH, THE DEMON KING', glyph: '🜏',
-      hp: 380, atk: 46, def: 16, spd: 11, chargeGain: 1, chargeOnPhase: 2, phases: true, cleanseCost: 1,
-      bankChance: 0.55,
-      // True king: tempo chip → mid → finale.
-      specials: [
-        { at: 1, name: 'Century\'s Edge', mult: 1.25, desc: 'his blade remembers every hero it has ended' },
-        { at: 4, name: 'Kingdom\'s Weight', mult: 2.05, aoe: true, weaken: 0.4, desc: 'the throne room leans on all of you' },
-        { at: 6, name: 'THE KING\'S QUESTION', mult: 2.85, aoe: true, frailSure: true, desc: 'the air itself takes his side' },
-      ],
-      taunt: 'I HAVE KILLED HEROES WITH BETTER STATS THAN YOURS.',
-      transformText: 'The blood boils upward and FOLDS into a shape that remembers being a king.\nVorath sets down his book, marks his page, and finally stands.\n"Every century, one of you reaches this room. You are the first to make me rise.\nAre you the interesting kind?"',
-    },
-  },
+  10: GALLERY_BOSSES.gv_grotto_escape_2_boss_dragon,
+  20: GALLERY_BOSSES.undead_executioner,
+  30: GALLERY_BOSSES.tr_mon_centaur,
+  40: GALLERY_BOSSES.tr_live_ogre,
+  50: GALLERY_BOSSES.kryos_demon_general,
+  51: GALLERY_BOSSES.boss_demon_slime,
 };
+
+/** Secret corrupt-king fight (throne "answer honestly" path). */
+export const SECRET_BOSS = GALLERY_BOSSES.medieval_king;
 
 /** Resolve which boss appears on a boss floor (seeded; sticky per run). */
 export function pickBossForFloor(floor, rng, run) {
@@ -380,8 +339,10 @@ export function pickBossForFloor(floor, rng, run) {
 }
 
 export function bossById(id) {
-  for (const b of Object.values(BOSSES)) if (b.id === id) return b;
-  for (const b of Object.values(ALT_BOSSES)) if (b.id === id) return b;
+  for (const b of Object.values(BOSSES)) if (b?.id === id) return b;
+  for (const b of Object.values(ALT_BOSSES)) if (b?.id === id) return b;
+  if (SECRET_BOSS?.id === id) return SECRET_BOSS;
+  if (GALLERY_BOSSES[id]) return GALLERY_BOSSES[id];
   return null;
 }
 
@@ -494,14 +455,18 @@ export const NPC_ENEMIES = {
       { at: 6, name: 'Final Examination', mult: 2.3, aoe: true, stun: 0.3, desc: 'the air itself quizzes you' },
     ],
   },
+  ...GALLERY_NPCS,
 };
 
 export function findEnemySpec(id) {
+  if (PLACEHOLDER_IDS.has(id)) return null;
   if (NPC_ENEMIES[id]) return NPC_ENEMIES[id];
   for (const pool of Object.values(ENEMIES)) {
     const found = pool.find(e => e.id === id);
     if (found) return found;
   }
+  const wander = WANDERING_ENEMIES.find(e => e.id === id);
+  if (wander) return wander;
   return bossById(id);
 }
 

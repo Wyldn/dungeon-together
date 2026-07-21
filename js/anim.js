@@ -37,15 +37,17 @@ export function animSpriteHtml(uid, mon, { boss = false, dead = false } = {}) {
   const set = SETS[mon];
   if (!set) return null;
   const s = scaleFor(set, boss);
-  // `ox` is how far the idle body sits from its canvas centre (the canvas is
-  // sized to fit the widest attack, so it's lopsided). Shift it back so the
-  // character stays centred under its own name/HP bar.
+  // `ox`/`oy`: idle body offset from canvas centre (canvas is often padded for
+  // wide attacks). Translate by the inverse so the body sits in the box middle.
   // `flip` mirrors player-facing packs (left) for the enemy side (right).
+  // `anchor: 'center'` — heavily padded sheets; don't pin to the box floor.
   const xf = [];
   if (set.flip) xf.push('scaleX(-1)');
   if (set.ox) xf.push(`translateX(${-(set.flip ? -set.ox : set.ox) * s}px)`);
+  if (set.oy) xf.push(`translateY(${-set.oy * s}px)`);
   const shift = xf.length ? ` transform:${xf.join(' ')};` : '';
-  return `<div class="anim-sprite${boss ? ' anim-boss' : ''}" data-uid="${uid}" data-mon="${mon}"`
+  const anchor = set.anchor === 'center' ? ' sprite-anchor-center' : '';
+  return `<div class="anim-sprite${boss ? ' anim-boss' : ''}${anchor}" data-uid="${uid}" data-mon="${mon}"`
     + `${dead ? ' data-dead="1"' : ''} style="width:${set.fw * s}px;height:${set.fh * s}px;${shift}"></div>`;
 }
 

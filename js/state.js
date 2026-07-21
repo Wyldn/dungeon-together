@@ -96,7 +96,7 @@ export const ACHIEVEMENTS = [
   { id: 'guardian', icon: '🛡️', name: 'The Wall', desc: 'Guard 15 times in a single run.', title: 'Living Bastion', titleStyle: 'ts-ward' },
   { id: 'silver_tongue', icon: '👅', name: 'Silver Tongue', desc: 'Bribe your way past 3 encounters in one run.', title: 'Gildtongue', titleStyle: 'ts-tongue', nameStyle: 'ns-gold' },
   { id: 'assessed', icon: '🔍', name: 'Know Thyself (Approximately)', desc: 'Get appraised for the first time.' },
-  { id: 'grave_calling', icon: '🦴', name: 'The Tower Shows Its Basement', desc: 'Unlock the hidden Necromancer calling.' },
+  { id: 'grave_calling', icon: '🦴', name: 'The Tower Shows Its Basement', desc: 'Reach floor 20 in a single climb.' },
   { id: 'party_of_four', icon: '👥', name: 'Full Banner', desc: 'Enter the tower with a party of four.', title: 'Fourfold Shadow', titleStyle: 'ts-banner', nameStyle: 'ns-epic' },
   { id: 'hoarder', icon: '🏦', name: 'Economically Unkillable', desc: 'Hold 1,000 gold at once.', title: 'Goldswollen', titleStyle: 'ts-hoard', nameStyle: 'ns-gold' },
 ];

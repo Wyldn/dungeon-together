@@ -5,13 +5,13 @@ import { CLASSES, SUBCLASSES, RANDOM_NAMES, subclassOptions } from './data/class
 import { RACES, applyRacePromotion } from './data/races.js';
 import { ORIGINS, originById } from './data/origins.js';
 import { SKILLS } from './data/skills.js';
-import { BIOMES, biomeForFloor, ENEMIES, BOSSES, ALT_BOSSES, MODIFIERS, pickBossForFloor, bossById, findEnemySpec, NPC_ENEMIES, mimicSpec } from './data/enemies.js';
+import { BIOMES, biomeForFloor, ENEMIES, BOSSES, ALT_BOSSES, MODIFIERS, pickBossForFloor, bossById, findEnemySpec, NPC_ENEMIES, WANDERING_ENEMIES, SECRET_BOSS, mimicSpec } from './data/enemies.js';
 import { EVENTS, CATEGORY_META, drawEvent, NPC_EVENTS } from './data/events.js';
 import { appearancesFor, defaultAppearanceId } from './data/appearances.js';
 import { CONFIG } from './data/config.js';
 import { planEncounter, planBossEncounter, pushEventHistory } from './data/balance.js';
 import { rankFor } from './data/ranks.js';
-import { CONSUMABLES, itemById, resolveItem, rollEquipment, rollRelic, rollUnique, rollWrld, markWrldClaimed, EQUIP_SLOTS, RELICS, ALL_EQUIPMENT, WEAPONS, itemUsefulForClass, itemIncompatibleForClass } from './data/items.js';
+import { CONSUMABLES, itemById, resolveItem, rollEquipment, rollRelic, rollUnique, rollWrld, npcDuelLoot, markWrldClaimed, EQUIP_SLOTS, RELICS, ALL_EQUIPMENT, WEAPONS, itemUsefulForClass, itemIncompatibleForClass } from './data/items.js';
 import { applyTagOutcomeMods, applySparkleOutcomeMods } from './data/eventtags.js';
 import { loadMeta, saveMeta, upgradeRank, award, UPGRADES, ACHIEVEMENTS, newRun, saveRun, loadRun, clearRun, runRng, rollStart, startDescriptor, awakenMonolith, fateGrowthBoost, fateGrowthPct, fateGrowthPctOne, randomRaceId, randomClassId, unlockedCosmetics, climberNameHtml, resetSanctumUpgrades } from './state.js';
 import {
@@ -184,13 +184,33 @@ function debugScreen() {
   const relicHtml = RELICS.map(r => `<div class="dbg-row"><b class="${rarityClass(r.rarity)}">${r.name}</b> <span class="tag ${rarityClass(r.rarity)}">${r.rarity}</span><div class="dbg-dim">${r.desc}</div></div>`).join('');
   const consHtml = CONSUMABLES.map(c => `<div class="dbg-row">${itemIconHtml(c.id, 24)}<b>${c.name}</b> <span class="tag ${rarityClass(c.rarity)}">${c.rarity}</span><div class="dbg-dim">${c.desc}</div></div>`).join('');
 
-  // enemies by biome + bosses, with sprites
+  // enemies by biome + wandering + bosses, with sprites (artId when present)
+  // Thumb box is 72×72 — pass the same edge so sprites fit inside, not combat scale.
+  const THUMB = 68;
+  const enemyCard = (e, { elite = !!e.elite, boss = !!e.boss, note = '' } = {}) => {
+    const key = e.artId || e.id;
+    const spr = enemySpriteHtml(key, { elite, boss, target: THUMB })
+      || (key !== e.id ? enemySpriteHtml(e.id, { elite, boss, target: THUMB }) : null)
+      || `<span style="font-size:28px">${e.glyph || '◆'}</span>`;
+    const tags = [
+      elite ? 'elite' : '',
+      boss ? 'boss' : '',
+      e.band === 'knights' ? 'band' : '',
+      e.intelligent ? 'bribable' : '',
+      note,
+    ].filter(Boolean).join(' · ');
+    return `<div class="dbg-enemy">${spriteMini(spr)}<div><b>${e.name}</b><div class="dbg-dim">hp ${e.hp} · atk ${e.atk} · def ${e.def}${tags ? ` · ${tags}` : ''}</div></div></div>`;
+  };
   const enemyHtml = Object.entries(ENEMIES).map(([biome, list]) => `<div class="dbg-group"><h4>${biome} <span class="dbg-dim">(${list.length})</span></h4>
-    <div class="dbg-enemy-grid">${list.map(e => `<div class="dbg-enemy">${spriteMini(enemySpriteHtml(e.id, { elite: e.elite }) || `<span style="font-size:30px">${e.glyph}</span>`)}<div><b>${e.name}</b><div class="dbg-dim">hp ${e.hp} · atk ${e.atk} · def ${e.def}${e.elite ? ' · elite' : ''}${e.intelligent ? ' · bribable' : ''}</div></div></div>`).join('')}</div>
+    <div class="dbg-enemy-grid">${list.map(e => enemyCard(e)).join('')}</div>
   </div>`).join('');
-  const bossHtml = `<div class="dbg-group"><h4>Bosses <span class="dbg-dim">(${Object.keys(BOSSES).length} + ${Object.keys(ALT_BOSSES).length} alts)</span></h4>
-    <div class="dbg-enemy-grid">${Object.entries(BOSSES).map(([f, b]) => `<div class="dbg-enemy">${spriteMini(enemySpriteHtml(b.id, { boss: true }) || `<span style="font-size:34px">${b.glyph}</span>`)}<div><b>${b.name}</b><div class="dbg-dim">F${f} · hp ${b.hp} · atk ${b.atk}</div></div></div>`).join('')}
-    ${Object.entries(ALT_BOSSES).map(([f, b]) => `<div class="dbg-enemy">${spriteMini(enemySpriteHtml(b.id, { boss: true }) || `<span style="font-size:34px">${b.glyph}</span>`)}<div><b>${b.name}</b><div class="dbg-dim">F${f} ALT · hp ${b.hp} · atk ${b.atk}</div></div></div>`).join('')}</div>
+  const wanderHtml = WANDERING_ENEMIES.length ? `<div class="dbg-group"><h4>Wandering <span class="dbg-dim">(${WANDERING_ENEMIES.length} · any biome)</span></h4>
+    <div class="dbg-enemy-grid">${WANDERING_ENEMIES.map(e => enemyCard(e, { note: 'wandering' })).join('')}</div>
+  </div>` : '';
+  const bossHtml = `<div class="dbg-group"><h4>Bosses <span class="dbg-dim">(${Object.keys(BOSSES).length} + ${Object.keys(ALT_BOSSES).length} alts${SECRET_BOSS ? ' + secret' : ''})</span></h4>
+    <div class="dbg-enemy-grid">${Object.entries(BOSSES).map(([f, b]) => enemyCard(b, { boss: true, note: `F${f}` })).join('')}
+    ${Object.entries(ALT_BOSSES).map(([f, b]) => enemyCard(b, { boss: true, note: `F${f} ALT` })).join('')}
+    ${SECRET_BOSS ? enemyCard(SECRET_BOSS, { boss: true, note: 'secret · honest path' }) : ''}</div>
   </div>`;
 
   // events / NPC encounters grouped by category
@@ -262,9 +282,14 @@ function debugScreen() {
     if (o.escape) parts.push('escape the tower (victory)');
     if (o.subclassOffer) parts.push('subclass offer');
     if (o.combat) {
-      const foes = (o.combat.enemies || []).join(', ');
+      const foes = (o.combat.enemies || []).join(', ') || (o.combat.pickEnemies ? 'picked foes' : 'foes');
       let c = `combat vs ${foes}`;
-      if (o.combat.reward?.options) {
+      if (o.combat.reward?.npcDuelLoot) {
+        const classes = Array.isArray(o.combat.reward.npcDuelLoot)
+          ? o.combat.reward.npcDuelLoot
+          : (o.combat.reward.npcDuelLoot.classes || []);
+        c += ` → duel loot (epic/leg/unique/wrld${classes.length ? `; tilts ${classes.join('/')}` : ''})`;
+      } else if (o.combat.reward?.options) {
         const opts = o.combat.reward.options.map(op =>
           op.kind === 'skill' ? skillName(op.id) : itemName(op.id)
         ).join(' or ');
@@ -329,7 +354,11 @@ function debugScreen() {
     const e = EVENTS.find(x => x.id === id);
     if (!e) return '';
     const artId = e.npc?.art;
-    const spr = artId ? enemySpriteHtml(artId, { elite: !!NPC_ENEMIES[artId]?.elite || !!NPC_ENEMIES[artId]?.boss }) : null;
+    const npcBoss = !!NPC_ENEMIES[artId]?.boss;
+    const npcElite = !!NPC_ENEMIES[artId]?.elite || npcBoss;
+    const spr = artId
+      ? enemySpriteHtml(artId, { elite: npcElite, boss: npcBoss, target: THUMB })
+      : null;
     return `<div class="dbg-card">
       <div class="dbg-head">${spriteMini(spr || `<span style="font-size:28px">${e.glyph}</span>`)}
         <div><b>${e.npc?.name || e.title}</b> <span class="tag" style="color:var(--gold)">NPC</span>
@@ -339,9 +368,9 @@ function debugScreen() {
     </div>`;
   }).join('');
   const farmerStrip = ['farmer_a', 'farmer_b', 'farmer_c', 'farmer_d', 'farmer_e', 'farmer_f']
-    .map(id => `<div class="dbg-enemy">${spriteMini(enemySpriteHtml(id))}<div><b>${NPC_ENEMIES[id]?.name || id}</b></div></div>`).join('');
+    .map(id => `<div class="dbg-enemy">${spriteMini(enemySpriteHtml(id, { target: THUMB }))}<div><b>${NPC_ENEMIES[id]?.name || id}</b></div></div>`).join('');
   const oldmanStrip = ['oldman_gentle', 'oldman_wrath']
-    .map(id => `<div class="dbg-enemy">${spriteMini(enemySpriteHtml(id, { elite: true, boss: !!NPC_ENEMIES[id]?.boss }))}<div><b>${NPC_ENEMIES[id]?.name || id}</b></div></div>`).join('');
+    .map(id => `<div class="dbg-enemy">${spriteMini(enemySpriteHtml(id, { elite: true, boss: !!NPC_ENEMIES[id]?.boss, target: THUMB }))}<div><b>${NPC_ENEMIES[id]?.name || id}</b></div></div>`).join('');
 
   app.innerHTML = '';
   const scr = el(`<div class="screen dbg-screen">
@@ -360,7 +389,7 @@ function debugScreen() {
     <div class="dbg-panel" id="dbg-skills" style="display:none">${skillHtml}</div>
     <div class="dbg-panel" id="dbg-equip" style="display:none">${equipHtml}</div>
     <div class="dbg-panel" id="dbg-relics" style="display:none"><div class="dbg-group"><h4>Relics (${RELICS.length})</h4>${relicHtml}</div><div class="dbg-group"><h4>Consumables (${CONSUMABLES.length})</h4>${consHtml}</div></div>
-    <div class="dbg-panel" id="dbg-enemies" style="display:none">${enemyHtml}${bossHtml}</div>
+    <div class="dbg-panel" id="dbg-enemies" style="display:none">${enemyHtml}${wanderHtml}${bossHtml}</div>
     <div class="dbg-panel" id="dbg-npcs" style="display:none">
       <div class="dbg-group"><h4>NPC Encounters</h4><div class="dbg-grid">${npcHtml}</div></div>
       <div class="dbg-group"><h4>Farmstead faces</h4><div class="dbg-enemy-grid">${farmerStrip}</div></div>
@@ -2201,7 +2230,14 @@ function logBossPowerCheck(boss, { gate = true } = {}) {
 /** Budget-aware encounter plan (bodies first; leftover → mild HP pad). */
 function pickEnemyPlan(rng, biome, partySize = 1) {
   const depth = run.floor - biome.floors[0];
-  let pool = ENEMIES[biome.id] || ENEMIES.hell;
+  let pool = [...(ENEMIES[biome.id] || ENEMIES.hell)];
+  // Wandering trash can appear in any biome.
+  if (WANDERING_ENEMIES?.length && rng.chance(0.38)) {
+    const wander = depth < 4
+      ? WANDERING_ENEMIES.filter(e => !e.elite)
+      : WANDERING_ENEMIES;
+    if (wander.length) pool = pool.concat(wander);
+  }
   if (depth < 4) pool = pool.filter(e => !e.elite);
   return planEncounter(rng, {
     floor: run.floor,
@@ -2521,6 +2557,24 @@ async function grantReward(reward, lines, { paySkills = false } = {}) {
       else await applyRewardOption({ kind: 'item', id: loot }, lines);
     }
   }
+  if (reward.npcDuelLoot) {
+    const classes = Array.isArray(reward.npcDuelLoot)
+      ? reward.npcDuelLoot
+      : (reward.npcDuelLoot.classes || []);
+    const item = npcDuelLoot(rng, run, {
+      classes,
+      coop: coopS,
+      floor: run.floor,
+    });
+    if (item) {
+      lines.push({ text: 'A climber\'s spoils — hard-won.', cls: 'item' });
+      await offerEquipment(item, lines);
+      if (item.rarity === 'unique') unlock('unique_gear');
+      if (['legendary', 'unique', 'wrld'].includes(item.rarity)) unlock('legendary');
+    } else {
+      lines.push({ text: 'Their pack is empty — the tower already claimed the prize.', cls: 'bad' });
+    }
+  }
   if (reward.options?.length) {
     let chosen = reward.options[0];
     // Combat spoils: techniques carry an acquisition fee by tier — the tower
@@ -2565,7 +2619,7 @@ async function grantReward(reward, lines, { paySkills = false } = {}) {
       lines.push({ text: `Technique learning fee: -${fee} gold`, cls: 'bad' });
     }
     await applyRewardOption(chosen, lines);
-  } else if (!reward.guaranteed && !reward.farmerLoot) {
+  } else if (!reward.guaranteed && !reward.farmerLoot && !reward.npcDuelLoot) {
     await applyRewardOption(reward, lines);
   }
   rng.advance();
@@ -3770,7 +3824,7 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
     // Duo+: soft escort on solo NPC duels after the first gate (roadside already packs two).
     if (partySize >= 2 && specs.length === 1 && (run.floor || 1) >= 12) {
       const id = specs[0]?.id || '';
-      if (/^(blade_hero|dark_mage|pathfinder_veteran|axe_northman|oldman_gentle|oldman_wrath)$/.test(id)) {
+      if (/^(blade_hero|dark_mage|pathfinder_veteran|axe_northman|oldman_gentle|oldman_wrath|evil_wizard|evil_wizard_3|archer_hero|samurai|rogue_hero|tr_live_wizard|fantasy_warrior|huntress|huntress_2|martial_hero|martial_hero_2|martial_hero_3)$/.test(id)) {
         const escort = NPC_ENEMIES.roadside_npc2 || ENEMIES[biome.id]?.[0];
         if (escort) specs = [specs[0], { ...escort, hp: Math.round((escort.hp || 40) * 0.7), atk: Math.round((escort.atk || 10) * 0.85) }];
       }
@@ -5169,16 +5223,19 @@ async function throneRoom(stage) {
     box.appendChild(b);
   };
 
-  const throneFight = async (hpMult) => {
+  const throneFight = async (spec, hpMult) => {
+    run.flags.throneBossId = spec.id;
+    run.flags.throneBossName = spec.name;
+    saveRun(run);
     if (coopS) {
-      const enemies = buildSharedEnemies([boss], { boss: true, partySize: coopS.partySize });
+      const enemies = buildSharedEnemies([spec], { boss: true, partySize: coopS.partySize });
       enemies.forEach(e => { e.maxHp = Math.round(e.maxHp * hpMult); e.hp = e.maxHp; });
-      coopS.net.send({ k: 'throne', enemies });
+      coopS.net.send({ k: 'throne', enemies, bossId: spec.id });
       await coopS.gate('fight-51');
-      return coopFightShared(stage, rehydrateEnemies(enemies), { boss });
+      return coopFightShared(stage, rehydrateEnemies(enemies), { boss: spec });
     }
-    const enemies = [buildEnemy(boss, run.floor, run.floor, { boss: true, hpMult })];
-    fightGroupBoss(stage, enemies, boss);
+    const enemies = [buildEnemy(spec, run.floor, run.floor, { boss: true, hpMult })];
+    fightGroupBoss(stage, enemies, spec);
   };
 
   if (hasSigils) {
@@ -5192,18 +5249,19 @@ async function throneRoom(stage) {
   if (run.flags.kings_petition) {
     addChoice(`<button class="choice-btn"><span class="choice-label">📜 Deliver the Ghost King's petition</span><span class="choice-hint">six hundred years overdue</span></button>`, async () => {
       run.flags.kings_petition = false;
-      await modal(`<h3>Filed at Last</h3><p class="modal-sub">Vorath reads all nine pages. Twice. "He wants his kingdom back, an apology, and — " he squints, " — 'reasonable compensation for emotional distress.'" He laughs so hard the throne cracks, and he's still wiping his eyes when he picks up his blade. He starts the duel visibly winded.</p>
+      await modal(`<h3>Filed at Last</h3><p class="modal-sub">${boss.name} reads all nine pages. Twice. "He wants his kingdom back, an apology, and — " a squint, " — 'reasonable compensation for emotional distress.'" Laughter cracks the throne. The duel starts with them still winded.</p>
         <div class="pick-grid"><button class="pick-option" data-close="x"><span class="po-name">Draw your weapon</span></button></div>`);
-      throneFight(0.85);
+      throneFight(boss, 0.85);
     });
   }
-  addChoice(`<button class="choice-btn"><span class="choice-label">⚔ "I'm the interesting kind." — Fight</span><span class="choice-hint">the classic ending</span></button>`, () => throneFight(1));
-  addChoice(`<button class="choice-btn"><span class="choice-label">🗣 Answer honestly: "I don't know yet."</span><span class="choice-hint">${run.flags.angel_lore || run.flags.tree_lore ? 'you know what he asks' : 'risky honesty'}</span></button>`, async () => {
-    await modal(`<h3>The Question</h3><p class="modal-sub">"Would you take this throne," Vorath asks, "if it were offered?"<br/><br/>"I don't know yet," you say. The Demon King smiles — the first true smile in a century. "Honest. FINALLY." He offers a duelist's salute. "Then let us find out what you are."</p>
-      <div class="pick-grid"><button class="pick-option" data-close="x"><span class="po-name">Begin</span></button></div>`);
+  addChoice(`<button class="choice-btn"><span class="choice-label">⚔ "I'm the interesting kind." — Fight</span><span class="choice-hint">the classic ending</span></button>`, () => throneFight(boss, 1));
+  addChoice(`<button class="choice-btn"><span class="choice-label">🗣 Answer honestly: "I don't know yet."</span><span class="choice-hint">${run.flags.angel_lore || run.flags.tree_lore ? 'the crown slips' : 'risky honesty'}</span></button>`, async () => {
+    await modal(`<h3>The Question</h3><p class="modal-sub">"Would you take this throne," ${boss.name} asks, "if it were offered?"<br/><br/>"I don't know yet," you say.<br/><br/>The figure on the throne <i>changes</i> — horns melt into a crooked crown, molten flesh into royal plate. Aldric, the Corrupt King, steps forward smiling wrong.<br/><br/>"Honest. Good. The Demon King was always a story we sold climbers. I am the kingdom. Let us settle the paperwork in blood."</p>
+      <div class="pick-grid"><button class="pick-option" data-close="x"><span class="po-name">Face the true king</span></button></div>`);
     changeFame(run, 5);
+    run.flags.corrupt_king_ending = true;
     renderHud();
-    throneFight(0.92);
+    throneFight(SECRET_BOSS, 1);
   });
 }
 
@@ -5260,6 +5318,8 @@ async function victoryScreen(type) {
   Music.play('victory');
   const wasCoop = !!coopS;
   const myName = run?.name || localStorage.getItem('dt_coop_name') || 'Climber';
+  const corruptKing = !!run?.flags?.corrupt_king_ending;
+  const throneName = run?.flags?.throneBossName || (corruptKing ? 'Aldric, the Corrupt King' : 'the throne\'s champion');
   const summary = run ? buildClimbSummary(run, type === 'win' ? 'win' : 'escape', runRng(run)) : null;
   if (summary) pushRunHistory(summary);
   const snap = summary || (run ? {
@@ -5273,7 +5333,12 @@ async function victoryScreen(type) {
   }
   const shards = shardsFor(type === 'win' ? 'win' : 'escape');
   meta.shards += shards;
-  if (type === 'win') { meta.wins++; unlock('win'); if (!meta.endings.includes('win')) meta.endings.push('win'); }
+  if (type === 'win') {
+    meta.wins++;
+    unlock('win');
+    if (!meta.endings.includes('win')) meta.endings.push('win');
+    if (corruptKing && !meta.endings.includes('corrupt_king')) meta.endings.push('corrupt_king');
+  }
   if (type === 'escape') { unlock('escape'); if (!meta.endings.includes('escape')) meta.endings.push('escape'); }
   saveMeta(meta);
   clearRun();
@@ -5286,12 +5351,15 @@ async function victoryScreen(type) {
   if (summary) {
     await showClimbSummary(summary, { shards, wasCoop, myName, isWin });
   }
+  const winEpitaph = corruptKing
+    ? `${throneName} dies laughing — crown cracked, kingdom exposed. The "Demon King" was a mask sold to climbers; the throne was always a man\'s lie stacked fifty-one floors high.<br/><br/>You leave the crown on the stones. Outside, the realm learns it was never ruled by a demon — only by appetite in a nicer hat.<br/><br/>${snap?.name || 'A climber'} the ${snap?.raceName || ''} ${snap?.title || ''} ended the corrupt kingdom.`
+    : `${throneName} falls to one knee, then both — and they are <i>smiling</i>. "The interesting kind after all." The tower shudders as its crown changes... no. You sheathe your weapon and walk past the throne without sitting down. Let the next century wonder why the top floor stands empty.<br/><br/>${snap?.name || 'A climber'} the ${snap?.raceName || ''} ${snap?.title || ''} conquered all fifty-one floors.`;
   showFinalEndScreen({
     wasCoop, myName, shards, isWin, snap,
-    title: isWin ? 'THE KING IS DEAD' : 'YOU WENT HOME',
+    title: isWin ? (corruptKing ? 'THE MASK FALLS' : 'THE KING IS DEAD') : 'YOU WENT HOME',
     glyph: isWin ? '👑' : '🌀',
     epitaph: isWin
-      ? `Vorath falls to one knee, then both — and he is <i>smiling</i>. "The interesting kind after all." The tower shudders as its crown changes... no. You sheathe your weapon and walk past the throne without sitting down. Let the next century wonder why the top floor stands empty.<br/><br/>${snap?.name || 'A climber'} the ${snap?.raceName || ''} ${snap?.title || ''} conquered all fifty-one floors.`
+      ? winEpitaph
       : `The portal closes behind you, and the world is suddenly, absurdly ordinary: weather, birdsong, a road. You are alive. Every scar came home with you, and so did every story.<br/><br/>The tower still stands on the horizon. You don't look at it. Mostly.<br/><br/>${snap?.name || 'A climber'} the ${snap?.title || ''} survived ${snap?.floor || '?'} floors — and chose to keep living.`,
   });
 }

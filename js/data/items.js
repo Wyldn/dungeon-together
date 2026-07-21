@@ -334,13 +334,19 @@ export function markWrldClaimed(run, id, coop = null) {
  * Pick a UNIQUE item not yet owned. Never appears in normal rollEquipment.
  * Chance helpers live in callers (boss / shop / event).
  */
-export function rollUnique(rng, run = null, { preferUseful = false } = {}) {
+export function rollUnique(rng, run = null, { preferUseful = false, classId = null } = {}) {
   const owned = ownedGearIds(run);
   let pool = uniqueCatalog().filter(i => !owned.has(i.id) && !i.exclusive);
   if (!pool.length) return null;
-  if (preferUseful && run?.classId) {
-    const useful = pool.filter(i => itemUsefulForClass(i, run.classId));
+  const cls = classId || run?.classId;
+  if (preferUseful && cls) {
+    const useful = pool.filter(i => itemUsefulForClass(i, cls));
+    // Prefer useful weapons; fall back to useful armor/accessory uniques.
     if (useful.length) pool = useful;
+    else {
+      const soft = pool.filter(i => i.slot !== 'weapon');
+      if (soft.length) pool = soft;
+    }
   }
   const base = rng.pick(pool);
   return finalizeLootItem({ ...base, baseId: base.id, affixes: [] }, rng, run);
@@ -351,7 +357,7 @@ export function rollUnique(rng, run = null, { preferUseful = false } = {}) {
  * kind: 'any' | 'equip' | 'relic' | 'weapon' | 'accessory' | slot name
  * Pass coop so multiplayer shares the "one of each" ledger.
  */
-export function rollWrld(rng, run = null, { preferUseful = false, kind = 'any', coop = null, claim = true } = {}) {
+export function rollWrld(rng, run = null, { preferUseful = false, kind = 'any', coop = null, claim = true, classId = null } = {}) {
   const claimed = claimedWrldIds(run, coop);
   const ownedRelics = run?.relics || [];
   let pool = wrldCatalog().filter(i => !claimed.has(i.id) && !i.exclusive && !relicMutexBlocked(i, ownedRelics));
@@ -361,9 +367,14 @@ export function rollWrld(rng, run = null, { preferUseful = false, kind = 'any', 
   else if (kind === 'accessory') pool = pool.filter(i => i.slot === 'accessory');
   else if (kind && kind !== 'any') pool = pool.filter(i => i.slot === kind);
   if (!pool.length) return null;
-  if (preferUseful && run?.classId) {
-    const useful = pool.filter(i => !i.slot || i.slot !== 'weapon' || itemUsefulForClass(i, run.classId));
+  const cls = classId || run?.classId;
+  if (preferUseful && cls) {
+    const useful = pool.filter(i => !i.slot || i.slot !== 'weapon' || itemUsefulForClass(i, cls));
     if (useful.length) pool = useful;
+    else {
+      const soft = pool.filter(i => !i.slot || i.slot !== 'weapon');
+      if (soft.length) pool = soft;
+    }
   }
   const base = rng.pick(pool);
   const baseId = base.id;
@@ -372,6 +383,51 @@ export function rollWrld(rng, run = null, { preferUseful = false, kind = 'any', 
     return { ...base };
   }
   return finalizeLootItem({ ...base, baseId, affixes: [] }, rng, run);
+}
+
+/**
+ * NPC duel spoils: epic 80% / legendary 15% / unique 4% / wrld 1%.
+ * Only unique/wrld tilt toward `classes` (preferUseful). Epic/legendary are open rolls.
+ * Falls back to armor/accessory when a weapon type gap would hard-fail.
+ */
+export function npcDuelLoot(rng, run = null, { classes = [], coop = null, floor = 1 } = {}) {
+  const roll = rng.next();
+  const classId = classes.length ? rng.pick(classes) : (run?.classId || null);
+  const tier = Math.max(3, Math.min(5, 2 + Math.floor((floor || 1) / 10)));
+
+  if (roll < 0.01) {
+    return rollWrld(rng, run, { preferUseful: true, classId, coop, claim: true })
+      || rollUnique(rng, run, { preferUseful: true, classId })
+      || rollForcedRarity(rng, run, 'legendary', { tier, floor });
+  }
+  if (roll < 0.05) {
+    return rollUnique(rng, run, { preferUseful: true, classId })
+      || rollForcedRarity(rng, run, 'legendary', { tier, floor });
+  }
+  if (roll < 0.20) {
+    return rollForcedRarity(rng, run, 'legendary', { tier, floor })
+      || rollForcedRarity(rng, run, 'epic', { tier, floor });
+  }
+  return rollForcedRarity(rng, run, 'epic', { tier, floor })
+    || rollForcedRarity(rng, run, 'legendary', { tier, floor });
+}
+
+function rollForcedRarity(rng, run, rarity, { classId = null, tier = 4, floor = 1 } = {}) {
+  let pool = ALL_EQUIPMENT.filter(i =>
+    i.rarity === rarity
+    && !i.exclusive
+    && !i.starter
+    && i.rarity !== 'unique'
+    && i.rarity !== 'wrld'
+    && (i.tier || 1) <= tier + 1
+  );
+  if (!pool.length) return null;
+  if (classId) {
+    const useful = pool.filter(i => itemUsefulForClass(i, classId));
+    if (useful.length) pool = useful;
+  }
+  const base = rng.pick(pool);
+  return finalizeLootItem({ ...base, baseId: base.id, affixes: [] }, rng, run);
 }
 
 /** True if equipping this weapon would lock out class techniques. */

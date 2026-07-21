@@ -21,6 +21,12 @@ function scaleFor(fh, target) {
   return Math.max(1, Math.round(target / fh));
 }
 
+/** Scale from idle height so FX-taller attack strips don't shrink the body. */
+function heroAnimScale(pack, animArt, target) {
+  const refH = pack?.anims?.idle?.h || pack?.h || animArt.h;
+  return scaleFor(refH, target);
+}
+
 // Visible ink height inside the frame (many boss sheets are heavily padded).
 // Used so bosses fill the ~200px combat box instead of looking tiny in empty canvas.
 const BOSS_INK_H = {
@@ -53,17 +59,29 @@ function bossScale(a, id) {
 
 // Two-frame (or N-frame) idle strips animate via background-position (CSS .px-sprite).
 // Bosses read large on the field; elites mid-size; summons/commons stay compact.
-export function enemySpriteHtml(id, { boss = false, elite = false, summon = false } = {}) {
+export function enemySpriteHtml(id, { boss = false, elite = false, summon = false, target = null } = {}) {
   // `artId` (set on phase evolve) is looked up the same way as the enemy id.
   const a = ENEMY_ART[id];
   if (!a) return null;
   const frames = a.frames || 2;
-  const s = boss
-    ? bossScale(a, id)
-    : scaleFor(a.h, summon ? 64 : elite ? 84 : 68);
+  // `target` = max box edge for thumbs (compendium). Fit BOTH width and height
+  // inside the box so large gallery/boss sheets don't blow past the viewport.
+  let s;
+  if (target != null) {
+    const box = Math.max(16, +target || 64);
+    const fit = Math.min(box / a.w, box / a.h);
+    const intS = Math.floor(fit);
+    s = intS >= 1 ? intS : Math.max(0.12, fit);
+  } else if (boss) {
+    s = bossScale(a, id);
+  } else {
+    s = scaleFor(a.h, summon ? 64 : elite ? 84 : 68);
+  }
   const fw = a.w * s, fh = a.h * s;
   const anim = frames > 1 ? '' : 'animation:none;';
-  return `<div class="px-sprite" style="width:${fw}px;height:${fh}px;--fw:${fw}px;--frames:${frames};background-image:url('${a.f}');background-size:${fw * frames}px ${fh}px;${anim}"></div>`;
+  // Thumbs skip combat center-anchor class — it fights the thumb viewport.
+  const anchor = (target == null && a.anchor === 'center') ? ' sprite-anchor-center' : '';
+  return `<div class="px-sprite${anchor}" style="width:${fw}px;height:${fh}px;--fw:${fw}px;--frames:${frames};background-image:url('${a.f}');background-size:${fw * frames}px ${fh}px;${anim}"></div>`;
 }
 
 export function heroSpriteHtml(classId, target = 68, { anim = 'idle', holdLast = false, faceLeft = null, appearanceId = null } = {}) {
@@ -73,7 +91,7 @@ export function heroSpriteHtml(classId, target = 68, { anim = 'idle', holdLast =
   const pack = HERO_ART[classId];
   const a = (anim && pack?.anims?.[anim]) || base;
   const frames = a.frames || 2;
-  const s = scaleFor(a.h, target);
+  const s = heroAnimScale(pack || base, a, target);
   const fw = a.w * s, fh = a.h * s;
   const isLoop = anim === 'idle' || anim === 'run' || !pack?.anims?.[anim];
   const flip = faceLeft == null ? !!pack?.faceLeft : !!faceLeft;
@@ -96,7 +114,7 @@ export function playHeroAnim(hostEl, classId, anim, { target = 68, holdLast = fa
   if (!spr) return Promise.resolve();
 
   const frames = a.frames || 2;
-  const s = scaleFor(a.h, target);
+  const s = heroAnimScale(pack, a, target);
   const fw = a.w * s, fh = a.h * s;
   const ms = Math.max(280, Math.round(frames * 70));
   const flip = faceLeft == null ? !!pack.faceLeft : !!faceLeft;
@@ -122,7 +140,7 @@ export function playHeroAnim(hostEl, classId, anim, { target = 68, holdLast = fa
       // restore idle (prefer cosmetic skin)
       const idle = resolveHeroArt(classId, appearanceId) || pack.anims?.idle || pack;
       const idFrames = idle.frames || 2;
-      const is = scaleFor(idle.h, target);
+      const is = heroAnimScale(pack, idle, target);
       const ifw = idle.w * is, ifh = idle.h * is;
       spr.dataset.anim = 'idle';
       spr.style.width = `${ifw}px`;

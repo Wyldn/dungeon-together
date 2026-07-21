@@ -1,0 +1,2043 @@
+{
+  "version": 2,
+  "count": 31,
+  "packs": [
+    "ArcherHero",
+    "Band of Knights",
+    "Boss Demon Slime",
+    "EVil Wizard 2",
+    "Evil Wizard 3",
+    "FREE Samurai",
+    "Fantasy Warrior",
+    "Fire Worm",
+    "Huntress",
+    "Huntress 2",
+    "Martial Hero",
+    "Martial Hero 2",
+    "Martial Hero 3",
+    "Mecha-stone Golem",
+    "Medieval King Pack 2",
+    "Monster Creatures Fantasy 1.3",
+    "Monsters Creatures Fantasy 2",
+    "Red Hood Free",
+    "Skeleton Enemy",
+    "Undead Executioner",
+    "sheets / attached"
+  ],
+  "items": [
+    {
+      "id": "fire_worm",
+      "name": "Fire Worm",
+      "pack": "Fire Worm",
+      "category": "enemy",
+      "preview": "assets/img/pack-previews/fire_worm/fire_worm/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/fire_worm/fire_worm/frame_00.png",
+        "assets/img/pack-previews/fire_worm/fire_worm/frame_01.png",
+        "assets/img/pack-previews/fire_worm/fire_worm/frame_02.png",
+        "assets/img/pack-previews/fire_worm/fire_worm/frame_03.png",
+        "assets/img/pack-previews/fire_worm/fire_worm/frame_04.png",
+        "assets/img/pack-previews/fire_worm/fire_worm/frame_05.png",
+        "assets/img/pack-previews/fire_worm/fire_worm/frame_06.png",
+        "assets/img/pack-previews/fire_worm/fire_worm/frame_07.png",
+        "assets/img/pack-previews/fire_worm/fire_worm/frame_08.png"
+      ],
+      "frameW": 90,
+      "frameH": 90,
+      "fps": 8.33,
+      "animations": [
+        "attack",
+        "death",
+        "hurt",
+        "idle",
+        "walk"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack",
+          "file": "Attack.png",
+          "rel": "Attack.png",
+          "w": 1440,
+          "h": 90
+        },
+        {
+          "role": "death",
+          "file": "Death.png",
+          "rel": "Death.png",
+          "w": 720,
+          "h": 90
+        },
+        {
+          "role": "hurt",
+          "file": "Get Hit.png",
+          "rel": "Get Hit.png",
+          "w": 270,
+          "h": 90
+        },
+        {
+          "role": "idle",
+          "file": "Idle.png",
+          "rel": "Idle.png",
+          "w": 810,
+          "h": 90
+        },
+        {
+          "role": "walk",
+          "file": "Walk.png",
+          "rel": "Walk.png",
+          "w": 810,
+          "h": 90
+        }
+      ],
+      "fileCount": 5,
+      "idleSource": "Idle.png",
+      "note": "Idle strip (worm body)"
+    },
+    {
+      "id": "mcf2_bat",
+      "name": "Bat",
+      "pack": "Monsters Creatures Fantasy 2",
+      "category": "enemy",
+      "preview": "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_bat/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_bat/frame_00.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_bat/frame_01.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_bat/frame_02.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_bat/frame_03.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_bat/frame_04.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_bat/frame_05.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_bat/frame_06.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_bat/frame_07.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_bat/frame_08.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_bat/frame_09.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_bat/frame_10.png"
+      ],
+      "frameW": 87,
+      "frameH": 87,
+      "fps": 8.33,
+      "animations": [
+        "attack",
+        "death",
+        "fall",
+        "fly_to_fall",
+        "fly",
+        "hurt"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack",
+          "file": "attack.png",
+          "rel": "attack.png",
+          "w": 957,
+          "h": 87
+        },
+        {
+          "role": "death",
+          "file": "death.png",
+          "rel": "death.png",
+          "w": 348,
+          "h": 87
+        },
+        {
+          "role": "fall",
+          "file": "fall.png",
+          "rel": "fall.png",
+          "w": 435,
+          "h": 87
+        },
+        {
+          "role": "fly_to_fall",
+          "file": "fly-to-fall.png",
+          "rel": "fly-to-fall.png",
+          "w": 261,
+          "h": 87
+        },
+        {
+          "role": "fly",
+          "file": "fly.png",
+          "rel": "fly.png",
+          "w": 957,
+          "h": 87
+        },
+        {
+          "role": "hurt",
+          "file": "hurt.png",
+          "rel": "hurt.png",
+          "w": 261,
+          "h": 87
+        }
+      ],
+      "fileCount": 6,
+      "idleSource": "fly.png"
+    },
+    {
+      "id": "mcf2_mimic",
+      "name": "Mimic",
+      "pack": "Monsters Creatures Fantasy 2",
+      "category": "enemy",
+      "preview": "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_mimic/frame_00.png",
+      "previewMode": "still",
+      "frames": [
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_mimic/frame_00.png"
+      ],
+      "frameW": 146,
+      "frameH": 146,
+      "fps": 8.33,
+      "animations": [
+        "attack1",
+        "attack2",
+        "death",
+        "hurt",
+        "idle",
+        "idle_open",
+        "idle_2",
+        "open",
+        "transform",
+        "walk"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack1",
+          "file": "attack_1.png",
+          "rel": "attack_1.png",
+          "w": 2044,
+          "h": 146
+        },
+        {
+          "role": "attack2",
+          "file": "attack_2.png",
+          "rel": "attack_2.png",
+          "w": 1898,
+          "h": 146
+        },
+        {
+          "role": "death",
+          "file": "death.png",
+          "rel": "death.png",
+          "w": 876,
+          "h": 146
+        },
+        {
+          "role": "hurt",
+          "file": "hurt.png",
+          "rel": "hurt.png",
+          "w": 438,
+          "h": 146
+        },
+        {
+          "role": "idle",
+          "file": "Idle_closed.png",
+          "rel": "Idle_closed.png",
+          "w": 146,
+          "h": 146
+        },
+        {
+          "role": "idle_open",
+          "file": "idle_open.png",
+          "rel": "idle_open.png",
+          "w": 146,
+          "h": 146
+        },
+        {
+          "role": "idle_2",
+          "file": "idle_transformed.png",
+          "rel": "idle_transformed.png",
+          "w": 1314,
+          "h": 146
+        },
+        {
+          "role": "open",
+          "file": "opening.png",
+          "rel": "opening.png",
+          "w": 876,
+          "h": 146
+        },
+        {
+          "role": "transform",
+          "file": "transform.png",
+          "rel": "transform.png",
+          "w": 1022,
+          "h": 146
+        },
+        {
+          "role": "walk",
+          "file": "walk.png",
+          "rel": "walk.png",
+          "w": 876,
+          "h": 146
+        }
+      ],
+      "fileCount": 10,
+      "idleSource": "Idle_closed.png"
+    },
+    {
+      "id": "mcf2_rat",
+      "name": "Rat",
+      "pack": "Monsters Creatures Fantasy 2",
+      "category": "enemy",
+      "preview": "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_rat/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_rat/frame_00.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_rat/frame_01.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_rat/frame_02.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_rat/frame_03.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_rat/frame_04.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_rat/frame_05.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_rat/frame_06.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_rat/frame_07.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_rat/frame_08.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_rat/frame_09.png"
+      ],
+      "frameW": 70,
+      "frameH": 70,
+      "fps": 8.33,
+      "animations": [
+        "attack",
+        "hurt",
+        "idle",
+        "death",
+        "run"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack",
+          "file": "attack_bite.png",
+          "rel": "attack_bite.png",
+          "w": 840,
+          "h": 70
+        },
+        {
+          "role": "hurt",
+          "file": "hurt.png",
+          "rel": "hurt.png",
+          "w": 210,
+          "h": 70
+        },
+        {
+          "role": "idle",
+          "file": "idle.png",
+          "rel": "idle.png",
+          "w": 700,
+          "h": 70
+        },
+        {
+          "role": "death",
+          "file": "rat-death.png",
+          "rel": "rat-death.png",
+          "w": 420,
+          "h": 70
+        },
+        {
+          "role": "run",
+          "file": "run.png",
+          "rel": "run.png",
+          "w": 560,
+          "h": 70
+        }
+      ],
+      "fileCount": 5,
+      "idleSource": "idle.png"
+    },
+    {
+      "id": "mcf2_slime",
+      "name": "Slime",
+      "pack": "Monsters Creatures Fantasy 2",
+      "category": "enemy",
+      "preview": "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_slime/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_slime/frame_00.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_slime/frame_01.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_slime/frame_02.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_slime/frame_03.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_slime/frame_04.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_slime/frame_05.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_slime/frame_06.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_slime/frame_07.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_slime/frame_08.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_slime/frame_09.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_slime/frame_10.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_slime/frame_11.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_slime/frame_12.png",
+        "assets/img/pack-previews/monsters_creatures_fantasy_2/mcf2_slime/frame_13.png"
+      ],
+      "frameW": 156,
+      "frameH": 156,
+      "fps": 8.33,
+      "animations": [
+        "attack",
+        "death",
+        "hurt",
+        "idle",
+        "walk"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack",
+          "file": "attack.png",
+          "rel": "attack.png",
+          "w": 2964,
+          "h": 156
+        },
+        {
+          "role": "death",
+          "file": "death.png",
+          "rel": "death.png",
+          "w": 1716,
+          "h": 156
+        },
+        {
+          "role": "hurt",
+          "file": "hurt.png",
+          "rel": "hurt.png",
+          "w": 468,
+          "h": 156
+        },
+        {
+          "role": "idle",
+          "file": "idle.png",
+          "rel": "idle.png",
+          "w": 2184,
+          "h": 156
+        },
+        {
+          "role": "walk",
+          "file": "walk.png",
+          "rel": "walk.png",
+          "w": 936,
+          "h": 156
+        }
+      ],
+      "fileCount": 5,
+      "idleSource": "idle.png"
+    },
+    {
+      "id": "mcf1_flying_eye",
+      "name": "Flying eye",
+      "pack": "Monster Creatures Fantasy 1.3",
+      "category": "enemy",
+      "preview": "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_flying_eye/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_flying_eye/frame_00.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_flying_eye/frame_01.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_flying_eye/frame_02.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_flying_eye/frame_03.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_flying_eye/frame_04.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_flying_eye/frame_05.png"
+      ],
+      "frameW": 150,
+      "frameH": 150,
+      "fps": 8.33,
+      "animations": [
+        "attack3"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack3",
+          "file": "Attack3.png",
+          "rel": "Attack3.png",
+          "w": 900,
+          "h": 150
+        }
+      ],
+      "fileCount": 1,
+      "idleSource": "Attack3.png",
+      "note": "Pack incomplete (no idle; Attack3 strip as preview)"
+    },
+    {
+      "id": "mcf1_goblin",
+      "name": "Goblin",
+      "pack": "Monster Creatures Fantasy 1.3",
+      "category": "enemy",
+      "preview": "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_goblin/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_goblin/frame_00.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_goblin/frame_01.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_goblin/frame_02.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_goblin/frame_03.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_goblin/frame_04.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_goblin/frame_05.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_goblin/frame_06.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_goblin/frame_07.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_goblin/frame_08.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_goblin/frame_09.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_goblin/frame_10.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_goblin/frame_11.png"
+      ],
+      "frameW": 150,
+      "frameH": 150,
+      "fps": 8.33,
+      "animations": [
+        "attack3"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack3",
+          "file": "Attack3.png",
+          "rel": "Attack3.png",
+          "w": 1800,
+          "h": 150
+        }
+      ],
+      "fileCount": 1,
+      "idleSource": "Attack3.png",
+      "note": "Pack incomplete (no idle; Attack3 strip as preview)"
+    },
+    {
+      "id": "mcf1_mushroom",
+      "name": "Mushroom",
+      "pack": "Monster Creatures Fantasy 1.3",
+      "category": "enemy",
+      "preview": "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_mushroom/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_mushroom/frame_00.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_mushroom/frame_01.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_mushroom/frame_02.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_mushroom/frame_03.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_mushroom/frame_04.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_mushroom/frame_05.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_mushroom/frame_06.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_mushroom/frame_07.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_mushroom/frame_08.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_mushroom/frame_09.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_mushroom/frame_10.png"
+      ],
+      "frameW": 150,
+      "frameH": 150,
+      "fps": 8.33,
+      "animations": [
+        "attack3"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack3",
+          "file": "Attack3.png",
+          "rel": "Attack3.png",
+          "w": 1650,
+          "h": 150
+        }
+      ],
+      "fileCount": 1,
+      "idleSource": "Attack3.png",
+      "note": "Pack incomplete (no idle; Attack3 strip as preview)"
+    },
+    {
+      "id": "mcf1_skeleton",
+      "name": "Skeleton",
+      "pack": "Monster Creatures Fantasy 1.3",
+      "category": "enemy",
+      "preview": "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_skeleton/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_skeleton/frame_00.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_skeleton/frame_01.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_skeleton/frame_02.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_skeleton/frame_03.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_skeleton/frame_04.png",
+        "assets/img/pack-previews/monster_creatures_fantasy_1_3/mcf1_skeleton/frame_05.png"
+      ],
+      "frameW": 150,
+      "frameH": 150,
+      "fps": 8.33,
+      "animations": [
+        "attack3"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack3",
+          "file": "Attack3.png",
+          "rel": "Attack3.png",
+          "w": 900,
+          "h": 150
+        }
+      ],
+      "fileCount": 1,
+      "idleSource": "Attack3.png",
+      "note": "Pack incomplete (no idle; Attack3 strip as preview)"
+    },
+    {
+      "id": "red_hood",
+      "name": "Red Hood",
+      "pack": "Red Hood Free",
+      "category": "enemy",
+      "preview": "assets/img/pack-previews/red_hood_free/red_hood/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/red_hood_free/red_hood/frame_00.png",
+        "assets/img/pack-previews/red_hood_free/red_hood/frame_01.png",
+        "assets/img/pack-previews/red_hood_free/red_hood/frame_02.png",
+        "assets/img/pack-previews/red_hood_free/red_hood/frame_03.png",
+        "assets/img/pack-previews/red_hood_free/red_hood/frame_04.png",
+        "assets/img/pack-previews/red_hood_free/red_hood/frame_05.png",
+        "assets/img/pack-previews/red_hood_free/red_hood/frame_06.png",
+        "assets/img/pack-previews/red_hood_free/red_hood/frame_07.png",
+        "assets/img/pack-previews/red_hood_free/red_hood/frame_08.png",
+        "assets/img/pack-previews/red_hood_free/red_hood/frame_09.png",
+        "assets/img/pack-previews/red_hood_free/red_hood/frame_10.png",
+        "assets/img/pack-previews/red_hood_free/red_hood/frame_11.png"
+      ],
+      "frameW": 112,
+      "frameH": 133,
+      "fps": 8.33,
+      "animations": [
+        "red_hood_itch_free_copy_sheet"
+      ],
+      "animationDetails": [
+        {
+          "role": "red_hood_itch_free_copy_sheet",
+          "file": "red hood itch free Copy-Sheet.png",
+          "rel": "red hood itch free Copy-Sheet.png",
+          "w": 1344,
+          "h": 1463
+        }
+      ],
+      "fileCount": 1,
+      "idleSource": "red hood itch free Copy-Sheet.png",
+      "note": "Idle from row 0 of full sheet (112\u00d7133 cells)"
+    },
+    {
+      "id": "medieval_king",
+      "name": "Medieval King",
+      "pack": "Medieval King Pack 2",
+      "category": "boss",
+      "preview": "assets/img/pack-previews/medieval_king_pack_2/medieval_king/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/medieval_king_pack_2/medieval_king/frame_00.png",
+        "assets/img/pack-previews/medieval_king_pack_2/medieval_king/frame_01.png",
+        "assets/img/pack-previews/medieval_king_pack_2/medieval_king/frame_02.png",
+        "assets/img/pack-previews/medieval_king_pack_2/medieval_king/frame_03.png",
+        "assets/img/pack-previews/medieval_king_pack_2/medieval_king/frame_04.png",
+        "assets/img/pack-previews/medieval_king_pack_2/medieval_king/frame_05.png",
+        "assets/img/pack-previews/medieval_king_pack_2/medieval_king/frame_06.png",
+        "assets/img/pack-previews/medieval_king_pack_2/medieval_king/frame_07.png"
+      ],
+      "frameW": 160,
+      "frameH": 111,
+      "fps": 8.33,
+      "animations": [
+        "attack1",
+        "attack2",
+        "attack3",
+        "death",
+        "fall",
+        "idle",
+        "jump",
+        "run",
+        "hurt",
+        "hurt_2"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack1",
+          "file": "Attack1.png",
+          "rel": "Attack1.png",
+          "w": 640,
+          "h": 111
+        },
+        {
+          "role": "attack2",
+          "file": "Attack2.png",
+          "rel": "Attack2.png",
+          "w": 640,
+          "h": 111
+        },
+        {
+          "role": "attack3",
+          "file": "Attack3.png",
+          "rel": "Attack3.png",
+          "w": 640,
+          "h": 111
+        },
+        {
+          "role": "death",
+          "file": "Death.png",
+          "rel": "Death.png",
+          "w": 960,
+          "h": 111
+        },
+        {
+          "role": "fall",
+          "file": "Fall.png",
+          "rel": "Fall.png",
+          "w": 320,
+          "h": 111
+        },
+        {
+          "role": "idle",
+          "file": "Idle.png",
+          "rel": "Idle.png",
+          "w": 1280,
+          "h": 111
+        },
+        {
+          "role": "jump",
+          "file": "Jump.png",
+          "rel": "Jump.png",
+          "w": 320,
+          "h": 111
+        },
+        {
+          "role": "run",
+          "file": "Run.png",
+          "rel": "Run.png",
+          "w": 1280,
+          "h": 111
+        },
+        {
+          "role": "hurt",
+          "file": "Take Hit - white silhouette.png",
+          "rel": "Take Hit - white silhouette.png",
+          "w": 640,
+          "h": 111
+        },
+        {
+          "role": "hurt_2",
+          "file": "Take Hit.png",
+          "rel": "Take Hit.png",
+          "w": 640,
+          "h": 111
+        }
+      ],
+      "fileCount": 10,
+      "idleSource": "Idle.png"
+    },
+    {
+      "id": "mecha_golem",
+      "name": "Mecha-stone Golem",
+      "pack": "Mecha-stone Golem",
+      "category": "enemy",
+      "preview": "assets/img/pack-previews/mecha_stone_golem/mecha_golem/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/mecha_stone_golem/mecha_golem/frame_00.png",
+        "assets/img/pack-previews/mecha_stone_golem/mecha_golem/frame_01.png",
+        "assets/img/pack-previews/mecha_stone_golem/mecha_golem/frame_02.png",
+        "assets/img/pack-previews/mecha_stone_golem/mecha_golem/frame_03.png"
+      ],
+      "frameW": 100,
+      "frameH": 100,
+      "fps": 8.33,
+      "animations": [
+        "character_sheet"
+      ],
+      "animationDetails": [
+        {
+          "role": "character_sheet",
+          "file": "Character_sheet.png",
+          "rel": "Character_sheet.png",
+          "w": 1000,
+          "h": 1000
+        }
+      ],
+      "fileCount": 1,
+      "idleSource": "Character_sheet.png",
+      "note": "Idle from row 0 of Character_sheet (projectiles omitted)"
+    },
+    {
+      "id": "knight_armor",
+      "name": "Knight Armor",
+      "pack": "Band of Knights",
+      "category": "elite",
+      "preview": "assets/img/pack-previews/band_of_knights/knight_armor/frame_00.png",
+      "previewMode": "step",
+      "frames": [
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_00.png",
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_01.png",
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_02.png",
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_03.png",
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_04.png",
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_05.png",
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_06.png",
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_07.png",
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_08.png",
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_09.png",
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_10.png",
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_11.png",
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_12.png",
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_13.png",
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_14.png",
+        "assets/img/pack-previews/band_of_knights/knight_armor/frame_15.png"
+      ],
+      "frameW": 43,
+      "frameH": 57,
+      "fps": 8.33,
+      "animations": [
+        "knight_sheet"
+      ],
+      "animationDetails": [
+        {
+          "role": "knight_sheet",
+          "file": "Knight sheet.png",
+          "rel": "Knight sheet.png",
+          "w": 688,
+          "h": 57
+        }
+      ],
+      "fileCount": 1,
+      "idleSource": "Knight sheet.png",
+      "note": "Helmet/pose variants \u2014 use \u25c0 \u25b6 to step (not a loop)"
+    },
+    {
+      "id": "knight_knight_sheet_alt_heads_nyx8",
+      "name": "Knight - Nyx8",
+      "pack": "Band of Knights",
+      "category": "elite",
+      "preview": "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads_nyx8/frame_00.png",
+      "previewMode": "step",
+      "frames": [
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads_nyx8/frame_00.png",
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads_nyx8/frame_01.png",
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads_nyx8/frame_02.png",
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads_nyx8/frame_03.png",
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads_nyx8/frame_04.png",
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads_nyx8/frame_05.png"
+      ],
+      "frameW": 80,
+      "frameH": 80,
+      "fps": 8.33,
+      "animations": [
+        "knight_sheet_alt_heads_nyx8"
+      ],
+      "animationDetails": [
+        {
+          "role": "knight_sheet_alt_heads_nyx8",
+          "file": "Knight sheet alt heads - Nyx8.png",
+          "rel": "Knight sheet alt heads - Nyx8.png",
+          "w": 480,
+          "h": 80
+        }
+      ],
+      "fileCount": 1,
+      "idleSource": "Knight sheet alt heads - Nyx8.png",
+      "note": "Alt head variants \u2014 use \u25c0 \u25b6 to step"
+    },
+    {
+      "id": "knight_knight_sheet_alt_heads_zughy32",
+      "name": "Knight - Zughy32",
+      "pack": "Band of Knights",
+      "category": "elite",
+      "preview": "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads_zughy32/frame_00.png",
+      "previewMode": "step",
+      "frames": [
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads_zughy32/frame_00.png",
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads_zughy32/frame_01.png",
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads_zughy32/frame_02.png",
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads_zughy32/frame_03.png",
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads_zughy32/frame_04.png",
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads_zughy32/frame_05.png"
+      ],
+      "frameW": 80,
+      "frameH": 80,
+      "fps": 8.33,
+      "animations": [
+        "knight_sheet_alt_heads_zughy32"
+      ],
+      "animationDetails": [
+        {
+          "role": "knight_sheet_alt_heads_zughy32",
+          "file": "Knight sheet alt heads - Zughy32.png",
+          "rel": "Knight sheet alt heads - Zughy32.png",
+          "w": 480,
+          "h": 80
+        }
+      ],
+      "fileCount": 1,
+      "idleSource": "Knight sheet alt heads - Zughy32.png",
+      "note": "Alt head variants \u2014 use \u25c0 \u25b6 to step"
+    },
+    {
+      "id": "knight_knight_sheet_alt_heads",
+      "name": "Knight",
+      "pack": "Band of Knights",
+      "category": "elite",
+      "preview": "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads/frame_00.png",
+      "previewMode": "step",
+      "frames": [
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads/frame_00.png",
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads/frame_01.png",
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads/frame_02.png",
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads/frame_03.png",
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads/frame_04.png",
+        "assets/img/pack-previews/band_of_knights/knight_knight_sheet_alt_heads/frame_05.png"
+      ],
+      "frameW": 80,
+      "frameH": 80,
+      "fps": 8.33,
+      "animations": [
+        "knight_sheet_alt_heads"
+      ],
+      "animationDetails": [
+        {
+          "role": "knight_sheet_alt_heads",
+          "file": "Knight sheet alt heads.png",
+          "rel": "Knight sheet alt heads.png",
+          "w": 480,
+          "h": 80
+        }
+      ],
+      "fileCount": 1,
+      "idleSource": "Knight sheet alt heads.png",
+      "note": "Alt head variants \u2014 use \u25c0 \u25b6 to step"
+    },
+    {
+      "id": "undead_executioner",
+      "name": "Undead Executioner",
+      "pack": "Undead Executioner",
+      "category": "boss",
+      "preview": "assets/img/pack-previews/undead_executioner/undead_executioner/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/undead_executioner/undead_executioner/frame_00.png",
+        "assets/img/pack-previews/undead_executioner/undead_executioner/frame_01.png",
+        "assets/img/pack-previews/undead_executioner/undead_executioner/frame_02.png",
+        "assets/img/pack-previews/undead_executioner/undead_executioner/frame_03.png"
+      ],
+      "frameW": 100,
+      "frameH": 100,
+      "fps": 8.33,
+      "animations": [
+        "attack",
+        "death",
+        "idle",
+        "idle2",
+        "special",
+        "summon",
+        "summon_appear",
+        "summon_death",
+        "summon_idle"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack",
+          "file": "attacking.png",
+          "rel": "attacking.png",
+          "w": 600,
+          "h": 300
+        },
+        {
+          "role": "death",
+          "file": "death.png",
+          "rel": "death.png",
+          "w": 1000,
+          "h": 200
+        },
+        {
+          "role": "idle",
+          "file": "idle.png",
+          "rel": "idle.png",
+          "w": 500,
+          "h": 100
+        },
+        {
+          "role": "idle2",
+          "file": "idle2.png",
+          "rel": "idle2.png",
+          "w": 400,
+          "h": 200
+        },
+        {
+          "role": "special",
+          "file": "skill1.png",
+          "rel": "skill1.png",
+          "w": 600,
+          "h": 200
+        },
+        {
+          "role": "summon",
+          "file": "summon.png",
+          "rel": "summon.png",
+          "w": 400,
+          "h": 200
+        },
+        {
+          "role": "summon_appear",
+          "file": "summonAppear.png",
+          "rel": "summonAppear.png",
+          "w": 150,
+          "h": 100
+        },
+        {
+          "role": "summon_death",
+          "file": "summonDeath.png",
+          "rel": "summonDeath.png",
+          "w": 150,
+          "h": 100
+        },
+        {
+          "role": "summon_idle",
+          "file": "summonIdle.png",
+          "rel": "summonIdle.png",
+          "w": 200,
+          "h": 50
+        }
+      ],
+      "fileCount": 9,
+      "idleSource": "idle.png"
+    },
+    {
+      "id": "archer_hero",
+      "name": "Archer Hero",
+      "pack": "ArcherHero",
+      "category": "npc",
+      "preview": "assets/img/pack-previews/archerhero/archer_hero/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/archerhero/archer_hero/frame_00.png",
+        "assets/img/pack-previews/archerhero/archer_hero/frame_01.png"
+      ],
+      "frameW": 64,
+      "frameH": 64,
+      "fps": 8.33,
+      "animations": [
+        "dash",
+        "death",
+        "attack_high",
+        "idle_run",
+        "jump",
+        "attack_low",
+        "attack"
+      ],
+      "animationDetails": [
+        {
+          "role": "dash",
+          "file": "Dash.png",
+          "rel": "Dash.png",
+          "w": 512,
+          "h": 256
+        },
+        {
+          "role": "death",
+          "file": "death.png",
+          "rel": "death.png",
+          "w": 512,
+          "h": 192
+        },
+        {
+          "role": "attack_high",
+          "file": "High Attack.png",
+          "rel": "High Attack.png",
+          "w": 512,
+          "h": 384
+        },
+        {
+          "role": "idle_run",
+          "file": "Idle and running.png",
+          "rel": "Idle and running.png",
+          "w": 512,
+          "h": 128
+        },
+        {
+          "role": "jump",
+          "file": "Jumping.png",
+          "rel": "Jumping.png",
+          "w": 512,
+          "h": 128
+        },
+        {
+          "role": "attack_low",
+          "file": "Low attack.png",
+          "rel": "Low attack.png",
+          "w": 512,
+          "h": 512
+        },
+        {
+          "role": "attack",
+          "file": "Normal Attack.png",
+          "rel": "Normal Attack.png",
+          "w": 512,
+          "h": 256
+        }
+      ],
+      "fileCount": 7,
+      "idleSource": "Idle and running.png",
+      "note": "Idle from top row of Idle and running (64\u00d764 cells)"
+    },
+    {
+      "id": "samurai",
+      "name": "Samurai",
+      "pack": "FREE Samurai",
+      "category": "npc",
+      "preview": "assets/img/pack-previews/free_samurai/samurai/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/free_samurai/samurai/frame_00.png",
+        "assets/img/pack-previews/free_samurai/samurai/frame_01.png",
+        "assets/img/pack-previews/free_samurai/samurai/frame_02.png",
+        "assets/img/pack-previews/free_samurai/samurai/frame_03.png",
+        "assets/img/pack-previews/free_samurai/samurai/frame_04.png",
+        "assets/img/pack-previews/free_samurai/samurai/frame_05.png",
+        "assets/img/pack-previews/free_samurai/samurai/frame_06.png",
+        "assets/img/pack-previews/free_samurai/samurai/frame_07.png",
+        "assets/img/pack-previews/free_samurai/samurai/frame_08.png",
+        "assets/img/pack-previews/free_samurai/samurai/frame_09.png"
+      ],
+      "frameW": 96,
+      "frameH": 96,
+      "fps": 8.33,
+      "animations": [
+        "preview",
+        "attack1",
+        "hurt",
+        "idle",
+        "run"
+      ],
+      "animationDetails": [
+        {
+          "role": "preview",
+          "file": "Preview.png",
+          "rel": "Preview.png",
+          "w": 475,
+          "h": 375
+        },
+        {
+          "role": "attack1",
+          "file": "ATTACK 1.png",
+          "rel": "ATTACK 1.png",
+          "w": 672,
+          "h": 96
+        },
+        {
+          "role": "hurt",
+          "file": "HURT.png",
+          "rel": "HURT.png",
+          "w": 384,
+          "h": 96
+        },
+        {
+          "role": "idle",
+          "file": "IDLE.png",
+          "rel": "IDLE.png",
+          "w": 960,
+          "h": 96
+        },
+        {
+          "role": "run",
+          "file": "RUN.png",
+          "rel": "RUN.png",
+          "w": 1536,
+          "h": 96
+        }
+      ],
+      "fileCount": 5,
+      "idleSource": "IDLE.png"
+    },
+    {
+      "id": "evil_wizard",
+      "name": "Evil Wizard",
+      "pack": "EVil Wizard 2",
+      "category": "enemy",
+      "preview": "assets/img/pack-previews/evil_wizard_2/evil_wizard/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/evil_wizard_2/evil_wizard/frame_00.png",
+        "assets/img/pack-previews/evil_wizard_2/evil_wizard/frame_01.png",
+        "assets/img/pack-previews/evil_wizard_2/evil_wizard/frame_02.png",
+        "assets/img/pack-previews/evil_wizard_2/evil_wizard/frame_03.png",
+        "assets/img/pack-previews/evil_wizard_2/evil_wizard/frame_04.png",
+        "assets/img/pack-previews/evil_wizard_2/evil_wizard/frame_05.png",
+        "assets/img/pack-previews/evil_wizard_2/evil_wizard/frame_06.png",
+        "assets/img/pack-previews/evil_wizard_2/evil_wizard/frame_07.png"
+      ],
+      "frameW": 250,
+      "frameH": 250,
+      "fps": 8.33,
+      "animations": [
+        "attack1",
+        "attack2",
+        "death",
+        "fall",
+        "idle",
+        "jump",
+        "run",
+        "hurt"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack1",
+          "file": "Attack1.png",
+          "rel": "Attack1.png",
+          "w": 2000,
+          "h": 250
+        },
+        {
+          "role": "attack2",
+          "file": "Attack2.png",
+          "rel": "Attack2.png",
+          "w": 2000,
+          "h": 250
+        },
+        {
+          "role": "death",
+          "file": "Death.png",
+          "rel": "Death.png",
+          "w": 1750,
+          "h": 250
+        },
+        {
+          "role": "fall",
+          "file": "Fall.png",
+          "rel": "Fall.png",
+          "w": 500,
+          "h": 250
+        },
+        {
+          "role": "idle",
+          "file": "Idle.png",
+          "rel": "Idle.png",
+          "w": 2000,
+          "h": 250
+        },
+        {
+          "role": "jump",
+          "file": "Jump.png",
+          "rel": "Jump.png",
+          "w": 500,
+          "h": 250
+        },
+        {
+          "role": "run",
+          "file": "Run.png",
+          "rel": "Run.png",
+          "w": 2000,
+          "h": 250
+        },
+        {
+          "role": "hurt",
+          "file": "Take hit.png",
+          "rel": "Take hit.png",
+          "w": 750,
+          "h": 250
+        }
+      ],
+      "fileCount": 8,
+      "idleSource": "Idle.png"
+    },
+    {
+      "id": "evil_wizard_3",
+      "name": "Evil Wizard 3",
+      "pack": "Evil Wizard 3",
+      "category": "npc",
+      "preview": "assets/img/pack-previews/evil_wizard_3/evil_wizard_3/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/evil_wizard_3/evil_wizard_3/frame_00.png",
+        "assets/img/pack-previews/evil_wizard_3/evil_wizard_3/frame_01.png",
+        "assets/img/pack-previews/evil_wizard_3/evil_wizard_3/frame_02.png",
+        "assets/img/pack-previews/evil_wizard_3/evil_wizard_3/frame_03.png",
+        "assets/img/pack-previews/evil_wizard_3/evil_wizard_3/frame_04.png",
+        "assets/img/pack-previews/evil_wizard_3/evil_wizard_3/frame_05.png",
+        "assets/img/pack-previews/evil_wizard_3/evil_wizard_3/frame_06.png",
+        "assets/img/pack-previews/evil_wizard_3/evil_wizard_3/frame_07.png",
+        "assets/img/pack-previews/evil_wizard_3/evil_wizard_3/frame_08.png",
+        "assets/img/pack-previews/evil_wizard_3/evil_wizard_3/frame_09.png"
+      ],
+      "frameW": 140,
+      "frameH": 140,
+      "fps": 8.33,
+      "animations": [
+        "attack",
+        "death",
+        "fall",
+        "hurt",
+        "idle",
+        "jump",
+        "run",
+        "walk"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack",
+          "file": "Attack.png",
+          "rel": "Attack.png",
+          "w": 1820,
+          "h": 140
+        },
+        {
+          "role": "death",
+          "file": "Death.png",
+          "rel": "Death.png",
+          "w": 2520,
+          "h": 140
+        },
+        {
+          "role": "fall",
+          "file": "Fall.png",
+          "rel": "Fall.png",
+          "w": 420,
+          "h": 140
+        },
+        {
+          "role": "hurt",
+          "file": "Get hit.png",
+          "rel": "Get hit.png",
+          "w": 420,
+          "h": 140
+        },
+        {
+          "role": "idle",
+          "file": "Idle.png",
+          "rel": "Idle.png",
+          "w": 1400,
+          "h": 140
+        },
+        {
+          "role": "jump",
+          "file": "Jump.png",
+          "rel": "Jump.png",
+          "w": 420,
+          "h": 140
+        },
+        {
+          "role": "run",
+          "file": "Run.png",
+          "rel": "Run.png",
+          "w": 1120,
+          "h": 140
+        },
+        {
+          "role": "walk",
+          "file": "Walk.png",
+          "rel": "Walk.png",
+          "w": 1120,
+          "h": 140
+        }
+      ],
+      "fileCount": 8,
+      "idleSource": "Idle.png",
+      "note": "NPC hero pack \u2014 idle strip"
+    },
+    {
+      "id": "martial_hero_3",
+      "name": "Martial Hero 3",
+      "pack": "Martial Hero 3",
+      "category": "npc",
+      "preview": "assets/img/pack-previews/martial_hero_3/martial_hero_3/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/martial_hero_3/martial_hero_3/frame_00.png",
+        "assets/img/pack-previews/martial_hero_3/martial_hero_3/frame_01.png",
+        "assets/img/pack-previews/martial_hero_3/martial_hero_3/frame_02.png",
+        "assets/img/pack-previews/martial_hero_3/martial_hero_3/frame_03.png",
+        "assets/img/pack-previews/martial_hero_3/martial_hero_3/frame_04.png",
+        "assets/img/pack-previews/martial_hero_3/martial_hero_3/frame_05.png",
+        "assets/img/pack-previews/martial_hero_3/martial_hero_3/frame_06.png",
+        "assets/img/pack-previews/martial_hero_3/martial_hero_3/frame_07.png",
+        "assets/img/pack-previews/martial_hero_3/martial_hero_3/frame_08.png",
+        "assets/img/pack-previews/martial_hero_3/martial_hero_3/frame_09.png"
+      ],
+      "frameW": 126,
+      "frameH": 126,
+      "fps": 8.33,
+      "animations": [
+        "attack1",
+        "attack2",
+        "attack3",
+        "death",
+        "going_down",
+        "going_up",
+        "idle",
+        "run",
+        "hurt"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack1",
+          "file": "Attack1.png",
+          "rel": "Attack1.png",
+          "w": 882,
+          "h": 126
+        },
+        {
+          "role": "attack2",
+          "file": "Attack2.png",
+          "rel": "Attack2.png",
+          "w": 756,
+          "h": 126
+        },
+        {
+          "role": "attack3",
+          "file": "Attack3.png",
+          "rel": "Attack3.png",
+          "w": 1134,
+          "h": 126
+        },
+        {
+          "role": "death",
+          "file": "Death.png",
+          "rel": "Death.png",
+          "w": 1386,
+          "h": 126
+        },
+        {
+          "role": "going_down",
+          "file": "Going Down.png",
+          "rel": "Going Down.png",
+          "w": 378,
+          "h": 126
+        },
+        {
+          "role": "going_up",
+          "file": "Going Up.png",
+          "rel": "Going Up.png",
+          "w": 378,
+          "h": 126
+        },
+        {
+          "role": "idle",
+          "file": "Idle.png",
+          "rel": "Idle.png",
+          "w": 1260,
+          "h": 126
+        },
+        {
+          "role": "run",
+          "file": "Run.png",
+          "rel": "Run.png",
+          "w": 1008,
+          "h": 126
+        },
+        {
+          "role": "hurt",
+          "file": "Take Hit.png",
+          "rel": "Take Hit.png",
+          "w": 378,
+          "h": 126
+        }
+      ],
+      "fileCount": 9,
+      "idleSource": "Idle.png",
+      "note": "NPC hero pack \u2014 idle strip"
+    },
+    {
+      "id": "martial_hero_2",
+      "name": "Martial Hero 2",
+      "pack": "Martial Hero 2",
+      "category": "npc",
+      "preview": "assets/img/pack-previews/martial_hero_2/martial_hero_2/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/martial_hero_2/martial_hero_2/frame_00.png",
+        "assets/img/pack-previews/martial_hero_2/martial_hero_2/frame_01.png",
+        "assets/img/pack-previews/martial_hero_2/martial_hero_2/frame_02.png",
+        "assets/img/pack-previews/martial_hero_2/martial_hero_2/frame_03.png"
+      ],
+      "frameW": 200,
+      "frameH": 200,
+      "fps": 8.33,
+      "animations": [
+        "attack1",
+        "attack2",
+        "death",
+        "fall",
+        "idle",
+        "jump",
+        "run",
+        "hurt"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack1",
+          "file": "Attack1.png",
+          "rel": "Attack1.png",
+          "w": 800,
+          "h": 200
+        },
+        {
+          "role": "attack2",
+          "file": "Attack2.png",
+          "rel": "Attack2.png",
+          "w": 800,
+          "h": 200
+        },
+        {
+          "role": "death",
+          "file": "Death.png",
+          "rel": "Death.png",
+          "w": 1400,
+          "h": 200
+        },
+        {
+          "role": "fall",
+          "file": "Fall.png",
+          "rel": "Fall.png",
+          "w": 400,
+          "h": 200
+        },
+        {
+          "role": "idle",
+          "file": "Idle.png",
+          "rel": "Idle.png",
+          "w": 800,
+          "h": 200
+        },
+        {
+          "role": "jump",
+          "file": "Jump.png",
+          "rel": "Jump.png",
+          "w": 400,
+          "h": 200
+        },
+        {
+          "role": "run",
+          "file": "Run.png",
+          "rel": "Run.png",
+          "w": 1600,
+          "h": 200
+        },
+        {
+          "role": "hurt",
+          "file": "Take hit.png",
+          "rel": "Take hit.png",
+          "w": 600,
+          "h": 200
+        }
+      ],
+      "fileCount": 8,
+      "idleSource": "Idle.png",
+      "note": "NPC hero pack \u2014 idle strip"
+    },
+    {
+      "id": "martial_hero",
+      "name": "Martial Hero",
+      "pack": "Martial Hero",
+      "category": "npc",
+      "preview": "assets/img/pack-previews/martial_hero/martial_hero/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/martial_hero/martial_hero/frame_00.png",
+        "assets/img/pack-previews/martial_hero/martial_hero/frame_01.png",
+        "assets/img/pack-previews/martial_hero/martial_hero/frame_02.png",
+        "assets/img/pack-previews/martial_hero/martial_hero/frame_03.png",
+        "assets/img/pack-previews/martial_hero/martial_hero/frame_04.png",
+        "assets/img/pack-previews/martial_hero/martial_hero/frame_05.png",
+        "assets/img/pack-previews/martial_hero/martial_hero/frame_06.png",
+        "assets/img/pack-previews/martial_hero/martial_hero/frame_07.png"
+      ],
+      "frameW": 200,
+      "frameH": 200,
+      "fps": 8.33,
+      "animations": [
+        "attack1",
+        "attack2",
+        "death",
+        "fall",
+        "idle",
+        "jump",
+        "run",
+        "hurt",
+        "hurt_2"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack1",
+          "file": "Attack1.png",
+          "rel": "Attack1.png",
+          "w": 1200,
+          "h": 200
+        },
+        {
+          "role": "attack2",
+          "file": "Attack2.png",
+          "rel": "Attack2.png",
+          "w": 1200,
+          "h": 200
+        },
+        {
+          "role": "death",
+          "file": "Death.png",
+          "rel": "Death.png",
+          "w": 1200,
+          "h": 200
+        },
+        {
+          "role": "fall",
+          "file": "Fall.png",
+          "rel": "Fall.png",
+          "w": 400,
+          "h": 200
+        },
+        {
+          "role": "idle",
+          "file": "Idle.png",
+          "rel": "Idle.png",
+          "w": 1600,
+          "h": 200
+        },
+        {
+          "role": "jump",
+          "file": "Jump.png",
+          "rel": "Jump.png",
+          "w": 400,
+          "h": 200
+        },
+        {
+          "role": "run",
+          "file": "Run.png",
+          "rel": "Run.png",
+          "w": 1600,
+          "h": 200
+        },
+        {
+          "role": "hurt",
+          "file": "Take Hit - white silhouette.png",
+          "rel": "Take Hit - white silhouette.png",
+          "w": 800,
+          "h": 200
+        },
+        {
+          "role": "hurt_2",
+          "file": "Take Hit.png",
+          "rel": "Take Hit.png",
+          "w": 800,
+          "h": 200
+        }
+      ],
+      "fileCount": 9,
+      "idleSource": "Idle.png",
+      "note": "NPC hero pack \u2014 idle strip"
+    },
+    {
+      "id": "huntress_2",
+      "name": "Huntress 2",
+      "pack": "Huntress 2",
+      "category": "npc",
+      "preview": "assets/img/pack-previews/huntress_2/huntress_2/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/huntress_2/huntress_2/frame_00.png",
+        "assets/img/pack-previews/huntress_2/huntress_2/frame_01.png",
+        "assets/img/pack-previews/huntress_2/huntress_2/frame_02.png",
+        "assets/img/pack-previews/huntress_2/huntress_2/frame_03.png",
+        "assets/img/pack-previews/huntress_2/huntress_2/frame_04.png",
+        "assets/img/pack-previews/huntress_2/huntress_2/frame_05.png",
+        "assets/img/pack-previews/huntress_2/huntress_2/frame_06.png",
+        "assets/img/pack-previews/huntress_2/huntress_2/frame_07.png",
+        "assets/img/pack-previews/huntress_2/huntress_2/frame_08.png",
+        "assets/img/pack-previews/huntress_2/huntress_2/frame_09.png"
+      ],
+      "frameW": 100,
+      "frameH": 100,
+      "fps": 8.33,
+      "animations": [
+        "attack",
+        "death",
+        "fall",
+        "hurt",
+        "idle",
+        "jump",
+        "run"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack",
+          "file": "Attack.png",
+          "rel": "Attack.png",
+          "w": 600,
+          "h": 100
+        },
+        {
+          "role": "death",
+          "file": "Death.png",
+          "rel": "Death.png",
+          "w": 1000,
+          "h": 100
+        },
+        {
+          "role": "fall",
+          "file": "Fall.png",
+          "rel": "Fall.png",
+          "w": 200,
+          "h": 100
+        },
+        {
+          "role": "hurt",
+          "file": "Get Hit.png",
+          "rel": "Get Hit.png",
+          "w": 300,
+          "h": 100
+        },
+        {
+          "role": "idle",
+          "file": "Idle.png",
+          "rel": "Idle.png",
+          "w": 1000,
+          "h": 100
+        },
+        {
+          "role": "jump",
+          "file": "Jump.png",
+          "rel": "Jump.png",
+          "w": 200,
+          "h": 100
+        },
+        {
+          "role": "run",
+          "file": "Run.png",
+          "rel": "Run.png",
+          "w": 800,
+          "h": 100
+        }
+      ],
+      "fileCount": 7,
+      "idleSource": "Idle.png",
+      "note": "NPC hero pack \u2014 idle strip"
+    },
+    {
+      "id": "huntress",
+      "name": "Huntress",
+      "pack": "Huntress",
+      "category": "npc",
+      "preview": "assets/img/pack-previews/huntress/huntress/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/huntress/huntress/frame_00.png",
+        "assets/img/pack-previews/huntress/huntress/frame_01.png",
+        "assets/img/pack-previews/huntress/huntress/frame_02.png",
+        "assets/img/pack-previews/huntress/huntress/frame_03.png",
+        "assets/img/pack-previews/huntress/huntress/frame_04.png",
+        "assets/img/pack-previews/huntress/huntress/frame_05.png",
+        "assets/img/pack-previews/huntress/huntress/frame_06.png",
+        "assets/img/pack-previews/huntress/huntress/frame_07.png"
+      ],
+      "frameW": 150,
+      "frameH": 150,
+      "fps": 8.33,
+      "animations": [
+        "attack1",
+        "attack2",
+        "attack3",
+        "death",
+        "fall",
+        "idle",
+        "jump",
+        "run",
+        "hurt"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack1",
+          "file": "Attack1.png",
+          "rel": "Attack1.png",
+          "w": 750,
+          "h": 150
+        },
+        {
+          "role": "attack2",
+          "file": "Attack2.png",
+          "rel": "Attack2.png",
+          "w": 750,
+          "h": 150
+        },
+        {
+          "role": "attack3",
+          "file": "Attack3.png",
+          "rel": "Attack3.png",
+          "w": 1050,
+          "h": 150
+        },
+        {
+          "role": "death",
+          "file": "Death.png",
+          "rel": "Death.png",
+          "w": 1200,
+          "h": 150
+        },
+        {
+          "role": "fall",
+          "file": "Fall.png",
+          "rel": "Fall.png",
+          "w": 300,
+          "h": 150
+        },
+        {
+          "role": "idle",
+          "file": "Idle.png",
+          "rel": "Idle.png",
+          "w": 1200,
+          "h": 150
+        },
+        {
+          "role": "jump",
+          "file": "Jump.png",
+          "rel": "Jump.png",
+          "w": 300,
+          "h": 150
+        },
+        {
+          "role": "run",
+          "file": "Run.png",
+          "rel": "Run.png",
+          "w": 1200,
+          "h": 150
+        },
+        {
+          "role": "hurt",
+          "file": "Take hit.png",
+          "rel": "Take hit.png",
+          "w": 450,
+          "h": 150
+        }
+      ],
+      "fileCount": 9,
+      "idleSource": "Idle.png",
+      "note": "NPC hero pack \u2014 idle strip"
+    },
+    {
+      "id": "fantasy_warrior",
+      "name": "Fantasy Warrior",
+      "pack": "Fantasy Warrior",
+      "category": "npc",
+      "preview": "assets/img/pack-previews/fantasy_warrior/fantasy_warrior/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/fantasy_warrior/fantasy_warrior/frame_00.png",
+        "assets/img/pack-previews/fantasy_warrior/fantasy_warrior/frame_01.png",
+        "assets/img/pack-previews/fantasy_warrior/fantasy_warrior/frame_02.png",
+        "assets/img/pack-previews/fantasy_warrior/fantasy_warrior/frame_03.png",
+        "assets/img/pack-previews/fantasy_warrior/fantasy_warrior/frame_04.png",
+        "assets/img/pack-previews/fantasy_warrior/fantasy_warrior/frame_05.png",
+        "assets/img/pack-previews/fantasy_warrior/fantasy_warrior/frame_06.png",
+        "assets/img/pack-previews/fantasy_warrior/fantasy_warrior/frame_07.png",
+        "assets/img/pack-previews/fantasy_warrior/fantasy_warrior/frame_08.png",
+        "assets/img/pack-previews/fantasy_warrior/fantasy_warrior/frame_09.png"
+      ],
+      "frameW": 162,
+      "frameH": 162,
+      "fps": 8.33,
+      "animations": [
+        "attack1",
+        "attack2",
+        "attack3",
+        "death",
+        "fall",
+        "idle",
+        "jump",
+        "run",
+        "hurt"
+      ],
+      "animationDetails": [
+        {
+          "role": "attack1",
+          "file": "Attack1.png",
+          "rel": "Attack1.png",
+          "w": 1134,
+          "h": 162
+        },
+        {
+          "role": "attack2",
+          "file": "Attack2.png",
+          "rel": "Attack2.png",
+          "w": 1134,
+          "h": 162
+        },
+        {
+          "role": "attack3",
+          "file": "Attack3.png",
+          "rel": "Attack3.png",
+          "w": 1296,
+          "h": 162
+        },
+        {
+          "role": "death",
+          "file": "Death.png",
+          "rel": "Death.png",
+          "w": 1134,
+          "h": 162
+        },
+        {
+          "role": "fall",
+          "file": "Fall.png",
+          "rel": "Fall.png",
+          "w": 486,
+          "h": 162
+        },
+        {
+          "role": "idle",
+          "file": "Idle.png",
+          "rel": "Idle.png",
+          "w": 1620,
+          "h": 162
+        },
+        {
+          "role": "jump",
+          "file": "Jump.png",
+          "rel": "Jump.png",
+          "w": 486,
+          "h": 162
+        },
+        {
+          "role": "run",
+          "file": "Run.png",
+          "rel": "Run.png",
+          "w": 1296,
+          "h": 162
+        },
+        {
+          "role": "hurt",
+          "file": "Take hit.png",
+          "rel": "Take hit.png",
+          "w": 486,
+          "h": 162
+        }
+      ],
+      "fileCount": 9,
+      "idleSource": "Idle.png",
+      "note": "NPC hero pack \u2014 idle strip"
+    },
+    {
+      "id": "skeleton_enemy",
+      "name": "Skeleton Enemy",
+      "pack": "Skeleton Enemy",
+      "category": "enemy",
+      "preview": "assets/img/pack-previews/skeleton_enemy/skeleton_enemy/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/skeleton_enemy/skeleton_enemy/frame_00.png",
+        "assets/img/pack-previews/skeleton_enemy/skeleton_enemy/frame_01.png",
+        "assets/img/pack-previews/skeleton_enemy/skeleton_enemy/frame_02.png",
+        "assets/img/pack-previews/skeleton_enemy/skeleton_enemy/frame_03.png",
+        "assets/img/pack-previews/skeleton_enemy/skeleton_enemy/frame_04.png",
+        "assets/img/pack-previews/skeleton_enemy/skeleton_enemy/frame_05.png",
+        "assets/img/pack-previews/skeleton_enemy/skeleton_enemy/frame_06.png",
+        "assets/img/pack-previews/skeleton_enemy/skeleton_enemy/frame_07.png",
+        "assets/img/pack-previews/skeleton_enemy/skeleton_enemy/frame_08.png",
+        "assets/img/pack-previews/skeleton_enemy/skeleton_enemy/frame_09.png",
+        "assets/img/pack-previews/skeleton_enemy/skeleton_enemy/frame_10.png",
+        "assets/img/pack-previews/skeleton_enemy/skeleton_enemy/frame_11.png",
+        "assets/img/pack-previews/skeleton_enemy/skeleton_enemy/frame_12.png"
+      ],
+      "frameW": 64,
+      "frameH": 64,
+      "fps": 8.33,
+      "animations": [
+        "skeleton_enemy"
+      ],
+      "animationDetails": [
+        {
+          "role": "skeleton_enemy",
+          "file": "Skeleton enemy.png",
+          "rel": "Skeleton enemy.png",
+          "w": 832,
+          "h": 320
+        }
+      ],
+      "fileCount": 1,
+      "idleSource": "Skeleton enemy.png",
+      "note": "Multi-row sheet \u2014 idle from row 0 (64\u00d764)"
+    },
+    {
+      "id": "boss_demon_slime",
+      "name": "Demon Slime",
+      "pack": "Boss Demon Slime",
+      "category": "boss",
+      "preview": "assets/img/pack-previews/boss_demon_slime/boss_demon_slime/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/boss_demon_slime/boss_demon_slime/frame_00.png",
+        "assets/img/pack-previews/boss_demon_slime/boss_demon_slime/frame_01.png",
+        "assets/img/pack-previews/boss_demon_slime/boss_demon_slime/frame_02.png",
+        "assets/img/pack-previews/boss_demon_slime/boss_demon_slime/frame_03.png",
+        "assets/img/pack-previews/boss_demon_slime/boss_demon_slime/frame_04.png",
+        "assets/img/pack-previews/boss_demon_slime/boss_demon_slime/frame_05.png"
+      ],
+      "frameW": 288,
+      "frameH": 160,
+      "fps": 8.33,
+      "animations": [
+        "demon_slime_free_v1_0_288x160_spritesheet",
+        "idle"
+      ],
+      "animationDetails": [
+        {
+          "role": "demon_slime_free_v1_0_288x160_spritesheet",
+          "file": "demon_slime_FREE_v1.0_288x160_spritesheet.png",
+          "rel": "demon_slime_FREE_v1.0_288x160_spritesheet.png",
+          "w": 6336,
+          "h": 800
+        },
+        {
+          "role": "idle",
+          "file": "01_d_idle.gif",
+          "rel": "01_d_idle.gif",
+          "w": 864,
+          "h": 480
+        }
+      ],
+      "fileCount": 2,
+      "idleSource": "demon_slime_FREE_v1.0_288x160_spritesheet.png",
+      "note": "Boss pack \u2014 idle from spritesheet row 0 (also has walk/cleave/hurt/death)"
+    },
+    {
+      "id": "pink_slime",
+      "name": "Pink Slime",
+      "pack": "sheets / attached",
+      "category": "enemy",
+      "preview": "assets/img/pack-previews/sheets_attached/pink_slime/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/sheets_attached/pink_slime/frame_00.png",
+        "assets/img/pack-previews/sheets_attached/pink_slime/frame_01.png",
+        "assets/img/pack-previews/sheets_attached/pink_slime/frame_02.png",
+        "assets/img/pack-previews/sheets_attached/pink_slime/frame_03.png",
+        "assets/img/pack-previews/sheets_attached/pink_slime/frame_04.png"
+      ],
+      "frameW": 64,
+      "frameH": 64,
+      "fps": 8.33,
+      "animations": [
+        "pink_slime_crawl"
+      ],
+      "animationDetails": [
+        {
+          "role": "pink_slime_crawl",
+          "file": "pink_slime_crawl.png",
+          "rel": "pink_slime_crawl.png",
+          "w": 320,
+          "h": 192
+        }
+      ],
+      "fileCount": 1,
+      "idleSource": "pink_slime_crawl.png",
+      "note": "Front idle row from 3\u00d75 sheet"
+    },
+    {
+      "id": "rogue_hero",
+      "name": "Rogue Hero",
+      "pack": "sheets / attached",
+      "category": "npc",
+      "preview": "assets/img/pack-previews/sheets_attached/rogue_hero/idle.gif",
+      "previewMode": "loop",
+      "frames": [
+        "assets/img/pack-previews/sheets_attached/rogue_hero/frame_00.png",
+        "assets/img/pack-previews/sheets_attached/rogue_hero/frame_01.png",
+        "assets/img/pack-previews/sheets_attached/rogue_hero/frame_02.png",
+        "assets/img/pack-previews/sheets_attached/rogue_hero/frame_03.png"
+      ],
+      "frameW": 50,
+      "frameH": 37,
+      "fps": 8.33,
+      "animations": [
+        "roguehero_npc"
+      ],
+      "animationDetails": [
+        {
+          "role": "roguehero_npc",
+          "file": "RogueHero_NPC.png",
+          "rel": "RogueHero_NPC.png",
+          "w": 500,
+          "h": 444
+        }
+      ],
+      "fileCount": 1,
+      "idleSource": "RogueHero_NPC.png",
+      "note": "Idle row 0 from multi-row sheet (50\u00d737 cells)"
+    }
+  ]
+}

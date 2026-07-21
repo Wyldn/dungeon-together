@@ -60,6 +60,7 @@ export const ENEMY_ANIM = {
   "fh": 100,
   "disp": 100,
   "inkH": 15,
+  "anchor": "center",
   "states": {
    "idle": {
     "f": "assets/img/anim/demon_slime/idle.png",
@@ -111,6 +112,8 @@ export const ENEMY_ANIM = {
   "fh": 160,
   "disp": 168,
   "inkH": 105,
+  "anchor": "center",
+  "oy": 26,
   "states": {
    "idle": {
     "f": "assets/img/anim/demon_king/idle.png",
@@ -326,6 +329,956 @@ export const ENEMY_ANIM = {
   },
   "roles": {
    "idle": "idle"
+  }
+ },
+ "archer_hero": {
+  "fw": 64,
+  "fh": 64,
+  "disp": 64,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/archer_hero/idle.png",
+    "n": 2,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "death": "death"
+  }
+ },
+ "boss_demon_slime": {
+  "fw": 288,
+  "fh": 160,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/boss_demon_slime/idle.png",
+    "n": 6,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "evil_wizard": {
+  "fw": 250,
+  "fh": 250,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/evil_wizard/idle.png",
+    "n": 8,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "attack": "attack",
+   "special": "attack",
+   "hurt": "hurt",
+   "death": "death",
+   "walk": "walk"
+  }
+ },
+ "evil_wizard_3": {
+  "fw": 140,
+  "fh": 140,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/evil_wizard_3/idle.png",
+    "n": 10,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "attack": "attack",
+   "special": "attack",
+   "hurt": "hurt",
+   "death": "death",
+   "walk": "walk"
+  }
+ },
+ "fantasy_warrior": {
+  "fw": 162,
+  "fh": 162,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/fantasy_warrior/idle.png",
+    "n": 10,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "attack": "attack",
+   "special": "attack",
+   "hurt": "hurt",
+   "death": "death",
+   "walk": "walk"
+  }
+ },
+ "fire_worm": {
+  "fw": 90,
+  "fh": 90,
+  "disp": 90,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/fire_worm/idle.png",
+    "n": 9,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "attack": "attack",
+   "special": "attack",
+   "hurt": "hurt",
+   "death": "death",
+   "walk": "walk"
+  }
+ },
+ "gv_demon_files": {
+  "fw": 256,
+  "fh": 176,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/gv_demon_files/idle.png",
+    "n": 6,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "gv_enemy_ghost": {
+  "fw": 64,
+  "fh": 64,
+  "disp": 64,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/gv_enemy_ghost/idle.png",
+    "n": 6,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "gv_fire_skull_files": {
+  "fw": 54,
+  "fh": 70,
+  "disp": 70,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/gv_fire_skull_files/idle.png",
+    "n": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "gv_flying_eye_demon": {
+  "fw": 48,
+  "fh": 48,
+  "disp": 64,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/gv_flying_eye_demon/idle.png",
+    "n": 8,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "gv_ghost_files": {
+  "fw": 64,
+  "fh": 80,
+  "disp": 80,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/gv_ghost_files/idle.png",
+    "n": 7,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "gv_grotto_escape_2_boss_dragon": {
+  "fw": 144,
+  "fh": 64,
+  "disp": 64,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/gv_grotto_escape_2_boss_dragon/idle.png",
+    "n": 6,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "gv_hell_hound_files": {
+  "fw": 64,
+  "fh": 48,
+  "disp": 64,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/gv_hell_hound_files/idle.png",
+    "n": 11,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "gv_mutant_toad": {
+  "fw": 80,
+  "fh": 64,
+  "disp": 64,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/gv_mutant_toad/idle.png",
+    "n": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "gv_nightmare_files": {
+  "fw": 160,
+  "fh": 96,
+  "disp": 96,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/gv_nightmare_files/idle.png",
+    "n": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "gv_ogre": {
+  "fw": 144,
+  "fh": 80,
+  "disp": 80,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/gv_ogre/idle.png",
+    "n": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "gv_terrible_knight": {
+  "fw": 128,
+  "fh": 96,
+  "disp": 96,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/gv_terrible_knight/idle.png",
+    "n": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "huntress": {
+  "fw": 150,
+  "fh": 150,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/huntress/idle.png",
+    "n": 8,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "attack": "attack",
+   "special": "attack",
+   "hurt": "hurt",
+   "death": "death",
+   "walk": "walk"
+  }
+ },
+ "huntress_2": {
+  "fw": 100,
+  "fh": 100,
+  "disp": 100,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/huntress_2/idle.png",
+    "n": 10,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "attack": "attack",
+   "special": "attack",
+   "hurt": "hurt",
+   "death": "death",
+   "walk": "walk"
+  }
+ },
+ "knight_armor": {
+  "fw": 43,
+  "fh": 57,
+  "disp": 64,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/knight_armor/idle.png",
+    "n": 16,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "knight_knight_sheet_alt_heads": {
+  "fw": 80,
+  "fh": 80,
+  "disp": 80,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/knight_knight_sheet_alt_heads/idle.png",
+    "n": 6,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "knight_knight_sheet_alt_heads_nyx8": {
+  "fw": 80,
+  "fh": 80,
+  "disp": 80,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/knight_knight_sheet_alt_heads_nyx8/idle.png",
+    "n": 6,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "knight_knight_sheet_alt_heads_zughy32": {
+  "fw": 80,
+  "fh": 80,
+  "disp": 80,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/knight_knight_sheet_alt_heads_zughy32/idle.png",
+    "n": 6,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "kryos_demon_general": {
+  "fw": 256,
+  "fh": 176,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/gv_demon_files/idle.png",
+    "n": 6,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "martial_hero": {
+  "fw": 200,
+  "fh": 200,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/martial_hero/idle.png",
+    "n": 8,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "attack": "attack",
+   "special": "attack",
+   "hurt": "hurt",
+   "death": "death",
+   "walk": "walk"
+  }
+ },
+ "martial_hero_2": {
+  "fw": 200,
+  "fh": 200,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/martial_hero_2/idle.png",
+    "n": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "attack": "attack",
+   "special": "attack",
+   "hurt": "hurt",
+   "death": "death",
+   "walk": "walk"
+  }
+ },
+ "martial_hero_3": {
+  "fw": 126,
+  "fh": 126,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/martial_hero_3/idle.png",
+    "n": 10,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "attack": "attack",
+   "special": "attack",
+   "hurt": "hurt",
+   "death": "death",
+   "walk": "walk"
+  }
+ },
+ "mcf1_flying_eye": {
+  "fw": 150,
+  "fh": 150,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/mcf1_flying_eye/idle.png",
+    "n": 6,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "mcf1_goblin": {
+  "fw": 150,
+  "fh": 150,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/mcf1_goblin/idle.png",
+    "n": 12,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "mcf1_mushroom": {
+  "fw": 150,
+  "fh": 150,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/mcf1_mushroom/idle.png",
+    "n": 11,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "mcf1_skeleton": {
+  "fw": 150,
+  "fh": 150,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/mcf1_skeleton/idle.png",
+    "n": 6,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "mcf2_bat": {
+  "fw": 87,
+  "fh": 87,
+  "disp": 87,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/mcf2_bat/idle.png",
+    "n": 11,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "attack": "attack",
+   "special": "attack",
+   "hurt": "hurt",
+   "death": "death"
+  }
+ },
+ "mcf2_rat": {
+  "fw": 70,
+  "fh": 70,
+  "disp": 70,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/mcf2_rat/idle.png",
+    "n": 10,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "hurt": "hurt",
+   "walk": "walk"
+  }
+ },
+ "mcf2_slime": {
+  "fw": 156,
+  "fh": 156,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/mcf2_slime/idle.png",
+    "n": 14,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "attack": "attack",
+   "special": "attack",
+   "hurt": "hurt",
+   "death": "death",
+   "walk": "walk"
+  }
+ },
+ "mecha_golem": {
+  "fw": 100,
+  "fh": 100,
+  "disp": 100,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/mecha_golem/idle.png",
+    "n": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "medieval_king": {
+  "fw": 160,
+  "fh": 111,
+  "disp": 111,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/medieval_king/idle.png",
+    "n": 8,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "attack": "attack",
+   "special": "attack",
+   "hurt": "hurt",
+   "death": "death"
+  }
+ },
+ "rogue_hero": {
+  "fw": 50,
+  "fh": 37,
+  "disp": 64,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/rogue_hero/idle.png",
+    "n": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "samurai": {
+  "fw": 96,
+  "fh": 96,
+  "disp": 96,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/samurai/idle.png",
+    "n": 10,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "attack": "attack",
+   "special": "attack",
+   "hurt": "hurt",
+   "walk": "walk"
+  }
+ },
+ "skeleton_enemy": {
+  "fw": 64,
+  "fh": 64,
+  "disp": 64,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/skeleton_enemy/idle.png",
+    "n": 13,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "tr_live_frog": {
+  "fw": 63,
+  "fh": 68,
+  "disp": 68,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/tr_live_frog/idle.png",
+    "n": 6,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "tr_live_mummy": {
+  "fw": 69,
+  "fh": 83,
+  "disp": 83,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/tr_live_mummy/idle.png",
+    "n": 6,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "tr_live_ogre": {
+  "fw": 128,
+  "fh": 128,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/tr_live_ogre/idle.png",
+    "n": 5,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "tr_live_slime": {
+  "fw": 118,
+  "fh": 79,
+  "disp": 79,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/tr_live_slime/idle.png",
+    "n": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "tr_live_wizard": {
+  "fw": 95,
+  "fh": 133,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/tr_live_wizard/idle.png",
+    "n": 6,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "tr_mon_centaur": {
+  "fw": 112,
+  "fh": 144,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/tr_mon_centaur/idle.png",
+    "n": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "tr_mon_demon": {
+  "fw": 112,
+  "fh": 153,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/tr_mon_demon/idle.png",
+    "n": 5,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "tr_mon_fire_haunt": {
+  "fw": 112,
+  "fh": 128,
+  "disp": 120,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/tr_mon_fire_haunt/idle.png",
+    "n": 5,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "tr_mon_jumping_demon": {
+  "fw": 101,
+  "fh": 98,
+  "disp": 98,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/tr_mon_jumping_demon/idle.png",
+    "n": 6,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "tr_mon_treant": {
+  "fw": 80,
+  "fh": 84,
+  "disp": 84,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/tr_mon_treant/idle.png",
+    "n": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "tr_mon_vampire": {
+  "fw": 121,
+  "fh": 110,
+  "disp": 110,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/tr_mon_vampire/idle.png",
+    "n": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "tr_mon_witch": {
+  "fw": 55,
+  "fh": 93,
+  "disp": 93,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/tr_mon_witch/idle.png",
+    "n": 5,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle"
+  }
+ },
+ "undead_executioner": {
+  "fw": 100,
+  "fh": 100,
+  "disp": 100,
+  "anchor": "center",
+  "states": {
+   "idle": {
+    "f": "assets/img/anim/undead_executioner/idle.png",
+    "n": 4,
+    "fps": 8,
+    "loop": true
+   }
+  },
+  "roles": {
+   "idle": "idle",
+   "death": "death"
   }
  }
 };

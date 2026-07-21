@@ -564,7 +564,7 @@ export const SKILLS = {
     desc: 'The song that ends stories. Hits all, 40% hex.',
   },
 
-  /* ============ NECROMANCER (Essence) — hidden class ============ */
+  /* ============ NECROMANCER (Essence) ============ */
   soul_bolt: {
     id: 'soul_bolt', fx: 'shadow', name: 'Soul Bolt', class: 'necromancer', cost: 0, charge: 0, target: 'one',
     power: 95, stat: 'int',

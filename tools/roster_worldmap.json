@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "source": "tools/enemy-box-settings-2026-07-21.json",
+  "worldOrder": ["forest", "ruins", "frost", "swamp", "hell", "throne", "wandering"],
+  "placeholders": [
+    "vampire", "dusk_lurker", "cursed_knight", "wight", "horned_stalker", "void_eye",
+    "yeti", "void_specter", "croc", "mire_abomination", "sin_eater", "eye_horror",
+    "crimson_wretch", "slag_knight", "ashen_sovereign", "heartwood", "ossuary_king",
+    "jarl_whitegrave", "bogmother", "demon_slime", "arch_tormentor", "demon_king",
+    "thornbeast", "flame_cyclops", "spike_sovereign", "void_cultist", "blood_fiend",
+    "ash_beast", "ember_maw", "throne_guard"
+  ],
+  "renames": {
+    "mecha_golem": "Stone Golem",
+    "gv_demon_files": "Kryos, the Demon General",
+    "gv_enemy_ghost": "Ghost",
+    "gv_fire_skull_files": "Fire Skull",
+    "gv_flying_eye_demon": "Eye Demon",
+    "gv_ghost_files": "Brox, the Ethereal Ghost",
+    "gv_grotto_escape_2_boss_dragon": "Cinderghast, the Grotto Dragon",
+    "gv_hell_hound_files": "Hell Hound",
+    "tr_live_slime": "Mutated Slime",
+    "gv_mutant_toad": "Mutant Toad",
+    "gv_nightmare_files": "Hellfire Horse",
+    "tr_live_ogre": "Bograth, the Twin-Headed Ogre",
+    "tr_mon_demon": "Vorath, the Wrathful Demon",
+    "boss_demon_slime": "Malqor, the Infernal Slime",
+    "medieval_king": "Aldric, the Corrupt King",
+    "undead_executioner": "Gravesend, the Undead Executioner",
+    "tr_mon_centaur": "Hroth, the Frost Centaur",
+    "fire_worm": "Pyrewyrm, the Fire Worm",
+    "knight_armor": "Ser Kael, Knight of the Band",
+    "knight_knight_sheet_alt_heads": "Ser Rowan, Knight of the Band",
+    "knight_knight_sheet_alt_heads_nyx8": "Ser Isolde, Knight of the Band",
+    "knight_knight_sheet_alt_heads_zughy32": "Ser Bram, Knight of the Band",
+    "tr_mon_vampire": "Nyxara, the Night Vampire",
+    "tr_mon_treant": "Oakheart, the Ancient Treant",
+    "tr_mon_witch": "Morrig, the Hedge Witch",
+    "tr_mon_fire_haunt": "Ashwraith, the Fire Haunt",
+    "tr_mon_jumping_demon": "Skarn, the Jumping Demon"
+  },
+  "worlds": {
+    "forest": {
+      "enemy": ["mcf1_goblin", "mcf1_mushroom", "mcf1_flying_eye", "gv_ogre"],
+      "elite": ["fire_worm", "tr_mon_treant", "tr_mon_witch", "tr_live_slime", "tr_mon_vampire"]
+    },
+    "ruins": {
+      "enemy": ["mcf1_skeleton", "skeleton_enemy", "tr_live_mummy", "gv_terrible_knight", "mecha_golem"],
+      "elite": ["knight_armor", "knight_knight_sheet_alt_heads", "knight_knight_sheet_alt_heads_nyx8", "knight_knight_sheet_alt_heads_zughy32"]
+    },
+    "frost": {
+      "enemy": [],
+      "elite": []
+    },
+    "swamp": {
+      "enemy": ["tr_live_frog", "gv_mutant_toad"],
+      "elite": []
+    },
+    "hell": {
+      "enemy": ["gv_hell_hound_files", "gv_fire_skull_files", "gv_nightmare_files", "gv_flying_eye_demon"],
+      "elite": ["tr_mon_jumping_demon", "tr_mon_fire_haunt"]
+    },
+    "wandering": {
+      "enemy": ["mcf2_rat", "mcf2_bat", "mcf2_slime", "gv_enemy_ghost", "gv_ghost_files"],
+      "elite": []
+    }
+  },
+  "bosses": {
+    "10": { "primary": "elderwood", "alt": "gv_grotto_escape_2_boss_dragon" },
+    "15": { "primary": "crowned_revenant" },
+    "20": { "primary": "lich", "alt": "undead_executioner" },
+    "30": { "primary": "frost_queen", "alt": "tr_mon_centaur" },
+    "40": { "primary": "hydra", "alt": "tr_live_ogre" },
+    "50": { "primary": "infernal_duke", "alt": "kryos_demon_general" },
+    "51": { "primary": "tr_mon_demon", "alt": "boss_demon_slime" }
+  },
+  "secretBoss": "medieval_king",
+  "npcs": [
+    "evil_wizard", "evil_wizard_3", "archer_hero", "samurai", "rogue_hero",
+    "tr_live_wizard", "fantasy_warrior", "huntress", "huntress_2",
+    "martial_hero", "martial_hero_2", "martial_hero_3"
+  ],
+  "npcClassPools": {
+    "evil_wizard": ["mage", "warlock"],
+    "evil_wizard_3": ["warlock", "necromancer"],
+    "archer_hero": ["archer"],
+    "samurai": ["warrior", "monk"],
+    "rogue_hero": ["rogue", "bard"],
+    "tr_live_wizard": ["mage", "spellsword"],
+    "fantasy_warrior": ["warrior", "spellsword"],
+    "huntress": ["archer", "rogue"],
+    "huntress_2": ["archer"],
+    "martial_hero": ["monk", "warrior"],
+    "martial_hero_2": ["monk"],
+    "martial_hero_3": ["warrior", "viking"]
+  }
+}

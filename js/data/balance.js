@@ -7,7 +7,7 @@
 
 import { CONFIG } from './config.js';
 import { TDC, expectedPower, expectedCurveT, enemyScale, partyPadEase } from './tdc.js';
-import { biomeForFloor } from './enemies.js';
+import { biomeForFloor, rollKnightBand } from './enemies.js';
 
 /* ================================================================== */
 /*  Guard ↔ revival reconciliation                                     */
@@ -304,6 +304,24 @@ export function planEncounter(rng, {
     const soften = TDC.budget.coopResidualHpScale ?? 0.55;
     hpMult = 1 + (hpMult - 1) * soften;
   }
+
+  // Band of Knights: any knight elite expands into a party-scaled pack
+  // with randomized armor variants (1p=2, 2p=3–4, …).
+  if (specs.some(e => e?.band === 'knights')) {
+    const band = rollKnightBand(rng, nParty);
+    return {
+      specs: band.specs,
+      hpMult: hpMult * band.hpMult,
+      budget,
+      spent,
+      remaining,
+      maxEnemies: cap,
+      minEnemies: minBodies,
+      swarm,
+      knightBand: true,
+    };
+  }
+
   return { specs, hpMult, budget, spent, remaining, maxEnemies: cap, minEnemies: minBodies, swarm };
 }
 

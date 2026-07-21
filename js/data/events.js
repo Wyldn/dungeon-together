@@ -28,6 +28,8 @@
 import { CONFIG } from './config.js';
 import { historyCategoryWeight } from './balance.js';
 import { tagWeightMult } from './eventtags.js';
+import { ROSTER } from './roster_worlds.js';
+import { GALLERY_NPCS } from './gallery_units.js';
 import { tagsForEvent } from './eventtagmap.js';
 
 export const EVENTS = [
@@ -1434,24 +1436,68 @@ export const EVENTS = [
         outcome: { text: 'You leave him to the whetstone. The next stair feels shorter.', xp: 30, statUpRandom: 2 } },
     ],
   },
+  // Gallery NPC duels — epic-heavy spoils; unique/wrld class-tilted (see npcDuelLoot).
+  ...Object.values(GALLERY_NPCS).map((npc, i) => {
+    const classes = ROSTER.npcClassPools?.[npc.id] || [];
+    const meetId = `${npc.id}_meet`;
+    return {
+      id: meetId,
+      biome: 'any',
+      category: 'social',
+      type: 'story',
+      glyph: '✦',
+      w: 4,
+      once: true,
+      cond: s => s.floor >= 4 + (i % 3),
+      title: npc.name,
+      text: `${npc.name} waits on the stair with the calm of someone who has already decided how this ends. "Talk, duel, or pass," they say. "The tower keeps score either way."`,
+      npc: { art: npc.id, name: npc.name, blurb: 'A fellow climber with gallery steel — and spoils worth the risk.' },
+      choices: [
+        {
+          label: 'Trade words',
+          hint: 'XP + growth',
+          outcome: {
+            text: 'They speak like a veteran who still likes the climb. You leave a little wiser.',
+            xp: 32, statUpRandom: 2,
+          },
+        },
+        {
+          label: 'Accept the duel',
+          hint: 'hard fight — epic+ class loot',
+          outcome: {
+            combat: {
+              enemies: [npc.id],
+              text: 'They smile with their eyes only. Steel follows.',
+              reward: { npcDuelLoot: { classes }, xp: 42 },
+            },
+          },
+        },
+        {
+          label: 'Pass on by',
+          hint: 'small XP',
+          outcome: { text: 'A nod. The stair keeps turning.', xp: 18 },
+        },
+      ],
+    };
+  }),
   {
     id: 'cursed_knight_vigil', biome: 'ruins', category: 'dangerous', type: 'risk', glyph: '🗡️', w: 4, once: true, cond: s => s.floor >= 11,
     title: 'The Cursed Vigil',
-    text: 'A dark knight stands watch over a cracked sarcophagus, sword planted, armor whispering to itself. The ruins remember him as a hero. He remembers something else.',
-    npc: { art: 'cursed_knight', name: 'Cursed Knight', blurb: 'A ruined oath in walking armor — walk, strike, hurt, fall.' },
+    text: 'A terrible knight stands watch over a cracked sarcophagus, sword planted, armor whispering to itself. The ruins remember him as a hero. He remembers something else.',
+    npc: { art: 'gv_terrible_knight', name: 'Terrible Knight', blurb: 'A ruined oath in walking armor — walk, strike, hurt, fall.' },
     choices: [
       { label: 'Offer a prayer for the oath', hint: 'blessing — or wake him',
         outcome: { roll: { stat: 'wis', dc: 12 },
           success: { text: 'Something in the helm softens. A keepsake falls from a gauntlet like a tear.', fame: 2, itemRoll: { slot: 'accessory', requireUseful: true }, xp: 35 },
           fail: { text: 'The prayer was the wrong language. The sword comes free.',
-            combat: { enemies: ['cursed_knight'], text: 'The vigil ends. The fight begins.', xp: 45,
+            combat: { enemies: ['gv_terrible_knight'], text: 'The vigil ends. The fight begins.', xp: 45,
               reward: { chooseLabel: 'From the cracked helm:', options: [
                 { kind: 'item', id: 'war_badge' },
                 { kind: 'skill', id: 'veteran_guard' },
                 { kind: 'item', id: 'spellthread' },
               ] } } } } },
       { label: 'Challenge the vigil', hint: 'hard fight — elite spoils',
-        outcome: { combat: { enemies: ['cursed_knight'], text: 'He draws. The ruins lean in to watch.',
+        outcome: { combat: { enemies: ['gv_terrible_knight'], text: 'He draws. The ruins lean in to watch.',
           reward: { chooseLabel: 'The armor empties. Take one:', options: [
             { kind: 'item', id: 'veteran_cuirass' },
             { kind: 'skill', id: 'veteran_guard' },
@@ -1568,6 +1614,7 @@ export const EVENTS = [
 /** Events shown on the Compendium NPCs tab. */
 export const NPC_EVENTS = [
   'blade_hero_meet', 'dark_mage_meet', 'pathfinder_meet', 'axe_northman_meet',
+  ...Object.keys(GALLERY_NPCS).map(id => `${id}_meet`),
   'cursed_knight_vigil', 'crowned_shadow',
   'roadside_climbers', 'farmstead_meet', 'oldman_trials',
 ];

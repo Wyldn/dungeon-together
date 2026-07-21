@@ -421,7 +421,7 @@ def draw_hero(cid, main, dark, trim, bob=0):
 # Classes whose art comes from a real sprite pack via tools/build_anim.py. Their
 # HERO_ART entries are preserved from the existing artmap.js above, so leave both
 # the PNG and the entry alone — redrawing the placeholder would undo that pack.
-PACK_HEROES = {'warrior', 'mage', 'viking'}
+PACK_HEROES = {'warrior', 'mage', 'viking', 'monk', 'necromancer'}
 
 for cid, (main, dark, trim) in HERO_PAL.items():
     if cid in PACK_HEROES:

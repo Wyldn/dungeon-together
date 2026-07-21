@@ -1311,20 +1311,30 @@ class Fight {
     };
   }
 
-  /** Choose a hero sheet anim for this skill (archer pack etc.). */
+  /** Choose a hero sheet anim for this skill (pack heroes: attack / attack2 / special…). */
   pickHeroAnim(sk) {
     if (!sk || !heroHasAnim(this.run.classId, 'attack')) return null;
     const id = sk.id || '';
     const name = (sk.name || '').toLowerCase();
+    const has = a => heroHasAnim(this.run.classId, a);
     if (sk.dodge || id.includes('roll') || id.includes('dash') || id.includes('windstep') || name.includes('evasive')) {
-      return heroHasAnim(this.run.classId, 'dash') ? 'dash' : 'attack';
+      return has('dash') ? 'dash' : 'attack';
     }
     if (sk.target === 'self' && (sk.healPct || sk.shield || sk.buff)) return null;
-    if (sk.target === 'all') return heroHasAnim(this.run.classId, 'attackLoop') ? 'attackLoop' : 'attack';
-    if (id.includes('aimed') || id.includes('one_shot') || name.includes('snipe')) {
-      return heroHasAnim(this.run.classId, 'attackHigh') ? 'attackHigh' : 'attack';
+    if (sk.target === 'all') {
+      if (has('special')) return 'special';
+      if (has('attackHigh')) return 'attackHigh';
+      if (has('attackLoop')) return 'attackLoop';
+      return 'attack';
     }
-    if (sk.power || sk.target === 'one') return 'attack';
+    if (id.includes('aimed') || id.includes('one_shot') || name.includes('snipe')
+        || id.includes('hurricane') || id.includes('earthbreaker') || id.includes('phoenix')) {
+      return has('attackHigh') ? 'attackHigh' : (has('attack2') ? 'attack2' : 'attack');
+    }
+    if (sk.power || (sk.charge && sk.charge >= 3) || id.includes('flurry') || id.includes('grave') || id.includes('siphon')) {
+      return has('attack2') ? 'attack2' : 'attack';
+    }
+    if (sk.target === 'one') return 'attack';
     return null;
   }
 
@@ -2114,8 +2124,10 @@ class Fight {
       this.log(`${sk.name.toUpperCase()} — ${e.name} is slain outright!`, 'log-ally');
     }
 
+    // Climb "dealt" tracks HP actually removed (no overkill).
+    const hpBefore = e.hp;
     e.hp = Math.max(0, e.hp - dmg);
-    this._dealt(dmg);
+    this._dealt(hpBefore - e.hp);
     const sprite = this.sprite(e.uid);
     if (sprite) {
       sprite.classList.add('hit');

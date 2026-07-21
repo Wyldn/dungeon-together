@@ -254,7 +254,8 @@ export const ENEMY_ART = {
   "f": "assets/img/enemies/slime.png",
   "w": 96,
   "h": 96,
-  "frames": 6
+  "frames": 6,
+  "anchor": "center"
  },
  "infernal_duke": {
   "f": "assets/img/enemies/infernal_duke.png",
@@ -272,7 +273,8 @@ export const ENEMY_ART = {
   "f": "assets/img/enemies/demon_king.png",
   "w": 32,
   "h": 32,
-  "frames": 2
+  "frames": 2,
+  "anchor": "center"
  },
  "ashen_sovereign": {
   "f": "assets/img/enemies/spike_sovereign.png",
@@ -314,7 +316,8 @@ export const ENEMY_ART = {
   "f": "assets/img/enemies/demon_slime.png",
   "w": 95,
   "h": 110,
-  "frames": 6
+  "frames": 6,
+  "anchor": "center"
  },
  "vampire": {
   "f": "assets/img/enemies/vampire.png",
@@ -450,7 +453,371 @@ export const ENEMY_ART = {
  "roadside_npc": { "f": "assets/img/npcs/npc1.png", "w": 32, "h": 32, "frames": 2 },
  "roadside_npc2": { "f": "assets/img/npcs/npc2.png", "w": 32, "h": 32, "frames": 2 },
  "oldman_gentle": { "f": "assets/img/npcs/oldman1.png", "w": 32, "h": 32, "frames": 2 },
- "oldman_wrath": { "f": "assets/img/npcs/oldman2.png", "w": 32, "h": 32, "frames": 2 }
+ "oldman_wrath": { "f": "assets/img/npcs/oldman2.png", "w": 32, "h": 32, "frames": 2 },
+ "archer_hero": {
+  "f": "assets/img/enemies/archer_hero.png",
+  "w": 64,
+  "h": 64,
+  "frames": 2,
+  "anchor": "center"
+ },
+ "boss_demon_slime": {
+  "f": "assets/img/enemies/boss_demon_slime.png",
+  "w": 288,
+  "h": 160,
+  "frames": 6,
+  "anchor": "center"
+ },
+ "evil_wizard": {
+  "f": "assets/img/enemies/evil_wizard.png",
+  "w": 250,
+  "h": 250,
+  "frames": 8,
+  "anchor": "center"
+ },
+ "evil_wizard_3": {
+  "f": "assets/img/enemies/evil_wizard_3.png",
+  "w": 140,
+  "h": 140,
+  "frames": 10,
+  "anchor": "center"
+ },
+ "fantasy_warrior": {
+  "f": "assets/img/enemies/fantasy_warrior.png",
+  "w": 162,
+  "h": 162,
+  "frames": 10,
+  "anchor": "center"
+ },
+ "fire_worm": {
+  "f": "assets/img/enemies/fire_worm.png",
+  "w": 90,
+  "h": 90,
+  "frames": 9,
+  "anchor": "center"
+ },
+ "gv_demon_files": {
+  "f": "assets/img/enemies/gv_demon_files.png",
+  "w": 256,
+  "h": 176,
+  "frames": 6,
+  "anchor": "center"
+ },
+ "gv_enemy_ghost": {
+  "f": "assets/img/enemies/gv_enemy_ghost.png",
+  "w": 64,
+  "h": 64,
+  "frames": 6,
+  "anchor": "center"
+ },
+ "gv_fire_skull_files": {
+  "f": "assets/img/enemies/gv_fire_skull_files.png",
+  "w": 54,
+  "h": 70,
+  "frames": 4,
+  "anchor": "center"
+ },
+ "gv_flying_eye_demon": {
+  "f": "assets/img/enemies/gv_flying_eye_demon.png",
+  "w": 48,
+  "h": 48,
+  "frames": 8,
+  "anchor": "center"
+ },
+ "gv_ghost_files": {
+  "f": "assets/img/enemies/gv_ghost_files.png",
+  "w": 64,
+  "h": 80,
+  "frames": 7,
+  "anchor": "center"
+ },
+ "gv_grotto_escape_2_boss_dragon": {
+  "f": "assets/img/enemies/gv_grotto_escape_2_boss_dragon.png",
+  "w": 144,
+  "h": 64,
+  "frames": 6,
+  "anchor": "center"
+ },
+ "gv_hell_hound_files": {
+  "f": "assets/img/enemies/gv_hell_hound_files.png",
+  "w": 64,
+  "h": 48,
+  "frames": 11,
+  "anchor": "center"
+ },
+ "gv_mutant_toad": {
+  "f": "assets/img/enemies/gv_mutant_toad.png",
+  "w": 80,
+  "h": 64,
+  "frames": 4,
+  "anchor": "center"
+ },
+ "gv_nightmare_files": {
+  "f": "assets/img/enemies/gv_nightmare_files.png",
+  "w": 160,
+  "h": 96,
+  "frames": 4,
+  "anchor": "center"
+ },
+ "gv_ogre": {
+  "f": "assets/img/enemies/gv_ogre.png",
+  "w": 144,
+  "h": 80,
+  "frames": 4,
+  "anchor": "center"
+ },
+ "gv_terrible_knight": {
+  "f": "assets/img/enemies/gv_terrible_knight.png",
+  "w": 128,
+  "h": 96,
+  "frames": 4,
+  "anchor": "center"
+ },
+ "huntress": {
+  "f": "assets/img/enemies/huntress.png",
+  "w": 150,
+  "h": 150,
+  "frames": 8,
+  "anchor": "center"
+ },
+ "huntress_2": {
+  "f": "assets/img/enemies/huntress_2.png",
+  "w": 100,
+  "h": 100,
+  "frames": 10,
+  "anchor": "center"
+ },
+ "knight_armor": {
+  "f": "assets/img/enemies/knight_armor.png",
+  "w": 43,
+  "h": 57,
+  "frames": 16,
+  "anchor": "center"
+ },
+ "knight_knight_sheet_alt_heads": {
+  "f": "assets/img/enemies/knight_knight_sheet_alt_heads.png",
+  "w": 80,
+  "h": 80,
+  "frames": 6,
+  "anchor": "center"
+ },
+ "knight_knight_sheet_alt_heads_nyx8": {
+  "f": "assets/img/enemies/knight_knight_sheet_alt_heads_nyx8.png",
+  "w": 80,
+  "h": 80,
+  "frames": 6,
+  "anchor": "center"
+ },
+ "knight_knight_sheet_alt_heads_zughy32": {
+  "f": "assets/img/enemies/knight_knight_sheet_alt_heads_zughy32.png",
+  "w": 80,
+  "h": 80,
+  "frames": 6,
+  "anchor": "center"
+ },
+ "kryos_demon_general": {
+  "f": "assets/img/enemies/gv_demon_files.png",
+  "w": 256,
+  "h": 176,
+  "frames": 6,
+  "anchor": "center"
+ },
+ "martial_hero": {
+  "f": "assets/img/enemies/martial_hero.png",
+  "w": 200,
+  "h": 200,
+  "frames": 8,
+  "anchor": "center"
+ },
+ "martial_hero_2": {
+  "f": "assets/img/enemies/martial_hero_2.png",
+  "w": 200,
+  "h": 200,
+  "frames": 4,
+  "anchor": "center"
+ },
+ "martial_hero_3": {
+  "f": "assets/img/enemies/martial_hero_3.png",
+  "w": 126,
+  "h": 126,
+  "frames": 10,
+  "anchor": "center"
+ },
+ "mcf1_flying_eye": {
+  "f": "assets/img/enemies/mcf1_flying_eye.png",
+  "w": 150,
+  "h": 150,
+  "frames": 6,
+  "anchor": "center"
+ },
+ "mcf1_goblin": {
+  "f": "assets/img/enemies/mcf1_goblin.png",
+  "w": 150,
+  "h": 150,
+  "frames": 12,
+  "anchor": "center"
+ },
+ "mcf1_mushroom": {
+  "f": "assets/img/enemies/mcf1_mushroom.png",
+  "w": 150,
+  "h": 150,
+  "frames": 11,
+  "anchor": "center"
+ },
+ "mcf1_skeleton": {
+  "f": "assets/img/enemies/mcf1_skeleton.png",
+  "w": 150,
+  "h": 150,
+  "frames": 6,
+  "anchor": "center"
+ },
+ "mcf2_bat": {
+  "f": "assets/img/enemies/mcf2_bat.png",
+  "w": 87,
+  "h": 87,
+  "frames": 11,
+  "anchor": "center"
+ },
+ "mcf2_rat": {
+  "f": "assets/img/enemies/mcf2_rat.png",
+  "w": 70,
+  "h": 70,
+  "frames": 10,
+  "anchor": "center"
+ },
+ "mcf2_slime": {
+  "f": "assets/img/enemies/mcf2_slime.png",
+  "w": 156,
+  "h": 156,
+  "frames": 14,
+  "anchor": "center"
+ },
+ "mecha_golem": {
+  "f": "assets/img/enemies/mecha_golem.png",
+  "w": 100,
+  "h": 100,
+  "frames": 4,
+  "anchor": "center"
+ },
+ "medieval_king": {
+  "f": "assets/img/enemies/medieval_king.png",
+  "w": 160,
+  "h": 111,
+  "frames": 8,
+  "anchor": "center"
+ },
+ "rogue_hero": {
+  "f": "assets/img/enemies/rogue_hero.png",
+  "w": 50,
+  "h": 37,
+  "frames": 4,
+  "anchor": "center"
+ },
+ "samurai": {
+  "f": "assets/img/enemies/samurai.png",
+  "w": 96,
+  "h": 96,
+  "frames": 10,
+  "anchor": "center"
+ },
+ "skeleton_enemy": {
+  "f": "assets/img/enemies/skeleton_enemy.png",
+  "w": 64,
+  "h": 64,
+  "frames": 13,
+  "anchor": "center"
+ },
+ "tr_live_frog": {
+  "f": "assets/img/enemies/tr_live_frog.png",
+  "w": 63,
+  "h": 68,
+  "frames": 6,
+  "anchor": "center"
+ },
+ "tr_live_mummy": {
+  "f": "assets/img/enemies/tr_live_mummy.png",
+  "w": 69,
+  "h": 83,
+  "frames": 6,
+  "anchor": "center"
+ },
+ "tr_live_ogre": {
+  "f": "assets/img/enemies/tr_live_ogre.png",
+  "w": 128,
+  "h": 128,
+  "frames": 5,
+  "anchor": "center"
+ },
+ "tr_live_slime": {
+  "f": "assets/img/enemies/tr_live_slime.png",
+  "w": 118,
+  "h": 79,
+  "frames": 4,
+  "anchor": "center"
+ },
+ "tr_live_wizard": {
+  "f": "assets/img/enemies/tr_live_wizard.png",
+  "w": 95,
+  "h": 133,
+  "frames": 6,
+  "anchor": "center"
+ },
+ "tr_mon_centaur": {
+  "f": "assets/img/enemies/tr_mon_centaur.png",
+  "w": 112,
+  "h": 144,
+  "frames": 4,
+  "anchor": "center"
+ },
+ "tr_mon_demon": {
+  "f": "assets/img/enemies/tr_mon_demon.png",
+  "w": 112,
+  "h": 153,
+  "frames": 5,
+  "anchor": "center"
+ },
+ "tr_mon_fire_haunt": {
+  "f": "assets/img/enemies/tr_mon_fire_haunt.png",
+  "w": 112,
+  "h": 128,
+  "frames": 5,
+  "anchor": "center"
+ },
+ "tr_mon_jumping_demon": {
+  "f": "assets/img/enemies/tr_mon_jumping_demon.png",
+  "w": 101,
+  "h": 98,
+  "frames": 6,
+  "anchor": "center"
+ },
+ "tr_mon_treant": {
+  "f": "assets/img/enemies/tr_mon_treant.png",
+  "w": 80,
+  "h": 84,
+  "frames": 4,
+  "anchor": "center"
+ },
+ "tr_mon_vampire": {
+  "f": "assets/img/enemies/tr_mon_vampire.png",
+  "w": 121,
+  "h": 110,
+  "frames": 4,
+  "anchor": "center"
+ },
+ "tr_mon_witch": {
+  "f": "assets/img/enemies/tr_mon_witch.png",
+  "w": 55,
+  "h": 93,
+  "frames": 5,
+  "anchor": "center"
+ },
+ "undead_executioner": {
+  "f": "assets/img/enemies/undead_executioner.png",
+  "w": 100,
+  "h": 100,
+  "frames": 4,
+  "anchor": "center"
+ }
 };
 
 export const ITEM_ART = {
@@ -529,19 +896,170 @@ export const ITEM_ART = {
 };
 
 // Bob-idle skins (warrior1… etc.) are merged at runtime via appearances.js.
-// Class keys below are defaults; monk/necromancer keep their original sheets.
+// Class keys below are defaults; monk/necromancer come from tools/build_monk_necro.py.
 export const HERO_ART = {
- "warrior": { "f": "assets/img/heroes/warrior1.png", "w": 32, "h": 32, "frames": 2 },
- "mage": { "f": "assets/img/heroes/mage1.png", "w": 32, "h": 32, "frames": 2 },
- "archer": { "f": "assets/img/heroes/ranger.png", "w": 32, "h": 32, "frames": 2 },
- "rogue": { "f": "assets/img/heroes/rogue.png", "w": 32, "h": 32, "frames": 2 },
- "priest": { "f": "assets/img/heroes/priest1.png", "w": 32, "h": 32, "frames": 2 },
- "monk": { "f": "assets/img/heroes/monk.png", "w": 32, "h": 32, "frames": 2 },
- "warlock": { "f": "assets/img/heroes/warlock1.png", "w": 32, "h": 32, "frames": 2 },
- "bard": { "f": "assets/img/heroes/bard1.png", "w": 32, "h": 32, "frames": 2 },
- "necromancer": { "f": "assets/img/heroes/necromancer.png", "w": 32, "h": 32, "frames": 2 },
- "spellsword": { "f": "assets/img/heroes/spellsword1.png", "w": 32, "h": 32, "frames": 2 },
- "viking": { "f": "assets/img/heroes/viking1.png", "w": 32, "h": 32, "frames": 2 }
+ "warrior": {
+  "f": "assets/img/heroes/warrior1.png",
+  "w": 32,
+  "h": 32,
+  "frames": 2
+ },
+ "mage": {
+  "f": "assets/img/heroes/mage1.png",
+  "w": 32,
+  "h": 32,
+  "frames": 2
+ },
+ "archer": {
+  "f": "assets/img/heroes/ranger.png",
+  "w": 32,
+  "h": 32,
+  "frames": 2
+ },
+ "rogue": {
+  "f": "assets/img/heroes/rogue.png",
+  "w": 32,
+  "h": 32,
+  "frames": 2
+ },
+ "priest": {
+  "f": "assets/img/heroes/priest1.png",
+  "w": 32,
+  "h": 32,
+  "frames": 2
+ },
+ "monk": {
+  "f": "assets/img/heroes/monk.png",
+  "w": 28,
+  "h": 38,
+  "frames": 6,
+  "combatSize": 68,
+  "anims": {
+   "idle": {
+    "f": "assets/img/heroes/monk.png",
+    "w": 28,
+    "h": 38,
+    "frames": 6
+   },
+   "run": {
+    "f": "assets/img/heroes/monk_run.png",
+    "w": 30,
+    "h": 37,
+    "frames": 8
+   },
+   "attack": {
+    "f": "assets/img/heroes/monk_attack.png",
+    "w": 52,
+    "h": 42,
+    "frames": 6
+   },
+   "attack2": {
+    "f": "assets/img/heroes/monk_attack2.png",
+    "w": 58,
+    "h": 42,
+    "frames": 12
+   },
+   "attackHigh": {
+    "f": "assets/img/heroes/monk_attack_high.png",
+    "w": 100,
+    "h": 44,
+    "frames": 23
+   },
+   "hurt": {
+    "f": "assets/img/heroes/monk_hurt.png",
+    "w": 27,
+    "h": 41,
+    "frames": 6
+   },
+   "death": {
+    "f": "assets/img/heroes/monk_death.png",
+    "w": 43,
+    "h": 32,
+    "frames": 17
+   },
+   "dash": {
+    "f": "assets/img/heroes/monk_dash.png",
+    "w": 36,
+    "h": 37,
+    "frames": 6
+   }
+  }
+ },
+ "warlock": {
+  "f": "assets/img/heroes/warlock1.png",
+  "w": 32,
+  "h": 32,
+  "frames": 2
+ },
+ "bard": {
+  "f": "assets/img/heroes/bard1.png",
+  "w": 32,
+  "h": 32,
+  "frames": 2
+ },
+ "necromancer": {
+  "f": "assets/img/heroes/necromancer.png",
+  "w": 45,
+  "h": 59,
+  "frames": 8,
+  "combatSize": 94,
+  "anims": {
+   "idle": {
+    "f": "assets/img/heroes/necromancer.png",
+    "w": 45,
+    "h": 59,
+    "frames": 8
+   },
+   "run": {
+    "f": "assets/img/heroes/necromancer_run.png",
+    "w": 42,
+    "h": 50,
+    "frames": 8
+   },
+   "attack": {
+    "f": "assets/img/heroes/necromancer_attack.png",
+    "w": 76,
+    "h": 104,
+    "frames": 13
+   },
+   "attack2": {
+    "f": "assets/img/heroes/necromancer_attack2.png",
+    "w": 44,
+    "h": 78,
+    "frames": 13
+   },
+   "special": {
+    "f": "assets/img/heroes/necromancer_special.png",
+    "w": 48,
+    "h": 64,
+    "frames": 17
+   },
+   "hurt": {
+    "f": "assets/img/heroes/necromancer_hurt.png",
+    "w": 45,
+    "h": 54,
+    "frames": 5
+   },
+   "death": {
+    "f": "assets/img/heroes/necromancer_death.png",
+    "w": 60,
+    "h": 65,
+    "frames": 9
+   }
+  }
+ },
+ "spellsword": {
+  "f": "assets/img/heroes/spellsword1.png",
+  "w": 32,
+  "h": 32,
+  "frames": 2
+ },
+ "viking": {
+  "f": "assets/img/heroes/viking1.png",
+  "w": 32,
+  "h": 32,
+  "frames": 2
+ }
 };
 
 export const BIOME_BG = {

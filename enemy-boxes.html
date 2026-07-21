@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enemy combat boxes — editor</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <style>
+    html, body {
+      margin: 0 !important;
+      width: auto !important;
+      height: auto !important;
+      min-height: 100% !important;
+      overflow: auto !important;
+      background: #121018 !important;
+      color: #e8e0d4;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+    body::before { display: none !important; }
+
+    .preview { max-width: 1480px; margin: 0 auto; padding: 24px 20px 80px; }
+    h1 { font-size: 22px; font-weight: 600; margin: 0 0 6px; letter-spacing: .02em; }
+    .sub { color: #9a9080; font-size: 13px; margin: 0 0 16px; max-width: 820px; line-height: 1.45; }
+    h2 {
+      font-size: 15px; text-transform: uppercase; letter-spacing: .12em; color: #c9b896;
+      border-bottom: 1px solid #3a342c; padding-bottom: 8px; margin: 28px 0 14px;
+    }
+
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      padding: 12px 14px; margin-bottom: 18px;
+      background: #1a1622; border: 1px solid #3a342c; border-radius: 8px;
+      position: sticky; top: 0; z-index: 20;
+    }
+    .toolbar label { font-size: 12px; color: #9a9080; display: flex; align-items: center; gap: 6px; }
+    .toolbar select {
+      background: #0c0a10; border: 1px solid #4a4050; color: #e8e0d4;
+      border-radius: 4px; padding: 3px 6px; font-size: 12px;
+    }
+    .toolbar .stat { font-size: 12px; color: #c9b896; margin-left: auto; }
+
+    .grid {
+      display: flex; flex-wrap: wrap; gap: 18px 14px; align-items: flex-end;
+    }
+
+    .card {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      width: 250px; padding: 10px 8px 12px;
+      background: #16121c; border: 1px solid #2e2836; border-radius: 8px;
+    }
+    .card.boss-card { width: 280px; }
+    .card.placeholder {
+      outline: 2px dashed #c9a24a;
+      background: #1a1810;
+    }
+    .card.placeholder .box { outline-style: dashed; outline-color: #c9a24a; }
+    .ph-art {
+      display: grid; place-items: center; width: 100%; height: 100%;
+      min-width: 64px; min-height: 64px;
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+      color: #c9a24a; text-align: center; line-height: 1.3; padding: 8px;
+      background: repeating-linear-gradient(
+        -45deg, #1a1810, #1a1810 6px, #221e14 6px, #221e14 12px
+      );
+    }
+    .ph-art small { display: block; margin-top: 4px; opacity: .75; font-size: 10px; }
+    .world-chip {
+      display: inline-block; font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+      padding: 2px 6px; border-radius: 3px; border: 1px solid #4a4050; color: #c9b896; background: #1a1622;
+    }
+    .world-chip.wandering { border-color: #6a7a8a; color: #a8c0d4; }
+    .world-chip.throne { border-color: #8a2f6e; color: #e0a0c8; }
+    .world-chip.added, .world-chip.npc { border-color: #5a6a4a; color: #b8c8a0; }
+    .world-sel {
+      background: #0c0a10; border: 1px solid #4a4050; color: #e8e0d4;
+      border-radius: 4px; padding: 2px 4px; font-size: 11px; width: 100%;
+    }
+
+    .box {
+      display: grid; place-items: center;
+      background:
+        linear-gradient(45deg, #1a1622 25%, transparent 25%),
+        linear-gradient(-45deg, #1a1622 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #1a1622 75%),
+        linear-gradient(-45deg, transparent 75%, #1a1622 75%);
+      background-size: 12px 12px;
+      background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+      background-color: #0c0a10;
+      outline: 2px solid #e8b64a;
+      box-sizing: border-box;
+      /* override combat fixed sizes — preview drives box via inline styles */
+      width: var(--box-w) !important;
+      height: var(--box-h) !important;
+      min-width: 0 !important;
+      min-height: 0 !important;
+      overflow: hidden;
+    }
+    .combatant.boss .box { outline-color: #e07060; }
+    /* Feet-pinned (default combat). Padded slime/king sheets must be centered or they clip to empty. */
+    .box[data-anchor="feet"] {
+      place-items: end center !important;
+      align-items: end !important;
+    }
+    .box[data-anchor="center"] {
+      place-items: center !important;
+      align-items: center !important;
+    }
+
+    .sprite-wrap {
+      transform-origin: center center;
+      will-change: transform;
+      line-height: 0;
+    }
+
+    .meta { text-align: center; font-size: 12px; line-height: 1.35; color: #b8aea0; width: 100%; }
+    .meta b { display: block; color: #f2ebe0; font-size: 13px; margin-bottom: 2px; }
+    .meta code { font-family: ui-monospace, Consolas, monospace; font-size: 11px; color: #8ec8a8; }
+    .dims { font-size: 11px; color: #8a8070; margin-top: 2px; }
+
+    .tag {
+      display: inline-block; font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+      padding: 1px 6px; border-radius: 3px; border: 1px solid #554a3a; color: #c9b896; margin: 0 2px;
+    }
+    .tag.boss { border-color: #a05048; color: #f0a090; }
+    .tag.elite { border-color: #6a4a90; color: #c8a8f0; }
+    .tag.anim { border-color: #3a6a70; color: #8fd0d8; }
+    .tag.missing { border-color: #803030; color: #f08080; }
+    .tag.flip { border-color: #5070a0; color: #a0c0f0; }
+    .tag.ph { border-color: #a08030; color: #e0c060; }
+    .tag.renamed { border-color: #508070; color: #90d0b0; }
+    .tag.cat-enemy { border-color: #4a6a50; color: #9ccc9a; }
+    .tag.cat-boss { border-color: #a05048; color: #f0a090; }
+    .tag.cat-elite { border-color: #6a4a90; color: #c8a8f0; }
+    .tag.cat-npc { border-color: #4a7090; color: #90c0e0; }
+    .cat-sel {
+      width: 100%; box-sizing: border-box; background: #0c0a10; border: 1px solid #4a4050;
+      color: #e8e0d4; border-radius: 4px; padding: 4px 6px; font-size: 11px; margin-top: 4px;
+    }
+    .name-in, .id-in {
+      width: 100%; box-sizing: border-box; background: #0c0a10; border: 1px solid #4a4050;
+      color: #f2ebe0; border-radius: 4px; padding: 4px 6px; font-size: 12px; text-align: center;
+    }
+    .id-in {
+      font-family: ui-monospace, Consolas, monospace; font-size: 11px; color: #8ec8a8; margin-top: 4px;
+    }
+    .orig-hint { font-size: 10px; color: #6a6050; margin-top: 2px; }
+
+    .ctrls {
+      display: flex; flex-direction: column; gap: 6px; width: 100%; margin-top: 4px;
+    }
+    .row {
+      display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; align-items: center;
+    }
+    .ctrls button, .toolbar button, .export-bar button {
+      appearance: none; border: 1px solid #4a4050; background: #221c2c; color: #e8e0d4;
+      font-size: 11px; padding: 4px 8px; border-radius: 4px; cursor: pointer; line-height: 1.2;
+    }
+    .ctrls button:hover, .toolbar button:hover, .export-bar button:hover {
+      background: #2e2638; border-color: #c9b896;
+    }
+    .ctrls button.active { background: #3a3048; border-color: #8ec8a8; color: #8ec8a8; }
+    .ctrls button.warn.active { border-color: #c9a24a; color: #e0c060; background: #3a3020; }
+    .ctrls button:disabled { opacity: .35; cursor: not-allowed; }
+    .val {
+      min-width: 36px; text-align: center; font-family: ui-monospace, Consolas, monospace;
+      font-size: 11px; color: #c9b896;
+    }
+    .ctrls input[type="number"] {
+      width: 52px; background: #0c0a10; border: 1px solid #4a4050; color: #e8e0d4;
+      border-radius: 4px; padding: 3px 4px; font-size: 11px; font-family: ui-monospace, Consolas, monospace;
+    }
+    .ctrls .lbl { font-size: 10px; color: #7a7060; text-transform: uppercase; letter-spacing: .06em; }
+    .note-in {
+      width: 100%; box-sizing: border-box; background: #0c0a10; border: 1px solid #4a4050;
+      color: #e8e0d4; border-radius: 4px; padding: 4px 6px; font-size: 11px; resize: vertical; min-height: 28px;
+    }
+
+    .export-bar {
+      margin-top: 40px; padding: 18px; background: #1a1622; border: 1px solid #3a342c; border-radius: 8px;
+    }
+    .export-bar h2 { margin-top: 0; }
+    .export-bar .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    #export-json {
+      width: 100%; box-sizing: border-box; min-height: 220px;
+      background: #0c0a10; border: 1px solid #4a4050; color: #c8e0d0;
+      border-radius: 6px; padding: 12px; font-family: ui-monospace, Consolas, monospace;
+      font-size: 12px; line-height: 1.4; resize: vertical;
+    }
+    .toast {
+      position: fixed; bottom: 20px; right: 20px; background: #2a4030; color: #d0f0d8;
+      border: 1px solid #5a9070; padding: 10px 14px; border-radius: 6px; font-size: 13px;
+      opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 50;
+    }
+    .toast.show { opacity: 1; }
+
+    .packs-bar, .legacy-bar {
+      margin-top: 36px; padding: 18px; background: #14181e; border: 1px solid #3a342c; border-radius: 8px;
+    }
+    .packs-bar { background: #16141c; border-color: #4a3a50; }
+    .packs-bar h2 { color: #d0b0e0; }
+    .legacy-bar h2 { margin-top: 0; }
+    .legacy-bar .sub { margin-bottom: 12px; }
+    .legacy-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
+    .legacy-filters select, .legacy-filters input {
+      background: #0c0a10; border: 1px solid #4a4050; color: #e8e0d4;
+      border-radius: 4px; padding: 5px 8px; font-size: 12px;
+    }
+    .legacy-grid {
+      display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+    }
+    .legacy-card {
+      width: 140px; padding: 8px; background: #16121c; border: 1px solid #2e2836; border-radius: 8px;
+      text-align: center;
+    }
+    .legacy-card .frame {
+      width: 120px; height: 120px; margin: 0 auto 6px; display: grid; place-items: center;
+      background: #0c0a10; outline: 1px solid #3a342c; overflow: hidden;
+    }
+    .legacy-card img {
+      max-width: 112px; max-height: 112px; image-rendering: pixelated; object-fit: contain;
+    }
+    .legacy-card .nm { font-size: 12px; color: #f2ebe0; line-height: 1.25; }
+    .legacy-card .pk { font-size: 10px; color: #8a8070; margin-top: 2px; }
+    .legacy-card code { display: block; font-size: 9px; color: #6a9a80; margin-top: 4px; word-break: break-all; }
+    .legacy-card button, .pack-card button {
+      appearance: none; margin-top: 6px; width: 100%;
+      border: 1px solid #5a5040; background: #2a2434; color: #f2ebe0;
+      font-size: 11px; padding: 5px 8px; border-radius: 4px; cursor: pointer; line-height: 1.2;
+    }
+    .legacy-card button:hover, .pack-card button:hover {
+      background: #3a3448; border-color: #c9b896; color: #fff8ee;
+    }
+    .pack-card {
+      width: 200px; padding: 10px; background: #16121c; border: 1px solid #3a3048; border-radius: 8px;
+      text-align: center;
+    }
+    .pack-card .frame {
+      width: 180px; height: 140px; margin: 0 auto 8px; display: grid; place-items: center;
+      background: #0c0a10; outline: 1px solid #3a342c; overflow: hidden;
+    }
+    .pack-card img {
+      max-width: 170px; max-height: 130px; image-rendering: pixelated; object-fit: contain;
+    }
+    .pack-card .nm { font-size: 13px; color: #f2ebe0; font-weight: 600; }
+    .pack-card .pk { font-size: 10px; color: #8a8070; margin-top: 2px; }
+    .pack-card .anims {
+      margin-top: 8px; text-align: left; font-size: 10px; color: #b8aea0; line-height: 1.35;
+      max-height: 90px; overflow: auto;
+    }
+    .pack-card .anims b { color: #c9b896; font-weight: 600; }
+    .pack-card .note { font-size: 10px; color: #8a7060; margin-top: 6px; text-align: left; font-style: italic; }
+    .frame-step {
+      display: flex; gap: 4px; align-items: center; justify-content: center; margin-top: 4px;
+    }
+    .frame-step button {
+      width: auto !important; margin-top: 0 !important; min-width: 32px; padding: 4px 8px;
+    }
+    .frame-step .frame-idx {
+      font-size: 11px; color: #c9b896; font-family: ui-monospace, Consolas, monospace; min-width: 3.5em;
+    }
+    .pack-card .anim-hint {
+      font-size: 9px; color: #6a9a80; margin-top: 2px;
+    }
+    .added-badge {
+      display: inline-block; margin: 4px 0 2px; padding: 2px 8px;
+      border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: .08em;
+      background: #1e3a2a; color: #8ec8a8; border: 1px solid #3a7050;
+    }
+    .pack-card.is-added, .legacy-card.is-added {
+      border-color: #3a7050;
+    }
+    .pack-card.is-added .add-as-row button, .legacy-card.is-added .add-as-row button {
+      border-color: #3a7050; color: #b8e0c8;
+    }
+    .add-as-row {
+      display: flex; gap: 4px; margin-top: 6px; align-items: stretch;
+    }
+    .add-as-row select {
+      flex: 1; min-width: 0; background: #0c0a10; border: 1px solid #4a4050; color: #e8e0d4;
+      border-radius: 4px; padding: 4px; font-size: 11px;
+    }
+    .add-as-row button { flex: 1.4; margin-top: 0 !important; width: auto !important; }
+    .pick-banner {
+      display: none; position: sticky; top: 52px; z-index: 21;
+      margin: 0 0 14px; padding: 10px 14px; border-radius: 8px;
+      background: #3a3020; border: 1px solid #c9a24a; color: #f0e0c0; font-size: 13px;
+    }
+    .pick-banner.on { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+    .pick-banner button { border: 1px solid #c9a24a; background: #221c14; color: #e8dcc0; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+    body.picking-art .packs-bar, body.picking-art .legacy-bar {
+      outline: 2px solid #c9a24a; outline-offset: 4px;
+    }
+    body.picking-art .pack-card, body.picking-art .legacy-card {
+      cursor: pointer; transition: outline .12s, transform .12s;
+    }
+    body.picking-art .pack-card:hover, body.picking-art .legacy-card:hover {
+      outline: 2px solid #e8b64a; transform: translateY(-2px);
+    }
+    .card.placeholder .box { cursor: pointer; }
+    .card.placeholder .box:hover { outline-color: #e8c060; }
+    .card.picking-target { outline: 2px solid #e8b64a; box-shadow: 0 0 0 2px rgba(232,182,74,.35); }
+    .repl-preview {
+      max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated;
+    }
+    .repl-label { font-size: 10px; color: #90d0b0; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="preview">
+    <h1>Enemy combat boxes — editor</h1>
+    <p class="sub">
+      Flip, reorder, rename, zoom, nudge, and resize boxes.
+      Mark <b>placeholder</b> then click the stand-in to pick replacement art from the galleries below.
+      Use <b>Add as…</b> on gallery cards to promote them into the collections above.
+    </p>
+
+    <div class="toolbar">
+      <label><input type="checkbox" id="hide-placeholder" /> Hide placeholders</label>
+      <label><input type="checkbox" id="pause-anim" /> Pause idle anim</label>
+      <label><input type="checkbox" id="group-by-category" checked /> Group by category</label>
+      <label>Category
+        <select id="filter-category">
+          <option value="">All</option>
+          <option value="enemy">enemy</option>
+          <option value="boss">boss</option>
+          <option value="elite">elite</option>
+          <option value="npc">npc</option>
+        </select>
+      </label>
+      <button type="button" id="btn-reset-all" title="Clear all edits">Reset all</button>
+      <button type="button" id="btn-refresh-json">Refresh JSON</button>
+      <span class="stat" id="statline"></span>
+    </div>
+
+    <div class="pick-banner" id="pick-banner">
+      <span id="pick-banner-text">Pick replacement art from a gallery card below.</span>
+      <button type="button" id="pick-cancel">Cancel</button>
+    </div>
+
+    <div id="root"></div>
+
+    <div class="packs-bar">
+      <h2>Imported packs (Downloads)</h2>
+      <p class="sub">
+        Each card is one sprite with an <b>idle</b> preview (animated GIF when the pack has a strip).
+        Use <b>Add as…</b> to promote into collections above, or click while picking art for a placeholder.
+        Re-run <code>python tools/import_download_packs.py</code> to refresh.
+      </p>
+      <div class="legacy-filters">
+        <label>Category
+          <select id="packs-cat">
+            <option value="">All</option>
+            <option value="boss">boss</option>
+            <option value="elite">elite</option>
+            <option value="enemy">enemy</option>
+            <option value="npc">npc</option>
+          </select>
+        </label>
+        <label>Pack <select id="packs-pack"><option value="">All</option></select></label>
+        <label>Search <input id="packs-search" type="search" placeholder="name / anim…" /></label>
+        <span class="stat" id="packs-stat"></span>
+      </div>
+      <div class="legacy-grid" id="packs-grid"></div>
+    </div>
+
+    <div class="legacy-bar">
+      <h2>Legacy Collection previews</h2>
+      <p class="sub">
+        Idle/preview GIFs from Ansimuz Legacy Collection. Same <b>Add as…</b> / click-to-replace flow.
+        Re-run <code>python tools/import_legacy_previews.py</code> to refresh.
+      </p>
+      <div class="legacy-filters">
+        <label>Pack <select id="legacy-pack"><option value="">All</option></select></label>
+        <label>Kind <select id="legacy-kind"><option value="">All</option></select></label>
+        <label>Search <input id="legacy-search" type="search" placeholder="name…" /></label>
+        <span class="stat" id="legacy-stat"></span>
+      </div>
+      <div class="legacy-grid" id="legacy-grid"></div>
+    </div>
+
+    <div class="export-bar">
+      <h2>Export settings</h2>
+      <div class="actions">
+        <button type="button" id="btn-copy">Copy JSON</button>
+        <button type="button" id="btn-download">Download JSON</button>
+        <button type="button" id="btn-import">Import JSON…</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden />
+      </div>
+      <textarea id="export-json" spellcheck="false"></textarea>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    import { ENEMIES, BOSSES, ALT_BOSSES, NPC_ENEMIES, WANDERING_ENEMIES, SECRET_BOSS } from './js/data/enemies.js';
+    import { ENEMY_ART } from './js/data/artmap.js';
+    import { enemySpriteHtml } from './js/art.js';
+    import * as SpriteAnim from './js/anim.js';
+    import { ENEMY_ANIM } from './js/data/animmap.js';
+    import { ROSTER } from './js/data/roster_worlds.js';
+
+    const WORLD_ORDER = [...(ROSTER.worldOrder || []), 'npc', 'added'];
+    const WORLD_SET = new Set(WORLD_ORDER);
+    const PLACEHOLDER_SET = new Set(ROSTER.placeholders || []);
+    const RENAMES = ROSTER.renames || {};
+    const UNIT_WORLD = ROSTER.unitWorld || {};
+    const WANDERING_SET = new Set(ROSTER.wanderingIds || []);
+
+    const STORAGE_KEY = 'dt-enemy-box-editor-v1';
+    const BOSS_DEFAULT = { w: 200, h: 200 };
+    const NORMAL_DEFAULT = { w: 96, h: 96 };
+    const CATEGORIES = ['enemy', 'boss', 'elite', 'npc'];
+
+    function inferCategory(item) {
+      if (item.boss || item.section === 'bosses' || item.section === 'alt_bosses') return 'boss';
+      if (item.section === 'npc') return 'npc';
+      if (item.elite) return 'elite';
+      return 'enemy';
+    }
+
+    const BOSS_INK_H = {
+      bogmother: 11, elderwood: 45, lich: 22, frost_queen: 59, hydra: 23,
+      infernal_duke: 75, ashen_sovereign: 76, heartwood: 82, ossuary_king: 78,
+      jarl_whitegrave: 72, arch_tormentor: 77, demon_king: 22,
+    };
+
+    function animScale(set, boss) {
+      if (!boss) return Math.max(1, Math.round((set.disp || set.fh) / set.fh));
+      const inkH = set.inkH || set.fh;
+      const fromInk = Math.round(176 / inkH);
+      const fromDisp = Math.round((set.bossDisp || Math.max(set.disp || set.fh, 200)) / set.fh);
+      return Math.max(1, Math.min(set.bossScaleCap || 14, Math.max(fromInk, fromDisp)));
+    }
+    function artScale(a, id, boss, elite) {
+      if (boss) {
+        const inkH = a.inkH || BOSS_INK_H[id] || a.h;
+        const fromInk = Math.round(176 / inkH);
+        const fromBox = Math.max(1, Math.ceil(200 / a.h));
+        return Math.max(1, Math.min(a.bossScaleCap || 14, Math.max(fromInk, fromBox)));
+      }
+      return Math.max(1, Math.round((elite ? 84 : 68) / a.h));
+    }
+    function nativeScale(id, boss, elite) {
+      if (ENEMY_ANIM[id]) return animScale(ENEMY_ANIM[id], boss);
+      const a = ENEMY_ART[id];
+      return a ? artScale(a, id, boss, elite) : 1;
+    }
+    function frameSize(id) {
+      if (ENEMY_ANIM[id]) return { w: ENEMY_ANIM[id].fw, h: ENEMY_ANIM[id].fh };
+      const a = ENEMY_ART[id];
+      return a ? { w: a.w, h: a.h } : { w: 0, h: 0 };
+    }
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      })[c]);
+    }
+
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.remove('show'), 1600);
+    }
+
+    /** Build catalog entries (stable uid per appearance). */
+    function buildCatalog() {
+      const items = [];
+      const push = (partial) => {
+        const defBox = partial.boss ? BOSS_DEFAULT : NORMAL_DEFAULT;
+        items.push({
+          uid: `${partial.section}::${partial.id}::${partial.note || ''}`,
+          id: partial.id,
+          name: partial.name || partial.id,
+          section: partial.section,
+          note: partial.note || '',
+          boss: !!partial.boss,
+          elite: !!partial.elite,
+          defaultBoxW: defBox.w,
+          defaultBoxH: defBox.h,
+          defaultScale: nativeScale(partial.id, !!partial.boss, !!partial.elite),
+          frame: frameSize(partial.id),
+          hasAnim: SpriteAnim.hasAnim(partial.id),
+          hasArt: !!ENEMY_ART[partial.id] || SpriteAnim.hasAnim(partial.id),
+          // Match art/anim `anchor: 'center'` (padded boss sheets).
+          anchor: (ENEMY_ANIM[partial.id]?.anchor === 'center'
+            || ENEMY_ART[partial.id]?.anchor === 'center')
+            ? 'center'
+            : (partial.boss ? 'feet' : 'center'),
+          defaultCategory: null, // filled after push fields settle
+        });
+        const last = items[items.length - 1];
+        last.defaultCategory = inferCategory(last);
+      };
+
+      for (const [biome, list] of Object.entries(ENEMIES)) {
+        for (const e of list) {
+          push({
+            id: e.id, name: e.name, section: biome,
+            elite: !!e.elite, boss: !!e.boss,
+          });
+        }
+      }
+      for (const [f, b] of Object.entries(BOSSES)) {
+        push({
+          id: b.artId || b.id, name: b.name, section: 'bosses',
+          boss: true, note: `F${f}${b.artId ? ` artId` : ''}`,
+        });
+        if (b.phaseArt) {
+          push({
+            id: b.phaseArt, name: b.phaseName || `${b.name} (phase)`,
+            section: 'bosses', boss: true, note: `F${f} phaseArt`,
+          });
+        }
+        if (b.phase2?.artId) {
+          push({
+            id: b.phase2.artId, name: b.phase2.name || `${b.name} P2`,
+            section: 'bosses', boss: true, note: `F${f} phase2`,
+          });
+        }
+      }
+      for (const [f, b] of Object.entries(ALT_BOSSES)) {
+        push({
+          id: b.artId || b.id, name: b.name, section: 'alt_bosses',
+          boss: true, note: `F${f} ALT`,
+        });
+        if (b.phaseArt) {
+          push({
+            id: b.phaseArt, name: b.phaseName || `${b.name} (phase)`,
+            section: 'alt_bosses', boss: true, note: `F${f} ALT phaseArt`,
+          });
+        }
+        if (b.phase2?.artId) {
+          push({
+            id: b.phase2.artId, name: b.phase2.name || `${b.name} P2`,
+            section: 'alt_bosses', boss: true, note: `F${f} ALT phase2`,
+          });
+        }
+      }
+      push({ id: 'mimic', name: 'Mimic', section: 'special', elite: true, note: 'mimic event' });
+      for (const e of WANDERING_ENEMIES || []) {
+        push({
+          id: e.id, name: e.name, section: 'wandering',
+          elite: !!e.elite, note: 'wandering (any biome)',
+        });
+      }
+      if (SECRET_BOSS) {
+        push({
+          id: SECRET_BOSS.artId || SECRET_BOSS.id, name: SECRET_BOSS.name,
+          section: 'bosses', boss: true, note: 'secret throne (honest path)',
+        });
+      }
+      for (const e of Object.values(NPC_ENEMIES)) {
+        push({
+          id: e.artId || e.id, name: e.name, section: 'npc',
+          boss: !!e.boss, elite: !!e.elite, note: 'NPC enemy',
+        });
+      }
+
+      const covered = new Set(items.map(i => i.id));
+      const orphanIds = [...new Set([...Object.keys(ENEMY_ART), ...Object.keys(ENEMY_ANIM)])]
+        .filter(id => !covered.has(id));
+      const bossish = /king|queen|duke|sovereign|hydra|lich|elder|jarl|oracle|thorn|prince|cyclops|revenant/i;
+      for (const id of orphanIds) {
+        push({
+          id, name: id, section: 'art_only',
+          boss: bossish.test(id), note: 'artmap/animmap only',
+        });
+      }
+      return items;
+    }
+
+    function inferDefaultWorld(item) {
+      const id = item.id;
+      if (WANDERING_SET.has(id) || item.section === 'wandering') return 'wandering';
+      if (UNIT_WORLD[id] && WORLD_SET.has(UNIT_WORLD[id])) return UNIT_WORLD[id];
+      if (['forest', 'ruins', 'frost', 'swamp', 'hell', 'throne'].includes(item.section)) return item.section;
+      if (item.section === 'npc') return 'npc';
+      if (item.custom) return 'added';
+      if (item.section === 'bosses' || item.section === 'alt_bosses') {
+        for (const [floor, plan] of Object.entries(ROSTER.bossPlan || {})) {
+          if (plan.primary === id || plan.alt === id
+            || (id === 'gv_demon_files' && plan.alt === 'kryos_demon_general')) {
+            const f = +floor;
+            if (f <= 10) return 'forest';
+            if (f <= 20) return 'ruins';
+            if (f <= 30) return 'frost';
+            if (f <= 40) return 'swamp';
+            if (f <= 50) return 'hell';
+            return 'throne';
+          }
+        }
+        if (id === ROSTER.secretBossId || id === 'medieval_king') return 'throne';
+        return UNIT_WORLD[id] || 'throne';
+      }
+      return 'added';
+    }
+
+    function defaultEdit(item) {
+      return {
+        flip: false,
+        placeholder: PLACEHOLDER_SET.has(item.id),
+        renameName: RENAMES[item.id] || '',
+        renameId: '',
+        category: item.defaultCategory || 'enemy',
+        world: inferDefaultWorld(item),
+        zoom: 1,
+        boxW: item.defaultBoxW,
+        boxH: item.defaultBoxH,
+        offsetX: 0,
+        offsetY: 0,
+        comment: '',
+        replacement: null, // { file, name, pack, id, source, animations? }
+      };
+    }
+
+    function normalizeEdit(raw, item) {
+      const base = defaultEdit(item);
+      if (!raw || typeof raw !== 'object') return base;
+      let category = raw.category != null ? String(raw.category) : base.category;
+      if (!CATEGORIES.includes(category)) category = base.category;
+      let world = raw.world != null ? String(raw.world) : base.world;
+      if (!WORLD_SET.has(world)) world = base.world;
+      let replacement = raw.replacement && typeof raw.replacement === 'object' ? {
+        file: raw.replacement.file || '',
+        name: raw.replacement.name || '',
+        pack: raw.replacement.pack || '',
+        id: raw.replacement.id || '',
+        source: raw.replacement.source || '',
+        animations: Array.isArray(raw.replacement.animations) ? raw.replacement.animations : [],
+      } : null;
+      if (replacement && !replacement.file) replacement = null;
+      return {
+        ...base,
+        flip: !!raw.flip,
+        placeholder: raw.placeholder != null || raw.remove != null
+          ? !!(raw.placeholder ?? raw.remove)
+          : base.placeholder,
+        renameName: raw.renameName != null ? String(raw.renameName) : base.renameName,
+        renameId: raw.renameId != null ? String(raw.renameId) : '',
+        category,
+        world,
+        zoom: raw.zoom != null ? +raw.zoom : base.zoom,
+        boxW: raw.boxW != null ? +raw.boxW : base.boxW,
+        boxH: raw.boxH != null ? +raw.boxH : base.boxH,
+        offsetX: raw.offsetX != null ? +raw.offsetX : base.offsetX,
+        offsetY: raw.offsetY != null ? +raw.offsetY : base.offsetY,
+        comment: raw.comment != null ? String(raw.comment) : '',
+        replacement,
+      };
+    }
+
+    function categoryOf(uid) {
+      const e = edits[uid];
+      const item = byUid[uid];
+      const c = e?.category;
+      return CATEGORIES.includes(c) ? c : (item?.defaultCategory || 'enemy');
+    }
+
+    function worldOf(uid) {
+      const e = edits[uid];
+      const item = byUid[uid];
+      const w = e?.world;
+      if (WORLD_SET.has(w)) return w;
+      return item ? inferDefaultWorld(item) : 'added';
+    }
+
+    function displayName(item, e) {
+      const n = (e.renameName || '').trim();
+      return n || item.name;
+    }
+    function displayId(item, e) {
+      const n = (e.renameId || '').trim();
+      return n || item.id;
+    }
+
+    let catalog = buildCatalog();
+    let customItems = []; // gallery promotions into the editor
+    let order = catalog.map(i => i.uid);
+    let edits = Object.fromEntries(catalog.map(i => [i.uid, defaultEdit(i)]));
+    let byUid = Object.fromEntries(catalog.map(i => [i.uid, i]));
+    let pickTargetUid = null;
+    let legacyItems = [];
+    let packItems = [];
+    const packFrameIndex = new Map(); // pack id -> frame index
+
+    function rebuildByUid() {
+      byUid = Object.fromEntries([...catalog, ...customItems].map(i => [i.uid, i]));
+    }
+
+    function loadSaved() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        // One-time: clear gallery promotions from before v4 (accidental Add as…)
+        const migrated = !(data.version >= 4);
+        if (!migrated && Array.isArray(data.customItems)) {
+          customItems = data.customItems.filter(i => i && i.uid);
+          rebuildByUid();
+          for (const item of customItems) {
+            if (!edits[item.uid]) edits[item.uid] = defaultEdit(item);
+          }
+        } else if (migrated) {
+          customItems = [];
+          rebuildByUid();
+        }
+        if (Array.isArray(data.order)) {
+          const known = new Set([...catalog, ...customItems].map(i => i.uid));
+          const next = data.order.filter(u => known.has(u));
+          for (const u of known) if (!next.includes(u)) next.push(u);
+          order = next;
+        }
+        if (data.edits && typeof data.edits === 'object') {
+          for (const uid of Object.keys(byUid)) {
+            if (data.edits[uid]) edits[uid] = normalizeEdit(data.edits[uid], byUid[uid]);
+            else if (!edits[uid]) edits[uid] = defaultEdit(byUid[uid]);
+          }
+          for (const uid of Object.keys(edits)) {
+            if (!byUid[uid]) delete edits[uid];
+          }
+        }
+        if (migrated) persist(); // write v4 so customs aren't wiped every load
+      } catch (_) { /* ignore */ }
+    }
+
+    function removeCustomItem(uid) {
+      const item = byUid[uid];
+      if (!item?.custom) return;
+      customItems = customItems.filter(i => i.uid !== uid);
+      order = order.filter(u => u !== uid);
+      delete edits[uid];
+      rebuildByUid();
+      if (pickTargetUid === uid) setPickMode(null);
+      persist();
+      renderAll();
+      toast(`Removed ${item.name}`);
+    }
+
+    function persist() {
+      const clean = {};
+      for (const [uid, e] of Object.entries(edits)) {
+        if (!byUid[uid]) continue;
+        const { remove, ...rest } = e;
+        clean[uid] = { ...rest, placeholder: !!e.placeholder, replacement: e.replacement || null };
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 4, order, edits: clean, customItems,
+      }));
+      updateExport();
+      updateStat();
+    }
+
+    function exportPayload() {
+      const items = order.map(uid => {
+        const item = byUid[uid];
+        const e = edits[uid];
+        const name = displayName(item, e);
+        const id = displayId(item, e);
+        return {
+          uid,
+          id,
+          originalId: item.id,
+          name,
+          originalName: item.name,
+          renamed: !!(e.renameName?.trim() || e.renameId?.trim()),
+          section: item.section,
+          note: item.note,
+          boss: item.boss,
+          elite: item.elite,
+          defaultCategory: item.defaultCategory,
+          category: categoryOf(uid),
+          world: worldOf(uid),
+          hasAnim: item.hasAnim,
+          frame: item.frame,
+          defaultScale: item.defaultScale,
+          defaultBox: { w: item.defaultBoxW, h: item.defaultBoxH },
+          flip: !!e.flip,
+          placeholder: !!e.placeholder,
+          zoom: +e.zoom,
+          boxW: +e.boxW,
+          boxH: +e.boxH,
+          offsetX: +e.offsetX,
+          offsetY: +e.offsetY,
+          comment: e.comment || '',
+          renameName: e.renameName || '',
+          renameId: e.renameId || '',
+          replacement: e.replacement || null,
+          custom: !!item.custom,
+          preview: item.preview || null,
+          animations: item.animations || [],
+          effectiveScale: +(item.defaultScale * e.zoom).toFixed(3),
+        };
+      });
+      const byCategory = Object.fromEntries(CATEGORIES.map(c => [c, items.filter(i => i.category === c).map(i => i.originalId)]));
+      return {
+        version: 3,
+        exportedAt: new Date().toISOString(),
+        summary: {
+          total: items.length,
+          placeholders: items.filter(i => i.placeholder).length,
+          replacements: items.filter(i => i.replacement).length,
+          added: items.filter(i => i.custom).length,
+          renamed: items.filter(i => i.renamed).length,
+          flipped: items.filter(i => i.flip).length,
+          boxChanged: items.filter(i =>
+            i.boxW !== i.defaultBox.w || i.boxH !== i.defaultBox.h).length,
+          zoomed: items.filter(i => i.zoom !== 1).length,
+          nudged: items.filter(i => i.offsetX || i.offsetY).length,
+          categories: Object.fromEntries(CATEGORIES.map(c => [c, byCategory[c].length])),
+        },
+        byCategory,
+        placeholderIds: items.filter(i => i.placeholder).map(i => i.originalId),
+        replacements: items.filter(i => i.replacement).map(i => ({
+          uid: i.uid, originalId: i.originalId, replacement: i.replacement,
+        })),
+        customItems,
+        renames: items.filter(i => i.renamed).map(i => ({
+          fromId: i.originalId, toId: i.id, fromName: i.originalName, toName: i.name,
+        })),
+        order: items.map(i => i.uid),
+        items,
+      };
+    }
+
+    function updateExport() {
+      document.getElementById('export-json').value = JSON.stringify(exportPayload(), null, 2);
+    }
+    function updateStat() {
+      const p = exportPayload().summary;
+      const cats = CATEGORIES.map(c => `${c} ${p.categories[c]}`).join(' · ');
+      document.getElementById('statline').textContent =
+        `${p.total} · ${cats} · ${p.placeholders} ph · ${p.replacements} replaced · ${p.added} added`;
+    }
+
+    const collAnimState = new Map(); // key -> { frames, idx }
+    let collAnimTimer = null;
+
+    function galleryArtHtml(art, alt, key) {
+      if (!art) return '<span style="opacity:.4">?</span>';
+      const frames = Array.isArray(art.frames) && art.frames.length
+        ? art.frames
+        : (art.file ? [art.file] : []);
+      if (!frames.length && !art.file) return '<span style="opacity:.4">?</span>';
+      const mode = art.previewMode
+        || (frames.length > 1 ? 'loop' : 'still');
+      const file = art.file || frames[0];
+      // Native GIF loops on its own
+      if (file && /\.gif($|\?)/i.test(file)) {
+        return `<img class="repl-preview" src="${esc(file)}" alt="${esc(alt || '')}" />`;
+      }
+      if (mode === 'loop' && frames.length > 1 && key) {
+        collAnimState.set(key, { frames, idx: 0 });
+        return `<img class="repl-preview" data-coll-anim="${esc(key)}" src="${esc(frames[0])}" alt="${esc(alt || '')}" />`;
+      }
+      return `<img class="repl-preview" src="${esc(file || frames[0])}" alt="${esc(alt || '')}" />`;
+    }
+
+    function stopCollAnims() {
+      if (collAnimTimer) {
+        clearInterval(collAnimTimer);
+        collAnimTimer = null;
+      }
+    }
+
+    function startCollAnims() {
+      stopCollAnims();
+      if (!document.querySelector('[data-coll-anim]')) return;
+      collAnimTimer = setInterval(() => {
+        document.querySelectorAll('[data-coll-anim]').forEach(img => {
+          const st = collAnimState.get(img.dataset.collAnim);
+          if (!st || st.frames.length < 2) return;
+          st.idx = (st.idx + 1) % st.frames.length;
+          img.src = st.frames[st.idx];
+        });
+      }, 120);
+    }
+
+    function enrichGalleryArt(art, item) {
+      if (!art) return art;
+      if (Array.isArray(art.frames) && art.frames.length > 1) return art;
+      // Revive frames for items saved before animation support
+      const src = art.source || item?.gallerySource;
+      const id = art.id || item?.galleryId;
+      if (src === 'packs' && id) {
+        const pack = packItems.find(x => x.id === id);
+        if (pack) {
+          const frames = packFrames(pack);
+          return {
+            ...art,
+            file: art.file || pack.preview || frames[0],
+            frames: frames.length ? frames : (art.file ? [art.file] : []),
+            previewMode: art.previewMode || packPreviewMode(pack),
+            fps: art.fps || pack.fps || 8,
+          };
+        }
+      }
+      return art;
+    }
+
+    function spriteHtml(item, cat, e) {
+      const edit = e || edits[item.uid];
+      if (edit?.replacement?.file || edit?.replacement?.frames?.length) {
+        return galleryArtHtml(
+          enrichGalleryArt(edit.replacement, item),
+          edit.replacement.name || item.name,
+          `repl:${item.uid}`
+        );
+      }
+      if (item.custom && (item.preview || item.frames?.length)) {
+        return galleryArtHtml(
+          enrichGalleryArt({
+            file: item.preview,
+            frames: item.frames,
+            previewMode: item.previewMode,
+            source: item.gallerySource,
+            id: item.galleryId,
+            fps: item.fps,
+          }, item),
+          item.name,
+          `custom:${item.uid}`
+        );
+      }
+      const uid = `prev-${item.uid.replace(/[^a-z0-9_-]/gi, '_')}`;
+      const c = cat || categoryOf(item.uid);
+      const asBoss = c === 'boss';
+      const asElite = c === 'elite';
+      if (item.hasAnim) {
+        return SpriteAnim.animSpriteHtml(uid, item.id, { boss: asBoss });
+      }
+      return enemySpriteHtml(item.id, { boss: asBoss, elite: asElite })
+        || '<span style="opacity:.4">?</span>';
+    }
+
+    function placeholderHtml(item, e) {
+      const id = displayId(item, e);
+      return `<div class="ph-art" data-act="pick-art" title="Click to pick replacement from galleries">Need art<small>${esc(id)}</small><small>click to pick</small></div>`;
+    }
+
+    function setPickMode(uid) {
+      pickTargetUid = uid || null;
+      document.body.classList.toggle('picking-art', !!pickTargetUid);
+      const banner = document.getElementById('pick-banner');
+      banner.classList.toggle('on', !!pickTargetUid);
+      if (pickTargetUid) {
+        const item = byUid[pickTargetUid];
+        const e = edits[pickTargetUid];
+        document.getElementById('pick-banner-text').textContent =
+          `Picking art for ${displayName(item, e)} (${displayId(item, e)}) — click a gallery card below.`;
+        document.getElementById('root').querySelectorAll('.card').forEach(c => {
+          c.classList.toggle('picking-target', c.dataset.uid === pickTargetUid);
+        });
+        document.querySelector('.packs-bar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        document.getElementById('root').querySelectorAll('.card.picking-target')
+          .forEach(c => c.classList.remove('picking-target'));
+      }
+      renderPacks();
+      renderLegacy();
+    }
+
+    function applyGalleryPick(src) {
+      if (!pickTargetUid || !byUid[pickTargetUid]) return;
+      const e = edits[pickTargetUid];
+      e.replacement = {
+        file: src.file,
+        name: src.name,
+        pack: src.pack || '',
+        id: src.id || '',
+        source: src.source || '',
+        animations: src.animations || [],
+        frames: src.frames || (src.file ? [src.file] : []),
+        previewMode: src.previewMode || 'still',
+        fps: src.fps || 8,
+      };
+      e.placeholder = false;
+      if (!e.renameName?.trim()) e.renameName = src.name;
+      if (!e.comment?.trim()) {
+        e.comment = `art from ${src.pack || src.source}: ${src.name}`;
+      }
+      const uid = pickTargetUid;
+      setPickMode(null);
+      persist();
+      renderAll();
+      document.querySelector(`[data-uid="${CSS.escape(uid)}"]`)?.scrollIntoView({ block: 'nearest' });
+      toast(`Replaced with ${src.name}`);
+    }
+
+    function galleryAddedEntries(source, id) {
+      return customItems.filter(i => i.gallerySource === source && i.galleryId === id);
+    }
+
+    function isGalleryAdded(source, id) {
+      return galleryAddedEntries(source, id).length > 0;
+    }
+
+    function addFromGallery(src, category) {
+      const cat = CATEGORIES.includes(category) ? category : 'enemy';
+      const baseId = slugSafe(src.id || src.name);
+      const already = galleryAddedEntries(src.source, src.id || '');
+      if (already.length) {
+        const cats = [...new Set(already.map(i =>
+          (edits[i.uid] && edits[i.uid].category) || i.defaultCategory || 'enemy'))].join(', ');
+        const ok = confirm(
+          `"${src.name}" is already added (${already.length}× as ${cats}).\n\nAdd another copy as ${cat}?`
+        );
+        if (!ok) return;
+      }
+      const uid = `added::${src.source}::${baseId}::${Date.now().toString(36)}`;
+      const item = {
+        uid,
+        id: baseId,
+        name: src.name || baseId,
+        section: 'added',
+        note: `added from ${src.pack || src.source}`,
+        boss: cat === 'boss',
+        elite: cat === 'elite',
+        defaultBoxW: cat === 'boss' ? BOSS_DEFAULT.w : NORMAL_DEFAULT.w,
+        defaultBoxH: cat === 'boss' ? BOSS_DEFAULT.h : NORMAL_DEFAULT.h,
+        defaultScale: 1,
+        frame: { w: 0, h: 0 },
+        hasAnim: false,
+        hasArt: !!src.file,
+        anchor: 'center',
+        defaultCategory: cat,
+        custom: true,
+        preview: src.file,
+        frames: src.frames || (src.file ? [src.file] : []),
+        previewMode: src.previewMode || 'still',
+        fps: src.fps || 8,
+        pack: src.pack || '',
+        animations: src.animations || [],
+        gallerySource: src.source,
+        galleryId: src.id || '',
+      };
+      customItems.push(item);
+      rebuildByUid();
+      edits[uid] = defaultEdit(item);
+      edits[uid].category = cat;
+      order.push(uid);
+      persist();
+      renderAll();
+      document.querySelector(`[data-uid="${CSS.escape(uid)}"]`)?.scrollIntoView({ block: 'nearest' });
+      toast(`Added ${item.name} as ${cat}`);
+    }
+
+    function slugSafe(s) {
+      return String(s || 'asset').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'asset';
+    }
+
+    function catSelectHtml(selected) {
+      return CATEGORIES.map(c =>
+        `<option value="${c}"${c === selected ? ' selected' : ''}>${c}</option>`).join('');
+    }
+
+    function applyVisual(card, item, e) {
+      const box = card.querySelector('.box');
+      const wrap = card.querySelector('.sprite-wrap');
+      box.style.setProperty('--box-w', `${e.boxW}px`);
+      box.style.setProperty('--box-h', `${e.boxH}px`);
+
+      // Swap real sprite ↔ placeholder stand-in ↔ gallery replacement / custom preview
+      if (e.placeholder) {
+        wrap.innerHTML = placeholderHtml(item, e);
+        wrap.style.transform = '';
+      } else {
+        wrap.innerHTML = spriteHtml(item, categoryOf(item.uid), e);
+        if (wrap.querySelector('.anim-sprite')) SpriteAnim.attach(card);
+        if (wrap.querySelector('[data-coll-anim]')) startCollAnims();
+        wrap.style.transform =
+          `translate(${e.offsetX}px, ${e.offsetY}px) scale(${e.flip ? -e.zoom : e.zoom}, ${e.zoom})`;
+      }
+
+      card.classList.toggle('placeholder', !!e.placeholder);
+      card.classList.toggle('picking-target', pickTargetUid === item.uid);
+      card.querySelector('[data-act="flip"]').classList.toggle('active', !!e.flip);
+      card.querySelector('[data-act="placeholder"]').classList.toggle('active', !!e.placeholder);
+      const pickBtn = card.querySelector('[data-act="pick-art"]');
+      if (pickBtn && pickBtn.tagName === 'BUTTON') {
+        pickBtn.classList.toggle('active', pickTargetUid === item.uid);
+      }
+      card.querySelector('[data-val="zoom"]').textContent = `${Math.round(e.zoom * 100)}%`;
+      card.querySelector('[data-field="boxW"]').value = e.boxW;
+      card.querySelector('[data-field="boxH"]').value = e.boxH;
+      card.querySelector('[data-val="ox"]').textContent = e.offsetX;
+      card.querySelector('[data-val="oy"]').textContent = e.offsetY;
+
+      const nameIn = card.querySelector('[data-field="renameName"]');
+      const idIn = card.querySelector('[data-field="renameId"]');
+      if (document.activeElement !== nameIn) nameIn.value = e.renameName || '';
+      if (document.activeElement !== idIn) idIn.value = e.renameId || '';
+      nameIn.placeholder = item.name;
+      idIn.placeholder = item.id;
+
+      const renamed = !!(e.renameName?.trim() || e.renameId?.trim());
+      const orig = card.querySelector('.orig-hint');
+      if (renamed) {
+        orig.hidden = false;
+        orig.textContent = `was ${item.name} · ${item.id}`;
+      } else {
+        orig.hidden = true;
+      }
+
+      const cat = categoryOf(item.uid);
+      const world = worldOf(item.uid);
+      const catSel = card.querySelector('[data-field="category"]');
+      if (document.activeElement !== catSel) catSel.value = cat;
+      const worldSel = card.querySelector('[data-field="world"]');
+      if (worldSel && document.activeElement !== worldSel) worldSel.value = world;
+
+      const tags = card.querySelector('.tags');
+      tags.innerHTML = [
+        `<span class="world-chip ${world}">${world}</span>`,
+        `<span class="tag cat-${cat}">${cat}</span>`,
+        item.custom ? '<span class="tag renamed">added</span>' : '',
+        item.defaultCategory !== cat ? `<span class="tag">was ${item.defaultCategory}</span>` : '',
+        item.hasAnim ? '<span class="tag anim">anim</span>' : '',
+        !item.hasArt && !e.replacement ? '<span class="tag missing">missing</span>' : '',
+        e.flip ? '<span class="tag flip">flipped</span>' : '',
+        e.placeholder ? '<span class="tag ph">placeholder</span>' : '',
+        e.replacement ? '<span class="tag renamed">replaced</span>' : '',
+        renamed ? '<span class="tag renamed">renamed</span>' : '',
+      ].join('');
+
+      const repl = card.querySelector('.repl-label');
+      if (e.replacement) {
+        repl.hidden = false;
+        repl.textContent = `art: ${e.replacement.name} (${e.replacement.pack || e.replacement.source})`;
+      } else if (item.custom) {
+        repl.hidden = false;
+        repl.textContent = `from ${item.pack || item.gallerySource || 'gallery'}`;
+      } else {
+        repl.hidden = true;
+      }
+
+      const fs = item.frame;
+      const eff = item.defaultScale * e.zoom;
+      card.querySelector('.dims').textContent = e.placeholder
+        ? `placeholder · box ${e.boxW}×${e.boxH} · click stand-in to pick art`
+        : (item.custom || e.replacement)
+          ? `preview art · box ${e.boxW}×${e.boxH}${e.replacement?.animations?.length ? ` · anims: ${e.replacement.animations.join(', ')}` : ''}`
+          : `frame ${fs.w}×${fs.h} · combat ×${item.defaultScale} · zoom → ${Math.round(fs.w * eff)}×${Math.round(fs.h * eff)} · box ${e.boxW}×${e.boxH}`;
+    }
+
+    function renderCard(item) {
+      const e = edits[item.uid];
+      const cat = categoryOf(item.uid);
+      const boxClass = cat === 'boss' || item.boss
+        ? 'combatant boss'
+        : (cat === 'elite' || item.elite ? 'combatant elite' : 'combatant');
+      const el = document.createElement('div');
+      el.className = `card ${cat === 'boss' || item.boss ? 'boss-card' : ''}${e.placeholder ? ' placeholder' : ''}`;
+      el.dataset.uid = item.uid;
+      const catOpts = CATEGORIES.map(c =>
+        `<option value="${c}"${c === cat ? ' selected' : ''}>${c}</option>`).join('');
+      el.innerHTML = `
+        <div class="${boxClass}">
+          <div class="fighter-sprite box" data-anchor="${esc(item.anchor)}">
+            <div class="sprite-wrap">${e.placeholder ? placeholderHtml(item, e) : spriteHtml(item, cat, e)}</div>
+          </div>
+        </div>
+        <div class="meta">
+          <input class="name-in" data-field="renameName" type="text" spellcheck="false" title="Rename display name" />
+          <input class="id-in" data-field="renameId" type="text" spellcheck="false" title="Rename asset id" />
+          <select class="cat-sel" data-field="category" title="Sprite category">${catOpts}</select>
+          <select class="world-sel" data-field="world" title="World / wandering">${WORLD_ORDER.map(w =>
+            `<option value="${w}"${w === worldOf(item.uid) ? ' selected' : ''}>${w}</option>`).join('')}</select>
+          <div class="orig-hint" hidden></div>
+          <div class="repl-label" hidden></div>
+          <div class="tags"></div>
+          <div class="dims"></div>
+          ${item.note ? `<div style="opacity:.7;font-size:11px">${esc(item.note)}</div>` : ''}
+        </div>
+        <div class="ctrls">
+          <div class="row">
+            <button type="button" data-act="left" title="Move earlier">◀</button>
+            <button type="button" data-act="right" title="Move later">▶</button>
+            <button type="button" data-act="flip" title="Mirror horizontally">Flip</button>
+            <button type="button" data-act="placeholder" class="warn" title="Needs new art — show placeholder">Placeholder</button>
+            <button type="button" data-act="pick-art" title="Pick replacement from galleries">Pick art</button>
+          </div>
+          <div class="row">
+            <span class="lbl">Zoom</span>
+            <button type="button" data-act="zoom-out">−</button>
+            <span class="val" data-val="zoom">100%</span>
+            <button type="button" data-act="zoom-in">+</button>
+            <button type="button" data-act="zoom-reset" title="Reset zoom">1×</button>
+          </div>
+          <div class="row">
+            <span class="lbl">Nudge</span>
+            <button type="button" data-act="nudge-l">←</button>
+            <button type="button" data-act="nudge-u">↑</button>
+            <button type="button" data-act="nudge-d">↓</button>
+            <button type="button" data-act="nudge-r">→</button>
+            <span class="val" data-val="ox">0</span>/<span class="val" data-val="oy">0</span>
+            <button type="button" data-act="nudge-reset">0</button>
+          </div>
+          <div class="row">
+            <span class="lbl">Box</span>
+            <input type="number" data-field="boxW" min="32" max="480" step="4" title="Box width" />
+            <span>×</span>
+            <input type="number" data-field="boxH" min="32" max="480" step="4" title="Box height" />
+            <button type="button" data-act="box-reset" title="Reset box">↺</button>
+          </div>
+          <div class="row">
+            <button type="button" data-act="box-sm" title="Shrink box">Box −</button>
+            <button type="button" data-act="box-lg" title="Grow box">Box +</button>
+            <button type="button" data-act="clear-replacement" title="Clear gallery replacement">Clear art</button>
+            <button type="button" data-act="reset" title="Reset this sprite">Reset</button>
+            ${item.custom ? '<button type="button" data-act="remove-added" class="warn" title="Remove from collections (stays in gallery)">Remove</button>' : ''}
+          </div>
+          <textarea class="note-in" data-field="comment" placeholder="note…" rows="1"></textarea>
+        </div>
+      `;
+      el.querySelector('[data-field="comment"]').value = e.comment || '';
+      applyVisual(el, item, e);
+      return el;
+    }
+
+    function renderAll() {
+      const root = document.getElementById('root');
+      const hidePh = document.getElementById('hide-placeholder').checked;
+      const groupByCat = document.getElementById('group-by-category').checked;
+      const filterCat = document.getElementById('filter-category').value;
+      SpriteAnim.reset();
+      root.innerHTML = '';
+
+      const visible = [];
+      for (const uid of order) {
+        const item = byUid[uid];
+        if (!item) continue;
+        if (hidePh && edits[uid].placeholder) continue;
+        if (filterCat && categoryOf(uid) !== filterCat) continue;
+        visible.push(item);
+      }
+
+      const groups = new Map(); // key -> items[]
+      const groupKeys = [];
+      if (groupByCat) {
+        for (const c of CATEGORIES) { groups.set(c, []); groupKeys.push(c); }
+        for (const item of visible) groups.get(categoryOf(item.uid)).push(item);
+      } else {
+        // Sort / group by world when category grouping is off.
+        for (const w of WORLD_ORDER) { groups.set(w, []); groupKeys.push(w); }
+        const sorted = [...visible].sort((a, b) => {
+          const wa = WORLD_ORDER.indexOf(worldOf(a.uid));
+          const wb = WORLD_ORDER.indexOf(worldOf(b.uid));
+          if (wa !== wb) return wa - wb;
+          return displayName(a, edits[a.uid]).localeCompare(displayName(b, edits[b.uid]));
+        });
+        for (const item of sorted) {
+          const w = worldOf(item.uid);
+          if (!groups.has(w)) { groups.set(w, []); groupKeys.push(w); }
+          groups.get(w).push(item);
+        }
+      }
+
+      for (const key of groupKeys) {
+        const list = groups.get(key) || [];
+        if (!list.length) continue;
+        const h = document.createElement('h2');
+        const phN = list.filter(i => edits[i.uid].placeholder).length;
+        h.textContent = `${key} (${list.length}${phN ? `, ${phN} placeholder` : ''})`;
+        root.appendChild(h);
+        const grid = document.createElement('div');
+        grid.className = 'grid';
+        grid.dataset.group = key;
+        for (const item of list) grid.appendChild(renderCard(item));
+        root.appendChild(grid);
+      }
+
+      SpriteAnim.attach(root);
+      if (document.getElementById('pause-anim').checked) pauseAnims(true);
+      updateExport();
+      updateStat();
+      startCollAnims();
+      if (typeof renderPacks === 'function') renderPacks();
+      if (typeof renderLegacy === 'function') renderLegacy();
+    }
+
+    function pauseAnims(on) {
+      document.querySelectorAll('.px-sprite').forEach(el => {
+        el.style.animationPlayState = on ? 'paused' : '';
+      });
+      // anim-sprite is rAF-driven; freeze by clearing records when pausing is awkward —
+      // instead stop advancing by detaching. Simpler: set background-position and kill loop.
+      if (on) {
+        SpriteAnim.reset();
+        stopCollAnims();
+      } else {
+        SpriteAnim.attach(document.getElementById('root'));
+        startCollAnims();
+      }
+    }
+
+    function moveUid(uid, dir) {
+      const item = byUid[uid];
+      const groupByCat = document.getElementById('group-by-category').checked;
+      // Reorder within the same category (or world) only
+      const siblings = order.filter(u => {
+        if (!byUid[u]) return false;
+        if (groupByCat) return categoryOf(u) === categoryOf(uid);
+        return worldOf(u) === worldOf(uid);
+      });
+      const si = siblings.indexOf(uid);
+      const ti = si + dir;
+      if (ti < 0 || ti >= siblings.length) return;
+      const a = order.indexOf(uid);
+      const b = order.indexOf(siblings[ti]);
+      [order[a], order[b]] = [order[b], order[a]];
+      persist();
+      renderAll();
+      document.querySelector(`[data-uid="${CSS.escape(uid)}"]`)?.scrollIntoView({ block: 'nearest' });
+    }
+
+    function onCardAction(uid, act, target) {
+      const item = byUid[uid];
+      const e = edits[uid];
+      if (!item || !e) return;
+
+      if (act === 'left') return moveUid(uid, -1);
+      if (act === 'right') return moveUid(uid, 1);
+      if (act === 'flip') e.flip = !e.flip;
+      else if (act === 'placeholder') {
+        e.placeholder = !e.placeholder;
+        if (e.placeholder) setPickMode(uid);
+        else if (pickTargetUid === uid) setPickMode(null);
+      } else if (act === 'pick-art') {
+        setPickMode(pickTargetUid === uid ? null : uid);
+        return;
+      } else if (act === 'clear-replacement') {
+        e.replacement = null;
+      } else if (act === 'zoom-in') e.zoom = Math.min(4, +(e.zoom + 0.1).toFixed(2));
+      else if (act === 'zoom-out') e.zoom = Math.max(0.25, +(e.zoom - 0.1).toFixed(2));
+      else if (act === 'zoom-reset') e.zoom = 1;
+      else if (act === 'nudge-l') e.offsetX -= 4;
+      else if (act === 'nudge-r') e.offsetX += 4;
+      else if (act === 'nudge-u') e.offsetY -= 4;
+      else if (act === 'nudge-d') e.offsetY += 4;
+      else if (act === 'nudge-reset') { e.offsetX = 0; e.offsetY = 0; }
+      else if (act === 'box-sm') {
+        e.boxW = Math.max(32, e.boxW - 8);
+        e.boxH = Math.max(32, e.boxH - 8);
+      } else if (act === 'box-lg') {
+        e.boxW = Math.min(480, e.boxW + 8);
+        e.boxH = Math.min(480, e.boxH + 8);
+      } else if (act === 'box-reset') {
+        e.boxW = item.defaultBoxW;
+        e.boxH = item.defaultBoxH;
+      } else if (act === 'reset') {
+        edits[uid] = defaultEdit(item);
+        if (pickTargetUid === uid) setPickMode(null);
+      } else if (act === 'remove-added') {
+        return removeCustomItem(uid);
+      } else return;
+
+      persist();
+      const card = document.querySelector(`[data-uid="${CSS.escape(uid)}"]`);
+      if (card) applyVisual(card, item, edits[uid]);
+      if (act === 'placeholder' && document.getElementById('hide-placeholder').checked) renderAll();
+    }
+
+    document.getElementById('root').addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-act]');
+      if (!btn) return;
+      const card = btn.closest('[data-uid]');
+      if (!card) return;
+      onCardAction(card.dataset.uid, btn.dataset.act);
+    });
+
+    document.getElementById('pick-cancel').addEventListener('click', () => setPickMode(null));
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && pickTargetUid) setPickMode(null);
+    });
+
+    function onFieldEdit(ev) {
+      const field = ev.target.dataset?.field;
+      if (!field) return;
+      const card = ev.target.closest('[data-uid]');
+      if (!card) return;
+      const uid = card.dataset.uid;
+      const e = edits[uid];
+      if (field === 'boxW' || field === 'boxH') {
+        e[field] = Math.max(32, Math.min(480, parseInt(ev.target.value, 10) || 32));
+      } else if (field === 'category') {
+        e.category = CATEGORIES.includes(ev.target.value) ? ev.target.value : 'enemy';
+        persist();
+        // Re-group / re-filter when category changes
+        renderAll();
+        document.querySelector(`[data-uid="${CSS.escape(uid)}"]`)?.scrollIntoView({ block: 'nearest' });
+        return;
+      } else if (field === 'world') {
+        e.world = WORLD_SET.has(ev.target.value) ? ev.target.value : 'added';
+        persist();
+        renderAll();
+        document.querySelector(`[data-uid="${CSS.escape(uid)}"]`)?.scrollIntoView({ block: 'nearest' });
+        return;
+      } else if (field === 'comment' || field === 'renameName' || field === 'renameId') {
+        e[field] = ev.target.value;
+      } else return;
+      persist();
+      applyVisual(card, byUid[uid], e);
+    }
+    document.getElementById('root').addEventListener('change', onFieldEdit);
+    document.getElementById('root').addEventListener('input', (ev) => {
+      const f = ev.target.dataset?.field;
+      if (f === 'renameName' || f === 'renameId' || f === 'comment') onFieldEdit(ev);
+    });
+
+    document.getElementById('hide-placeholder').addEventListener('change', renderAll);
+    document.getElementById('group-by-category').addEventListener('change', renderAll);
+    document.getElementById('filter-category').addEventListener('change', renderAll);
+    document.getElementById('pause-anim').addEventListener('change', (ev) => {
+      if (ev.target.checked) pauseAnims(true);
+      else { SpriteAnim.attach(document.getElementById('root')); pauseAnims(false); }
+    });
+
+    document.getElementById('btn-reset-all').addEventListener('click', () => {
+      if (!confirm('Reset all edits, added gallery units, and replacements?')) return;
+      setPickMode(null);
+      customItems = [];
+      catalog = buildCatalog();
+      rebuildByUid();
+      order = catalog.map(i => i.uid);
+      edits = Object.fromEntries(catalog.map(i => [i.uid, defaultEdit(i)]));
+      persist();
+      renderAll();
+      toast('Reset');
+    });
+
+    document.getElementById('btn-refresh-json').addEventListener('click', () => {
+      updateExport();
+      toast('JSON refreshed');
+    });
+
+    document.getElementById('btn-copy').addEventListener('click', async () => {
+      updateExport();
+      const text = document.getElementById('export-json').value;
+      try {
+        await navigator.clipboard.writeText(text);
+        toast('Copied to clipboard');
+      } catch {
+        document.getElementById('export-json').select();
+        document.execCommand('copy');
+        toast('Copied');
+      }
+    });
+
+    document.getElementById('btn-download').addEventListener('click', () => {
+      updateExport();
+      const blob = new Blob([document.getElementById('export-json').value], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `enemy-box-settings-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast('Downloaded');
+    });
+
+    document.getElementById('btn-import').addEventListener('click', () => {
+      document.getElementById('import-file').click();
+    });
+    document.getElementById('import-file').addEventListener('change', async (ev) => {
+      const file = ev.target.files?.[0];
+      if (!file) return;
+      try {
+        const data = JSON.parse(await file.text());
+        if (Array.isArray(data.customItems)) {
+          customItems = data.customItems.filter(i => i && i.uid);
+          rebuildByUid();
+        }
+        if (Array.isArray(data.order)) {
+          const known = new Set(Object.keys(byUid));
+          const next = data.order.filter(u => known.has(u));
+          for (const u of known) if (!next.includes(u)) next.push(u);
+          order = next;
+        }
+        const src = data.edits || (Array.isArray(data.items)
+          ? Object.fromEntries(data.items.map(i => [i.uid, i]))
+          : null);
+        if (src) {
+          for (const uid of Object.keys(byUid)) {
+            const s = src[uid];
+            if (!s) {
+              if (!edits[uid]) edits[uid] = defaultEdit(byUid[uid]);
+              continue;
+            }
+            edits[uid] = normalizeEdit({
+              ...edits[uid],
+              flip: !!s.flip,
+              placeholder: !!(s.placeholder ?? s.remove),
+              renameName: s.renameName != null ? s.renameName : (edits[uid]?.renameName || ''),
+              renameId: s.renameId != null ? s.renameId : (edits[uid]?.renameId || ''),
+              category: s.category != null ? s.category : edits[uid]?.category,
+              zoom: s.zoom != null ? +s.zoom : edits[uid]?.zoom,
+              boxW: s.boxW != null ? +s.boxW : edits[uid]?.boxW,
+              boxH: s.boxH != null ? +s.boxH : edits[uid]?.boxH,
+              offsetX: s.offsetX != null ? +s.offsetX : edits[uid]?.offsetX,
+              offsetY: s.offsetY != null ? +s.offsetY : edits[uid]?.offsetY,
+              comment: s.comment || '',
+              replacement: s.replacement || null,
+            }, byUid[uid]);
+          }
+        }
+        persist();
+        renderAll();
+        toast('Imported');
+      } catch (err) {
+        alert('Import failed: ' + err.message);
+      }
+      ev.target.value = '';
+    });
+
+    // Keep export textarea editable → apply on blur if valid JSON with items/edits
+    document.getElementById('export-json').addEventListener('blur', () => {
+      // don't auto-import on blur — too easy to break; use Import button
+    });
+
+    /* ---- Legacy Collection preview gallery ---- */
+    async function loadLegacy() {
+      try {
+        const res = await fetch('assets/img/legacy-previews/catalog.json');
+        if (!res.ok) throw new Error(res.statusText);
+        const data = await res.json();
+        legacyItems = data.items || [];
+      } catch (err) {
+        document.getElementById('legacy-stat').textContent = 'catalog missing — run import_legacy_previews.py';
+        return;
+      }
+      const packs = [...new Set(legacyItems.map(i => i.pack))].sort();
+      const kinds = [...new Set(legacyItems.map(i => i.kind))].sort();
+      const packSel = document.getElementById('legacy-pack');
+      const kindSel = document.getElementById('legacy-kind');
+      const seenP = new Set([...packSel.options].map(o => o.value));
+      const seenK = new Set([...kindSel.options].map(o => o.value));
+      for (const p of packs) {
+        if (seenP.has(p)) continue;
+        packSel.insertAdjacentHTML('beforeend', `<option value="${esc(p)}">${esc(p)}</option>`);
+      }
+      for (const k of kinds) {
+        if (seenK.has(k)) continue;
+        kindSel.insertAdjacentHTML('beforeend', `<option value="${esc(k)}">${esc(k)}</option>`);
+      }
+    }
+    function gallerySrcFromLegacy(i) {
+      return {
+        source: 'legacy',
+        id: i.id,
+        name: i.name,
+        pack: i.pack,
+        file: i.file,
+        frames: i.file ? [i.file] : [],
+        previewMode: /\.gif$/i.test(i.file || '') ? 'loop' : 'still',
+        animations: i.role ? [i.role] : [],
+      };
+    }
+    function gallerySrcFromPack(i) {
+      const frames = packFrames(i);
+      const mode = packPreviewMode(i);
+      const idx = packFrameIndex.get(i.id) || 0;
+      // Prefer animated GIF for loops; step mode keeps the selected variant frame
+      let file = i.preview || '';
+      if (mode === 'step') file = frames[idx] || file;
+      else if (!/\.gif$/i.test(file) && frames.length) file = frames[0];
+      return {
+        source: 'packs',
+        id: i.id,
+        name: i.name,
+        pack: i.pack,
+        file,
+        frames: mode === 'step' ? [file].filter(Boolean) : (frames.length ? frames : (file ? [file] : [])),
+        previewMode: mode,
+        fps: i.fps || 8,
+        animations: i.animations || [],
+      };
+    }
+
+    function renderLegacy() {
+      const grid = document.getElementById('legacy-grid');
+      if (!grid) return;
+      const pack = document.getElementById('legacy-pack').value;
+      const kind = document.getElementById('legacy-kind').value;
+      const q = document.getElementById('legacy-search').value.trim().toLowerCase();
+      const list = legacyItems.filter(i => {
+        if (pack && i.pack !== pack) return false;
+        if (kind && i.kind !== kind) return false;
+        if (q && !(`${i.name} ${i.id} ${i.pack}`.toLowerCase().includes(q))) return false;
+        return true;
+      });
+      document.getElementById('legacy-stat').textContent =
+        `${list.length} / ${legacyItems.length}${pickTargetUid ? ' · click to assign' : ''}`;
+      grid.innerHTML = list.map(i => {
+        const defCat = 'enemy';
+        const added = isGalleryAdded('legacy', i.id);
+        const n = galleryAddedEntries('legacy', i.id).length;
+        return `<div class="legacy-card${added ? ' is-added' : ''}" data-gallery="legacy" data-id="${esc(i.id)}">
+          <div class="frame"><img src="${esc(i.file)}" alt="${esc(i.name)}" loading="lazy" /></div>
+          ${added ? `<div class="added-badge">ADDED${n > 1 ? ` ×${n}` : ''}</div>` : ''}
+          <div class="nm">${esc(i.name)}</div>
+          <div class="pk">${esc(i.pack)} · ${esc(i.role || i.kind)}</div>
+          <code>${esc(i.file.replace('assets/img/legacy-previews/', ''))}</code>
+          <div class="add-as-row">
+            <select data-add-cat title="Category to add as">${catSelectHtml(defCat)}</select>
+            <button type="button" data-add-as>${added ? 'Add again…' : 'Add as…'}</button>
+          </div>
+          <button type="button" data-copy-path="${esc(i.file)}">Copy path</button>
+        </div>`;
+      }).join('');
+    }
+    document.getElementById('legacy-pack').addEventListener('change', renderLegacy);
+    document.getElementById('legacy-kind').addEventListener('change', renderLegacy);
+    document.getElementById('legacy-search').addEventListener('input', renderLegacy);
+    document.getElementById('legacy-grid').addEventListener('click', async (ev) => {
+      const card = ev.target.closest('.legacy-card');
+      if (!card) return;
+      const id = card.dataset.id;
+      const item = legacyItems.find(x => x.id === id);
+      if (!item) return;
+
+      if (pickTargetUid && !ev.target.closest('[data-add-as], [data-add-cat], [data-copy-path]')) {
+        applyGalleryPick(gallerySrcFromLegacy(item));
+        return;
+      }
+      if (ev.target.closest('[data-add-as]')) {
+        const cat = card.querySelector('[data-add-cat]')?.value || 'enemy';
+        addFromGallery(gallerySrcFromLegacy(item), cat);
+        return;
+      }
+      const copyBtn = ev.target.closest('[data-copy-path]');
+      if (copyBtn) {
+        try {
+          await navigator.clipboard.writeText(copyBtn.dataset.copyPath);
+          toast('Path copied');
+        } catch { toast(copyBtn.dataset.copyPath); }
+      }
+    });
+
+    /* ---- Imported download packs (between elites editor + Legacy) ---- */
+    const PACK_CAT_ORDER = { boss: 0, elite: 1, enemy: 2, npc: 3 };
+
+    async function loadPacks() {
+      try {
+        const res = await fetch('assets/img/pack-previews/catalog.json');
+        if (!res.ok) throw new Error(res.statusText);
+        const data = await res.json();
+        packItems = data.items || [];
+      } catch {
+        document.getElementById('packs-stat').textContent = 'catalog missing — run import_download_packs.py';
+        return;
+      }
+      const packs = [...new Set(packItems.map(i => i.pack))].sort();
+      const sel = document.getElementById('packs-pack');
+      const seen = new Set([...sel.options].map(o => o.value));
+      for (const p of packs) {
+        if (seen.has(p)) continue;
+        sel.insertAdjacentHTML('beforeend', `<option value="${esc(p)}">${esc(p)}</option>`);
+      }
+    }
+
+    let packAnimTimer = null;
+
+    function packFrames(item) {
+      if (Array.isArray(item.frames) && item.frames.length) return item.frames;
+      return item.preview ? [item.preview] : [];
+    }
+
+    function packPreviewMode(item) {
+      if (item.previewMode === 'step' || item.previewMode === 'loop' || item.previewMode === 'still') {
+        return item.previewMode;
+      }
+      return packFrames(item).length > 1 ? 'loop' : 'still';
+    }
+
+    function setPackFrame(card, item, idx) {
+      const frames = packFrames(item);
+      if (!frames.length) return;
+      const i = ((idx % frames.length) + frames.length) % frames.length;
+      packFrameIndex.set(item.id, i);
+      const img = card.querySelector('[data-frame-img]');
+      if (img) img.src = frames[i];
+      const label = card.querySelector('.frame-idx');
+      if (label) label.textContent = `${i + 1}/${frames.length}`;
+    }
+
+    function stopPackAnims() {
+      if (packAnimTimer) {
+        clearInterval(packAnimTimer);
+        packAnimTimer = null;
+      }
+    }
+
+    function startPackAnims() {
+      stopPackAnims();
+      packAnimTimer = setInterval(() => {
+        document.querySelectorAll('.pack-card[data-anim-mode="loop"]').forEach(card => {
+          const item = packItems.find(x => x.id === card.dataset.id);
+          if (!item) return;
+          const frames = packFrames(item);
+          if (frames.length < 2) return;
+          const cur = packFrameIndex.get(item.id) || 0;
+          setPackFrame(card, item, cur + 1);
+        });
+      }, 120);
+    }
+
+    function renderPacks() {
+      if (!document.getElementById('packs-grid')) return;
+      stopPackAnims();
+      const cat = document.getElementById('packs-cat').value;
+      const pack = document.getElementById('packs-pack').value;
+      const q = document.getElementById('packs-search').value.trim().toLowerCase();
+      let list = packItems.filter(i => {
+        if (cat && i.category !== cat) return false;
+        if (pack && i.pack !== pack) return false;
+        const hay = `${i.name} ${i.id} ${i.pack} ${(i.animations || []).join(' ')}`.toLowerCase();
+        if (q && !hay.includes(q)) return false;
+        return true;
+      });
+      list.sort((a, b) => (PACK_CAT_ORDER[a.category] ?? 9) - (PACK_CAT_ORDER[b.category] ?? 9)
+        || a.pack.localeCompare(b.pack) || a.name.localeCompare(b.name));
+
+      document.getElementById('packs-stat').textContent =
+        `${list.length} / ${packItems.length}${pickTargetUid ? ' · click to assign' : ''}`;
+      const grid = document.getElementById('packs-grid');
+      grid.innerHTML = list.map(i => {
+        const anims = (i.animations || []).map(a => `<code>${esc(a)}</code>`).join(' ');
+        const frames = packFrames(i);
+        const mode = packPreviewMode(i);
+        const idx = packFrameIndex.get(i.id) || 0;
+        const src = frames[idx] || i.preview || '';
+        const defCat = CATEGORIES.includes(i.category) ? i.category : 'enemy';
+        const step = mode === 'step' && frames.length > 1
+          ? `<div class="frame-step">
+              <button type="button" data-frame-prev title="Previous variant">◀</button>
+              <span class="frame-idx">${idx + 1}/${frames.length}</span>
+              <button type="button" data-frame-next title="Next variant">▶</button>
+            </div>`
+          : '';
+        const hint = mode === 'loop' && frames.length > 1
+          ? `<div class="anim-hint">idle · ${frames.length} frames</div>`
+          : (mode === 'step' ? `<div class="anim-hint">step variants</div>` : '');
+        const added = isGalleryAdded('packs', i.id);
+        const n = galleryAddedEntries('packs', i.id).length;
+        return `<div class="pack-card${added ? ' is-added' : ''}" data-gallery="packs" data-id="${esc(i.id)}" data-anim-mode="${esc(mode)}">
+          <div class="frame">${src ? `<img data-frame-img src="${esc(src)}" alt="${esc(i.name)}" loading="lazy" />` : '?'}</div>
+          ${step}
+          ${hint}
+          ${added ? `<div class="added-badge">ADDED${n > 1 ? ` ×${n}` : ''}</div>` : ''}
+          <div class="nm">${esc(i.name)}</div>
+          <div class="pk"><span class="tag cat-${esc(i.category)}">${esc(i.category)}</span> ${esc(i.pack)}</div>
+          <div class="anims"><b>Anims</b><br>${anims || '—'}</div>
+          ${i.note ? `<div class="note">${esc(i.note)}</div>` : ''}
+          <div class="add-as-row">
+            <select data-add-cat title="Category to add as">${catSelectHtml(defCat)}</select>
+            <button type="button" data-add-as>${added ? 'Add again…' : 'Add as…'}</button>
+          </div>
+          <button type="button" data-copy-path="${esc(src || i.id)}">Copy preview path</button>
+        </div>`;
+      }).join('');
+      startPackAnims();
+    }
+
+    document.getElementById('packs-cat').addEventListener('change', renderPacks);
+    document.getElementById('packs-pack').addEventListener('change', renderPacks);
+    document.getElementById('packs-search').addEventListener('input', renderPacks);
+    document.getElementById('packs-grid').addEventListener('click', async (ev) => {
+      const card = ev.target.closest('.pack-card');
+      if (!card) return;
+      const id = card.dataset.id;
+      const item = packItems.find(x => x.id === id);
+      if (!item) return;
+
+      const uiOnly = '[data-add-as], [data-add-cat], [data-copy-path], [data-frame-prev], [data-frame-next]';
+      if (ev.target.closest('[data-frame-prev]')) {
+        setPackFrame(card, item, (packFrameIndex.get(item.id) || 0) - 1);
+        return;
+      }
+      if (ev.target.closest('[data-frame-next]')) {
+        setPackFrame(card, item, (packFrameIndex.get(item.id) || 0) + 1);
+        return;
+      }
+
+      if (pickTargetUid && !ev.target.closest(uiOnly)) {
+        if (!item.preview && !packFrames(item).length) { toast('No preview file on this unit'); return; }
+        applyGalleryPick(gallerySrcFromPack(item));
+        return;
+      }
+      if (ev.target.closest('[data-add-as]')) {
+        if (!item.preview && !packFrames(item).length) { toast('No preview file on this unit'); return; }
+        const cat = card.querySelector('[data-add-cat]')?.value || item.category || 'enemy';
+        addFromGallery(gallerySrcFromPack(item), cat);
+        return;
+      }
+      const copyBtn = ev.target.closest('[data-copy-path]');
+      if (copyBtn) {
+        try {
+          await navigator.clipboard.writeText(copyBtn.dataset.copyPath);
+          toast('Path copied');
+        } catch { toast(copyBtn.dataset.copyPath); }
+      }
+    });
+    loadSaved();
+    Promise.all([loadLegacy(), loadPacks()]).then(() => renderAll());
+  </script>
+</body>
+</html>

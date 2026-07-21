@@ -377,7 +377,7 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
     if (!coopS || coopS.alone) return '';
     const chips = [...coopS.partners.entries()].map(([id, p]) => {
       const s = p.status || {};
-      const resName = ({ fighter: 'Vigor', mage: 'Mana', ranger: 'Focus', rogue: 'Energy', priest: 'Faith', monk: 'Ki', warlock: 'Pact', bard: 'Verve', druid: 'Essence' })[s.classId || p.classId] || 'RES';
+      const resName = ({ fighter: 'Vigor', mage: 'Mana', ranger: 'Focus', rogue: 'Energy', priest: 'Faith', monk: 'Ki', warlock: 'Pact', bard: 'Verve', necromancer: 'Essence', viking: 'Fury', spellsword: 'Arcana' })[s.classId || p.classId] || 'RES';
       const hpPct = s.maxHp ? Math.max(0, Math.min(100, (s.hp / s.maxHp) * 100)) : 0;
       const mpPct = s.maxMp ? Math.max(0, Math.min(100, ((s.mp || 0) / s.maxMp) * 100)) : 0;
       return `<button type="button" class="tm-party-chip ${s.down ? 'downed' : ''}" data-partner="${id}" title="View ${p.name}'s appraisal &amp; gear">
@@ -468,7 +468,7 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
         const chip = root.querySelector(`[data-partner="${id}"]`);
         if (!chip) continue;
         const s = p.status || {};
-        const resName = ({ fighter: 'Vigor', mage: 'Mana', ranger: 'Focus', rogue: 'Energy', priest: 'Faith', monk: 'Ki', warlock: 'Pact', bard: 'Verve', druid: 'Essence' })[s.classId || p.classId] || 'RES';
+        const resName = ({ fighter: 'Vigor', mage: 'Mana', ranger: 'Focus', rogue: 'Energy', priest: 'Faith', monk: 'Ki', warlock: 'Pact', bard: 'Verve', necromancer: 'Essence', viking: 'Fury', spellsword: 'Arcana' })[s.classId || p.classId] || 'RES';
         const hpPct = s.maxHp ? Math.max(0, Math.min(100, (s.hp / s.maxHp) * 100)) : 0;
         const mpPct = s.maxMp ? Math.max(0, Math.min(100, ((s.mp || 0) / s.maxMp) * 100)) : 0;
         chip.classList.toggle('downed', !!s.down);

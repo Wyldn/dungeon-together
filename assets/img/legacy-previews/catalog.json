@@ -1,0 +1,536 @@
+{
+  "version": 1,
+  "source": "c:\\Users\\andre\\Downloads\\Legacy Collection\\Legacy Collection\\Assets",
+  "count": 58,
+  "packs": [
+    "Explosions and Magic",
+    "Gothicvania",
+    "TinyRPG Living Pack 1",
+    "TinyRPG Monster Pack",
+    "Warped"
+  ],
+  "items": [
+    {
+      "id": "gv_bridge_heroine",
+      "name": "Bridge Heroine",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/Bridge Heroine/Heroine base/Previews/idle.gif",
+      "file": "assets/img/legacy-previews/gothicvania/bridge_heroine/idle.gif",
+      "role": "idle"
+    },
+    {
+      "id": "gv_crow",
+      "name": "crow",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/crow/Previews/crow-idle.gif",
+      "file": "assets/img/legacy-previews/gothicvania/crow/crow-idle.gif",
+      "role": "idle"
+    },
+    {
+      "id": "gv_dancing_girl_files",
+      "name": "Dancing Girl Files",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/Dancing Girl Files/Preview/hips.gif",
+      "file": "assets/img/legacy-previews/gothicvania/dancing_girl_files/dancing_girl_files-hips.gif",
+      "role": "preview"
+    },
+    {
+      "id": "gv_death",
+      "name": "death",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/death/Previews/death-walk.gif",
+      "file": "assets/img/legacy-previews/gothicvania/death/death-death-walk.gif",
+      "role": "preview"
+    },
+    {
+      "id": "gv_demon_files",
+      "name": "demon Files",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/demon-Files/Previews/demon-idle.gif",
+      "file": "assets/img/legacy-previews/gothicvania/demon_files/demon-idle.gif",
+      "role": "idle"
+    },
+    {
+      "id": "gv_enemy_ghost",
+      "name": "enemy ghost",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/enemy-ghost/Previews/no-particles.gif",
+      "file": "assets/img/legacy-previews/gothicvania/enemy_ghost/enemy_ghost-no-particles.gif",
+      "role": "preview"
+    },
+    {
+      "id": "gv_fire_skull_files",
+      "name": "Fire Skull Files",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/Fire-Skull-Files/Previews/fire-skull-no-fire.gif",
+      "file": "assets/img/legacy-previews/gothicvania/fire_skull_files/fire_skull_files-fire-skull-no-fire.gif",
+      "role": "preview"
+    },
+    {
+      "id": "gv_flying_bird",
+      "name": "flying bird",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/flying-bird/previews/flying-creature-previewx1.gif",
+      "file": "assets/img/legacy-previews/gothicvania/flying_bird/flying_bird-flying-creature-previewx1.gif",
+      "role": "preview"
+    },
+    {
+      "id": "gv_flying_eye_demon",
+      "name": "flying eye demon",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/flying-eye-demon/Preview.gif",
+      "file": "assets/img/legacy-previews/gothicvania/flying_eye_demon/flying_eye_demon-preview.gif",
+      "role": "preview"
+    },
+    {
+      "id": "gv_ghost_files",
+      "name": "Ghost Files",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/Ghost-Files/Previews/idle.gif",
+      "file": "assets/img/legacy-previews/gothicvania/ghost_files/idle.gif",
+      "role": "idle"
+    },
+    {
+      "id": "gv_grotto_escape_2_boss_dragon",
+      "name": "Grotto escape 2 boss dragon",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/Grotto-escape-2-boss-dragon/Previews/idle.gif",
+      "file": "assets/img/legacy-previews/gothicvania/grotto_escape_2_boss_dragon/idle.gif",
+      "role": "idle"
+    },
+    {
+      "id": "gv_hell_beast_files",
+      "name": "Hell Beast Files",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/Hell-Beast-Files/Fireball/Preview.gif",
+      "file": "assets/img/legacy-previews/gothicvania/hell_beast_files/hell_beast_files-preview.gif",
+      "role": "preview"
+    },
+    {
+      "id": "gv_hell_hound_files",
+      "name": "Hell Hound Files",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/Hell-Hound-Files/Previews/hell-hound-idle.gif",
+      "file": "assets/img/legacy-previews/gothicvania/hell_hound_files/hell-hound-idle.gif",
+      "role": "idle"
+    },
+    {
+      "id": "gv_meerman",
+      "name": "meerman",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/meerman/Preview.gif",
+      "file": "assets/img/legacy-previews/gothicvania/meerman/meerman-preview.gif",
+      "role": "preview"
+    },
+    {
+      "id": "gv_mutant_toad",
+      "name": "mutant toad",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/mutant-toad/Previews/mutant-toad-idle.gif",
+      "file": "assets/img/legacy-previews/gothicvania/mutant_toad/mutant-toad-idle.gif",
+      "role": "idle"
+    },
+    {
+      "id": "gv_nightmare_files",
+      "name": "Nightmare Files",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/Nightmare-Files/Previews/idle.gif",
+      "file": "assets/img/legacy-previews/gothicvania/nightmare_files/idle.gif",
+      "role": "idle"
+    },
+    {
+      "id": "gv_ogre",
+      "name": "Ogre",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/Ogre/Previews/ogre-idle.gif",
+      "file": "assets/img/legacy-previews/gothicvania/ogre/ogre-idle.gif",
+      "role": "idle"
+    },
+    {
+      "id": "gv_terrible_knight",
+      "name": "Terrible Knight",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/Terrible Knight/Previews/idle.gif",
+      "file": "assets/img/legacy-previews/gothicvania/terrible_knight/idle.gif",
+      "role": "idle"
+    },
+    {
+      "id": "gv_werewolf",
+      "name": "WereWolf",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/WereWolf/Previews/werewolf-idle.gif",
+      "file": "assets/img/legacy-previews/gothicvania/werewolf/werewolf-idle.gif",
+      "role": "idle"
+    },
+    {
+      "id": "gv_wolf_runing_cycle",
+      "name": "wolf runing cycle",
+      "pack": "Gothicvania",
+      "kind": "character",
+      "src": "Gothicvania/Characters/wolf-runing-cycle/previews/wolf-runing-cycle.gif",
+      "file": "assets/img/legacy-previews/gothicvania/wolf_runing_cycle/wolf_runing_cycle-wolf-runing-cycle.gif",
+      "role": "preview"
+    },
+    {
+      "id": "tr_mon_centaur",
+      "name": "centaur",
+      "pack": "TinyRPG Monster Pack",
+      "kind": "monster",
+      "src": "TinyRPG/Characters/Battle Sprites/Monster Pack Files/Previews/centaur.gif",
+      "file": "assets/img/legacy-previews/tinyrpg/monsters/centaur.gif",
+      "role": "preview"
+    },
+    {
+      "id": "tr_mon_demon",
+      "name": "demon",
+      "pack": "TinyRPG Monster Pack",
+      "kind": "monster",
+      "src": "TinyRPG/Characters/Battle Sprites/Monster Pack Files/Previews/demon.gif",
+      "file": "assets/img/legacy-previews/tinyrpg/monsters/demon.gif",
+      "role": "preview"
+    },
+    {
+      "id": "tr_mon_fire_haunt",
+      "name": "Fire haunt",
+      "pack": "TinyRPG Monster Pack",
+      "kind": "monster",
+      "src": "TinyRPG/Characters/Battle Sprites/Monster Pack Files/Previews/Fire-haunt.gif",
+      "file": "assets/img/legacy-previews/tinyrpg/monsters/fire_haunt.gif",
+      "role": "preview"
+    },
+    {
+      "id": "tr_mon_jumping_demon",
+      "name": "Jumping Demon",
+      "pack": "TinyRPG Monster Pack",
+      "kind": "monster",
+      "src": "TinyRPG/Characters/Battle Sprites/Monster Pack Files/Previews/Jumping-Demon.gif",
+      "file": "assets/img/legacy-previews/tinyrpg/monsters/jumping_demon.gif",
+      "role": "preview"
+    },
+    {
+      "id": "tr_mon_treant",
+      "name": "Treant",
+      "pack": "TinyRPG Monster Pack",
+      "kind": "monster",
+      "src": "TinyRPG/Characters/Battle Sprites/Monster Pack Files/Previews/Treant.gif",
+      "file": "assets/img/legacy-previews/tinyrpg/monsters/treant.gif",
+      "role": "preview"
+    },
+    {
+      "id": "tr_mon_vampire",
+      "name": "vampire",
+      "pack": "TinyRPG Monster Pack",
+      "kind": "monster",
+      "src": "TinyRPG/Characters/Battle Sprites/Monster Pack Files/Previews/vampire.gif",
+      "file": "assets/img/legacy-previews/tinyrpg/monsters/vampire.gif",
+      "role": "preview"
+    },
+    {
+      "id": "tr_mon_witch",
+      "name": "witch",
+      "pack": "TinyRPG Monster Pack",
+      "kind": "monster",
+      "src": "TinyRPG/Characters/Battle Sprites/Monster Pack Files/Previews/witch.gif",
+      "file": "assets/img/legacy-previews/tinyrpg/monsters/witch.gif",
+      "role": "preview"
+    },
+    {
+      "id": "tr_live_frog",
+      "name": "Frog",
+      "pack": "TinyRPG Living Pack 1",
+      "kind": "monster",
+      "src": "TinyRPG/Characters/Battle Sprites/Living Pack 1/Frog/Frog-Preview.gif",
+      "file": "assets/img/legacy-previews/tinyrpg/living/frog.gif",
+      "role": "preview"
+    },
+    {
+      "id": "tr_live_mummy",
+      "name": "Mummy",
+      "pack": "TinyRPG Living Pack 1",
+      "kind": "monster",
+      "src": "TinyRPG/Characters/Battle Sprites/Living Pack 1/Mummy/Mummy-prview.gif",
+      "file": "assets/img/legacy-previews/tinyrpg/living/mummy.gif",
+      "role": "preview"
+    },
+    {
+      "id": "tr_live_ogre",
+      "name": "Ogre",
+      "pack": "TinyRPG Living Pack 1",
+      "kind": "monster",
+      "src": "TinyRPG/Characters/Battle Sprites/Living Pack 1/Ogre/Ogre-preview.gif",
+      "file": "assets/img/legacy-previews/tinyrpg/living/ogre.gif",
+      "role": "preview"
+    },
+    {
+      "id": "tr_live_slime",
+      "name": "Slime",
+      "pack": "TinyRPG Living Pack 1",
+      "kind": "monster",
+      "src": "TinyRPG/Characters/Battle Sprites/Living Pack 1/Slime/slime-preview.gif",
+      "file": "assets/img/legacy-previews/tinyrpg/living/slime.gif",
+      "role": "preview"
+    },
+    {
+      "id": "tr_live_wizard",
+      "name": "Wizard",
+      "pack": "TinyRPG Living Pack 1",
+      "kind": "monster",
+      "src": "TinyRPG/Characters/Battle Sprites/Living Pack 1/Wizard/wizard-preview.gif",
+      "file": "assets/img/legacy-previews/tinyrpg/living/wizard.gif",
+      "role": "preview"
+    },
+    {
+      "id": "wp_lizard",
+      "name": "Lizard",
+      "pack": "Warped",
+      "kind": "character",
+      "src": "Warped/Characters/Grotto-escape-2-lizzard/Previews/idle.gif",
+      "file": "assets/img/legacy-previews/warped/lizard.gif",
+      "role": "idle"
+    },
+    {
+      "id": "wp_snake",
+      "name": "Snake",
+      "pack": "Warped",
+      "kind": "character",
+      "src": "Warped/Characters/Grotto-escape-2-snake/Previews/idle.gif",
+      "file": "assets/img/legacy-previews/warped/snake.gif",
+      "role": "idle"
+    },
+    {
+      "id": "wp_alien_walker",
+      "name": "Alien Walker",
+      "pack": "Warped",
+      "kind": "character",
+      "src": "Warped/Characters/alien-walking-enemy/Previews/alien-enemy-idle.gif",
+      "file": "assets/img/legacy-previews/warped/alien_walker.gif",
+      "role": "idle"
+    },
+    {
+      "id": "fx_enemydeath",
+      "name": "enemydeath",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/EnemyDeath/Preview.gif",
+      "file": "assets/img/legacy-previews/fx/enemydeath.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_explosions_pack_explosion_1_a",
+      "name": "explosions pack explosion 1 a",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Explosions pack/explosion-1-a/preview.gif",
+      "file": "assets/img/legacy-previews/fx/explosions_pack_explosion_1_a.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_explosions_pack_explosion_1_b",
+      "name": "explosions pack explosion 1 b",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Explosions pack/explosion-1-b/Preview.gif",
+      "file": "assets/img/legacy-previews/fx/explosions_pack_explosion_1_b.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_explosions_pack_explosion_1_c",
+      "name": "explosions pack explosion 1 c",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Explosions pack/explosion-1-c/Preview.gif",
+      "file": "assets/img/legacy-previews/fx/explosions_pack_explosion_1_c.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_explosions_pack_explosion_1_d",
+      "name": "explosions pack explosion 1 d",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Explosions pack/explosion-1-d/Preview.gif",
+      "file": "assets/img/legacy-previews/fx/explosions_pack_explosion_1_d.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_explosions_pack_explosion_1_e",
+      "name": "explosions pack explosion 1 e",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Explosions pack/explosion-1-e/Preview.gif",
+      "file": "assets/img/legacy-previews/fx/explosions_pack_explosion_1_e.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_explosions_pack_explosion_1_f",
+      "name": "explosions pack explosion 1 f",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Explosions pack/explosion-1-f/Preview.gif",
+      "file": "assets/img/legacy-previews/fx/explosions_pack_explosion_1_f.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_explosions_pack_explosion_1_g",
+      "name": "explosions pack explosion 1 g",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Explosions pack/explosion-1-g/Preview.gif",
+      "file": "assets/img/legacy-previews/fx/explosions_pack_explosion_1_g.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_grotto_escape_2_fx_previews",
+      "name": "grotto escape 2 fx previews",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Grotto-escape-2-FX/Previews/electro-shock.gif",
+      "file": "assets/img/legacy-previews/fx/grotto_escape_2_fx_previews.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_hit",
+      "name": "hit",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Hit/preview.gif",
+      "file": "assets/img/legacy-previews/fx/hit.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_warped_shooting_fx_bolt",
+      "name": "warped shooting fx bolt",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Warped shooting fx/Bolt/preview.gif",
+      "file": "assets/img/legacy-previews/fx/warped_shooting_fx_bolt.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_warped_shooting_fx_charged",
+      "name": "warped shooting fx charged",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Warped shooting fx/charged/preview.gif",
+      "file": "assets/img/legacy-previews/fx/warped_shooting_fx_charged.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_warped_shooting_fx_crossed",
+      "name": "warped shooting fx crossed",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Warped shooting fx/crossed/preview.gif",
+      "file": "assets/img/legacy-previews/fx/warped_shooting_fx_crossed.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_warped_shooting_fx_hits_hits_1",
+      "name": "warped shooting fx hits hits 1",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Warped shooting fx/hits/hits-1/preview.gif",
+      "file": "assets/img/legacy-previews/fx/warped_shooting_fx_hits_hits_1.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_warped_shooting_fx_hits_hits_2",
+      "name": "warped shooting fx hits hits 2",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Warped shooting fx/hits/Hits-2/preview.gif",
+      "file": "assets/img/legacy-previews/fx/warped_shooting_fx_hits_hits_2.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_warped_shooting_fx_hits_hits_3",
+      "name": "warped shooting fx hits hits 3",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Warped shooting fx/hits/Hits-3/preview.gif",
+      "file": "assets/img/legacy-previews/fx/warped_shooting_fx_hits_hits_3.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_warped_shooting_fx_hits_hits_4",
+      "name": "warped shooting fx hits hits 4",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Warped shooting fx/hits/hits-4/preview.gif",
+      "file": "assets/img/legacy-previews/fx/warped_shooting_fx_hits_hits_4.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_warped_shooting_fx_hits_hits_5",
+      "name": "warped shooting fx hits hits 5",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Warped shooting fx/hits/Hits-5/preview.gif",
+      "file": "assets/img/legacy-previews/fx/warped_shooting_fx_hits_hits_5.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_warped_shooting_fx_hits_hits_6",
+      "name": "warped shooting fx hits hits 6",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Warped shooting fx/hits/Hits-6/preview.gif",
+      "file": "assets/img/legacy-previews/fx/warped_shooting_fx_hits_hits_6.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_warped_shooting_fx_pulse",
+      "name": "warped shooting fx pulse",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Warped shooting fx/Pulse/preview.gif",
+      "file": "assets/img/legacy-previews/fx/warped_shooting_fx_pulse.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_warped_shooting_fx_spark",
+      "name": "warped shooting fx spark",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Warped shooting fx/spark/preview.gif",
+      "file": "assets/img/legacy-previews/fx/warped_shooting_fx_spark.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_warped_shooting_fx_waveform",
+      "name": "warped shooting fx waveform",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Warped shooting fx/waveform/preview.gif",
+      "file": "assets/img/legacy-previews/fx/warped_shooting_fx_waveform.gif",
+      "role": "preview"
+    },
+    {
+      "id": "fx_water_splash",
+      "name": "water splash",
+      "pack": "Explosions and Magic",
+      "kind": "fx",
+      "src": "Explosions and Magic/Water splash/preview.gif",
+      "file": "assets/img/legacy-previews/fx/water_splash.gif",
+      "role": "preview"
+    }
+  ]
+}

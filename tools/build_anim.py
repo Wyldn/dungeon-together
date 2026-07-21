@@ -112,6 +112,9 @@ def tiny(mon, folder, disp):
 
 tiny('imp', 'Demon_A', 100)
 tiny('demon_slime', 'Blood Monster_A', 100)
+# Tiny ink in a padded 100x100 canvas — scale by inkH, center in the boss box.
+animmap['demon_slime']['inkH'] = 15
+animmap['demon_slime']['anchor'] = 'center'
 
 # ---- boss_demon_slime -> demon_king (phase 2) ----
 new_mon('demon_king', 288, 160, 168, {
@@ -126,6 +129,10 @@ for folder, state, loop, once in BOSS_STATES:
     frames = sorted(glob.glob(os.path.join(BOSS, folder, '*.png')),
                     key=lambda p: int(''.join(filter(str.isdigit, os.path.basename(p).rsplit('_', 1)[-1])) or 0))
     emit_from_frames('demon_king', state, frames, 288, 160, loop=loop, once=once)
+# Body sits low in the wide attack canvas; center + oy keep Vorath in-frame.
+animmap['demon_king']['inkH'] = 105
+animmap['demon_king']['anchor'] = 'center'
+animmap['demon_king']['oy'] = 26
 
 # ---- Mimic ----
 new_mon('mimic', 102, 102, 96, {

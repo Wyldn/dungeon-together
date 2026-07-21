@@ -246,6 +246,11 @@ def main() -> None:
     art["jarl_whitegrave"]["f"] = art["yeti"]["f"]
     art["bogmother"] = dict(art["slime"])  # phase-1 look; phaseArt swaps to demon_slime
     art["bogmother"]["f"] = art["slime"]["f"]
+    art["bogmother"]["anchor"] = "center"  # tiny ink in padded sheet
+    if "demon_slime" in art:
+        art["demon_slime"]["anchor"] = "center"
+    if "demon_king" in art:
+        art["demon_king"]["anchor"] = "center"
     art["arch_tormentor"] = dict(art["flame_cyclops"])
     art["arch_tormentor"]["f"] = art["flame_cyclops"]["f"]
     art["ashen_sovereign"] = dict(art["spike_sovereign"])
