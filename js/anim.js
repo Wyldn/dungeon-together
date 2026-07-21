@@ -30,9 +30,18 @@ export function deathBeatMs(mon) {
 const BOSS_CONTENT_TARGET = 176;
 const BOSS_SCALE_CAP = 14;
 
-/** Integer scale. Bosses size to visible ink (`inkH`) so padded sheets fill the box. */
+/** Scale to `disp` height. Upscale with crisp integers; downscale fractionally so
+ *  large padded sheets (e.g. 250px NPC frames targeting disp 120) fit the box. */
 function scaleFor(set, boss = false) {
-  if (!boss) return Math.max(1, Math.round((set.disp || set.fh) / set.fh));
+  if (!boss) {
+    const target = set.disp || set.fh;
+    const s = target / set.fh;
+    if (s >= 1) {
+      const nearest = Math.round(s);
+      return Math.max(1, Math.abs(nearest - s) < 0.08 ? nearest : s);
+    }
+    return Math.max(0.12, s);
+  }
   const inkH = set.inkH || set.fh;
   const target = set.bossContent || BOSS_CONTENT_TARGET;
   const fromInk = Math.round(target / inkH);

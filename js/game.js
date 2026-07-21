@@ -419,6 +419,10 @@ function titleScreen() {
         : '<div class="title-vista title-vista-fallback" aria-hidden="true"><span class="title-tower">🗼</span></div>'}
       <div class="title-veil" aria-hidden="true"></div>
 
+      <div class="title-corner-tools">
+        <a class="btn ghost small" href="enemy-boxes.html" id="btn-box-editor" title="Open enemy sprite box editor">Sprite boxes</a>
+      </div>
+
       <div class="title-hero">
         <h1 class="game-title">DUNGEON<br/>TOGETHER</h1>
         <p class="game-subtitle">Fifty-one floors. One throne. The tower deals first.</p>

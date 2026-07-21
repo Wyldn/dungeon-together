@@ -304,6 +304,18 @@
       max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated;
     }
     .repl-label { font-size: 10px; color: #90d0b0; margin-top: 4px; }
+    .sync-banner {
+      display: none; margin: 10px 0 14px; padding: 10px 12px; border-radius: 8px;
+      border: 1px solid #5a4a28; background: #2a2418; color: #e8d5a8; font-size: 13px;
+      align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .sync-banner.on { display: flex; }
+    .sync-banner.ok { border-color: #2f5a3a; background: #1a2a20; color: #b8e0c4; }
+    .sync-banner code { font-size: 12px; }
+    .sync-banner button {
+      font: inherit; cursor: pointer; border-radius: 6px; border: 1px solid #c4a35a;
+      background: #3a3020; color: #f0e6c8; padding: 4px 10px;
+    }
   </style>
 </head>
 <body>
@@ -311,9 +323,15 @@
     <h1>Enemy combat boxes — editor</h1>
     <p class="sub">
       Flip, reorder, rename, zoom, nudge, and resize boxes.
-      Mark <b>placeholder</b> then click the stand-in to pick replacement art from the galleries below.
-      Use <b>Add as…</b> on gallery cards to promote them into the collections above.
+      <b>Live roster cards</b> (not gallery staging) use the same sprite + box pipeline as combat.
+      After edits, click <b>Publish to game</b> and replace <code>data/enemy-box-settings.json</code>, then refresh the game.
+      <a href="index.html" style="color:#e8b64a;margin-left:.5em">← Back to game</a>
     </p>
+
+    <div class="sync-banner on" id="sync-banner">
+      <span id="sync-banner-text">Checking sync with in-game JSON…</span>
+      <button type="button" id="btn-publish">Publish to game</button>
+    </div>
 
     <div class="toolbar">
       <label><input type="checkbox" id="hide-placeholder" /> Hide placeholders</label>
@@ -328,6 +346,8 @@
           <option value="npc">npc</option>
         </select>
       </label>
+      <button type="button" id="btn-load-ingame" title="Reload zoom/nudge/flip from the shipping in-game JSON">Load in-game JSON</button>
+      <button type="button" id="btn-publish-toolbar" title="Download enemy-box-settings.json for data/">Publish to game</button>
       <button type="button" id="btn-reset-all" title="Clear all edits">Reset all</button>
       <button type="button" id="btn-refresh-json">Refresh JSON</button>
       <span class="stat" id="statline"></span>
@@ -407,7 +427,7 @@
     const UNIT_WORLD = ROSTER.unitWorld || {};
     const WANDERING_SET = new Set(ROSTER.wanderingIds || []);
 
-    const STORAGE_KEY = 'dt-enemy-box-editor-v1';
+    const STORAGE_KEY = 'dt-enemy-box-editor-v4';
     const BOSS_DEFAULT = { w: 200, h: 200 };
     const NORMAL_DEFAULT = { w: 96, h: 96 };
     const CATEGORIES = ['enemy', 'boss', 'elite', 'npc'];
@@ -426,7 +446,16 @@
     };
 
     function animScale(set, boss) {
-      if (!boss) return Math.max(1, Math.round((set.disp || set.fh) / set.fh));
+      // Match js/anim.js scaleFor: fractional downscale for large padded sheets.
+      if (!boss) {
+        const target = set.disp || set.fh;
+        const s = target / set.fh;
+        if (s >= 1) {
+          const nearest = Math.round(s);
+          return Math.max(1, Math.abs(nearest - s) < 0.08 ? nearest : s);
+        }
+        return Math.max(0.12, s);
+      }
       const inkH = set.inkH || set.fh;
       const fromInk = Math.round(176 / inkH);
       const fromDisp = Math.round((set.bossDisp || Math.max(set.disp || set.fh, 200)) / set.fh);
@@ -691,10 +720,40 @@
       byUid = Object.fromEntries([...catalog, ...customItems].map(i => [i.uid, i]));
     }
 
+    /** Drop added:: staging cards when the same id already exists on the live roster. */
+    function pruneDuplicateCustoms() {
+      const liveIds = new Set(catalog.map(i => i.id));
+      const before = customItems.length;
+      const drop = new Set(
+        customItems.filter(i => liveIds.has(i.id) || liveIds.has(i.galleryId)).map(i => i.uid)
+      );
+      if (!drop.size) return 0;
+      customItems = customItems.filter(i => !drop.has(i.uid));
+      order = order.filter(u => !drop.has(u));
+      for (const uid of drop) delete edits[uid];
+      rebuildByUid();
+      return before - customItems.length;
+    }
+
+    function persist() {
+      const clean = {};
+      for (const [uid, e] of Object.entries(edits)) {
+        if (!byUid[uid]) continue;
+        const { remove, ...rest } = e;
+        clean[uid] = { ...rest, placeholder: !!e.placeholder, replacement: e.replacement || null };
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 4, presentSynced: true, order, edits: clean, customItems,
+      }));
+      updateExport();
+      updateStat();
+      updateSyncBanner();
+    }
+
     function loadSaved() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
+        if (!raw) return { presentSynced: false };
         const data = JSON.parse(raw);
         // One-time: clear gallery promotions from before v4 (accidental Add as…)
         const migrated = !(data.version >= 4);
@@ -724,7 +783,125 @@
           }
         }
         if (migrated) persist(); // write v4 so customs aren't wiped every load
-      } catch (_) { /* ignore */ }
+        return { presentSynced: !!data.presentSynced && !migrated };
+      } catch (_) {
+        return { presentSynced: false };
+      }
+    }
+
+    /** Apply an export payload (file import or shipping data/enemy-box-settings.json). */
+    function applyImportData(data) {
+      if (Array.isArray(data.customItems)) {
+        customItems = data.customItems.filter(i => i && i.uid);
+        rebuildByUid();
+      }
+      if (Array.isArray(data.order)) {
+        const known = new Set(Object.keys(byUid));
+        const next = data.order.filter(u => known.has(u));
+        for (const u of known) if (!next.includes(u)) next.push(u);
+        order = next;
+      }
+      const src = data.edits || (Array.isArray(data.items)
+        ? Object.fromEntries(data.items.map(i => [i.uid, i]))
+        : null);
+      if (src) {
+        for (const uid of Object.keys(byUid)) {
+          const s = src[uid];
+          if (!s) {
+            if (!edits[uid]) edits[uid] = defaultEdit(byUid[uid]);
+            continue;
+          }
+          edits[uid] = normalizeEdit({
+            ...edits[uid],
+            flip: !!s.flip,
+            placeholder: !!(s.placeholder ?? s.remove),
+            renameName: s.renameName != null ? s.renameName : (edits[uid]?.renameName || ''),
+            renameId: s.renameId != null ? s.renameId : (edits[uid]?.renameId || ''),
+            category: s.category != null ? s.category : edits[uid]?.category,
+            world: s.world != null ? s.world : edits[uid]?.world,
+            zoom: s.zoom != null ? +s.zoom : edits[uid]?.zoom,
+            boxW: s.boxW != null ? +s.boxW : edits[uid]?.boxW,
+            boxH: s.boxH != null ? +s.boxH : edits[uid]?.boxH,
+            offsetX: s.offsetX != null ? +s.offsetX : edits[uid]?.offsetX,
+            offsetY: s.offsetY != null ? +s.offsetY : edits[uid]?.offsetY,
+            comment: s.comment || '',
+            replacement: s.replacement || null,
+          }, byUid[uid]);
+        }
+      }
+    }
+
+    const INGAME_SETTINGS_URL = 'data/enemy-box-settings.json';
+    let shippedFingerprint = '';
+
+    /** Stable fingerprint of live-roster framing (what combat loads). */
+    function framingFingerprint(data) {
+      const items = (data?.items || []).filter(i =>
+        i && i.id && !i.placeholder
+        && i.section !== 'added'
+        && !String(i.uid || '').startsWith('added::'));
+      const byId = {};
+      for (const i of items) {
+        const prev = byId[i.id];
+        // Prefer later live entries if duplicates somehow remain.
+        if (!prev || (i.section !== 'art_only' && prev.section === 'art_only')) byId[i.id] = i;
+      }
+      return Object.keys(byId).sort().map(id => {
+        const i = byId[id];
+        return [
+          id,
+          +i.zoom || 1,
+          +i.offsetX || 0,
+          +i.offsetY || 0,
+          i.flip ? 1 : 0,
+          +i.boxW || 0,
+          +i.boxH || 0,
+          i.anchor || '',
+        ].join(':');
+      }).join('|');
+    }
+
+    function updateSyncBanner() {
+      const banner = document.getElementById('sync-banner');
+      const text = document.getElementById('sync-banner-text');
+      if (!banner || !text) return;
+      const local = framingFingerprint(exportPayload());
+      const synced = !!shippedFingerprint && local === shippedFingerprint;
+      banner.classList.add('on');
+      banner.classList.toggle('ok', synced);
+      if (!shippedFingerprint) {
+        text.textContent = 'Could not read data/enemy-box-settings.json — Publish after fixing the file.';
+      } else if (synced) {
+        text.innerHTML = 'In sync with game: live roster framing matches <code>data/enemy-box-settings.json</code>.';
+      } else {
+        text.innerHTML = 'Local edits are <b>not</b> in the game yet. Click <b>Publish to game</b>, save as <code>data/enemy-box-settings.json</code>, then refresh the game.';
+      }
+    }
+
+    async function loadInGameSettings() {
+      const res = await fetch(INGAME_SETTINGS_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`${INGAME_SETTINGS_URL} missing — run python tools/apply_enemy_box_present.py`);
+      const data = await res.json();
+      shippedFingerprint = framingFingerprint(data);
+      applyImportData(data);
+      pruneDuplicateCustoms();
+      persist();
+      renderAll();
+      updateSyncBanner();
+    }
+
+    function publishToGame() {
+      updateExport();
+      const blob = new Blob([document.getElementById('export-json').value], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'enemy-box-settings.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      // Assume they save over data/ — banner goes green; Load in-game re-confirms from disk.
+      shippedFingerprint = framingFingerprint(exportPayload());
+      toast('Save into project data/ (replace existing), then refresh the game');
+      updateSyncBanner();
     }
 
     function removeCustomItem(uid) {
@@ -738,20 +915,6 @@
       persist();
       renderAll();
       toast(`Removed ${item.name}`);
-    }
-
-    function persist() {
-      const clean = {};
-      for (const [uid, e] of Object.entries(edits)) {
-        if (!byUid[uid]) continue;
-        const { remove, ...rest } = e;
-        clean[uid] = { ...rest, placeholder: !!e.placeholder, replacement: e.replacement || null };
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        version: 4, order, edits: clean, customItems,
-      }));
-      updateExport();
-      updateStat();
     }
 
     function exportPayload() {
@@ -778,6 +941,7 @@
           frame: item.frame,
           defaultScale: item.defaultScale,
           defaultBox: { w: item.defaultBoxW, h: item.defaultBoxH },
+          anchor: item.anchor || 'center',
           flip: !!e.flip,
           placeholder: !!e.placeholder,
           zoom: +e.zoom,
@@ -1000,6 +1164,10 @@
     function addFromGallery(src, category) {
       const cat = CATEGORIES.includes(category) ? category : 'enemy';
       const baseId = slugSafe(src.id || src.name);
+      if (catalog.some(i => i.id === baseId || i.id === src.id)) {
+        toast(`Already in the live roster as ${baseId} — edit that card instead of adding a duplicate`);
+        return;
+      }
       const already = galleryAddedEntries(src.source, src.id || '');
       if (already.length) {
         const cats = [...new Set(already.map(i =>
@@ -1460,6 +1628,9 @@
       toast('Downloaded');
     });
 
+    document.getElementById('btn-publish').addEventListener('click', publishToGame);
+    document.getElementById('btn-publish-toolbar').addEventListener('click', publishToGame);
+
     document.getElementById('btn-import').addEventListener('click', () => {
       document.getElementById('import-file').click();
     });
@@ -1467,44 +1638,7 @@
       const file = ev.target.files?.[0];
       if (!file) return;
       try {
-        const data = JSON.parse(await file.text());
-        if (Array.isArray(data.customItems)) {
-          customItems = data.customItems.filter(i => i && i.uid);
-          rebuildByUid();
-        }
-        if (Array.isArray(data.order)) {
-          const known = new Set(Object.keys(byUid));
-          const next = data.order.filter(u => known.has(u));
-          for (const u of known) if (!next.includes(u)) next.push(u);
-          order = next;
-        }
-        const src = data.edits || (Array.isArray(data.items)
-          ? Object.fromEntries(data.items.map(i => [i.uid, i]))
-          : null);
-        if (src) {
-          for (const uid of Object.keys(byUid)) {
-            const s = src[uid];
-            if (!s) {
-              if (!edits[uid]) edits[uid] = defaultEdit(byUid[uid]);
-              continue;
-            }
-            edits[uid] = normalizeEdit({
-              ...edits[uid],
-              flip: !!s.flip,
-              placeholder: !!(s.placeholder ?? s.remove),
-              renameName: s.renameName != null ? s.renameName : (edits[uid]?.renameName || ''),
-              renameId: s.renameId != null ? s.renameId : (edits[uid]?.renameId || ''),
-              category: s.category != null ? s.category : edits[uid]?.category,
-              zoom: s.zoom != null ? +s.zoom : edits[uid]?.zoom,
-              boxW: s.boxW != null ? +s.boxW : edits[uid]?.boxW,
-              boxH: s.boxH != null ? +s.boxH : edits[uid]?.boxH,
-              offsetX: s.offsetX != null ? +s.offsetX : edits[uid]?.offsetX,
-              offsetY: s.offsetY != null ? +s.offsetY : edits[uid]?.offsetY,
-              comment: s.comment || '',
-              replacement: s.replacement || null,
-            }, byUid[uid]);
-          }
-        }
+        applyImportData(JSON.parse(await file.text()));
         persist();
         renderAll();
         toast('Imported');
@@ -1512,6 +1646,15 @@
         alert('Import failed: ' + err.message);
       }
       ev.target.value = '';
+    });
+
+    document.getElementById('btn-load-ingame').addEventListener('click', async () => {
+      try {
+        await loadInGameSettings();
+        toast('Loaded in-game JSON');
+      } catch (err) {
+        alert(err.message || String(err));
+      }
     });
 
     // Keep export textarea editable → apply on blur if valid JSON with items/edits
@@ -1802,8 +1945,21 @@
         } catch { toast(copyBtn.dataset.copyPath); }
       }
     });
-    loadSaved();
-    Promise.all([loadLegacy(), loadPacks()]).then(() => renderAll());
+    const savedMeta = loadSaved();
+    pruneDuplicateCustoms();
+    Promise.all([loadLegacy(), loadPacks()]).then(async () => {
+      if (!savedMeta.presentSynced) {
+        try {
+          await loadInGameSettings();
+          toast('Synced in-game box settings');
+        } catch (err) {
+          console.warn(err);
+          renderAll();
+        }
+      } else {
+        renderAll();
+      }
+    });
   </script>
 </body>
 </html>
