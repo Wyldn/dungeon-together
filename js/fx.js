@@ -3,8 +3,8 @@
 
 import { biomeBgUrl } from './art.js';
 
-const canvas = document.getElementById('fx-canvas');
-const g = canvas.getContext('2d');
+const canvas = typeof document !== 'undefined' ? document.getElementById('fx-canvas') : null;
+const g = canvas?.getContext?.('2d') || null;
 let particles = [];
 let mode = 'leaves';
 let running = false;
@@ -34,6 +34,7 @@ function spawn(cfg, randomY = true) {
 // Fixed design frame — the canvas lives inside the scaled 1280x720 #frame.
 const FRAME_W = 1280, FRAME_H = 720;
 function resize() {
+  if (!canvas) return;
   canvas.width = FRAME_W;
   canvas.height = FRAME_H;
 }
@@ -41,11 +42,14 @@ resize();
 
 // Scale the fixed frame to fit the viewport (letterboxed), centred.
 export function fitFrame() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
   const s = Math.min(window.innerWidth / FRAME_W, window.innerHeight / FRAME_H);
   document.documentElement.style.setProperty('--frame-scale', s);
 }
-window.addEventListener('resize', fitFrame);
-fitFrame();
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', fitFrame);
+  fitFrame();
+}
 
 function loop() {
   if (!running) return;
@@ -70,6 +74,7 @@ function loop() {
 }
 
 export function setParticles(newMode) {
+  if (!canvas || !g) return;
   if (!MODES[newMode]) newMode = 'dust';
   mode = newMode;
   const cfg = MODES[mode];
@@ -77,19 +82,24 @@ export function setParticles(newMode) {
   if (!running) { running = true; requestAnimationFrame(loop); }
 }
 
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) running = false;
-  else if (!running) { running = true; requestAnimationFrame(loop); }
-});
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) running = false;
+    else if (!running && canvas && g) { running = true; requestAnimationFrame(loop); }
+  });
+}
 
 export function setBiomeGlow(color) {
+  if (typeof document === 'undefined') return;
   document.documentElement.style.setProperty('--biome-glow', color);
 }
 
 export function screenShake() {
-  document.getElementById('app').classList.remove('shake');
-  void document.getElementById('app').offsetWidth; // restart animation
-  document.getElementById('app').classList.add('shake');
+  const app = typeof document !== 'undefined' ? document.getElementById('app') : null;
+  if (!app) return;
+  app.classList.remove('shake');
+  void app.offsetWidth; // restart animation
+  app.classList.add('shake');
 }
 
 const WALK_SHEET = 'assets/img/fx/knight_walk.png';

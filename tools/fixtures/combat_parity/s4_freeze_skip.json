@@ -1,0 +1,63 @@
+{
+  "id": "s4_freeze_skip",
+  "stage": 4,
+  "method": "enemyTurn skip CC",
+  "seed": 502,
+  "capturedFrom": "js/combat.js Fight (pre-extract characterization)",
+  "extra": {},
+  "expected": {
+    "round": 0,
+    "ended": false,
+    "outcome": null,
+    "charge": 0,
+    "corpses": 0,
+    "usedDeathward": false,
+    "usedUltimate": false,
+    "damageTaken": 0,
+    "target": 0,
+    "actingKey": "e1",
+    "order": [],
+    "player": {
+      "hp": 80,
+      "maxHp": 80,
+      "mp": 40,
+      "maxMp": 40,
+      "down": false,
+      "combatTaunt": 0,
+      "usedRevive": false,
+      "guardCount": 0,
+      "statuses": {},
+      "buffs": [],
+      "partyBuffs": [],
+      "guarding": false,
+      "ironStance": null,
+      "scriptedEdge": false
+    },
+    "enemies": [
+      {
+        "uid": "e1",
+        "id": "wolf",
+        "name": "Dire Wolf",
+        "hp": 32,
+        "maxHp": 32,
+        "atk": 3,
+        "def": 1,
+        "spd": 8,
+        "charge": 1,
+        "turnCount": 1,
+        "statuses": {},
+        "phaseTriggers": [],
+        "phase": 1,
+        "twoPhase": false,
+        "_enraged": false,
+        "summon": false
+      }
+    ],
+    "logs": [
+      {
+        "msg": "Dire Wolf is frozen — it cannot act.",
+        "cls": "log-foe"
+      }
+    ]
+  }
+}

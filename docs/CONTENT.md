@@ -30,8 +30,17 @@ skald: {
   next: 'saga_lord',                                      // its tier-2 deeper branch
 }
 ```
-Secret subclasses add `secret: true` and `secretCond: run => ...` — the condition
-is **never shown to players**; the option simply appears at level 6 when earned.
+Secret subclasses add `secret: true` and
+`secretCond: run => secretUnlocked(run, id)`. Meeting a hidden requirement
+does **not** reveal the option. It only makes a class-specific initiation
+event eligible. The player must encounter that event and accept a diegetic
+choice; that choice writes `unlock_<id>` on `run.world.knowledge`. Fallbacks
+(kills, fame, items) exist so missed optional story cannot softlock a build —
+they still only open the event, never the level-6 UI.
+
+Author the route in `SECRET_ROUTES` (`js/data/world.js`) plus an initiation
+and a later return card in `js/data/narrative_events.js`. Do not add a second
+quest system. Players never see a checklist; `?dev=world` is debug-only.
 
 ## Add a race / race promotion
 `js/data/races.js`. Races modify stats/hp/mp, initiative, fame gain, charge
@@ -77,9 +86,62 @@ poison/burn/freeze/stun, lifesteal, healPct, shield, buff, selfHpCost, guard`.
 training/appraisal/equipment/social/advancement/dangerous/unknown), `type`,
 `glyph`, `title`, `text`, `w` (draw weight), `choices`.
 
-Optional: `tags` (see below), `once`, `cond(state)`,
+Optional: `tags` (see below), `once`, `cond(state)`, `when` (declarative
+world-state gate — see below), `variants`, `family`, `onSee`,
 `affinity: {classes, races, underdog}` (sparkle eligibility), `comeback: true`
-(weighted ×3 for underdog starts), `mimicChance`, `resolution: 'random'`.
+(weighted ×3 for underdog starts), `mimicChance`, `resolution: 'random'`,
+`pace` (optional draw-weight override — see below).
+
+**World state** (`js/data/world.js`): persist structured memory on `run.world`
+(characters, factions, knowledge, threads, counters). Existing `flag` /
+`clearFlag` outcomes still work — `FLAG_BRIDGES` mirrors important flags into
+character/thread state on save/load.
+
+Prefer `when` over a new `cond` lambda when the gate is data:
+
+```js
+when: { flag: 'saved_climber', floorMin: 16, notFlag: 'left_climber' }
+when: { any: [{ knowledge: 'heard_dead_language' }, { classId: 'necromancer' }] }
+```
+
+`when` fields AND together. Combinators: `all`, `any`, `not`. Common keys:
+`flag`/`notFlag`, `floorMin`/`floorMax`, `event`/`notEvent`, `charMet`,
+`charAlive`, `charRelMin`, `knowledge`, `thread`, `sigil`/`sigilCount`,
+`kills`, `fame`, `gold`, `classId`, `subclassId`, `secretTaken` (live secret subclass — not eligibility or unlock-without-taking), `coop`, `statMin`.
+
+**Variants:** first matching `when` overlays `title`/`text`/`choices` on the
+same event id. Put specific variants first; the base card is the fallback.
+A variant may set `append` instead of `text` — the first matching append adds
+one extra sentence onto whatever text won, so a rest can remember more than
+the oldest flag.
+
+**Outcomes:** `world: { char, faction, knowledge, thread, counter, tag }` plus
+the existing `flag` vocabulary. Interconnected cards live in
+`js/data/narrative_events.js` and are appended to `EVENTS`.
+
+**Debug:** open `?dev=world` or `?dev=debug` (World tab). Shows flags, characters,
+threads (with age), secret-subclass route progress, why events are eligible,
+and the same draw-weight breakdown `drawEvent` uses. The title Compendium is
+player-facing and never includes this.
+
+**Pacing** (`js/data/eventpace.js`): a weight layer on top of `when`, not a
+quest scheduler. Eligibility still answers "can this happen?"; pacing answers
+"is this a good moment?" Defaults are inferred from `family`, `thread`,
+`when`, and `SECRET_ROUTES`. Most cards need no extra fields. Opt in only
+when the default age anchor is wrong:
+
+```js
+pace: {
+  role: 'callback',   // flavor | narrative | callback | initiation | payoff
+  after: 'bard',      // age from this event / flag / knowledge / thread
+  minDelay: 4,        // floors before the callback warms up
+  preferDelay: 8,
+  priority: 2,        // 0–3, small multiplier
+  chain: true,        // skip same-family congestion
+}
+```
+
+Do not rewrite existing `floorMin` / `once` / `family` to fight the director.
 
 **Event tags** (modifiers, not story generators): defaults live in
 `js/data/eventtagmap.js`; rules in `js/data/eventtags.js`. Tags nudge draw
@@ -87,9 +149,15 @@ weight and lightly tint outcomes (e.g. `gamble` softens DCs for underdogs,
 `recovery` boosts heal % slightly). Author the card text by hand; attach tags
 like `mentor`, `curse`, `fame-test`, `class-specific`, `sigil`, `spark-for-player`.
 
+**Secret unlocks:** `SECRET_ROUTES` lists narrative `routes` and mechanical
+`fallbacks`. Both feed `secretEligible` (initiation `when`). Only
+`unlockSecret: '<id>'` on an accept outcome feeds `secretUnlocked` /
+`secretCond`. Decline should write a deferred knowledge key and open a
+return event — do not permanently lock the path without a strong theme.
+
 **Milestones:** reuse `js/data/milestones.js` (`Milestone.fame(25)`,
-`Milestone.flag('defiler')`, `Milestone.all(...)`) for secret gates and
-`secretCond` helpers.
+`Milestone.flag('defiler')`, `Milestone.all(...)`) for older gates. New
+secret work should use `when` + `SECRET_ROUTES`, not a parallel quest list.
 
 Outcome effects (composable): `text, gold, goldPct, hp, hpPct, maxHp, mana,
 manaPct, fullHeal, fullMana, fame, xp, statUp, statUpRandom, itemRoll,
@@ -144,8 +212,36 @@ encounters around action economy, expected rounds, damage taken, and resource sp
 leftover budget becomes a capped HP pad — never both large HP mults *and*
 guaranteed extras.
 
+## Co-op contract (story stays personal)
+
+The tower is shared. Character identity is not.
+
+- **Vote together:** path cards, and any event that can lead to a fight or mimic.
+- **Choose alone:** peaceful story, shops, NPC memory, secret-subclass *accept*.
+  Do **not** turn initiation or NPC cards into party votes — two climbers can
+  chase two lives in one tower.
+- **Draw for the party:** class / secret / affinity gates may open a card if
+  *anyone* in the party qualifies. Unlock and accept stay on that climber's run.
+- **Combat reasons** (cashed burn / frail / wounded, spent mark / execute) are
+  party-visible. Do not replicate every local debug line.
+
 **Validators** (in `tools/test.js`) reject over-budget items and stacked loadouts.
 Expand content only after `node tools/test.js` is green.
+
+## Telemetry vs `TDC.clearRate`
+
+`TDC.clearRate` is a **survival-CDF target for `tools/run_sim.js` only**. That
+harness keeps its own 48% combat-vs-event loop and does **not** call
+`generateFloorCards`. It is not live DungeonTogether encounter frequency and
+not observed player behavior.
+
+`tools/run_health.js` observes live offer generation (`generateFloorCards`) and
+labels autoplay path/combat/economy outcomes as modeled. Do not treat modeled
+clear or taken-mix numbers as player data.
+
+`tools/run_climb_v2.js` is the faithful solo climb harness (live cards, events,
+combat core, rewards, shops). It is **not** a `TDC.clearRate` target and does
+not replace `tools/run_sim.js`.
 
 ## Verify
 ```bash

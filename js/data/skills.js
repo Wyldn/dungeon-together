@@ -46,7 +46,7 @@ export const SKILLS = {
   ),
   taunt: composeSkill(
     { id: 'taunt', name: 'Taunt', class: 'warrior', fx: 'buff',
-      desc: 'Jeer every enemy into aiming at YOU for 1 turn, and brace hard (block 65%). Bosses sometimes shrug it. In a party, you are the wall.' },
+      desc: 'Jeer every enemy into aiming at YOU for 1 turn, and brace hard (block 65%). Solo: they lose the wind-up and swing wild. Bosses sometimes shrug it.' },
     COMP.cost(12), COMP.charge(1), COMP.target('self'), COMP.shield(0.65),
     { tauntTurns: 1 },
   ),
@@ -118,8 +118,8 @@ export const SKILLS = {
   },
   rampage: {
     id: 'rampage', fx: 'slash', name: 'Rampage', class: 'warrior', cost: 26, charge: 3, target: 'one', tier: 2,
-    power: 185, stat: 'str', selfHpCost: 0.06,
-    desc: 'Trade blood for violence: heavy damage, costs 6% of your max HP.',
+    power: 185, stat: 'str', weaken: 0.35,
+    desc: 'Commit the line: heavy damage, 35% weaken. The Knight does not pay in blood.',
   },
   holy_strike: {
     id: 'holy_strike', fx: 'holy', name: 'Holy Strike', class: 'warrior', cost: 36, charge: 3, target: 'one', tier: 2,
@@ -155,13 +155,13 @@ export const SKILLS = {
   },
   mana_storm: {
     id: 'mana_storm', fx: 'arcane', name: 'Mana Storm', class: 'mage', cost: 36, charge: 3, target: 'all',
-    power: 105, stat: 'int',
-    desc: 'Unleash raw arcana on every enemy.',
+    power: 105, stat: 'int', burn: 0.4,
+    desc: 'Unleash raw arcana on every enemy. 40% burn — the storm clings.',
   },
   soul_siphon: {
     id: 'soul_siphon', fx: 'shadow', name: 'Soul Siphon', class: 'mage', cost: 26, charge: 2, target: 'one', tier: 2,
-    power: 90, stat: 'int', lifesteal: 0.6,
-    desc: 'Drain a foe\'s essence, healing for 60% of damage dealt.',
+    power: 90, stat: 'int', lifesteal: 0.6, consumeBurn: true,
+    desc: 'Drain a burning foe — consume burn to drink deeper. 60% lifesteal.',
   },
   chain_lightning: {
     id: 'chain_lightning', fx: 'thunder', name: 'Chain Lightning', class: 'mage', cost: 40, charge: 4, target: 'all', tier: 2,
@@ -175,8 +175,8 @@ export const SKILLS = {
   },
   blade_storm: {
     id: 'blade_storm', fx: 'arcane', name: 'Blade Storm', class: 'mage', cost: 54, charge: 5, target: 'all', tier: 3,
-    power: 145, stat: 'int',
-    desc: 'Every spell your sword remembers, all at once, everywhere.',
+    power: 145, stat: 'int', stun: 0.25,
+    desc: 'Every spell your sword remembers, all at once. 25% stun — tempo, not a second Spellsword.',
   },
   unmake: {
     id: 'unmake', fx: 'shadow', name: 'Unmake', class: 'mage', cost: 40, charge: 4, target: 'one', tier: 2,
@@ -232,8 +232,8 @@ export const SKILLS = {
   },
   one_shot: {
     id: 'one_shot', fx: 'pierce', name: 'One Shot', class: 'archer', cost: 48, charge: 5, target: 'one', tier: 3,
-    power: 340, stat: 'dex', critBonus: 30, execute: 0.12,
-    desc: 'One arrow. One ending. +30% crit; finishes non-bosses under 12%.',
+    power: 340, stat: 'dex', critBonus: 30, execute: 0.12, consumeMark: true,
+    desc: 'One arrow. One ending. +30% crit; spends a Hunter\'s Mark to finish under 22%.',
   },
   arrow_tempest: {
     id: 'arrow_tempest', fx: 'wind', name: 'Arrow Tempest', class: 'archer', cost: 62, charge: 6, target: 'all', tier: 3,
@@ -325,13 +325,13 @@ export const SKILLS = {
   ),
   crusader_mark: composeSkill(
     { id: 'crusaders_mark', name: "Crusader's Mark", class: 'priest', fx: 'holy', tier: 2,
-      desc: 'Brand a foe frail — they take +12% damage for 3 turns. Modest hit.' },
+      desc: 'Brand a foe frail — armor splits, and finishers find them sooner. Modest hit.' },
     COMP.cost(16), COMP.charge(1), COMP.target('one'), COMP.dmg(90, 'wis'), COMP.frail(1),
   ),
   judgement: {
     id: 'judgement', fx: 'holy', name: 'Judgement', class: 'priest', cost: 36, charge: 3, target: 'all',
-    power: 100, stat: 'wis',
-    desc: 'The verdict arrives for every enemy at once.',
+    power: 100, stat: 'wis', consumeFrail: true,
+    desc: 'The verdict arrives for every enemy at once. Detonates frail — Crusader\'s Mark first.',
   },
   censure: {
     id: 'censure', fx: 'holy', name: 'Censure', class: 'priest', cost: 20, charge: 2, target: 'one', tier: 2,
@@ -350,13 +350,13 @@ export const SKILLS = {
   },
   final_verdict: {
     id: 'final_verdict', fx: 'holy', name: 'Final Verdict', class: 'priest', cost: 54, charge: 5, target: 'one', tier: 3,
-    power: 280, stat: 'wis', execute: 0.15, frail: 0.75,
-    desc: 'Gavel down. Massive damage; slays non-boss foes below 15%; 75% frail.',
+    power: 280, stat: 'wis', execute: 0.15, frail: 0.75, consumeFrail: true,
+    desc: 'Gavel down. Detonates frail, then slays non-bosses below 15%; 75% frail leftover.',
   },
   last_rites: {
     id: 'last_rites', fx: 'holy', name: 'Last Rites', class: 'priest', cost: 68, charge: 6, target: 'all', tier: 3,
-    power: 170, stat: 'wis', healPct: 0.15, frail: 0.55,
-    desc: 'ULTIMATE — say the words for everyone at once. Devastates enemies, mends you; 55% frail.',
+    power: 170, stat: 'wis', healPct: 0.15, frail: 0.55, consumeFrail: true,
+    desc: 'ULTIMATE — say the words. Detonates frail, then brands survivors; mends you 15%.',
   },
 
   /* ============ MONK (Ki) ============ */
@@ -372,8 +372,8 @@ export const SKILLS = {
   },
   iron_stance: {
     id: 'iron_stance', fx: 'buff', name: 'Iron Stance', class: 'monk', cost: 16, charge: 0, target: 'self',
-    shield: 0.45, healPct: 0.08,
-    desc: 'Root like a mountain: heal 8% and block 45% for 3 turns.',
+    shield: 0.45, healPct: 0.08, stanceStrikes: 1,
+    desc: 'Root like a mountain: heal 8%, block 45%, and your next strike ignores armor. You cannot Guard while rooted.',
   },
   hurricane_kick: {
     id: 'hurricane_kick', fx: 'wind', name: 'Hurricane Kick', class: 'monk', cost: 30, charge: 3, target: 'all',
@@ -387,8 +387,8 @@ export const SKILLS = {
   },
   immovable: {
     id: 'immovable', fx: 'buff', name: 'Immovable', class: 'monk', cost: 26, charge: 2, target: 'self', tier: 2,
-    shield: 0.65, healPct: 0.12,
-    desc: 'Become terrain. Heal 12% and block 65% for 3 turns.',
+    shield: 0.65, healPct: 0.12, stanceStrikes: 2,
+    desc: 'Become terrain. Heal 12%, block 65%, and your next two strikes ignore armor. You cannot Guard while rooted.',
   },
   gale_palm: {
     id: 'gale_palm', fx: 'wind', name: 'Gale Palm', class: 'monk', cost: 24, charge: 2, target: 'one', tier: 2,
@@ -452,7 +452,7 @@ export const SKILLS = {
   hex_mark: {
     id: 'hex_mark', fx: 'shadow', name: 'Hex Mark', class: 'warlock', cost: 15, charge: 1, target: 'one',
     power: 60, stat: 'int', hex: 0.9,
-    desc: 'Brand a foe for suffering: hexed enemies take +25% damage. 90% chance.',
+    desc: 'Brand a foe for suffering: hexed enemies take +12% damage. 90% chance.',
   },
   shadow_ward: {
     id: 'shadow_ward', fx: 'buff', name: 'Shadow Ward', class: 'warlock', cost: 18, charge: 0, target: 'self',
@@ -462,7 +462,7 @@ export const SKILLS = {
   dark_pact: {
     id: 'dark_pact', fx: 'shadow', name: 'Dark Pact', class: 'warlock', cost: 0, charge: 0, target: 'self',
     selfHpCost: 0.08, gainResource: 32, gainCharge: 1,
-    desc: 'Pay in blood, be paid in power: -8% max HP, +18 Pact, +1 charge.',
+    desc: 'Pay in blood, be paid in power: -8% max HP, +32 Pact, +1 charge.',
   },
   rain_of_ruin: {
     id: 'rain_of_ruin', fx: 'shadow', name: 'Rain of Ruin', class: 'warlock', cost: 30, charge: 3, target: 'all',
@@ -544,9 +544,10 @@ export const SKILLS = {
     desc: 'Sing the old war-songs until they become true. +50% damage, +15% dodge.',
   },
   inspire_greatness: {
-    id: 'inspire_greatness', fx: 'heal', name: 'Inspire Greatness', class: 'bard', cost: 30, charge: 2, target: 'self', tier: 2, allyTarget: true,
-    healPct: 0.35,
-    desc: 'Remind someone who they are. Restore 35% HP — yours or a companion\'s.',
+    id: 'inspire_greatness', fx: 'buff', name: 'Inspire Greatness', class: 'bard', cost: 30, charge: 2, target: 'self', tier: 2,
+    buff: { stat: 'str', mult: 1.35, turns: 3 },
+    partyBuff: { kind: 'dmg', mult: 1.2, turns: 3, label: 'INSPIRE' },
+    desc: 'Remind the room who it is. You +35% damage; the party +20% for 3 turns. Leave the mending to priests.',
   },
   showstopper: {
     id: 'showstopper', fx: 'luck', name: 'Showstopper', class: 'bard', cost: 36, charge: 4, target: 'one', tier: 2,
@@ -572,8 +573,8 @@ export const SKILLS = {
   },
   bone_spike: {
     id: 'bone_spike', fx: 'pierce', name: 'Bone Spike', class: 'necromancer', cost: 15, charge: 1, target: 'one',
-    power: 120, stat: 'int',
-    desc: 'The floor of the tower is mostly climbers. Ask it for a favor.',
+    power: 120, stat: 'int', corpseSpend: true, corpseIgnoreDef: true,
+    desc: 'The floor of the tower is mostly climbers. Spend a corpse to ignore armor.',
   },
   corpse_ward: {
     id: 'corpse_ward', fx: 'buff', name: 'Corpse Ward', class: 'necromancer', cost: 18, charge: 0, target: 'self',
@@ -587,8 +588,8 @@ export const SKILLS = {
   },
   grave_bloom: {
     id: 'grave_bloom', fx: 'poison', name: 'Grave Bloom', class: 'necromancer', cost: 30, charge: 3, target: 'all',
-    power: 80, stat: 'int', poison: 0.4,
-    desc: 'Everything buried here flowers at once. 40% poison.',
+    power: 80, stat: 'int', poison: 0.4, corpseSpend: true, corpsePoisonSure: true,
+    desc: 'Everything buried here flowers at once. 40% poison — a corpse makes it certain.',
   },
   wither: {
     id: 'wither', fx: 'shadow', name: 'Wither', class: 'necromancer', cost: 30, charge: 3, target: 'one', tier: 2,
@@ -607,8 +608,8 @@ export const SKILLS = {
   },
   raise_anguish: {
     id: 'raise_anguish', fx: 'shadow', name: 'Raise Anguish', class: 'necromancer', cost: 34, charge: 3, target: 'one', tier: 2,
-    power: 185, stat: 'int',
-    desc: 'Summon everything this floor regrets, briefly, on top of one enemy.',
+    power: 185, stat: 'int', corpseSpend: true, corpsePower: 1.35,
+    desc: 'Summon everything this floor regrets. A corpse makes the regret heavier.',
   },
   black_rain: {
     id: 'black_rain', fx: 'shadow', name: 'Black Rain', class: 'necromancer', cost: 58, charge: 5, target: 'all', tier: 3,
@@ -654,8 +655,8 @@ export const SKILLS = {
   },
   hunters_mark: {
     id: 'hunters_mark', fx: 'pierce', name: 'Hunter\'s Mark', class: 'archer', cost: 20, charge: 2, target: 'one', tier: 2,
-    power: 120, stat: 'dex', hex: 0.9,
-    desc: 'Mark the quarry — a marked foe takes +25% damage from everything. 90% chance.',
+    power: 120, stat: 'dex', mark: 0.9,
+    desc: 'Mark the quarry — your arrows find them (+20% from you). One Shot spends the mark.',
   },
   caltrops: {
     id: 'caltrops', fx: 'poison', name: 'Caltrops', class: 'rogue', cost: 24, charge: 3, target: 'all', tier: 2,
@@ -823,8 +824,8 @@ export const SKILLS = {
 
   /* Tier-2 cheap options — still no/low charge, a bit more punch */
   measured_strike: composeSkill(
-    { id: 'measured_strike', name: 'Measured Strike', class: 'warrior', fx: 'slash', tier: 2,
-      desc: 'Free technique of a seasoned blade. Stronger than Tempered Cut — still no Rampage.' },
+    { id: 'measured_strike', name: 'Measured Strike', class: 'warrior', fx: 'slash', tier: 2, offer: false,
+      desc: 'Free technique of a seasoned blade. Folded into Tempered Cut.' },
     COMP.cost(0), COMP.charge(0), COMP.target('one'), COMP.dmg(128, 'str'),
   ),
   reserve_cast: composeSkill(
@@ -898,17 +899,17 @@ export const SKILLS = {
   ),
   arc_ward: composeSkill(
     { id: 'arc_ward', name: 'Arc Ward', class: 'spellsword', fx: 'buff',
-      desc: 'A thin shield of circulating Arcana. Block 48% of damage for 3 turns.' },
+      desc: 'A thin shield of circulating Arcana. Block 48% — the next blade-spell ignores armor.' },
     COMP.cost(18), COMP.charge(0), COMP.target('self'), COMP.shield(0.48),
   ),
   mana_lunge: composeSkill(
     { id: 'mana_lunge', name: 'Mana Lunge', class: 'spellsword', fx: 'slash',
-      desc: 'Close the gap with a charged blade. Solid hybrid damage.' },
+      desc: 'Close the gap with a charged blade. The hybrid spend — Sigil Thrust lives here now.' },
     COMP.cost(16), COMP.charge(1), COMP.target('one'), COMP.dmg(125, 'str+int'),
   ),
   sigil_thrust: composeSkill(
-    { id: 'sigil_thrust', name: 'Sigil Thrust', class: 'spellsword', fx: 'pierce',
-      desc: 'A short thrust stamped with a killing mark. Cheap and precise.' },
+    { id: 'sigil_thrust', name: 'Sigil Thrust', class: 'spellsword', fx: 'pierce', offer: false,
+      desc: 'A short thrust stamped with a killing mark. Folded into Mana Lunge.' },
     COMP.cost(12), COMP.charge(1), COMP.target('one'), COMP.dmg(118, 'str+int'),
   ),
   blade_tempest: composeSkill(
@@ -948,7 +949,7 @@ export const SKILLS = {
   ),
   glyph_parry: composeSkill(
     { id: 'glyph_parry', name: 'Glyph Parry', class: 'spellsword', fx: 'buff', tier: 2,
-      desc: 'Intercept with a floating rune. Block 40% and recover a little Arcana.' },
+      desc: 'Intercept with a floating rune. Block 40%, recover Arcana, and the next blade ignores armor.' },
     COMP.cost(16), COMP.charge(1), COMP.target('self'),
     COMP.shield(0.4), COMP.gainResource(10),
   ),
@@ -1010,5 +1011,5 @@ export const SKILLS = {
 
 // Learnable pool: class skills gated by tier + your subclass lineage's skills.
 export function skillsForClass(cls, tier = 1) {
-  return Object.values(SKILLS).filter(s => s.class === cls && (s.tier || 1) <= tier);
+  return Object.values(SKILLS).filter(s => s.class === cls && (s.tier || 1) <= tier && s.offer !== false);
 }

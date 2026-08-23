@@ -1,0 +1,77 @@
+{
+  "id": "s5_initiative_paralyze",
+  "stage": 5,
+  "method": "rollRoundInitiative+beginPlayerTurn",
+  "seed": 601,
+  "capturedFrom": "js/combat.js Fight (pre-extract characterization)",
+  "extra": {},
+  "expected": {
+    "round": 1,
+    "ended": false,
+    "outcome": null,
+    "charge": 2,
+    "corpses": 0,
+    "usedDeathward": false,
+    "usedUltimate": false,
+    "damageTaken": 0,
+    "target": 0,
+    "actingKey": null,
+    "order": [
+      {
+        "key": "player",
+        "isPlayer": true,
+        "stableId": "p-me",
+        "init": 11,
+        "spdStat": 7
+      },
+      {
+        "key": "e1",
+        "isPlayer": false,
+        "stableId": "e1",
+        "init": 9,
+        "spdStat": 8
+      }
+    ],
+    "player": {
+      "hp": 80,
+      "maxHp": 80,
+      "mp": 40,
+      "maxMp": 40,
+      "down": false,
+      "combatTaunt": 0,
+      "usedRevive": false,
+      "guardCount": 0,
+      "statuses": {
+        "paralyzed": 2
+      },
+      "buffs": [],
+      "partyBuffs": [],
+      "guarding": false,
+      "ironStance": null,
+      "scriptedEdge": false
+    },
+    "enemies": [
+      {
+        "uid": "e1",
+        "id": "wolf",
+        "name": "Dire Wolf",
+        "hp": 32,
+        "maxHp": 32,
+        "atk": 3,
+        "def": 1,
+        "spd": 8,
+        "charge": 0,
+        "turnCount": 0,
+        "statuses": {
+          "paralyzed": 2
+        },
+        "phaseTriggers": [],
+        "phase": 1,
+        "twoPhase": false,
+        "_enraged": false,
+        "summon": false
+      }
+    ],
+    "logs": []
+  }
+}

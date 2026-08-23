@@ -2,10 +2,18 @@
 // so the repo stays tiny and load time stays instant.
 
 let ctx = null;
-let muted = JSON.parse(localStorage.getItem('dt_muted') || 'false');
+let muted = false;
+try {
+  if (typeof localStorage !== 'undefined') {
+    muted = JSON.parse(localStorage.getItem('dt_muted') || 'false');
+  }
+} catch { muted = false; }
 
 function ac() {
-  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (typeof window === 'undefined') return null;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  if (!ctx) ctx = new AC();
   if (ctx.state === 'suspended') ctx.resume();
   return ctx;
 }
@@ -26,7 +34,9 @@ function env(gainNode, t, attack, decay, peak = 0.2) {
 function tone({ freq = 440, type = 'sine', attack = 0.005, decay = 0.15, peak = 0.15, slideTo = null, delay = 0 }) {
   if (muted) return;
   try {
-    const a = ac(), t = a.currentTime + delay;
+    const a = ac();
+    if (!a) return;
+    const t = a.currentTime + delay;
     const osc = a.createOscillator(), g = a.createGain();
     osc.type = type; osc.frequency.setValueAtTime(freq, t);
     if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t + attack + decay);
@@ -39,7 +49,9 @@ function tone({ freq = 440, type = 'sine', attack = 0.005, decay = 0.15, peak = 
 function noise({ decay = 0.2, peak = 0.12, freq = 1000, delay = 0 }) {
   if (muted) return;
   try {
-    const a = ac(), t = a.currentTime + delay;
+    const a = ac();
+    if (!a) return;
+    const t = a.currentTime + delay;
     const len = a.sampleRate * (decay + 0.05);
     const buf = a.createBuffer(1, len, a.sampleRate);
     const data = buf.getChannelData(0);

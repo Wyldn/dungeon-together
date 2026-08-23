@@ -1,6 +1,6 @@
 // Turn-based combat engine (handoff §8–§14).
 //   - Initiative rolls at every battle; visible turn order on the left.
-//   - Universal Guard (30% block) and Basic Attack, regardless of weapon.
+//   - Universal Guard (22% block) and Basic Attack, regardless of weapon.
 //   - Six-segment Battle Charge for players AND enemies; AOE/heavy hits gated.
 //   - Enemy specials telegraphed one segment before they're ready.
 // Two drivers: solo (fully interleaved initiative) and shared co-op
@@ -8,15 +8,46 @@
 // constraint; the displayed order reflects what actually happens).
 
 import { SKILLS } from './data/skills.js';
-import { CONSUMABLES } from './data/items.js';
+import { CONSUMABLES, consumableCombatValue } from './data/items.js';
 import { CONFIG } from './data/config.js';
 import {
-  enemyScale, softLevelDamage, rewardMult, partyBossAoeMult, partyOutgoingDmgMult,
-  soloBossChargeForScale, TDC,
+  softLevelDamage, rewardMult, partyBossAoeMult, partyOutgoingDmgMult, TDC,
 } from './data/tdc.js';
-import { derived, gearHas, heal, restoreMana, usableSkillIds, resourceName, changeFame, classTitle } from './character.js';
-import { initiativeOrder, addCharge, tickEnemyCharge, canAfford, skillEffectivePower, pickEnemySpecial, enemyTelegraph, applyGuard, applyDefense } from './systems.js';
-import { biomeForFloor, ENEMIES } from './data/enemies.js';
+import { derived, heal, restoreMana, usableSkillIds, resourceName, changeFame, classTitle } from './character.js';
+import { initiativeOrder, canAfford, skillEffectivePower, enemyTelegraph, applyGuard, applyDefense, enemySpecialPayoff, enemyPayoffLine } from './systems.js';
+import { biomeForFloor } from './data/enemies.js';
+import {
+  skillStatValue, buildEnemy, spawnSummon as coreSpawnSummon,
+  statusOutgoingMult, collectEnemyRiders, initiativePenaltyFromStatuses,
+  applyPlayerFrail as coreApplyPlayerFrail,
+  buffValue as coreBuffValue, partyBuffMult as corePartyBuffMult,
+  gainCharge as coreGainCharge, gainFury as coreGainFury,
+  classResourceTick as coreClassResourceTick, gainCorpse as coreGainCorpse,
+  consumeStanceIgnore as coreConsumeStance,
+  notePlayerHpLoss as coreNoteHpLoss,
+  hasDebuff as coreHasDebuff, hasHardCC as coreHasHardCC,
+  cleanseBoss as coreCleanseBoss, resolveBossAntiCC as coreResolveBossAntiCC,
+  resolveEnemySpecial as coreResolveEnemySpecial,
+  applyStatusRiders as coreApplyStatusRiders,
+  deathSaves as coreDeathSaves,
+  applyEnrage as coreApplyEnrage,
+  bossPhaseChecksSolo as coreBossPhaseSolo,
+  transformBoss as coreTransformBoss, maybeTransform as coreMaybeTransform,
+  resolvePlayerHit, applySelfSkill as coreApplySelfSkill,
+  resolveUseConsumable, resolveEnemyTurn, resolveEnemyTurnStart,
+  resolveEnemyConfusedStrike,
+  tickEnemyStatuses as coreTickEnemyStatuses, upkeep as coreUpkeep,
+  beginPlayerTurn, combatantEntries, rollRoundInitiativeSolo,
+  endPlayerAction as coreEndPlayerAction,
+  snapshotCombat, applyCombatStartMana,
+} from './combat_core.js';
+import { computeCombatPayout } from './rewards.js';
+import { chooseAutoPlayAction } from './combat_policy.js';
+
+export {
+  skillStatValue, buildEnemy, enemyHitFreezes, statusOutgoingMult,
+  collectEnemyRiders, initiativePenaltyFromStatuses,
+} from './combat_core.js';
 import { ICONS } from './icons.js';
 import { enemySpriteHtml, heroSpriteHtml, playHeroAnim, heroHasAnim, heroCombatSize, biomeBgUrl } from './art.js';
 import { enemyBoxHtml } from './data/sprite_present.js';
@@ -29,9 +60,15 @@ import {
   trackDamageDealt, trackDamageTaken, trackHealed, trackBuff, trackDebuff,
 } from './runlog.js';
 
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+let _sleepImpl = ms => new Promise(r => setTimeout(r, ms));
+const sleep = ms => _sleepImpl(ms);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const LAST_FLOOR = 51;
+
+/** Test/headless only: make combat sleeps instant. Does not change rule math. */
+export function setCombatSleep(fn) {
+  _sleepImpl = fn || (ms => new Promise(r => setTimeout(r, ms)));
+}
 
 /** Live solo fight — used to persist mid-battle on Save. */
 let activeFight = null;
@@ -53,142 +90,12 @@ export function snapshotActiveCombat() {
     modifier: activeFight.mod || null,
     playerStatuses: { ...(activeFight.player?.statuses || {}) },
     playerBuffs: [...(activeFight.player?.buffs || [])],
+    corpses: activeFight.corpses || 0,
   };
-}
-
-/** Governing-stat value for a skill: one stat, 'best', or dual 'a+b'.
- *  Dual = 55% of the sum — beats a single stat only if you feed both. */
-export function skillStatValue(sk, d) {
-  const stat = sk.stat || 'str';
-  if (stat === 'best') return Math.max(d.str, d.dex, d.int, d.wis);
-  if (stat.includes('+')) {
-    const [a, b] = stat.split('+');
-    return ((d[a] || 0) + (d[b] || 0)) * 0.55;
-  }
-  return d[stat] || d.str;
-}
-
-const DEFAULT_SUMMONS = {
-  skeleton: { id: 'skeleton', name: 'Risen Skeleton', glyph: '💀', hp: 30, atk: 9, def: 2, spd: 6, gold: [0, 0], xp: 5 },
-  leech: { id: 'leech', name: 'Bound Leech', glyph: '🪱', hp: 28, atk: 10, def: 1, spd: 6, gold: [0, 0], xp: 5, lifesteal: 0.35 },
-  imp: { id: 'imp', name: 'Cinder Imp', glyph: '👺', hp: 26, atk: 11, def: 2, spd: 11, gold: [0, 0], xp: 5, burn: 0.25 },
-  slime: { id: 'slime', name: 'Spawn Slime', glyph: '🟢', hp: 24, atk: 8, def: 1, spd: 4, gold: [0, 0], xp: 5 },
-  rat: { id: 'rat', name: 'Sewer Rat', glyph: '🐀', hp: 18, atk: 7, def: 0, spd: 10, gold: [0, 0], xp: 4 },
-};
-
-function summonSpecFor(summonId) {
-  if (!summonId) return DEFAULT_SUMMONS.skeleton;
-  if (DEFAULT_SUMMONS[summonId]) return { ...DEFAULT_SUMMONS[summonId] };
-  for (const pool of Object.values(ENEMIES)) {
-    const found = pool.find(e => e.id === summonId);
-    if (found) {
-      return {
-        id: found.id, name: found.name, glyph: found.glyph,
-        hp: Math.round(found.hp * 0.55), atk: Math.round(found.atk * 0.7),
-        def: Math.max(0, found.def - 1), spd: found.spd,
-        gold: [0, 0], xp: 5,
-        burn: found.burn, poison: found.poison, lifesteal: found.lifesteal, freeze: found.freeze,
-      };
-    }
-  }
-  return DEFAULT_SUMMONS.skeleton;
 }
 
 function spawnSummon(fight, bossEnemy) {
-  const spec = summonSpecFor(bossEnemy.summons);
-  const minion = buildEnemy(spec, fight.run.floor, fight.run.floor);
-  minion.summon = true;
-  minion.spawnIn = true;
-  fight.enemies.push(minion);
-  fight.order.push({
-    key: minion.uid, name: minion.name, glyph: minion.glyph,
-    spdStat: minion.spd, isPlayer: false, stableId: minion.uid, init: 0,
-  });
-  return minion;
-}
-
-/** Whether this enemy hit should freeze the player. `freezeEvery` = once per N turns. */
-function enemyHitFreezes(e, special, rng) {
-  if (e.freezeEvery) {
-    return e.turnCount > 0 && e.turnCount % e.freezeEvery === 0;
-  }
-  return (e.freeze && rng.chance(e.freeze))
-    || !!special?.freezeSure
-    || !!(special?.freeze && rng.chance(special.freeze));
-}
-
-/** Outgoing damage mult from weaken + burn (burn also DoTs separately). */
-function statusOutgoingMult(statuses = {}) {
-  const C = CONFIG.combat;
-  let m = 1;
-  if (statuses.weaken) m *= C.weakenDmgMult ?? 0.7;
-  if (statuses.burn) m *= C.burnDmgMult ?? 0.85;
-  return m;
-}
-
-/** Status riders an enemy hit may apply to a climber. */
-function collectEnemyRiders(e, special, rng) {
-  const C = CONFIG.combat;
-  const riders = {};
-  if ((e.poison && rng.chance(e.poison)) || special?.poisonSure
-    || (special?.poison && rng.chance(special.poison))) {
-    riders.poison = C.poisonTurns ?? 3;
-  }
-  if ((e.burn && rng.chance(e.burn)) || special?.burnSure
-    || (special?.burn && rng.chance(special.burn))) {
-    riders.burn = C.burnTurns ?? 2;
-  }
-  if (enemyHitFreezes(e, special, rng)) riders.freeze = 1;
-  if (special?.weakenSure || (special?.weaken && rng.chance(special.weaken))) riders.weaken = 3;
-  if (special?.frailSure || (special?.frail && rng.chance(special.frail))) riders.frail = 3;
-  if (special?.tormentedSure || (special?.tormented && rng.chance(special.tormented))) riders.tormented = 3;
-  if (special?.confusedSure || (special?.confused && rng.chance(special.confused))) riders.confused = C.confuseTurns ?? 2;
-  if (special?.lazySure || (special?.lazy && rng.chance(special.lazy))) riders.lazy = 2;
-  // Enemy `stun` was dead data — it now applies soft paralyze (initiative penalty).
-  if (special?.paralyzeSure || special?.stunSure
-    || (special?.paralyze && rng.chance(special.paralyze))
-    || (special?.stun && rng.chance(special.stun))) {
-    riders.paralyze = C.paralyzeTurns ?? 2;
-  }
-  return riders;
-}
-
-function initiativePenaltyFromStatuses(statuses = {}) {
-  if (!statuses.paralyzed) return 0;
-  return -(CONFIG.combat.paralyzeInitPenalty ?? 4);
-}
-
-export function buildEnemy(spec, floor, biomeStart, {
-  boss = false, hpMult = 1, atkMult = 1, partySize = 1,
-} = {}) {
-  const isBoss = boss || !!spec.boss;
-  const biome = biomeForFloor(floor);
-  const sc = enemyScale(floor, biomeStart, biome.id, {
-    boss: isBoss, elite: !!spec.elite, partySize,
-    eliteAtkRole: !!spec.eliteAtkRole,
-  });
-  const spd = Math.max(1, Math.round((spec.spd || 5) * sc.spd));
-  const atkScale = sc.atk * (atkMult || 1);
-  const liveAtk = Math.round(spec.atk * atkScale);
-  return {
-    ...spec,
-    boss: isBoss,
-    elite: !!spec.elite,
-    maxHp: Math.round(spec.hp * sc.hp * hpMult),
-    hp: Math.round(spec.hp * sc.hp * hpMult),
-    atk: liveAtk,
-    baseAtk: liveAtk,
-    def: Math.round(spec.def * sc.def),
-    spd,
-    chargeGain: (spec.chargeGain || 1) * sc.chargeGain,
-    charge: 0,
-    statuses: {},
-    phaseTriggers: [],
-    turnCount: 0,
-    // stashed so a two-phase boss can scale its phase-2 stats identically (§51)
-    _m: { hp: sc.hp * hpMult, atk: atkScale, def: sc.def, spd: sc.spd },
-    uid: spec.uid || Math.random().toString(36).slice(2, 8),
-  };
+  return coreSpawnSummon(fight, bossEnemy);
 }
 
 export function startCombat({
@@ -199,10 +106,7 @@ export function startCombat({
   return new Promise(resolve => {
     // Fresh fights top off class resource a bit so mid-kit spends stay usable.
     // Skip on resume so a reloaded mid-fight doesn't free-refill.
-    if (!resume) {
-      const pct = CONFIG.recovery?.combatStartManaPct ?? 0;
-      if (pct > 0) restoreMana(run, (run.maxMp || 0) * pct);
-    }
+    applyCombatStartMana(run, { resume });
     const C = new Fight(container, run, rng, enemies, modifier, introText, onHud, resolve, coop, {
       onCharacter, onSettings,
     });
@@ -211,6 +115,7 @@ export function startCombat({
       if (resume.playerStatuses) C.player.statuses = { ...resume.playerStatuses };
       if (resume.playerBuffs) C.player.buffs = [...resume.playerBuffs];
       if (resume.round != null) C.round = resume.round;
+      if (resume.corpses != null) C.corpses = resume.corpses;
     }
     if (!coop) activeFight = C;
     const done = (result) => {
@@ -222,9 +127,25 @@ export function startCombat({
   });
 }
 
+/** Headless Fight for characterization / tests. Same rule methods, no DOM. */
+export function createSilentFight(run, rng, enemies, modifier = null) {
+  setCombatSleep(() => Promise.resolve());
+  const fight = new Fight(null, run, rng, enemies, modifier, null, null, () => {}, null, { headless: true });
+  fight.headless = true;
+  fight.logs = [];
+  return fight;
+}
+
+/** Serializable combat snapshot used by characterization goldens. */
+export function snapshotFightState(fight) {
+  return snapshotCombat(fight);
+}
+
 class Fight {
   constructor(container, run, rng, enemies, modifier, introText, onHud, resolve, coop, ui = {}) {
+    this.headless = !container || !!ui.headless;
     this.el = container;
+    this.logs = [];
     this.run = run;
     this.rng = rng;
     this.enemies = enemies;
@@ -237,10 +158,12 @@ class Fight {
     this.onSettings = ui.onSettings || null;
     this.shared = !!coop;
     this.player = { statuses: {}, buffs: [], guarding: false };
+    this.corpses = 0;
     this.charge = clamp((run.metaStartCharge || 0) + derived(run).startCharge, 0, CONFIG.charge.max);
     this.actionMode = 'root'; // root | skills | items | flee (handoff moded menu)
     this._actEnabled = false;
     this.target = 0;
+    this.aimBySeat = new Map(); // seat id → enemy uid (co-op aim chips)
     this.locked = true;
     this.usedDeathward = false;
     this.round = 0;
@@ -317,21 +240,22 @@ class Fight {
   _healed(n) { trackHealed(this.run, n); }
   _buff() { trackBuff(this.run); }
   _debuff() { trackDebuff(this.run); }
-  buffValue(stat) {
-    let mult = 1, add = 0;
-    for (const b of this.player.buffs) {
-      if (b.stat === stat) { if (b.mult) mult *= b.mult; if (b.add) add += b.add; }
-    }
-    return { mult, add };
-  }
-  gainCharge(n) {
-    const before = this.charge;
-    this.charge = addCharge(this.charge, n, this.mod.chargeMult || 1);
-    if (this.charge > before) this.renderCharge();
-  }
+  buffValue(stat) { return coreBuffValue(this, stat); }
+  gainCharge(n) { return coreGainCharge(this, n); }
+  gainFury(amount) { return coreGainFury(this, amount); }
+  classResourceTick() { return coreClassResourceTick(this); }
+  gainCorpse() { return coreGainCorpse(this); }
+
+  /** Solo taunt delays a special; pack howls and self-wards apply here. */
+  resolveEnemySpecial(e, special) { return coreResolveEnemySpecial(this, e, special); }
+
+  applyPlayerFrail(dmg) { return coreApplyPlayerFrail(this, dmg); }
+  notePlayerHpLoss(dmg) { return coreNoteHpLoss(this, dmg); }
+  consumeStanceIgnore() { return coreConsumeStance(this); }
 
   log(msg, cls = '') {
-    if (!this.logEl) return;
+    this.logs.push({ msg, cls: cls || '' });
+    if (this.headless || !this.logEl) return;
     const div = document.createElement('div');
     if (cls) div.className = cls;
     div.textContent = msg;
@@ -379,7 +303,7 @@ class Fight {
   }
 
   float(hostEl, text, cls) {
-    if (!hostEl) return;
+    if (this.headless || !hostEl) return;
     const layer = this.fxLayer || this.el;
     const isCrit = cls === 'crit';
     const isIncoming = cls === 'incoming';
@@ -405,7 +329,8 @@ class Fight {
 
   /** Anchor floating numbers on the combatant card (sprite parent), not the sprite alone. */
   playerFloatHost() {
-    const spr = this.el.querySelector('#sprite-player');
+    if (!this.el) return null;
+    const spr = this.el?.querySelector?.('#sprite-player');
     return spr?.parentElement || spr;
   }
   allyFloatHost(id) {
@@ -414,70 +339,31 @@ class Fight {
   }
 
   enemyByUid(uid) { return this.enemies.find(e => e.uid === uid); }
-  sprite(uid) { return this.el.querySelector(`#sprite-${uid}`); }
+  sprite(uid) { return this.el?.querySelector?.(`#sprite-${uid}`) || null; }
 
   // §12: has the boss picked up any player-applied affliction?
-  hasDebuff(st) { return !!(st.poison || st.burn || st.frozen || st.stunned || st.hexed); }
-  hasHardCC(st) { return !!(st.frozen || st.stunned); }
+  hasDebuff(st) { return coreHasDebuff(st); }
+  hasHardCC(st) { return coreHasHardCC(st); }
 
-  // §12: bosses shrug afflictions on a slow cadence, or burn Battle Charge to break freeze/stun.
-  // Returns 'broke' | 'cleansed' | null. Call after charge tick, before the skip check.
   resolveBossAntiCC(e, ops = null) {
-    if (!e.boss) return null;
-    const every = e.cleanseEvery ?? CONFIG.boss.cleanseEvery;
-    const cost = e.cleanseCost ?? CONFIG.boss.cleanseCost;
-
-    // Spend FOC to tear free of hard CC and keep acting this turn
-    if (this.hasHardCC(e.statuses) && cost > 0 && (e.charge || 0) >= cost) {
-      e.charge -= cost;
-      delete e.statuses.frozen;
-      delete e.statuses.stunned;
-      this.log(`${e.name} burns ${cost} Battle Charge and tears free of the binding!`, 'log-foe');
-      SFX.bossIntro();
-      ops?.push({ type: 'echarge', uid: e.uid, charge: e.charge });
-      ops?.push({ type: 'breakcc', uid: e.uid, cost });
-      this.renderEnemies();
-      return 'broke';
-    }
-
-    // Periodic full cleanse (DoTs + any leftover hard CC)
-    if (e.turnCount > 0 && e.turnCount % every === 0 && this.hasDebuff(e.statuses)) {
-      this.cleanseBoss(e);
-      ops?.push({ type: 'cleanse', uid: e.uid });
-      return 'cleansed';
-    }
-    return null;
+    const result = coreResolveBossAntiCC(this, e, ops);
+    if (result && !this.headless) SFX.bossIntro();
+    return result;
   }
 
-  // §12: bosses periodically shrug off crowd-control so it can't be cheesed.
   cleanseBoss(e) {
-    delete e.statuses.poison; delete e.statuses.burn; delete e.statuses.frozen;
-    delete e.statuses.stunned; delete e.statuses.hexed;
-    this.log(`${e.name} draws a breath of pure spite — every affliction sloughs away.`, 'log-foe');
-    SFX.bossIntro();
-    this.renderEnemies();
+    coreCleanseBoss(this, e);
+    if (!this.headless) SFX.bossIntro();
   }
 
   // §15 Prism of Discord: a bewildered enemy strikes one of its own instead.
   async enemyConfusedStrike(e) {
-    const others = this.aliveEnemies().filter(x => x.uid !== e.uid);
-    if (!others.length) return false;
-    const victim = this.rng.pick(others);
-    this.log(`${e.name} is bewildered and turns on ${victim.name}!`, 'log-ally');
-    const es = this.sprite(e.uid);
-    if (es) { es.classList.add('attack'); setTimeout(() => es.classList.remove('attack'), 420); }
+    const hit = resolveEnemyConfusedStrike(this, e);
+    if (!hit || this.headless) return hit;
+    const sprite = this.sprite(e.uid);
+    if (sprite) { sprite.classList.add('attack'); setTimeout(() => sprite.classList.remove('attack'), 420); }
     SpriteAnim.play(e.uid, 'attack');
-    await sleep(220);
-    let dmg = applyDefense(
-      e.atk * CONFIG.combat.enemyAtkMult * (0.85 + this.rng.next() * 0.3),
-      victim.def,
-    );
-    victim.hp = Math.max(0, victim.hp - dmg);
-    const vs = this.sprite(victim.uid);
-    if (vs) { vs.classList.add('hit'); setTimeout(() => vs.classList.remove('hit'), 360); this.float(vs.parentElement, `${dmg}`, 'dmg'); }
-    SpriteAnim.play(victim.uid, 'hurt');
     SFX.hit();
-    if (victim.hp <= 0) this.log(`${victim.name} is cut down by its own ally!`, 'log-foe');
     this.renderEnemies();
     await sleep(360);
     return true;
@@ -503,6 +389,7 @@ class Fight {
   }
 
   showTurnBanner(show) {
+    if (this.headless || !this.el) return;
     const b = this.el.querySelector('#turn-banner');
     if (b) b.style.display = show ? '' : 'none';
     if (show) {
@@ -515,6 +402,7 @@ class Fight {
 
   /** Flash the browser tab title while it's your turn (esp. when the tab is in the background). */
   setTabTurnAlert(on) {
+    if (this.headless || typeof document === 'undefined') return;
     this._tabFlashActive = !!on;
     if (!on) {
       this._stopTabFlash();
@@ -541,7 +429,7 @@ class Fight {
       this._tabFlashTimer = null;
     }
     this._tabFlashActive = false;
-    if (this._baseTitle != null) {
+    if (this._baseTitle != null && typeof document !== 'undefined') {
       document.title = this._baseTitle;
       this._baseTitle = null;
     }
@@ -549,7 +437,7 @@ class Fight {
 
   // per-skill-type visual: a brief overlay on the target sprite
   spawnFx(spriteEl, fxType) {
-    if (!spriteEl || !fxType) return;
+    if (this.headless || !spriteEl || !fxType) return;
     const f = document.createElement('div');
     f.className = `skill-fx fx-${fxType}`;
     spriteEl.appendChild(f);
@@ -589,20 +477,7 @@ class Fight {
       }));
       return [...players, ...foes];
     }
-    return [
-      {
-        key: 'player', name: this.run.name, glyph: null,
-        spdStat: Math.round(4 + d.dex * 0.3),
-        mod: d.initiative + (this.mod.enemyFirst ? -100 : 0)
-          + initiativePenaltyFromStatuses(this.player.statuses),
-        isPlayer: true, stableId: 'p-me',
-      },
-      ...this.aliveEnemies().map(e => ({
-        key: e.uid, name: e.name, glyph: null, spdStat: e.spd,
-        mod: initiativePenaltyFromStatuses(e.statuses),
-        isPlayer: false, stableId: e.uid,
-      })),
-    ];
+    return combatantEntries(this);
   }
 
   rollBattleOrder() {
@@ -635,8 +510,7 @@ class Fight {
   async rollRoundInitiative() {
     this._actingKey = null;
     if (!this.shared) {
-      this.order = initiativeOrder(this.rng, this._combatantEntries(), this.run.floor);
-      this.renderTurnOrder();
+      rollRoundInitiativeSolo(this);
       return;
     }
     this._sharedInitReady = true;
@@ -679,6 +553,7 @@ class Fight {
 
   /* ---------------- rendering ---------------- */
   begin() {
+    if (this.headless) return;
     const biome = biomeForFloor(this.run.floor);
     this.el.innerHTML = `
       <div class="combat-screen cx-full">
@@ -758,6 +633,32 @@ class Fight {
     return 1 + (this.allies?.size || 0);
   }
 
+  /** Local target plus a short co-op announce so companions can see the mark. */
+  setAim(i) {
+    this.target = i;
+    if (!this.shared || !this.coop) return;
+    const e = this.enemies[i];
+    const uid = (e && e.hp > 0) ? e.uid : null;
+    const prev = this.aimBySeat.get(this.coop.you);
+    if (uid === prev) return;
+    if (uid) this.aimBySeat.set(this.coop.you, uid);
+    else this.aimBySeat.delete(this.coop.you);
+    this.coop.net.send({ k: 'caim', uid: uid || null });
+  }
+
+  aimChipsHtml(uid) {
+    if (!this.shared || !uid) return '';
+    const chips = [];
+    for (const [seat, aimed] of this.aimBySeat) {
+      if (aimed !== uid) continue;
+      const you = seat === this.coop.you;
+      const raw = you ? (this.run.name || 'You') : (this.allies.get(seat)?.name || 'Ally');
+      const name = raw.length > 10 ? raw.slice(0, 9) + '…' : raw;
+      chips.push(`<span class="aim-chip${you ? ' you' : ''}">${name}</span>`);
+    }
+    return chips.length ? `<div class="aim-chips">${chips.join('')}</div>` : '';
+  }
+
   /**
    * Align turn order with Battle Charge. Party-lane bar is CSS on `.cx-party`
    * (scales with stack height). Crowded 4-player fights get a compact class.
@@ -783,7 +684,7 @@ class Fight {
     return `<span class="cpips">${pips}</span>`;
   }
 
-  // per-fighter FOC pips (handoff §4) — filled = charge segments
+  // per-fighter Battle Charge pips (handoff §4) — filled = charge segments
   focPips(current, max = CONFIG.charge.max) {
     let p = '';
     for (let i = 0; i < max; i++) p += `<span class="fpip ${i < current ? 'lit' : ''}"></span>`;
@@ -791,14 +692,16 @@ class Fight {
   }
 
   renderCharge() {
+    if (this.headless || !this.chargeTray) return;
     if (!this.chargeTray) return;
-    // Pip fill only — match enemy FOC (no "0/6" suffix).
+    // Pip fill only — match per-fighter CHG (no "0/6" suffix).
     this.chargeTray.innerHTML = `
       <span class="charge-label">${CONFIG.charge.displayName}</span>
       ${this.chargePips(this.charge)}`;
   }
 
   renderTurnOrder(activeKey = this._actingKey) {
+    if (this.headless || !this.turnOrderEl) return;
     if (!this.turnOrderEl) return;
     this.turnOrderEl.innerHTML = `<div class="to-title">TURN ORDER</div>` + this.order
       .filter(o => {
@@ -830,6 +733,7 @@ class Fight {
 
   /** Play death anim, then pull corpses off the board (mid-fight). Win outro owns the last clear. */
   scheduleClearFallen() {
+    if (this.headless) return;
     for (const e of this.enemies) {
       if (e.hp > 0 || e.cleared || e._clearing) continue;
       if (e.hp < 0) e.hp = 0;
@@ -850,9 +754,16 @@ class Fight {
   }
 
   renderEnemies() {
+    if (this.headless || !this.enemyRow) {
+      if (this.enemies[this.target]?.hp <= 0) {
+        const next = this.enemies.findIndex(e => e.hp > 0 && !e.cleared);
+        if (next >= 0) this.target = next;
+      }
+      return;
+    }
     // Fix target before paint so we don't rebuild mid-death-anim
     if (this.enemies[this.target]?.hp <= 0 || this.enemies[this.target]?.cleared) {
-      this.target = this.enemies.findIndex(e => e.hp > 0 && !e.cleared);
+      this.setAim(this.enemies.findIndex(e => e.hp > 0 && !e.cleared));
     }
     this.scheduleClearFallen();
 
@@ -904,10 +815,11 @@ class Fight {
         <div class="cx-info">
           <div class="cx-head"><span class="fighter-name">${e.name}</span><span class="cx-lv">Lv.${this.run.floor}</span></div>
           <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${clamp(e.hp / e.maxHp * 100, 0, 100)}%"></div><span class="cx-bar-num">${Math.max(0, Math.round(e.hp))}/${Math.round(e.maxHp)}</span></div></div>
-          <div class="cx-bar-row"><span class="cx-blabel foc">FOC</span>${this.focPips(e.charge || 0)}</div>
+          <div class="cx-bar-row"><span class="cx-blabel foc">CHG</span>${this.focPips(e.charge || 0)}</div>
         </div>
-        <div class="fighter-statuses">${this.statusPips(e.statuses)}</div>`;
-      div.onclick = () => { if (e.hp > 0) { this.target = i; this.renderEnemies(); SFX.click(); } };
+          <div class="fighter-statuses">${this.statusPips(e.statuses)}</div>
+          ${this.aimChipsHtml(e.uid)}`;
+      div.onclick = () => { if (e.hp > 0) { this.setAim(i); this.renderEnemies(); SFX.click(); } };
       this.enemyRow.appendChild(div);
       if (spawn) {
         const uid = e.uid;
@@ -922,6 +834,7 @@ class Fight {
   }
 
   renderPlayers(actingKey = this._actingKey) {
+    if (this.headless || !this.playerRow) return;
     const s = this.player.statuses;
     const hpW = clamp(this.run.hp / this.run.maxHp * 100, 0, 100);
     const mpW = clamp(this.run.mp / Math.max(1, this.run.maxMp) * 100, 0, 100);
@@ -941,10 +854,13 @@ class Fight {
           <div class="cx-head"><span class="fighter-name">${climberNameHtml(this.run.name, { title: this._nameTitle, nameStyle: this._nameStyle })}${this.run.down ? ' (down)' : ''}</span></div>
           <div class="cx-bar-row"><span class="cx-blabel hp">HP</span><div class="bar cx-thin"><div class="bar-fill hp" style="width:${hpW}%"></div><span class="cx-bar-num">${Math.round(this.run.hp)}/${Math.round(this.run.maxHp)}</span></div></div>
           <div class="cx-bar-row"><span class="cx-blabel mp" title="${resName}">${resShort}</span><div class="bar cx-thin"><div class="bar-fill mp" style="width:${mpW}%"></div><span class="cx-bar-num">${Math.round(this.run.mp)}/${Math.round(this.run.maxMp)}</span></div></div>
-          <div class="cx-bar-row"><span class="cx-blabel foc">FOC</span>${this.focPips(this.charge)}</div>
+          <div class="cx-bar-row"><span class="cx-blabel foc">CHG</span>${this.focPips(this.charge)}</div>
         </div>
         <div class="fighter-statuses">
           ${this.player.guarding ? '<span class="status-pip guard-pip">🛡 GUARD</span>' : ''}
+          ${this.player.ironStance ? `<span class="status-pip">STANCE ${this.player.ironStance.strikes}</span>` : ''}
+          ${this.player.scriptedEdge ? '<span class="status-pip">EDGE</span>' : ''}
+          ${this.corpses ? `<span class="status-pip">CORPSE ${this.corpses}</span>` : ''}
           ${this.statusPips(s)}${this.player.buffs.map(b => `<span class="status-pip">▲${b.label} ${b.turns}</span>`).join('')}${(this.player.partyBuffs || []).map(b => `<span class="status-pip">◆${b.label || b.kind} ${b.turns}</span>`).join('')}
         </div>
       </div>`;
@@ -966,27 +882,30 @@ class Fight {
   }
 
   statusPips(st) {
+    const pip = (label, title) => `<span class="status-pip" title="${title}">${label}</span>`;
     const pips = [];
-    if (st.poison) pips.push(`<span class="status-pip">poison ${st.poison}</span>`);
-    if (st.burn) pips.push(`<span class="status-pip">burn ${st.burn}</span>`);
-    if (st.frozen) pips.push(`<span class="status-pip">frozen</span>`);
-    if (st.stunned) pips.push(`<span class="status-pip">stunned</span>`);
-    if (st.paralyzed) pips.push(`<span class="status-pip">paralyze ${st.paralyzed}</span>`);
-    if (st.shield) pips.push(`<span class="status-pip">ward ${st.shield.turns}</span>`);
-    if (st.hexed) pips.push(`<span class="status-pip">hex ${st.hexed}</span>`);
-    if (st.weaken) pips.push(`<span class="status-pip">weaken ${st.weaken}</span>`);
-    if (st.frail) pips.push(`<span class="status-pip">frail ${st.frail}</span>`);
-    if (st.tormented) pips.push(`<span class="status-pip">torment ${st.tormented}</span>`);
-    if (st.confused) pips.push(`<span class="status-pip">confused ${st.confused}</span>`);
-    if (st.lazy) pips.push(`<span class="status-pip">lazy ${st.lazy}</span>`);
+    if (st.poison) pips.push(pip(`poison ${st.poison}`, 'Ticks each round. Hits harder if the body is frail.'));
+    if (st.burn) pips.push(pip(`burn ${st.burn}`, 'Ticks each round. Some foes hit harder while you burn.'));
+    if (st.frozen) pips.push(pip('frozen', 'Skip your next action.'));
+    if (st.stunned) pips.push(pip('stunned', 'Skip your next action.'));
+    if (st.paralyzed) pips.push(pip(`paralyze ${st.paralyzed}`, 'You still act, but later in the round.'));
+    if (st.shield) pips.push(pip(`ward ${st.shield.turns}`, 'Incoming damage is reduced.'));
+    if (st.hexed) pips.push(pip(`hex ${st.hexed}`, 'A curse. Hits land harder on the marked.'));
+    if (st.marked) pips.push(pip(`mark ${st.marked}`, 'Finishers find this target sooner.'));
+    if (st.weaken) pips.push(pip(`weaken ${st.weaken}`, 'Outgoing damage is reduced.'));
+    if (st.frail) pips.push(pip(`frail ${st.frail}`, 'Armor failing. Finishers and poison find you.'));
+    if (st.tormented) pips.push(pip(`torment ${st.tormented}`, 'Lingering pain. Bosses cannot slough it off immediately.'));
+    if (st.confused) pips.push(pip(`confused ${st.confused}`, 'Attacks may whiff or strike a companion.'));
+    if (st.lazy) pips.push(pip(`lazy ${st.lazy}`, 'Skip your next action.'));
     return pips.join('');
   }
 
   // Moded floating menu (handoff §4): root → FIGHT/ITEMS/FLEE, each opening a
   // submenu with a BACK chip. Wraps the existing useSkill/useConsumable/tryFlee.
-  setMode(m) { this.actionMode = m; SFX.click(); this.renderActions(this._actEnabled); }
+  setMode(m) { this.actionMode = m; if (!this.headless) SFX.click(); this.renderActions(this._actEnabled); }
 
   renderActions(enabled) {
+    if (this.headless || !this.actionBar) return;
     this._actEnabled = enabled;
     if (!enabled) this.actionMode = 'root'; // reset when the turn ends
     this.actionBar.innerHTML = '';
@@ -1057,6 +976,7 @@ class Fight {
       const cost = Math.ceil((sk.cost || 0) * costMult);
       const chargeCost = sk.charge || 0;
       const isUsable = usable.includes(id);
+      const stanceLocked = id === 'guard' && !!this.player.ironStance;
       const affordable = canAfford({ cost, charge: chargeCost }, this.run.mp, this.charge);
       const est = this.estimateSkill(sk);
       // damage-formula hint (§4): "≈42 dmg · 130% DEX + weapon"
@@ -1065,8 +985,10 @@ class Fight {
         : '';
       const btn = document.createElement('button');
       btn.className = `skill-btn ${sk.class === 'universal' ? 'universal' : ''} ${!isUsable ? 'incompatible' : ''}`;
-      btn.disabled = !enabled || !isUsable || !affordable;
-      btn.title = isUsable ? `${sk.name}\n${sk.desc}${formula ? '\n\n' + formula : ''}` : 'Incompatible weapon — only Strike and Guard are available.';
+      btn.disabled = !enabled || !isUsable || !affordable || stanceLocked;
+      btn.title = stanceLocked
+        ? 'Iron Stance holds you rooted — you cannot Guard.'
+        : isUsable ? `${sk.name}\n${sk.desc}${formula ? '\n\n' + formula : ''}` : 'Incompatible weapon — only Strike and Guard are available.';
       btn.innerHTML = `
         <div class="sk-name"><span>${sk.name}</span>
           <span class="sk-cost">${cost ? `${cost} ${resName}` : ''}${cost && chargeCost ? ' + ' : ''}${chargeCost ? `${chargeCost}⚡` : ''}${!cost && !chargeCost ? 'FREE' : ''}</span></div>
@@ -1129,26 +1051,13 @@ class Fight {
   }
 
   waitingBanner(name) {
+    if (this.headless || !this.actionBar) return;
     this.actionBar.innerHTML = `<div class="modifier-banner" style="grid-column:1/-1;border-color:var(--panel-edge);color:var(--ink-dim)">⏳ ${name} is acting…</div>`;
     this.utilBar.innerHTML = '';
   }
 
   /** Stall enrage for bosses / event elites (TDC.enrage). */
-  applyEnrage() {
-    for (const e of this.aliveEnemies()) {
-      if (e._enraged) continue;
-      const at = e.enrageAtRound
-        ?? (e.boss ? TDC.enrage?.bossAtRound : null)
-        ?? ((e.elite && !e.boss) ? TDC.enrage?.eventAtRound : null);
-      if (at == null || this.round < at) continue;
-      const mult = e.boss
-        ? (TDC.enrage?.bossAtkMult || 1.25)
-        : (TDC.enrage?.eventAtkMult || 1.25);
-      e.atk = Math.round((e.baseAtk || e.atk) * mult);
-      e._enraged = true;
-      this.log?.(`${e.name} enrages!`, 'log-bad');
-    }
-  }
+  applyEnrage() { return coreApplyEnrage(this); }
 
   /* ================= SOLO DRIVER: interleaved initiative ================= */
   async soloLoop() {
@@ -1187,23 +1096,11 @@ class Fight {
   }
 
   async playerTurn() {
-    // guard expires at the start of your turn
-    this.player.guarding = false;
-    const st = this.player.statuses;
-    // Confuse no longer skips — offensive skills may whiff or hit allies instead.
-    if (st.frozen || st.stunned || st.lazy) {
-      const why = st.frozen ? 'frozen solid' : st.stunned ? 'stunned' : 'too lazy to act';
-      this.log(`You are ${why} — turn lost!`, 'log-foe');
-      delete st.frozen; delete st.stunned; delete st.lazy;
-      // a lost turn still ends: charge + resource tick over as usual
-      this.gainCharge(CONFIG.charge.gainPerTurn);
-      restoreMana(this.run, this.d().manaRegen);
-      this.renderPlayers();
+    const began = beginPlayerTurn(this);
+    if (began.skipped) {
       await sleep(700);
       return;
     }
-    if (st.confused) this.log('Your thoughts tangle — choose carefully. Attacks may go astray.', 'log-foe');
-    if (st.paralyzed) this.log('Paralysis weighs on you — you will act later in the round.', 'log-foe');
     this.locked = false;
     this.showTurnBanner(true);
     this.renderActions(true);
@@ -1217,20 +1114,18 @@ class Fight {
     this.renderActions(false);
   }
 
-  endPlayerAction() {
-    this.gainCharge(CONFIG.charge.gainPerTurn);
-    // class resource ticks at the END of the turn — you spend into it next
-    // round instead of banking it before you act (Focus-timing review)
-    restoreMana(this.run, this.d().manaRegen);
-    this.onHud?.();
-    if (this.shared) { this._sharedTurnDone?.(); }
-    else this._turnDone?.();
-  }
+  endPlayerAction() { return coreEndPlayerAction(this); }
 
   /* ================= SHARED DRIVER (co-op) ================= */
   async sharedLoop() {
     this.offs.push(this.coop.net.on('cact', (d, from) => this._pendingActs.push({ d, from })));
     this.offs.push(this.coop.net.on('cpass', (d, from) => this._pendingActs.push({ d: { ...d, pass: true }, from })));
+    this.offs.push(this.coop.net.on('caim', (d, from) => {
+      if (d?.uid) this.aimBySeat.set(from, d.uid);
+      else this.aimBySeat.delete(from);
+      this.renderEnemies();
+    }));
+    this.setAim(this.target);
     this.offs.push(this.coop.net.on('eturn', d => { this._eturn = d; this._eturnResolve?.(); }));
     this.offs.push(this.coop.net.on('cend', d => this.finishShared(d)));
     // §51 two-phase boss: host authoritatively swaps the shell for the true king
@@ -1305,8 +1200,8 @@ class Fight {
       const healer = this.allies.get(from)?.name || 'A companion';
       if (d.to === this.coop.you) {
         const amt = heal(this.run, this.run.maxHp * d.pct);
-        this.float(this.el.querySelector('#sprite-player'), `+${amt}`, 'heal');
-        this.spawnFx(this.el.querySelector('#sprite-player'), 'heal');
+        this.float(this.el?.querySelector?.('#sprite-player'), `+${amt}`, 'heal');
+        this.spawnFx(this.el?.querySelector?.('#sprite-player'), 'heal');
         this.log(`${healer} mends you with ${d.label}. (+${amt} HP)`, 'log-ally');
         this.coop.broadcastStatus(this.runStatus(), 'fighting');
         this.onHud?.();
@@ -1397,7 +1292,7 @@ class Fight {
 
   async playLocalHeroAnim(anim, { holdLast = false } = {}) {
     if (!anim || !heroHasAnim(this.run.classId, anim)) return;
-    const spriteP = this.el.querySelector('#sprite-player');
+    const spriteP = this.el?.querySelector?.('#sprite-player');
     await playHeroAnim(spriteP, this.run.classId, anim, { target: heroCombatSize(this.run.classId), holdLast, faceLeft: false, appearanceId: this.run.appearanceId });
   }
 
@@ -1408,22 +1303,12 @@ class Fight {
       await sleep(400);
       return;
     }
-    this.player.guarding = false;
-    const st = this.player.statuses;
-    if (st.frozen || st.stunned || st.lazy) {
-      const why = st.frozen ? 'frozen solid' : st.stunned ? 'stunned' : 'too lazy to act';
-      this.log(`You are ${why} — turn lost!`, 'log-foe');
-      delete st.frozen; delete st.stunned; delete st.lazy;
-      // a lost turn still ends: charge + resource tick over as usual
-      this.gainCharge(CONFIG.charge.gainPerTurn);
-      restoreMana(this.run, this.d().manaRegen);
+    const began = beginPlayerTurn(this);
+    if (began.skipped) {
       this.coop.net.send({ k: 'cpass', why: 'stunned' });
-      this.renderPlayers(this._actingKey);
       await sleep(600);
       return;
     }
-    if (st.confused) this.log('Your thoughts tangle — attacks may strike a companion instead.', 'log-foe');
-    if (st.paralyzed) this.log('Paralysis weighs on you — you will act later in the round.', 'log-foe');
     this.locked = false;
     this.showTurnBanner(true);
     this.renderActions(true);
@@ -1450,61 +1335,15 @@ class Fight {
     if (!isAutoPlay() || this.locked || this.ended) return;
     const waiting = this.shared ? this._sharedTurnDone : this._turnDone;
     if (!waiting) return;
-
-    const hpRatio = this.run.hp / Math.max(1, this.run.maxHp);
-    if (hpRatio < 0.35) {
-      const healId = this.run.consumables.find(id => {
-        const c = CONSUMABLES.find(x => x.id === id);
-        return c && (c.heal || c.healPct);
-      });
-      if (healId) {
-        const c = CONSUMABLES.find(x => x.id === healId);
-        this.useConsumable(c);
-        return;
-      }
-    }
-
-    const costMult = this.mod.costMult || 1;
-    const usable = usableSkillIds(this.run);
-    const afford = sk => canAfford(
-      { cost: Math.ceil((sk.cost || 0) * costMult), charge: sk.charge || 0 },
-      this.run.mp, this.charge,
-    );
-
-    if (hpRatio < 0.4) {
-      const healSk = ['basic_attack', ...this.run.skills]
-        .map(id => SKILLS[id])
-        .find(sk => sk && usable.includes(sk.id) && sk.healPct && !sk.allyTarget && afford(sk));
-      if (healSk) {
-        this.useSkill(healSk, Math.ceil((healSk.cost || 0) * costMult));
-        return;
-      }
-    }
-
-    const threatened = this.aliveEnemies().some(e => {
-      const t = enemyTelegraph(e);
-      return t && t.ready;
-    });
-    if (threatened && hpRatio < 0.55 && usable.includes('guard') && afford(SKILLS.guard)) {
-      this.useSkill(SKILLS.guard, 0);
+    const action = chooseAutoPlayAction(this);
+    if (action.type === 'useConsumable') {
+      const c = CONSUMABLES.find(x => x.id === action.itemId);
+      if (c) this.useConsumable(c);
       return;
     }
-
-    const pool = ['basic_attack', ...this.run.skills]
-      .map(id => SKILLS[id])
-      .filter(sk => sk && usable.includes(sk.id) && !sk.allyTarget && sk.id !== 'guard')
-      .filter(afford)
-      .sort((a, b) => skillEffectivePower(b) - skillEffectivePower(a) || (b.charge || 0) - (a.charge || 0));
-    const sk = pool[0] || SKILLS.basic_attack;
-
-    let best = -1;
-    for (let i = 0; i < this.enemies.length; i++) {
-      const e = this.enemies[i];
-      if (e.hp <= 0) continue;
-      if (best < 0 || e.hp < this.enemies[best].hp) best = i;
-    }
-    if (best >= 0) this.target = best;
-
+    const sk = SKILLS[action.skillId] || SKILLS.basic_attack;
+    if (action.enemy != null) this.setAim(action.enemy);
+    const costMult = this.mod.costMult || 1;
     this.useSkill(sk, Math.ceil((sk.cost || 0) * costMult));
   }
 
@@ -1520,7 +1359,7 @@ class Fight {
       .filter(sk => canAfford({ cost: Math.ceil((sk.cost || 0) * costMult), charge: sk.charge || 0 }, this.run.mp, this.charge));
     const sk = pool.length ? pool[Math.floor(Math.random() * pool.length)] : SKILLS.basic_attack;
     const alive = this.enemies.map((e, i) => ({ e, i })).filter(x => x.e.hp > 0);
-    if (alive.length) this.target = alive[Math.floor(Math.random() * alive.length)].i;
+    if (alive.length) this.setAim(alive[Math.floor(Math.random() * alive.length)].i);
     this.log('You hesitate too long — instinct takes over.', 'log-sys');
     this.useSkill(sk, Math.ceil((sk.cost || 0) * costMult));
   }
@@ -1571,6 +1410,7 @@ class Fight {
       }
       SpriteAnim.play(e.uid, 'hurt');
       t.crit ? SFX.crit() : SFX.hit();
+      for (const n of t.notes || []) this.log(n, 'log-ally');
       if (e.hp <= 0) this.log(`${e.name} is defeated!`, 'log-ally');
     }
     this.renderEnemies();
@@ -1591,53 +1431,14 @@ class Fight {
 
     for (const e of sequence) {
       if (this.ended) return;
-      this.setActing(e.uid);
-      e.turnCount++;
-      e.charge = tickEnemyCharge(e, this.mod.chargeMult || 1);
-      ops.push({ type: 'echarge', uid: e.uid, charge: e.charge });
-
-      // §12: burn FOC to break hard CC, or shrug everything on cadence
-      const anti = this.resolveBossAntiCC(e, ops);
-      if (anti) await sleep(300);
-
-      if (e.summons && e.turnCount % 3 === 0 && this.enemies.filter(x => x.hp > 0).length < 3) {
-        const minion = spawnSummon(this, e);
-        ops.push({ type: 'summon', spec: { ...minion, statuses: {}, spawnIn: true, summon: true } });
-        this.log(`${e.name} drags a servant up from the dust!`, 'log-foe');
-        this.renderEnemies();
-        this.renderTurnOrder();
-        await sleep(400);
+      const start = resolveEnemyTurnStart(this, e, ops);
+      if (start.done) {
+        if (!this.headless) await sleep(start.reason === 'summon' ? 400 : 350);
         continue;
       }
-      this.bossPhaseChecks(e, ops);
+      const { special, chargeScale } = start;
+      if (special && !this.headless) SFX.bossIntro();
 
-      if (e.statuses.frozen || e.statuses.stunned || e.statuses.lazy) {
-        const why = e.statuses.frozen ? 'frozen' : e.statuses.stunned ? 'stunned' : 'lazy';
-        ops.push({ type: 'skip', uid: e.uid, why });
-        this.log(`${e.name} is ${why} — it cannot act.`, 'log-foe');
-        delete e.statuses.frozen; delete e.statuses.stunned;
-        delete e.statuses.lazy;
-        this.renderEnemies();
-        await sleep(350);
-        continue;
-      }
-      if (e.statuses.confused) {
-        delete e.statuses.confused;
-        if (this.aliveEnemies().length > 1) {
-          await this.enemyConfusedStrike(e);
-          ops.push({ type: 'confused', uid: e.uid });
-          this.renderEnemies();
-          await sleep(350);
-          continue;
-        }
-        ops.push({ type: 'skip', uid: e.uid, why: 'confused' });
-        this.log(`${e.name} is confused — it flails and hits nothing.`, 'log-foe');
-        this.renderEnemies();
-        await sleep(350);
-        continue;
-      }
-
-      const special = pickEnemySpecial(e, this.rng);
       const targets = [{ id: this.coop.you, def: this.d().def, dodge: this.d().dodge, down: this.run.down, taunt: this.run.combatTaunt || 0 },
         ...[...this.allies.entries()].map(([id, a]) => ({ id, def: a.def, dodge: a.dodge, down: a.down, taunt: a.taunt || 0 }))]
         .filter(t => !t.down);
@@ -1652,19 +1453,6 @@ class Fight {
         if (!ignore) focusPool = taunters;
       }
       const hitTargets = special?.aoe ? targets : [this.pickEnemyFocusTarget(focusPool)];
-      // §12: heavy boss telegraphs scale with the charge they banked
-      let chargeScale = 1;
-      if (special) {
-        if (e.boss) {
-          const banked = this.coop ? (e.charge || 0)
-            : soloBossChargeForScale(this.run.floor, e.charge || 0);
-          chargeScale = 1 + CONFIG.boss.chargeDamageScale * banked;
-        }
-        e.charge = 0;
-        ops.push({ type: 'echarge', uid: e.uid, charge: 0 });
-        this.log(`${e.name} unleashes ${special.name}!`, 'log-foe');
-        SFX.bossIntro();
-      }
 
       const es = this.sprite(e.uid);
       if (es) { es.classList.add('attack'); setTimeout(() => es.classList.remove('attack'), 420); }
@@ -1683,11 +1471,24 @@ class Fight {
         if (special?.aoe) dmg *= partyBossAoeMult(targets.length);
         dmg *= statusOutgoingMult(e.statuses);
         if (this.rng.chance(this.d().enemyCrit / 100)) dmg *= 1.5;
+        let payoff = null;
+        {
+          const ally = target.id === this.coop.you ? this.player : this.allies.get(target.id);
+          const st = target.id === this.coop.you ? this.player.statuses : (ally?.statuses || {});
+          const hpRatio = target.id === this.coop.you
+            ? this.run.hp / this.run.maxHp
+            : ((ally?.hp ?? 1) / (ally?.maxHp || 1));
+          const pay = enemySpecialPayoff(special, st, hpRatio);
+          dmg *= pay.mult;
+          if (pay.consume && st) delete st[pay.consume];
+          payoff = enemyPayoffLine(e.name, pay);
+        }
         if (e.caster && !special && e.turnCount % 2 === 0) dmg *= 1.4;
         dmg = applyDefense(dmg, target.def);
         const riders = collectEnemyRiders(e, special, this.rng);
         if (e.lifesteal || special?.heal) e.hp = Math.min(e.maxHp, e.hp + Math.round(e.maxHp * (special?.heal || 0)) + Math.round(dmg * (e.lifesteal || 0)));
         const op = { type: 'hit', uid: e.uid, target: target.id, dmg, riders, special: special?.name };
+        if (payoff) op.payoff = payoff;
         ops.push(op);
         this.applyHitOp(op, e);
       }
@@ -1698,51 +1499,12 @@ class Fight {
     this.broadcastEturn(ops);
   }
 
-  bossPhaseChecks(e, ops) {
-    if (e.heads) {
-      const pct = e.hp / e.maxHp;
-      for (const threshold of [0.6, 0.3]) {
-        if (pct <= threshold && !e.phaseTriggers.includes(threshold)) {
-          e.phaseTriggers.push(threshold);
-          e.atk = Math.round(e.atk * 1.2);
-          e.hp = Math.min(e.maxHp, e.hp + Math.round(e.maxHp * 0.1));
-          ops.push({ type: 'phase', uid: e.uid, atk: e.atk, hpAfter: e.hp, text: 'A severed head regrows — angrier. The Hydra swells with grief.' });
-          this.log('A severed head regrows — angrier.', 'log-foe');
-          SFX.bossIntro();
-        }
-      }
-    }
-    if (e.phases && e.hp / e.maxHp <= 0.5 && !e.phaseTriggers.includes('enrage')) {
-      e.phaseTriggers.push('enrage');
-      e.atk = Math.round(e.atk * 1.3);
-      e.hp = Math.min(e.maxHp, e.hp + Math.round(e.maxHp * 0.12));
-      if (e.chargeOnPhase) e.charge = addCharge(e.charge || 0, e.chargeOnPhase);
-      if (e.phaseArt) e.artId = e.phaseArt;
-      if (e.phaseName) e.name = e.phaseName;
-      if (e.phaseGlyph) e.glyph = e.phaseGlyph;
-      if (e.phaseSpecials) e.specials = e.phaseSpecials;
-      const evolve = e.phaseArt ? (e.phaseText || `${e.name} evolves into something worse.`) : `${e.name}: "${e.taunt}" — stops holding back.`;
-      ops.push({
-        type: 'phase', uid: e.uid, atk: e.atk, hpAfter: e.hp, charge: e.charge,
-        artId: e.artId, name: e.name, glyph: e.glyph, specials: e.specials, text: evolve,
-      });
-      this.log(evolve, 'log-sys');
-      SFX.bossIntro(); screenShake();
-    }
-  }
+  bossPhaseChecks(e, ops) { return this.bossPhaseChecksSolo(e, ops); }
 
   applyStatusRiders(r) {
-    if (!r || !Object.keys(r).length) return;
-    const st = this.player.statuses;
-    if (r.poison && !this.rng.chance(this.d().poisonResist)) { st.poison = r.poison; this.log('You are poisoned!', 'log-foe'); }
-    if (r.burn) { st.burn = r.burn; this.log('You are set ablaze!', 'log-foe'); }
-    if (r.freeze) { st.frozen = 1; this.log('You are frozen!', 'log-foe'); SFX.freeze(); }
-    if (r.weaken) { st.weaken = r.weaken; this.log('You feel weakened!', 'log-foe'); }
-    if (r.frail) { st.frail = r.frail; this.log('You feel frail!', 'log-foe'); }
-    if (r.tormented) { st.tormented = r.tormented; this.log('Torment claws at you!', 'log-foe'); }
-    if (r.confused) { st.confused = r.confused; this.log('Your thoughts tangle!', 'log-foe'); }
-    if (r.lazy) { st.lazy = r.lazy; this.log('Your limbs grow heavy!', 'log-foe'); }
-    if (r.paralyze) { st.paralyzed = r.paralyze; this.log('Your nerves seize — paralysis!', 'log-foe'); }
+    const froze = !this.player.statuses.frozen;
+    coreApplyStatusRiders(this, r);
+    if (!this.headless && r?.freeze && this.player.statuses.frozen && froze) SFX.freeze();
   }
 
   /** Rough strike damage for confused friendly-fire (no crit / buff variance). */
@@ -1766,19 +1528,16 @@ class Fight {
       SFX.miss();
       return;
     }
+    if (op.payoff) this.log(op.payoff, 'log-foe');
     if (op.target === this.coop.you) {
       let dmg = op.dmg;
       const shield = this.player.statuses.shield;
       if (shield) dmg = Math.max(1, Math.round(dmg * (1 - shield.mult)));
       dmg = applyGuard(dmg, this.player.guarding);
       dmg = Math.max(1, Math.round(dmg * this.d().dmgTakenMult * this.partyBuffMult('dr')));
-      if (this.player.statuses.frail || this.player.statuses.tormented) {
-        dmg = Math.max(1, Math.round(dmg * (CONFIG.combat.frailTakenMult ?? 1.25)));
-      }
+      dmg = this.applyPlayerFrail(dmg);
       this.run.hp = Math.max(0, this.run.hp - dmg);
-      this.damageTaken = (this.damageTaken || 0) + dmg;
-      this._taken(dmg);
-      if (this.d().chargeOnHit) this.gainCharge(1);
+      this.notePlayerHpLoss(dmg);
       this.float(this.playerFloatHost(), `-${dmg}`, 'incoming');
       SFX.hit();
       this.log(`${e?.name || 'The enemy'}${op.special ? ` (${op.special})` : ''} hits you for ${dmg}${this.player.guarding ? ' (guarded)' : ''}.`, 'log-foe');
@@ -1823,8 +1582,18 @@ class Fight {
         this.renderTurnOrder();
       } else if (op.type === 'cleanse') {
         const e = this.enemyByUid(op.uid);
-        if (e) { delete e.statuses.poison; delete e.statuses.burn; delete e.statuses.frozen; delete e.statuses.stunned; delete e.statuses.hexed; }
-        this.log(`${e?.name || 'The boss'} sloughs off every affliction.`, 'log-foe');
+        if (e) {
+          if (op.blocked || e.statuses.tormented) {
+            delete e.statuses.tormented;
+            this.log(`${e.name} tries to slough the fight off — torment holds the spite back.`, 'log-ally');
+          } else {
+            delete e.statuses.poison; delete e.statuses.burn; delete e.statuses.frozen;
+            delete e.statuses.stunned; delete e.statuses.hexed;
+            delete e.statuses.frail; delete e.statuses.weaken; delete e.statuses.lazy;
+            delete e.statuses.confused; delete e.statuses.paralyzed; delete e.statuses.marked;
+            this.log(`${e.name} sloughs off every affliction.`, 'log-foe');
+          }
+        }
         this.renderEnemies();
       } else if (op.type === 'breakcc') {
         const e = this.enemyByUid(op.uid);
@@ -1887,38 +1656,14 @@ class Fight {
     SFX.death();
     this.renderPlayers(this._actingKey);
     if (heroHasAnim(this.run.classId, 'death')) {
-      playHeroAnim(this.el.querySelector('#sprite-player'), this.run.classId, 'death', { target: heroCombatSize(this.run.classId), holdLast: true, faceLeft: true });
+      playHeroAnim(this.el?.querySelector?.('#sprite-player'), this.run.classId, 'death', { target: heroCombatSize(this.run.classId), holdLast: true, faceLeft: true });
     }
   }
 
   /* ---- two-phase boss transform (§51 Demon King) ---- */
   // The phase-1 shell reached 0 HP: become the true form in place (same uid) with
   // a fresh HP bar instead of dying. Mutates the entity; returns the reveal text.
-  transformBoss(e) {
-    const p2 = e.phase2 || {};
-    const m = e._m || { hp: 1, atk: 1, def: 1, spd: 1 };
-    e.artId = p2.artId ?? e.artId;
-    e.name = p2.name ?? e.name;
-    e.glyph = p2.glyph ?? e.glyph;
-    // phase-2 bases are raw (like the bestiary) — scale them the same way
-    // buildEnemy scaled phase 1, so the difficulty curve stays intact.
-    if (p2.atk != null) e.atk = Math.round(p2.atk * m.atk);
-    if (p2.def != null) e.def = Math.round(p2.def * m.def);
-    if (p2.spd != null) e.spd = Math.max(1, Math.round(p2.spd * m.spd));
-    e.maxHp = p2.hp != null ? Math.round(p2.hp * m.hp) : e.maxHp;
-    e.hp = e.maxHp;
-    e.specials = p2.specials ?? e.specials;
-    e.chargeGain = p2.chargeGain ?? e.chargeGain;
-    e.chargeOnPhase = p2.chargeOnPhase;
-    e.cleanseCost = p2.cleanseCost ?? e.cleanseCost;
-    e.phases = !!p2.phases;
-    e.taunt = p2.taunt ?? e.taunt;
-    if (p2.bankChance != null) e.bankChance = p2.bankChance;
-    e.charge = 0; e.statuses = {}; e.phaseTriggers = [];
-    e.twoPhase = false; e.phase = 2;
-    this.syncOrderIdentity(e);
-    return p2.transformText || `${e.name} rises!`;
-  }
+  transformBoss(e) { return coreTransformBoss(this, e); }
 
   syncOrderIdentity(e) {
     const oe = this.order.find(o => o.key === e.uid);
@@ -1930,21 +1675,19 @@ class Fight {
   // if a transform happened (so the caller must NOT end the fight).
   maybeTransform() {
     const e = this.enemies.find(x => x.twoPhase && x.phase2 && x.hp <= 0);
-    if (!e) return false;
-    const text = this.transformBoss(e);
-    this.log(text, 'log-sys');
-    SFX.evolve(); screenShake();
-    if (this.shared && this.coop?.isHost) {
-      this.coop.net.send({ k: 'transform', uid: e.uid, spec: {
-        artId: e.artId, name: e.name, glyph: e.glyph, atk: e.atk, def: e.def, spd: e.spd,
-        maxHp: e.maxHp, hp: e.hp, specials: e.specials, chargeGain: e.chargeGain,
-        chargeOnPhase: e.chargeOnPhase, cleanseCost: e.cleanseCost, phases: e.phases,
-        taunt: e.taunt, text } });
+    const happened = coreMaybeTransform(this);
+    if (happened) this.setAim(this.target);
+    if (happened && !this.headless) {
+      SFX.evolve(); screenShake();
+      if (this.shared && this.coop?.isHost && e) {
+        this.coop.net.send({ k: 'transform', uid: e.uid, spec: {
+          artId: e.artId, name: e.name, glyph: e.glyph, atk: e.atk, def: e.def, spd: e.spd,
+          maxHp: e.maxHp, hp: e.hp, specials: e.specials, chargeGain: e.chargeGain,
+          chargeOnPhase: e.chargeOnPhase, cleanseCost: e.cleanseCost, phases: e.phases,
+          taunt: e.taunt, text: this.logs[this.logs.length - 1]?.msg } });
+      }
     }
-    this.target = this.enemies.findIndex(x => x.hp > 0);
-    this.renderEnemies();
-    this.renderTurnOrder();
-    return true;
+    return happened;
   }
 
   // Companion side: apply the host's authoritative transform.
@@ -1961,7 +1704,7 @@ class Fight {
     this.syncOrderIdentity(e);
     this.log(spec.text || `${e.name} rises!`, 'log-sys');
     SFX.evolve(); screenShake();
-    this.target = this.enemies.findIndex(x => x.hp > 0);
+    this.setAim(this.enemies.findIndex(x => x.hp > 0));
     this.renderEnemies();
     this.renderTurnOrder();
   }
@@ -2032,14 +1775,35 @@ class Fight {
   /* ================= PLAYER ACTIONS (both modes) ================= */
   async useSkill(sk, cost) {
     this.locked = true;
-    this.actionBar.querySelectorAll('button').forEach(b => b.disabled = true);
+    this.actionBar?.querySelectorAll?.('button')?.forEach(b => { b.disabled = true; });
     this.run.mp -= cost;
     if (sk.charge) { this.charge = Math.max(0, this.charge - sk.charge); this.renderCharge(); if (sk.charge >= 6) this.usedUltimate = true; }
-    if (sk.selfHpCost) this.run.hp = Math.max(1, this.run.hp - Math.round(this.run.maxHp * sk.selfHpCost));
+    if (sk.selfHpCost) {
+      const paid = Math.round(this.run.maxHp * sk.selfHpCost);
+      this.run.hp = Math.max(1, this.run.hp - paid);
+      const rate = CONFIG.identity?.viking?.furyPerSelfCost ?? 0.5;
+      this.gainFury(Math.max(2, Math.round(paid * rate)));
+    }
+    this._corpseSpent = false;
+    if (sk.corpseSpend && (this.corpses || 0) > 0) {
+      this.corpses--;
+      this._corpseSpent = true;
+      this.log('A corpse answers you.', 'log-ally');
+    }
+    if (sk.power && sk.target !== 'self' && this.run.classId === 'archer') {
+      this._rangerOffensive = true;
+    }
     const d = this.d();
 
     // Guard: the universal defensive action
     if (sk.guard) {
+      if (this.player.ironStance) {
+        this.log('Iron Stance holds you rooted — you cannot Guard.', 'log-sys');
+        this.run.mp += cost;
+        this.locked = false;
+        this.renderActions(true);
+        return;
+      }
       this.player.guarding = true;
       this.run.guardCount = (this.run.guardCount || 0) + 1;
       this.gainCharge(CONFIG.guard.chargeGain);
@@ -2110,7 +1874,7 @@ class Fight {
       : sk.target === 'self' ? []
       : [this.enemies[this.target]].filter(e => e && e.hp > 0);
 
-    const spriteP = this.el.querySelector('#sprite-player');
+    const spriteP = this.el?.querySelector?.('#sprite-player');
     const heroAnim = this.pickHeroAnim(sk);
     if (heroAnim && heroHasAnim(this.run.classId, heroAnim)) {
       // Play sheet anim; don't also bounce-transform or it fights the sprite
@@ -2121,6 +1885,7 @@ class Fight {
     }
 
     const actOps = { k: 'cact', label: sk.name, targets: [], heroAnim };
+    this._stanceIgnore = (sk.power && sk.target !== 'self') ? this.consumeStanceIgnore() : false;
     if (sk.target === 'self') {
       this.applySelfSkill(sk, d);
     } else {
@@ -2141,35 +1906,14 @@ class Fight {
   }
 
   applySelfSkill(sk, d) {
-    this.spawnFx(this.el.querySelector('#sprite-player'), sk.fx || (sk.healPct ? 'heal' : 'buff'));
-    if (sk.shield) {
-      this.player.statuses.shield = { mult: sk.shield, turns: CONFIG.defense.wardTurns };
-      this.log(`You raise a ward — ${Math.round(sk.shield * 100)}% damage blocked for ${CONFIG.defense.wardTurns} turns.`, 'log-ally');
-    }
-    if (sk.healPct) {
-      const amt = heal(this.run, this.run.maxHp * sk.healPct);
-      this.float(this.el.querySelector('#sprite-player'), `+${amt}`, 'heal');
-      SFX.heal();
-    }
-    for (const b of [sk.buff, sk.buff2].filter(Boolean)) {
-      this.player.buffs.push({ ...b, turns: b.turns, label: b.stat === 'dodge' ? 'DODGE' : 'PWR' });
-      this.log(`${sk.name}: you feel ${b.stat === 'dodge' ? 'untouchable' : 'stronger'}.`, 'log-ally');
-    }
-    if (sk.gainResource) {
-      const amt = restoreMana(this.run, sk.gainResource);
-      if (amt > 0) this.float(this.el.querySelector('#sprite-player'), `+${amt}`, 'mana');
-    }
-    if (sk.gainCharge) this.gainCharge(sk.gainCharge);
-    if (sk.tauntTurns) {
-      // transient combat state; the host reads it off status broadcasts
-      this.run.combatTaunt = sk.tauntTurns;
-      this.log(`You make yourself impossible to ignore — enemies fix on YOU for ${sk.tauntTurns} turns.`, 'log-ally');
-      if (this.shared) this.coop.broadcastStatus(this.runStatus(), 'fighting');
-    }
-    if (sk.partyBuff) {
-      this.applyPartyBuff(sk.partyBuff);
-      this.log(`${sk.name}: the party feels the ${sk.partyBuff.label || 'boost'}.`, 'log-ally');
-    }
+    const hpBefore = this.run.hp;
+    const mpBefore = this.run.mp;
+    coreApplySelfSkill(this, sk, d);
+    this.spawnFx(this.el?.querySelector?.('#sprite-player'), sk.fx || (sk.healPct ? 'heal' : 'buff'));
+    if (this.run.hp > hpBefore) this.float(this.el?.querySelector?.('#sprite-player'), `+${this.run.hp - hpBefore}`, 'heal');
+    if (this.run.mp > mpBefore) this.float(this.el?.querySelector?.('#sprite-player'), `+${this.run.mp - mpBefore}`, 'mana');
+    if (this.shared && sk.tauntTurns) this.coop.broadcastStatus(this.runStatus(), 'fighting');
+    if (this.shared && sk.partyBuff) this.coop.net.send({ k: 'pbuff', ...sk.partyBuff });
     SFX.heal();
   }
 
@@ -2180,145 +1924,51 @@ class Fight {
     if (this.shared) this.coop.net.send({ k: 'pbuff', ...pb });
   }
 
-  partyBuffMult(kind) {
-    let m = 1;
-    for (const b of (this.player.partyBuffs || [])) {
-      if (b.kind === kind) m *= b.mult;
-    }
-    return m;
-  }
+  partyBuffMult(kind) { return corePartyBuffMult(this, kind); }
 
   hitEnemy(e, sk, d) {
-    // damage scales off the skill's governing stat (STR warriors, INT mages,
-    // STR+INT spellswords...)
-    const statVal = skillStatValue(sk, d);
-    const buff = this.buffValue('str');
-    const C = CONFIG.combat;
-    let base = (statVal * C.playerStatWeight + d.atk * C.playerAtkWeight + softLevelDamage(this.run.level, C.playerLevelWeight) + C.playerFlat)
-      * (skillEffectivePower(sk) / 100) * buff.mult;
-    let critChance = d.crit + (sk.critBonus || 0);
-    const isCrit = this.rng.chance(clamp(critChance, 0, 85) / 100);
-    let dmg = base * (0.85 + this.rng.next() * 0.3);
-    if (isCrit) { dmg *= (C.critMult ?? 1.45); this.gainCharge(CONFIG.charge.gainOnCrit); }
-    dmg *= d.dmgMult * (this.mod.dmgMult || 1) * this.partyBuffMult('dmg');
-    dmg *= statusOutgoingMult(this.player.statuses);
-    dmg *= partyOutgoingDmgMult(this.partySize());
-    if (e.boss) dmg *= d.bossDmgMult;
-    if (e.statuses.hexed) dmg *= C.hexTakenMult;
-    if (e.statuses.frail || e.statuses.tormented) dmg *= (C.frailTakenMult ?? 1.12);
-    // The Berserker's Heart: on its chosen round, everything doubles (§15)
-    if (d.doubleDmgRound && this.round === d.doubleDmgRound) dmg *= 2;
-    dmg = applyDefense(dmg, e.def, { ignoreDef: !!sk.ignoreDef });
+    const res = resolvePlayerHit(this, e, sk, d);
     this.spawnFx(this.sprite(e.uid), sk.fx);
-
-    if (sk.execute && !e.boss && e.hp / e.maxHp <= sk.execute) {
-      dmg = e.hp;
-      this.log(`${sk.name.toUpperCase()} — ${e.name} is slain outright!`, 'log-ally');
-    }
-
-    // Climb "dealt" tracks HP actually removed (no overkill).
-    const hpBefore = e.hp;
-    e.hp = Math.max(0, e.hp - dmg);
-    this._dealt(hpBefore - e.hp);
     const sprite = this.sprite(e.uid);
     if (sprite) {
       sprite.classList.add('hit');
       setTimeout(() => sprite.classList.remove('hit'), 360);
-      this.float(sprite.parentElement, isCrit ? `${dmg}!` : `${dmg}`, isCrit ? 'crit' : 'dmg');
+      this.float(sprite.parentElement, res.crit ? `${res.dmg}!` : `${res.dmg}`, res.crit ? 'crit' : 'dmg');
     }
     SpriteAnim.play(e.uid, 'hurt');
-    isCrit ? SFX.crit() : SFX.hit();
-    if (isCrit) screenShake();
-    this.log(`${sk.name} hits ${e.name} for ${dmg}${isCrit ? ' — CRITICAL!' : ''}`, isCrit ? 'log-ally' : 'log-ally');
-
-    if (sk.healPct) {
-      const amt = heal(this.run, this.run.maxHp * sk.healPct);
-      if (amt > 0) {
-        this._healed(amt);
-        this.float(this.el.querySelector('#sprite-player'), `+${amt}`, 'heal');
-      }
-    }
-
-    const newStatuses = {};
-    const Cstat = CONFIG.combat;
-    const burnCh = (sk.burn || 0) + d.burn;
-    const freezeCh = (sk.freeze || 0) + d.freeze;
-    const poisonCh = (sk.poison || 0) + (d.poison || 0);
-    const weakenCh = (sk.weaken || 0) + (d.weaken || 0);
-    const frailCh = (sk.frail || 0) + (d.frail || 0);
-    if (e.hp > 0) {
-      if (poisonCh && this.rng.chance(poisonCh)) {
-        e.statuses.poison = Cstat.poisonTurns ?? 3; newStatuses.poison = e.statuses.poison;
-        this.log(`${e.name} is poisoned.`, 'log-ally');
-      }
-      if (burnCh && this.rng.chance(burnCh)) {
-        e.statuses.burn = Cstat.burnTurns ?? 2; newStatuses.burn = e.statuses.burn;
-        this.log(`${e.name} catches fire.`, 'log-ally'); SFX.fire();
-      }
-      if (freezeCh && this.rng.chance(freezeCh)) { e.statuses.frozen = 1; newStatuses.frozen = 1; this.log(`${e.name} is frozen solid.`, 'log-ally'); SFX.freeze(); }
-      const stunCh = (sk.stun || 0) + (d.stun || 0);
-      if (stunCh && this.rng.chance(stunCh)) { e.statuses.stunned = 1; newStatuses.stunned = 1; this.log(`${e.name} is stunned.`, 'log-ally'); }
-      const paraCh = (sk.paralyze || 0) + (d.paralyze || 0);
-      if (paraCh && this.rng.chance(paraCh)) {
-        e.statuses.paralyzed = Cstat.paralyzeTurns ?? 2; newStatuses.paralyzed = e.statuses.paralyzed;
-        this.log(`${e.name} is paralyzed.`, 'log-ally');
-      }
-      if (sk.hex && this.rng.chance(sk.hex)) { e.statuses.hexed = 3; newStatuses.hexed = 3; this.log(`${e.name} is hexed — it will suffer more.`, 'log-ally'); }
-      if (weakenCh && this.rng.chance(Math.min(1, weakenCh))) { e.statuses.weaken = 3; newStatuses.weaken = 3; this.log(`${e.name} is weakened.`, 'log-ally'); }
-      if (frailCh && this.rng.chance(Math.min(1, frailCh))) { e.statuses.frail = 3; newStatuses.frail = 3; this.log(`${e.name} is frail.`, 'log-ally'); }
-      const tormentCh = (sk.tormented || 0) + (d.tormented || 0);
-      if (tormentCh && this.rng.chance(Math.min(1, tormentCh))) { e.statuses.tormented = 3; newStatuses.tormented = 3; this.log(`${e.name} is tormented.`, 'log-ally'); }
-      const confuseCh = (sk.confused || 0) + (d.confused || 0);
-      if (confuseCh && this.rng.chance(confuseCh)) {
-        e.statuses.confused = Cstat.confuseTurns ?? 2; newStatuses.confused = e.statuses.confused;
-        this.log(`${e.name} is confused.`, 'log-ally');
-      }
-      const lazyCh = (sk.lazy || 0) + (d.lazy || 0);
-      if (lazyCh && this.rng.chance(lazyCh)) { e.statuses.lazy = 2; newStatuses.lazy = 2; this.log(`${e.name} grows lazy.`, 'log-ally'); }
-    } else {
-      this.gainCharge(CONFIG.charge.gainOnKill);
-    }
-    // lifesteal is capped hard: no single hit may heal more than a sliver (patch)
-    const ls = (sk.lifesteal || 0) + d.lifesteal;
-    if (ls > 0) {
-      const capped = Math.min(dmg * ls, this.run.maxHp * CONFIG.combat.lifestealCapPct * (d.lifestealCapMult || 1));
-      const amt = heal(this.run, capped);
-      if (amt > 0) this.float(this.el.querySelector('#sprite-player'), `+${amt}`, 'heal');
-    }
-    if (e.hp <= 0) this.log(`${e.name} is defeated!`, 'log-ally');
-
-    return { uid: e.uid, dmg, crit: isCrit, hpAfter: e.hp, statuses: newStatuses, fx: sk.fx };
+    res.crit ? SFX.crit() : SFX.hit();
+    if (res.crit) screenShake();
+    if (res.statuses?.burn) SFX.fire();
+    if (res.statuses?.frozen) SFX.freeze();
+    return res;
   }
 
   useConsumable(c) {
-    this.locked = true;
-    const idx = this.run.consumables.indexOf(c.id);
-    if (idx === -1) return;
-    this.run.consumables.splice(idx, 1);
+    const hpBefore = this.run.hp;
+    const mpBefore = this.run.mp;
+    const beforeHp = this.enemies.map(e => e.hp);
+    resolveUseConsumable(this, c);
     const actOps = { k: 'cact', label: c.name, targets: [] };
-    if (c.heal) { const amt = heal(this.run, c.heal); this.float(this.el.querySelector('#sprite-player'), `+${amt}`, 'heal'); SFX.heal(); }
-    if (c.healPct) { const amt = heal(this.run, Math.round(this.run.maxHp * c.healPct)); this.float(this.el.querySelector('#sprite-player'), `+${amt}`, 'heal'); SFX.heal(); }
-    if (c.mana) { restoreMana(this.run, c.mana); this.float(this.el.querySelector('#sprite-player'), `+${c.mana}`, 'mana'); }
-    if (c.fame) changeFame(this.run, c.fame);
-    if (c.foodBuff) this.run.foodBuff = { ...c.foodBuff, floorsLeft: c.foodBuff.floors || 3 };
-    if (c.cure) { this.player.statuses = {}; this.log('Ailments cured.', 'log-ally'); }
-    if (c.bombDmg) {
-      for (const e of this.aliveEnemies()) {
-        e.hp = Math.max(0, e.hp - c.bombDmg);
-        this.float(this.sprite(e.uid)?.parentElement, `${c.bombDmg}`, 'dmg');
-        SpriteAnim.play(e.uid, 'hurt');
-        actOps.targets.push({ uid: e.uid, dmg: c.bombDmg, hpAfter: e.hp });
-      }
-      SFX.crit(); screenShake();
-      this.log('The bomb detonates!', 'log-sys');
+    if (this.run.hp > hpBefore) {
+      this.float(this.el?.querySelector?.('#sprite-player'), `+${this.run.hp - hpBefore}`, 'heal');
+      SFX.heal();
     }
-    this.log(`Used ${c.name}.`, 'log-ally');
+    if (this.run.mp > mpBefore) {
+      this.float(this.el?.querySelector?.('#sprite-player'), `+${this.run.mp - mpBefore}`, 'mana');
+    }
+    this.enemies.forEach((e, i) => {
+      const dmg = beforeHp[i] - e.hp;
+      if (dmg > 0) {
+        this.float(this.sprite(e.uid)?.parentElement, `${dmg}`, 'dmg');
+        SpriteAnim.play(e.uid, 'hurt');
+        actOps.targets.push({ uid: e.uid, dmg, hpAfter: e.hp });
+      }
+    });
+    if (actOps.targets.length) { SFX.crit(); screenShake(); }
     if (this.shared) {
       this.coop.net.send(actOps);
       this.coop.broadcastStatus(this.runStatus(), 'fighting');
     }
-    this.renderEnemies();
-    this.renderPlayers(this._actingKey);
     setTimeout(() => this.endPlayerAction(), 600);
   }
 
@@ -2340,258 +1990,45 @@ class Fight {
 
   /* ================= ENEMY TURN (solo) ================= */
   async enemyTurn(e) {
-    this.setActing(e.uid);
-    e.turnCount++;
-    e.charge = tickEnemyCharge(e, this.mod.chargeMult || 1);
-    this.renderEnemies();
-
-    // §12: burn FOC to break hard CC, or shrug everything on cadence
-    const anti = this.resolveBossAntiCC(e);
-    if (anti) await sleep(300);
-
-    if (e.summons && e.turnCount % 3 === 0 && this.enemies.filter(x => x.hp > 0).length < 3) {
-      spawnSummon(this, e);
-      this.log(`${e.name} drags a servant up from the dust!`, 'log-foe');
-      this.renderEnemies();
-      this.renderTurnOrder();
-      await sleep(400);
-      return;
+    resolveEnemyTurn(this, e);
+    if (!this.headless) {
+      const sprite = this.sprite(e.uid);
+      if (sprite) { sprite.classList.add('attack'); setTimeout(() => sprite.classList.remove('attack'), 420); }
+      await sleep(420);
     }
-    this.bossPhaseChecksSolo(e);
+  }
 
-    if (e.statuses.frozen || e.statuses.stunned || e.statuses.lazy) {
-      const why = e.statuses.frozen ? 'frozen' : e.statuses.stunned ? 'stunned' : 'lazy';
-      this.log(`${e.name} is ${why} — it cannot act.`, 'log-foe');
-      delete e.statuses.frozen; delete e.statuses.stunned;
-      delete e.statuses.lazy;
-      this.renderEnemies();
-      await sleep(350);
-      return;
-    }
-
-    // Confused foes turn on their own when they can; otherwise they thrash uselessly.
-    if (e.statuses.confused) {
-      delete e.statuses.confused;
-      if (this.aliveEnemies().length > 1) {
-        if (await this.enemyConfusedStrike(e)) return;
-      }
-      this.log(`${e.name} is confused — it flails and hits nothing.`, 'log-foe');
-      this.renderEnemies();
-      await sleep(350);
-      return;
-    }
-
-    // §15 Prism of Discord: the enemy may turn on its own kind
-    const dConf = this.d();
-    if (dConf.confuseChance && this.aliveEnemies().length > 1 && this.rng.chance(dConf.confuseChance)) {
-      if (await this.enemyConfusedStrike(e)) return;
-    }
-
-    const special = pickEnemySpecial(e, this.rng);
-    // §12: a boss's heavy telegraphed hit scales with the charge it banked
-    let chargeScale = 1;
-    if (special) {
-      if (e.boss) {
-        const banked = soloBossChargeForScale(this.run.floor, e.charge || 0);
-        chargeScale = 1 + CONFIG.boss.chargeDamageScale * banked;
-      }
-      e.charge = 0;
-      this.log(`${e.name} unleashes ${special.name}!${e.boss && chargeScale > 1.2 ? ' The air screams with pent-up force.' : ''}`, 'log-foe');
+  
+  bossPhaseChecksSolo(e, ops = null) {
+    const before = e.phaseTriggers.length;
+    coreBossPhaseSolo(this, e, ops);
+    if (!this.headless && e.phaseTriggers.length > before) {
       SFX.bossIntro();
-    }
-
-    const sprite = this.sprite(e.uid);
-    if (sprite) { sprite.classList.add('attack'); setTimeout(() => sprite.classList.remove('attack'), 420); }
-    SpriteAnim.play(e.uid, special ? 'special' : 'attack');
-    await sleep(240);
-
-    const d = this.d();
-    const dodgeBuff = this.buffValue('dodge');
-    const dodgeCh = clamp(d.dodge + dodgeBuff.add, 0, 80);
-    if (!special && this.rng.chance(dodgeCh / 100)) {
-      this.float(this.playerFloatHost(), 'MISS', 'miss');
-      this.log(`${e.name} attacks — you evade!`, 'log-ally');
-      SFX.miss();
-      await sleep(380);
-      return;
-    }
-
-    let dmg = e.atk * CONFIG.combat.enemyAtkMult * (0.85 + this.rng.next() * 0.3) * (this.mod.dmgMult || 1) * (special?.mult || 1) * chargeScale;
-    if (typeof location !== 'undefined' && /(?:\?|&)debugCombat=1(?:&|$)/.test(location.search || '')) {
-      const raw = dmg;
-      const afterDef = applyDefense(raw, this.d().def);
-      console.debug(`[combat] ${e.name} atk=${e.atk} raw=${raw.toFixed(1)} afterDef=${afterDef} def=${this.d().def}`);
-    }
-    dmg *= statusOutgoingMult(e.statuses);
-    if (this.rng.chance(d.enemyCrit / 100)) dmg *= 1.5;
-    dmg = applyDefense(dmg, d.def);
-    if (e.caster && !special && e.turnCount % 2 === 0) { dmg *= 1.4; this.log(`${e.name} channels a darker spell!`, 'log-foe'); }
-    const shield = this.player.statuses.shield;
-    if (shield) dmg *= (1 - shield.mult);
-    dmg = applyGuard(Math.max(1, Math.round(dmg * d.dmgTakenMult * this.partyBuffMult('dr'))), this.player.guarding);
-    if (this.player.statuses.frail || this.player.statuses.tormented) {
-      dmg = Math.max(1, Math.round(dmg * (CONFIG.combat.frailTakenMult ?? 1.25)));
-    }
-
-    this.run.hp = Math.max(0, this.run.hp - dmg);
-    this.damageTaken = (this.damageTaken || 0) + dmg;
-    this._taken(dmg);
-    if (d.chargeOnHit) this.gainCharge(1);
-    this.float(this.playerFloatHost(), `-${dmg}`, 'incoming');
-    SFX.hit();
-    this.log(`${e.name}${special ? ` (${special.name})` : ''} hits you for ${dmg}${this.player.guarding ? ' (guarded)' : ''}.`, 'log-foe');
-
-    // §15 Coat of Thorns: attackers pay for the privilege
-    if (d.thorns && e.hp > 0 && dmg > 0) {
-      const back = Math.max(1, Math.round(dmg * d.thorns));
-      e.hp = Math.max(0, e.hp - back);
-      const es2 = this.sprite(e.uid);
-      if (es2) { es2.classList.add('hit'); setTimeout(() => es2.classList.remove('hit'), 360); this.float(es2.parentElement, `${back}`, 'dmg'); }
-      SpriteAnim.play(e.uid, 'hurt');
-      this.log(`Thorns bite back — ${e.name} takes ${back}.`, 'log-ally');
-      if (e.hp <= 0) this.log(`${e.name} is defeated by its own violence!`, 'log-ally');
-    }
-
-    if (e.lifesteal || special?.heal) {
-      e.hp = Math.min(e.maxHp, e.hp + Math.round(dmg * (e.lifesteal || 0)) + Math.round(e.maxHp * (special?.heal || 0)));
-      this.log(`${e.name} drinks deep.`, 'log-foe');
-    }
-    this.applyStatusRiders(collectEnemyRiders(e, special, this.rng));
-
-    if (this.run.hp <= 0) this.deathSaves();
-
-    this.renderPlayers();
-    this.renderEnemies();
-    await sleep(420);
-  }
-
-  bossPhaseChecksSolo(e) {
-    if (e.heads) {
-      const pct = e.hp / e.maxHp;
-      for (const threshold of [0.6, 0.3]) {
-        if (pct <= threshold && !e.phaseTriggers.includes(threshold)) {
-          e.phaseTriggers.push(threshold);
-          e.atk = Math.round(e.atk * 1.2);
-          e.hp = Math.min(e.maxHp, e.hp + Math.round(e.maxHp * 0.1));
-          this.log('A severed head regrows — angrier. The Hydra swells with grief.', 'log-foe');
-          SFX.bossIntro();
-          this.renderEnemies();
-        }
-      }
-    }
-    if (e.phases && e.hp / e.maxHp <= 0.5 && !e.phaseTriggers.includes('enrage')) {
-      e.phaseTriggers.push('enrage');
-      e.atk = Math.round(e.atk * 1.3);
-      e.hp = Math.min(e.maxHp, e.hp + Math.round(e.maxHp * 0.12));
-      if (e.chargeOnPhase) e.charge = addCharge(e.charge || 0, e.chargeOnPhase);
-      if (e.phaseArt) e.artId = e.phaseArt;
-      if (e.phaseName) e.name = e.phaseName;
-      if (e.phaseGlyph) e.glyph = e.phaseGlyph;
-      if (e.phaseSpecials) e.specials = e.phaseSpecials;
-      const evolve = e.phaseArt ? (e.phaseText || `${e.name} evolves into something worse.`) : `${e.name}: "${e.taunt}"`;
-      this.log(evolve, 'log-sys');
-      if (!e.phaseArt) this.log('Stops holding back.', 'log-foe');
-      SFX.bossIntro(); screenShake();
-      this.renderEnemies(); this.renderPlayers();
+      if (e.phases) screenShake();
     }
   }
 
+  
   /* ---- end-of-round upkeep ---- */
   async tickEnemyStatuses(ops = null) {
-    const C = CONFIG.combat;
-    for (const e of this.aliveEnemies()) {
-      if (e.statuses.poison) {
-        const dmg = Math.max(2, Math.round(e.maxHp * (C.poisonPctOnEnemy ?? 0.1)));
-        e.hp = Math.max(0, e.hp - dmg);
-        this.float(this.sprite(e.uid)?.parentElement, `${dmg}`, 'dmg');
-        this.log(`${e.name} suffers ${dmg} poison damage.`);
-        e.statuses.poison--;
-        if (e.statuses.poison <= 0) delete e.statuses.poison;
-        ops?.push({ type: 'edot', uid: e.uid, dmg, hpAfter: e.hp, kind: 'poison' });
-      }
-      if (e.statuses.burn) {
-        const dmg = Math.max(2, Math.round(e.maxHp * (C.burnPctOnEnemy ?? 0.055)));
-        e.hp = Math.max(0, e.hp - dmg);
-        this.float(this.sprite(e.uid)?.parentElement, `${dmg}`, 'dmg');
-        this.log(`${e.name} burns for ${dmg}.`);
-        e.statuses.burn--;
-        if (e.statuses.burn <= 0) delete e.statuses.burn;
-        ops?.push({ type: 'edot', uid: e.uid, dmg, hpAfter: e.hp, kind: 'burn' });
-      }
-      if (e.statuses.hexed) { e.statuses.hexed--; if (e.statuses.hexed <= 0) delete e.statuses.hexed; }
-      for (const k of ['weaken', 'frail', 'tormented', 'lazy', 'paralyzed', 'confused']) {
-        if (e.statuses[k]) { e.statuses[k]--; if (e.statuses[k] <= 0) delete e.statuses[k]; }
-      }
-      if (e.regen && e.hp > 0 && e.hp < e.maxHp) {
-        const amt = Math.round(e.maxHp * e.regen);
-        e.hp = Math.min(e.maxHp, e.hp + amt);
-        this.log(`${e.name} regenerates ${amt}.`, 'log-foe');
-        ops?.push({ type: 'eregen', uid: e.uid, amt, hpAfter: e.hp });
-      }
-    }
-    this.renderEnemies();
-    await sleep(200);
+    coreTickEnemyStatuses(this, ops);
+    if (!this.headless) await sleep(200);
   }
 
+  
   async upkeep() {
-    if (!this.shared) await this.tickEnemyStatuses();
-    const st = this.player.statuses;
-    const C = CONFIG.combat;
-    if (st.poison && this.run.hp > 0) {
-      const dmg = Math.max(2, Math.round(this.run.maxHp * (C.poisonPctOnPlayer ?? 0.08)));
-      this.run.hp = Math.max(0, this.run.hp - dmg);
-      this._taken(dmg);
-      this.float(this.playerFloatHost(), `-${dmg}`, 'incoming');
-      this.log(`Poison courses through you for ${dmg}.`, 'log-foe');
-      st.poison--; if (st.poison <= 0) delete st.poison;
-      if (this.run.hp <= 0) { this.deathSaves(); if (this.shared && this.run.hp <= 0) this.goDown(); }
-    }
-    if (st.burn && this.run.hp > 0) {
-      const dmg = Math.max(3, Math.round(this.run.maxHp * (C.burnPctOnPlayer ?? 0.06)));
-      this.run.hp = Math.max(0, this.run.hp - dmg);
-      this._taken(dmg);
-      this.float(this.playerFloatHost(), `-${dmg}`, 'incoming');
-      this.log(`You burn for ${dmg}.`, 'log-foe');
-      st.burn--; if (st.burn <= 0) delete st.burn;
-      if (this.run.hp <= 0) { this.deathSaves(); if (this.shared && this.run.hp <= 0) this.goDown(); }
-    }
-    if (st.shield) { st.shield.turns--; if (st.shield.turns <= 0) delete st.shield; }
-    for (const k of ['weaken', 'frail', 'tormented', 'lazy', 'confused', 'paralyzed']) {
-      if (st[k]) { st[k]--; if (st[k] <= 0) delete st[k]; }
-    }
-    if (this.run.combatTaunt) {
-      this.run.combatTaunt--;
-      if (this.run.combatTaunt <= 0) {
-        delete this.run.combatTaunt;
-        this.log('Enemies stop rising to your bait.', 'log-sys');
-      }
-    }
-    this.player.buffs = this.player.buffs.filter(b => --b.turns > 0);
-    this.player.partyBuffs = (this.player.partyBuffs || []).filter(b => --b.turns > 0);
-    if (this.mod.hpDrainPct && !this.run.down && this.run.hp > 0) {
-      const drain = Math.max(1, Math.round(this.run.maxHp * this.mod.hpDrainPct));
-      this.run.hp = Math.max(0, this.run.hp - drain);
-      this.log(`The floor drinks ${drain} of your blood.`, 'log-foe');
-      SFX.bad();
-      if (this.run.hp <= 0) { this.deathSaves(); if (this.shared && this.run.hp <= 0) this.goDown(); }
-    }
-    this.renderPlayers(this._actingKey);
+    coreUpkeep(this);
+    if (!this.headless && this.mod.hpDrainPct) SFX.bad();
   }
 
+  
   deathSaves() {
-    if (gearHas(this.run, 'revive') && !this.run.usedRevive) {
-      this.run.usedRevive = true;
-      this.run.hp = Math.round(this.run.maxHp * CONFIG.death.reviveHpPct);
-      this.log('The Phoenix Feather ignites — you rise from the ashes!', 'log-sys');
-      SFX.evolve();
-      return;
-    }
-    if (gearHas(this.run, 'deathward') && !this.usedDeathward) {
-      this.usedDeathward = true;
-      this.run.hp = 1;
-      this.log('The Cracked Hourglass shatters — time stumbles, and you are spared. Barely.', 'log-sys');
-      SFX.unlock();
-    }
+    const beforeRevive = this.run.usedRevive;
+    const beforeWard = this.usedDeathward;
+    coreDeathSaves(this);
+    if (this.headless) return;
+    if (this.run.usedRevive && !beforeRevive) SFX.evolve();
+    else if (this.usedDeathward && !beforeWard) SFX.unlock();
   }
 
   /* ---------------- end conditions (solo) ---------------- */
@@ -2599,7 +2036,7 @@ class Fight {
     if (this.shared) return this.ended;
     if (this.run.hp <= 0) {
       if (heroHasAnim(this.run.classId, 'death')) {
-        playHeroAnim(this.el.querySelector('#sprite-player'), this.run.classId, 'death', { target: heroCombatSize(this.run.classId), holdLast: true, faceLeft: true });
+        playHeroAnim(this.el?.querySelector?.('#sprite-player'), this.run.classId, 'death', { target: heroCombatSize(this.run.classId), holdLast: true, faceLeft: true });
         this.finishSolo('dead', { _delayMs: 1100 });
       } else {
         this.finishSolo('dead');
@@ -2608,15 +2045,7 @@ class Fight {
     }
     if (this.aliveEnemies().length === 0) {
       if (this.maybeTransform()) return false;
-      const d = this.d();
-      let gold = 0, xp = 0;
-      for (const e of this.enemies) {
-        gold += this.rng.int(e.gold[0], e.gold[1]);
-        xp += e.xp;
-      }
-      const rw = rewardMult(this.run.floor);
-      gold = Math.round(gold * d.goldMult * d.combatGoldMult * (this.mod.goldMult || 1) * CONFIG.economy.combatGoldMult * rw.gold);
-      xp = Math.round(xp * 1.45 * d.xpMult * rw.xp);
+      const { gold, xp } = computeCombatPayout(this.run, this.rng, this.enemies, this.mod);
       this.finishSolo('win', { gold, xp });
       return true;
     }
@@ -2626,13 +2055,20 @@ class Fight {
   finishSolo(result, extra = {}) {
     this.locked = true;
     this.ended = true;
+    this._outcome = result;
     this._stopTabFlash();
-    if (this._onCombatResize) window.removeEventListener('resize', this._onCombatResize);
+    if (this._onCombatResize && typeof window !== 'undefined') {
+      window.removeEventListener('resize', this._onCombatResize);
+    }
     delete this.run.combatTaunt;
     if (CONFIG.charge.resetAfterCombat) this.charge = 0;
     this.rng.advance?.();
     const { _delayMs, ...rest } = extra;
     const payload = { result, noDamage: !this.damageTaken, usedUltimate: !!this.usedUltimate, ...rest };
+    if (this.headless) {
+      this.resolve?.(payload);
+      return;
+    }
     if (result === 'win' && _delayMs == null) {
       this.resolveAfterEnemyDeaths(payload);
       return;

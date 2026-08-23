@@ -3,17 +3,26 @@
 
 import { CLASSES, SUBCLASSES, RANDOM_NAMES, subclassOptions } from './data/classes.js';
 import { RACES, applyRacePromotion } from './data/races.js';
-import { ORIGINS, originById } from './data/origins.js';
+import { ORIGINS, originById, defaultOriginId } from './data/origins.js';
 import { SKILLS } from './data/skills.js';
-import { BIOMES, biomeForFloor, ENEMIES, BOSSES, ALT_BOSSES, MODIFIERS, pickBossForFloor, bossById, findEnemySpec, NPC_ENEMIES, WANDERING_ENEMIES, SECRET_BOSS, mimicSpec } from './data/enemies.js';
+import { BIOMES, biomeForFloor, ENEMIES, BOSSES, ALT_BOSSES, MODIFIERS, pickBossForFloor, bossById, resolveThroneBoss, findEnemySpec, NPC_ENEMIES, WANDERING_ENEMIES, SECRET_BOSS, mimicSpec } from './data/enemies.js';
 import { EVENTS, CATEGORY_META, drawEvent, NPC_EVENTS } from './data/events.js';
+import {
+  presentEvent, presentBoss, recordEvent, applyWorldPatch, applyOutcomeWorld, ensureWorld,
+  charRel, worldDebugSnapshot, explainEligibility, eventEligible, eligibilitySnapshot,
+  worldPoke, beginWorldInspect, resetWorldInspect, endWorldInspect, THREADS, CHARACTERS,
+  TENDENCIES,
+} from './data/world.js';
+import { biomeIntroText, throneMemoryLines, throneEpitaphStain } from './data/late_memory.js';
+import { eventDrawWeight } from './data/eventpace.js';
 import { appearancesFor, defaultAppearanceId } from './data/appearances.js';
 import { CONFIG } from './data/config.js';
-import { planEncounter, planBossEncounter, pushEventHistory } from './data/balance.js';
+import { planBossEncounter, pushEventHistory } from './data/balance.js';
+import { dealLiveFloorCards, pickEnemyPlan as planFloorEnemies } from './data/floorcards.js';
 import { rankFor } from './data/ranks.js';
-import { CONSUMABLES, itemById, resolveItem, rollEquipment, rollRelic, rollUnique, rollWrld, npcDuelLoot, markWrldClaimed, EQUIP_SLOTS, RELICS, ALL_EQUIPMENT, WEAPONS, itemUsefulForClass, itemIncompatibleForClass } from './data/items.js';
+import { CONSUMABLES, itemById, resolveItem, rollEquipment, rollRelic, rollUnique, rollWrld, npcDuelLoot, markWrldClaimed, EQUIP_SLOTS, RELICS, ALL_EQUIPMENT, WEAPONS, itemUsefulForClass, itemIncompatibleForClass, shopConsumablePool, shopListingPrice, consumableCombatValue, sellGold } from './data/items.js';
 import { applyTagOutcomeMods, applySparkleOutcomeMods } from './data/eventtags.js';
-import { loadMeta, saveMeta, upgradeRank, award, UPGRADES, ACHIEVEMENTS, newRun, saveRun, loadRun, clearRun, runRng, rollStart, startDescriptor, awakenMonolith, fateGrowthBoost, fateGrowthPct, fateGrowthPctOne, randomRaceId, randomClassId, unlockedCosmetics, climberNameHtml, resetSanctumUpgrades } from './state.js';
+import { loadMeta, saveMeta, upgradeRank, award, UPGRADES, ACHIEVEMENTS, newRun, saveRun, loadRun, clearRun, runRng, rollStart, startDescriptor, awakenMonolith, fateGrowthBoost, fateGrowthPct, fateGrowthPctOne, randomRaceId, randomClassId, unlockedCosmetics, climberNameHtml, resetSanctumUpgrades, noteCallings } from './state.js';
 import {
   derived, classTitle, skillTier, gainXp, learnableSkills, heal, restoreMana, relicItems,
   equippedItems, changeFame, resourceName, appraiseRun, revealLevel,
@@ -42,10 +51,28 @@ import { CoopSession, connectCoop } from './coop.js';
 import { Music } from './music.js';
 import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl, raceArtHtml, originArtHtml, raceIconUrl, originIconUrl, eventCatUrl, npcArtUrl, enemySpriteHtml } from './art.js';
 import { isAutoPlay, setAutoPlay, syncAutoPlayLoop } from './autoplay.js';
+import { reqMet as reqMetOf } from './requirements.js';
+import { biomeTier as biomeTierOf } from './biome_tier.js';
+import { gearScore, skillAutoScore } from './loot_score.js';
+import { rollEventCheck, applyEventOutcome } from './outcomes.js';
+import {
+  applyVictoryRewards, applyEliteVictoryFind, grantReward as grantRewardShared,
+  rollBossHoard,
+} from './rewards.js';
+import { buildShopStock, shopDiscount, shopPrice, shopHealCost, applyShopHeal } from './shop.js';
+import {
+  resolveEncounterApproach,
+  isSpecialEventFoe as isSpecialEventFoeOf, buildEventFightEnemies as buildEventFightEnemiesOf,
+} from './encounter.js';
+import { SKILL_OFFER_LEVELS, offerSkillPool } from './progression.js';
+import { beginThrone, resolveThroneChoice } from './throne.js';
+import { applyFloorBreath, tickFoodBuff, applyLowHpRelic, previewUpcomingBoss } from './floor.js';
+import { createClimbRecorder } from './climb_trace.js';
 
 let meta = loadMeta();
 let run = null;
 let coopS = null; // CoopSession | null — null means solo
+let climbTrace = null;
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const BOSS_FLOORS = Object.keys(BOSSES).map(Number);
@@ -59,6 +86,16 @@ function applyCardBg(stage) {
 }
 const LAST_FLOOR = 51;
 const NPC_DUELS = new Set(['crimson_stranger', 'frost_revenant', ...NPC_EVENTS]);
+
+function announceCallings() {
+  if (!run || !meta) return;
+  const newly = noteCallings(meta, run);
+  for (const id of newly) {
+    if (id === run.classId) continue;
+    toast(`A calling opens: ${CLASSES[id]?.name || id}.`, 'info');
+    SFX.unlock();
+  }
+}
 
 /* ============================================================
    TITLE
@@ -88,8 +125,20 @@ function devJump() {
     fightGroup(stage, specs, { text: 'A wild foe erupts from the brush!' });
     return true;
   }
+  if (p === 'trace') {
+    climbTrace = createClimbRecorder(run);
+    climbTrace.checkpoint(run, 'start');
+    window.__climbTrace = climbTrace;
+    console.info('[climb-trace] recording. Dump via window.__climbTrace.dump()');
+    enterFloorScreen(true);
+    return true;
+  }
   if (p === 'map') { enterFloorScreen(true); return true; }
-  if (p === 'debug') { debugScreen(); return true; }
+  if (p === 'debug' || p === 'world') {
+    debugScreen({ debug: true });
+    if (p === 'world') document.querySelector('[data-tab="world"]')?.click();
+    return true;
+  }
   if (p === 'summary') {
     const mock = {
       outcome: 'win', name: 'Elba', raceName: 'Human', classId: 'archer',
@@ -141,14 +190,269 @@ function devJump() {
    DEBUG / COMPENDIUM SCREEN (§17) — every class, subclass, skill,
    relic, equipment piece, enemy and boss, with their sprites.
    ============================================================ */
-function debugScreen() {
+let inspectSession = null;
+
+function inspectRun() {
+  if (inspectSession?.working) {
+    ensureWorld(inspectSession.working);
+    return inspectSession.working;
+  }
+  inspectSession = beginWorldInspect(run || null, run ? null : loadRun());
+  if (!inspectSession) return null;
+  ensureWorld(inspectSession.working);
+  return inspectSession.working;
+}
+
+function resetInspectedRun() {
+  resetWorldInspect(inspectSession);
+  if (inspectSession?.working) ensureWorld(inspectSession.working);
+}
+
+function endInspectSession() {
+  endWorldInspect(inspectSession);
+  inspectSession = null;
+}
+
+function dbgEsc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+function dbgMark(ok, text) {
+  return `<div class="dbg-check ${ok ? 'ok' : 'no'}">${ok ? '✓' : '✗'} ${dbgEsc(text)}</div>`;
+}
+
+/** Dev-only world inspector — never shown in normal play. */
+function worldDebugHtml() {
+  const state = inspectRun();
+  if (!state) {
+    return `<div class="dbg-group"><h4>Run state</h4>
+      <p class="dbg-dim">No active climb. Continue a run, or open <code>?dev=world</code> (spawns a test climber).</p></div>`;
+  }
+  const snap = worldDebugSnapshot(state);
+  const flags = Object.keys(snap.flags).filter(k => snap.flags[k]).sort();
+  const header = snap.run;
+  const className = CLASSES[header.classId]?.name || header.classId || '—';
+
+  const threadRows = snap.threads.map(t => {
+    const age = t.floor != null ? header.floor - t.floor : null;
+    const ageBit = t.floor != null
+      ? ` · since Fl.${t.floor}${age != null ? ` · age ${age}` : ''}`
+      : '';
+    const right = t.status === 'dormant'
+      ? 'Dormant'
+      : `Stage ${t.stageIndex}/${t.stageCount} · ${t.stage}${t.status === 'resolved' ? ' · Resolved' : ''}${ageBit}`;
+    return `<div class="dbg-inspect-row"><b>${dbgEsc(t.name)}</b><span class="dbg-inspect-val">${dbgEsc(right)}</span></div>`;
+  }).join('');
+
+  const charRows = snap.characters.map(c => {
+    const mems = (c.memories || []).length
+      ? `<ul class="dbg-mem">${c.memories.map(m => `<li>${dbgEsc(m)}</li>`).join('')}</ul>`
+      : `<div class="dbg-dim">none</div>`;
+    return `<div class="dbg-npc">
+      <b>${dbgEsc(c.name)}</b> <span class="dbg-dim">(${dbgEsc(c.id)}${c.met ? '' : ' · unmet'})</span>
+      <div class="dbg-kv"><span>alive</span><span>${c.alive}</span></div>
+      <div class="dbg-kv"><span>relationship</span><span>${c.rel}</span></div>
+      <div class="dbg-kv"><span>location</span><span>${dbgEsc(c.loc || '—')}</span></div>
+      <div class="dbg-kv dbg-kv-stack"><span>memories</span>${mems}</div>
+    </div>`;
+  }).join('');
+
+  const secretRows = snap.secrets.map(s => {
+    const parent = CLASSES[s.parent]?.name || s.parent;
+    const routes = s.routes.map(r => {
+      const bits = (r.explain.parts || []).map(p => dbgMark(p.ok, p.text)).join('');
+      const kind = r.kind === 'fallback' ? 'fallback · ' : '';
+      return `<div class="dbg-choice">${r.ok ? '✓' : '✗'} ${kind}${dbgEsc(r.label)}${bits}</div>`;
+    }).join('');
+    return `<div class="dbg-secret">
+      <b>${dbgEsc(s.name)}</b>
+      ${s.unlocked ? '<span class="tag">unlocked</span>' : '<span class="tag">locked</span>'}
+      ${s.eligible ? '<span class="tag">eligible</span>' : '<span class="tag">not eligible</span>'}
+      <div class="dbg-dim">${dbgEsc(parent)}${s.initiation ? ` · initiation ${s.initiation}` : ' · missing initiation'}${s.unlockKey ? ` · ${s.unlockKey}` : ' · missing unlock'}</div>
+      <div class="dbg-player-view">??? / ${s.routeCount} routes${s.unlocked ? ' · hidden path at Lv.6' : s.eligible ? ' · event only — UI hidden' : ''}</div>
+      <details class="dbg-devview" open><summary>DEV VIEW</summary>${routes}</details>
+    </div>`;
+  }).join('');
+
+  const eligible = [];
+  const blocked = [];
+  for (const ev of EVENTS) {
+    if (!ev.when && !ev.cond && !ev.once && !ev.family) continue;
+    const why = explainEligibility(ev, state);
+    const clauses = why.parts.map(p => dbgMark(p.ok, p.text)).join('');
+    let weightBlock = '';
+    if (why.ok) {
+      const wt = eventDrawWeight(ev, state);
+      const bits = wt.terms.map(term => {
+        const n = term.mult;
+        const shown = Number.isInteger(n) ? String(n) : n.toFixed(2);
+        return `<div class="dbg-dim">${dbgEsc(term.label)} ×${shown}</div>`;
+      }).join('');
+      const eff = Number.isInteger(wt.w) ? String(wt.w) : wt.w.toFixed(2);
+      weightBlock = `<div class="dbg-weight">${bits}<div>Effective weight ${eff}</div></div>`;
+    }
+    const line = `<div class="dbg-event">
+      <b>${dbgEsc(ev.title)}</b> <span class="dbg-dim">(${dbgEsc(ev.id)})</span>
+      <div class="${why.ok ? 'dbg-ok-label' : 'dbg-no-label'}">${why.ok ? 'Eligible' : 'Blocked because:'}</div>
+      ${clauses}
+      ${weightBlock}
+    </div>`;
+    if (why.ok) eligible.push(line); else blocked.push(line);
+  }
+
+  const factionRows = snap.factions
+    .filter(f => f.rel || f.helped || f.harmed)
+    .map(f => `<div class="dbg-inspect-row"><b>${dbgEsc(f.name)}</b><span class="dbg-inspect-val">rel ${f.rel}${f.helped ? ' · helped' : ''}${f.harmed ? ' · harmed' : ''}</span></div>`)
+    .join('');
+
+  const threadOpts = Object.entries(THREADS).map(([id, t]) => `<option value="${id}">${dbgEsc(t.name)}</option>`).join('');
+  const firstThread = Object.keys(THREADS)[0];
+  const stageOpts = (THREADS[firstThread]?.stages || []).map(s => `<option value="${s}">${s}</option>`).join('');
+  const charOpts = Object.entries(CHARACTERS).map(([id, c]) => `<option value="${id}">${dbgEsc(c.name)}</option>`).join('');
+
+  return `
+    <div class="dbg-group"><h4>Run state</h4>
+      <div class="dbg-inspect">
+        <div class="dbg-inspect-row"><b>${dbgEsc(header.name || 'climber')}</b><span class="dbg-inspect-val">Fl.${header.floor} · ${dbgEsc(header.biome || '—')} · ${dbgEsc(className)} · Lv ${header.level} · seed ${dbgEsc(header.seed)}</span></div>
+        <div class="dbg-kv"><span>flags</span><span>${flags.length ? flags.map(dbgEsc).join(', ') : 'none'}</span></div>
+        <div class="dbg-kv"><span>knowledge</span><span>${snap.knowledge.length ? snap.knowledge.map(dbgEsc).join(', ') : 'none'}</span></div>
+        <div class="dbg-kv"><span>counters</span><span>${Object.keys(snap.counters).length ? Object.entries(snap.counters).map(([k, v]) => `${dbgEsc(k)}:${v}`).join(', ') : 'none'}</span></div>
+      </div>
+    </div>
+    <div class="dbg-group"><h4>Tendencies</h4>
+      <p class="dbg-dim">Hidden habit tallies. Warm ≥2 opens copy; marked ≥3 may open a rare card. Never shown in play.</p>
+      <div class="dbg-inspect">${(snap.tendencies || []).map(t => {
+        const right = `${t.value} · ${t.band} · warm ${t.warm} · marked ${t.marked}`;
+        return `<div class="dbg-inspect-row"><b>${dbgEsc(t.label)}</b><span class="dbg-inspect-val">${dbgEsc(right)}</span></div>`;
+      }).join('')}</div>
+    </div>
+    <div class="dbg-group"><h4>Narrative threads</h4>
+      <div class="dbg-inspect">${threadRows}</div>
+    </div>
+    <div class="dbg-group"><h4>NPC state</h4>${charRows}</div>
+    ${factionRows ? `<div class="dbg-group"><h4>Factions</h4><div class="dbg-inspect">${factionRows}</div></div>` : ''}
+    <div class="dbg-group"><h4>Class discovery</h4>
+      <p class="dbg-dim">Player-facing line hides route names. Eligibility may open an initiation event; unlock is a diegetic accept.</p>
+      ${secretRows}
+    </div>
+    <details class="dbg-group dbg-collapse"><summary class="dbg-collapse-sum">Eligible events (${eligible.length})</summary>${eligible.join('') || '<div class="dbg-dim">none</div>'}</details>
+    <details class="dbg-group dbg-collapse" open><summary class="dbg-collapse-sum">Blocked events (${blocked.length})</summary>${blocked.join('') || '<div class="dbg-dim">none</div>'}</details>
+    <div class="dbg-group dbg-poke"><h4>Poke</h4>
+      <div class="dbg-poke-row">
+        <label>Flag <input id="poke-flag" class="dbg-input" placeholder="saved_climber"></label>
+        <button class="btn small" id="poke-flag-btn" type="button">Set</button>
+        <label>Knowledge <input id="poke-know" class="dbg-input" placeholder="heard_dead_language"></label>
+        <button class="btn small" id="poke-know-btn" type="button">Set</button>
+      </div>
+      <div class="dbg-poke-row">
+        <label>Thread <select id="poke-thread" class="dbg-input">${threadOpts}</select></label>
+        <label>Stage <select id="poke-stage" class="dbg-input">${stageOpts}</select></label>
+        <button class="btn small" id="poke-thread-btn" type="button">Apply</button>
+      </div>
+      <div class="dbg-poke-row">
+        <label>Tendency <select id="poke-tend" class="dbg-input">${Object.keys(TENDENCIES).map(id => `<option value="${id}">${dbgEsc(id)}</option>`).join('')}</select></label>
+        <button class="btn small" id="poke-tend-up" type="button">+1</button>
+        <button class="btn ghost small" id="poke-tend-down" type="button">−1</button>
+      </div>
+      <div class="dbg-poke-row">
+        <label>NPC <select id="poke-char" class="dbg-input">${charOpts}</select></label>
+        <label class="dbg-check-lab"><input type="checkbox" id="poke-met" checked> met</label>
+        <label class="dbg-check-lab"><input type="checkbox" id="poke-alive" checked> alive</label>
+        <label>Rel <input id="poke-rel" class="dbg-input dbg-input-sm" type="number" value="0"></label>
+        <label>Loc <input id="poke-loc" class="dbg-input" placeholder="ruins"></label>
+        <label>Memory <input id="poke-mem" class="dbg-input" placeholder="player_saved_me"></label>
+        <button class="btn small" id="poke-char-btn" type="button">Apply</button>
+        <button class="btn ghost small" id="poke-reset-btn" type="button">Reset</button>
+      </div>
+      <p class="dbg-dim">Pokes a scratch copy. Reset restores the snapshot. The climb save is never written.</p>
+    </div>
+  `;
+}
+
+function fillPokeStages() {
+  const thread = document.getElementById('poke-thread')?.value;
+  const sel = document.getElementById('poke-stage');
+  if (!sel || !thread) return;
+  const stages = THREADS[thread]?.stages || [];
+  sel.innerHTML = stages.map(s => `<option value="${s}">${s}</option>`).join('');
+}
+
+function refreshWorldPanel() {
+  const panel = document.getElementById('dbg-world');
+  if (!panel) return;
+  panel.innerHTML = worldDebugHtml();
+  bindWorldPoke();
+}
+
+function bindWorldPoke() {
+  const panel = document.getElementById('dbg-world');
+  const state = inspectRun();
+  if (!panel || !state) return;
+  const poke = (action) => {
+    worldPoke(state, action);
+    refreshWorldPanel();
+  };
+  document.getElementById('poke-thread')?.addEventListener('change', fillPokeStages);
+  document.getElementById('poke-flag-btn')?.addEventListener('click', () => {
+    const flag = document.getElementById('poke-flag')?.value?.trim();
+    if (flag) { SFX.click(); poke({ flag }); }
+  });
+  document.getElementById('poke-know-btn')?.addEventListener('click', () => {
+    const knowledge = document.getElementById('poke-know')?.value?.trim();
+    if (knowledge) { SFX.click(); poke({ knowledge }); }
+  });
+  document.getElementById('poke-thread-btn')?.addEventListener('click', () => {
+    const id = document.getElementById('poke-thread')?.value;
+    const stage = document.getElementById('poke-stage')?.value;
+    if (id && stage) { SFX.click(); poke({ thread: { id, stage } }); }
+  });
+  const tendPoke = (add) => {
+    const id = document.getElementById('poke-tend')?.value;
+    if (id) { SFX.click(); poke({ counter: { id, add } }); }
+  };
+  document.getElementById('poke-tend-up')?.addEventListener('click', () => tendPoke(1));
+  document.getElementById('poke-tend-down')?.addEventListener('click', () => tendPoke(-1));
+  document.getElementById('poke-char-btn')?.addEventListener('click', () => {
+    const id = document.getElementById('poke-char')?.value;
+    if (!id) return;
+    SFX.click();
+    const relRaw = document.getElementById('poke-rel')?.value;
+    const loc = document.getElementById('poke-loc')?.value?.trim();
+    const memory = document.getElementById('poke-mem')?.value?.trim();
+    poke({
+      char: {
+        id,
+        met: !!document.getElementById('poke-met')?.checked,
+        alive: !!document.getElementById('poke-alive')?.checked,
+        relSet: relRaw === '' ? undefined : Number(relRaw),
+        loc: loc || undefined,
+        memory: memory || undefined,
+      },
+    });
+  });
+  document.getElementById('poke-reset-btn')?.addEventListener('click', () => {
+    SFX.click();
+    resetInspectedRun();
+    refreshWorldPanel();
+  });
+}
+
+function callingUnlocked(c) {
+  return !c.hidden || !!c.unlockCond?.(meta);
+}
+
+function debugScreen({ debug = false } = {}) {
   setBiomeGlow('#3f3a58'); setParticles('dust');
   const spriteMini = html => `<div class="dbg-sprite">${html || '—'}</div>`;
+  const secretSkillIds = new Set(
+    Object.values(SUBCLASSES).filter(s => s.secret && s.skill).map(s => s.skill)
+  );
 
   // classes + their subclass trees
-  const classCards = Object.values(CLASSES).map(c => {
-    const subs = Object.values(SUBCLASSES).filter(s => s.parent === c.id || SUBCLASSES[s.parent]?.parent === c.id);
-    const t1 = Object.values(SUBCLASSES).filter(s => s.parent === c.id);
+  const classCards = Object.values(CLASSES).filter(c => debug || callingUnlocked(c)).map(c => {
+    const t1 = Object.values(SUBCLASSES).filter(s => s.parent === c.id && (debug || !s.secret));
     const subHtml = t1.map(s => {
       const deeper = s.next ? SUBCLASSES[s.next] : null;
       return `<div class="dbg-sub ${s.secret ? 'secret' : ''}">
@@ -157,7 +461,7 @@ function debugScreen() {
       </div>`;
     }).join('');
     return `<div class="dbg-card" style="--accent:${c.accent}">
-      <div class="dbg-head">${spriteMini(heroSpriteHtml(c.id, 48) || ICONS[c.id])}<div><b>${c.name}</b>${c.hidden ? ' <span class="tag">hidden</span>' : ''}<div class="dbg-dim">${c.resource.name} · ${c.weapons.join(', ')}</div></div></div>
+      <div class="dbg-head">${spriteMini(heroSpriteHtml(c.id, 48) || ICONS[c.id])}<div><b>${c.name}</b>${debug && c.hidden ? ' <span class="tag">hidden</span>' : ''}<div class="dbg-dim">${c.resource.name} · ${c.weapons.join(', ')}</div></div></div>
       <div class="dbg-subs">${subHtml}</div>
     </div>`;
   }).join('');
@@ -165,7 +469,15 @@ function debugScreen() {
   // skills grouped by class
   const skillClasses = [...new Set(Object.values(SKILLS).map(s => s.class))];
   const skillHtml = skillClasses.map(cls => {
-    const list = Object.values(SKILLS).filter(s => s.class === cls);
+    const list = Object.values(SKILLS).filter(s => {
+      if (s.class !== cls) return false;
+      if (debug) return true;
+      if (cls === 'universal' || cls === 'special') return true;
+      const parent = CLASSES[cls];
+      if (!parent || !callingUnlocked(parent)) return false;
+      return !secretSkillIds.has(s.id);
+    });
+    if (!list.length) return '';
     const label = CLASSES[cls]?.name || (cls === 'universal' ? 'Universal' : cls === 'special' ? 'Exclusive / Drop' : cls);
     return `<div class="dbg-group"><h4>${label} <span class="dbg-dim">(${list.length})</span></h4>
       ${list.map(s => `<div class="dbg-row"><b>${s.name}</b> <span class="tag">${s.cost || 0}${s.charge ? ' +' + s.charge + '⚡' : ''}</span> <span class="tag">${s.target}</span>${s.power ? ` <span class="dbg-dim">${s.power}% ${s.stat}</span>` : ''}<div class="dbg-dim">${s.desc}</div></div>`).join('')}
@@ -207,10 +519,11 @@ function debugScreen() {
   const wanderHtml = WANDERING_ENEMIES.length ? `<div class="dbg-group"><h4>Wandering <span class="dbg-dim">(${WANDERING_ENEMIES.length} · any biome)</span></h4>
     <div class="dbg-enemy-grid">${WANDERING_ENEMIES.map(e => enemyCard(e, { note: 'wandering' })).join('')}</div>
   </div>` : '';
-  const bossHtml = `<div class="dbg-group"><h4>Bosses <span class="dbg-dim">(${Object.keys(BOSSES).length} + ${Object.keys(ALT_BOSSES).length} alts${SECRET_BOSS ? ' + secret' : ''})</span></h4>
+  const showSecretBoss = debug && SECRET_BOSS;
+  const bossHtml = `<div class="dbg-group"><h4>Bosses <span class="dbg-dim">(${Object.keys(BOSSES).length} + ${Object.keys(ALT_BOSSES).length} alts${showSecretBoss ? ' + secret' : ''})</span></h4>
     <div class="dbg-enemy-grid">${Object.entries(BOSSES).map(([f, b]) => enemyCard(b, { boss: true, note: `F${f}` })).join('')}
     ${Object.entries(ALT_BOSSES).map(([f, b]) => enemyCard(b, { boss: true, note: `F${f} ALT` })).join('')}
-    ${SECRET_BOSS ? enemyCard(SECRET_BOSS, { boss: true, note: 'secret · honest path' }) : ''}</div>
+    ${showSecretBoss ? enemyCard(SECRET_BOSS, { boss: true, note: 'secret · honest path' }) : ''}</div>
   </div>`;
 
   // events / NPC encounters grouped by category
@@ -228,6 +541,8 @@ function debugScreen() {
     if (req.class) return `${CLASSES[req.class]?.name || req.class} only`;
     if (req.flag) return `needs flag:${req.flag}`;
     if (req.notFlag) return `blocked by flag:${req.notFlag}`;
+    if (req.sigil) return `needs sigil:${req.sigil}`;
+    if (req.knowledge) return `needs knowledge:${req.knowledge}`;
     if (req.item) return `needs ${itemName(req.item)}`;
     return 'requirement';
   };
@@ -276,6 +591,7 @@ function debugScreen() {
     if (o.upgradeWeapon) parts.push(o.upgradeScaled ? 'weapon upgrade (scales with floor)' : 'weapon upgrade (+4 dmg)');
     if (o.flag) parts.push(`set flag:${o.flag}`);
     if (o.clearFlag) parts.push(`clear flag:${o.clearFlag}`);
+    if (o.world) parts.push('world-state change');
     if (o.sigil) parts.push(`sigil: ${o.sigil}`);
     if (o.revealFloors) parts.push(`reveal next ${o.revealFloors} floors`);
     if (o.setFuture) parts.push('set next floor path category');
@@ -334,6 +650,9 @@ function debugScreen() {
           `<span class="tag">${e.biome || 'any'}</span>`,
           e.once ? '<span class="tag">once</span>' : '',
           e.cond ? '<span class="tag">conditional</span>' : '',
+          e.when ? '<span class="tag">when</span>' : '',
+          e.variants ? '<span class="tag">variants</span>' : '',
+          e.family ? `<span class="tag">${e.family}</span>` : '',
           e.comeback ? '<span class="tag">comeback</span>' : '',
           e.shop ? '<span class="tag">shop</span>' : '',
           NPC_DUELS.has(e.id) ? '<span class="tag" style="color:var(--gold)">NPC duel</span>'
@@ -364,7 +683,7 @@ function debugScreen() {
         <div><b>${e.npc?.name || e.title}</b> <span class="tag" style="color:var(--gold)">NPC</span>
           <div class="dbg-dim">${e.title}</div></div></div>
       <div class="dbg-dim" style="margin:6px 0">${e.npc?.blurb || e.text.slice(0, 140)}…</div>
-      ${formatChoices(e)}
+      ${debug ? formatChoices(e) : ''}
     </div>`;
   }).join('');
   const farmerStrip = ['farmer_a', 'farmer_b', 'farmer_c', 'farmer_d', 'farmer_e', 'farmer_f']
@@ -374,7 +693,9 @@ function debugScreen() {
 
   app.innerHTML = '';
   const scr = el(`<div class="screen dbg-screen">
-    <div class="select-header"><h2>Compendium / Debug</h2><p>Every class, technique, relic, item, enemy, boss, NPC, and event in the tower.</p></div>
+    <div class="select-header"><h2>${debug ? 'Compendium / Debug' : 'Compendium'}</h2><p>${debug
+      ? 'Every class, technique, relic, item, enemy, boss, NPC, and event in the tower.'
+      : 'Callings, techniques, relics, and creatures of the tower. Hidden paths stay hidden.'}</p></div>
     <div style="text-align:center;margin-bottom:12px"><button class="btn small" id="dbg-back">← Title</button></div>
     <div class="dbg-tabs">
       <button class="btn small primary" data-tab="classes">Classes</button>
@@ -383,7 +704,7 @@ function debugScreen() {
       <button class="btn small" data-tab="relics">Relics &amp; Items</button>
       <button class="btn small" data-tab="enemies">Bestiary</button>
       <button class="btn small" data-tab="npcs">NPCs</button>
-      <button class="btn small" data-tab="events">Events</button>
+      ${debug ? '<button class="btn small" data-tab="events">Events</button><button class="btn small" data-tab="world">World</button>' : ''}
     </div>
     <div class="dbg-panel" id="dbg-classes"><div class="dbg-grid">${classCards}</div></div>
     <div class="dbg-panel" id="dbg-skills" style="display:none">${skillHtml}</div>
@@ -395,19 +716,28 @@ function debugScreen() {
       <div class="dbg-group"><h4>Farmstead faces</h4><div class="dbg-enemy-grid">${farmerStrip}</div></div>
       <div class="dbg-group"><h4>The Old Man</h4><div class="dbg-enemy-grid">${oldmanStrip}</div></div>
     </div>
-    <div class="dbg-panel" id="dbg-events" style="display:none">${eventHtml}</div>
+    ${debug ? `<div class="dbg-panel" id="dbg-events" style="display:none">${eventHtml}</div>
+    <div class="dbg-panel" id="dbg-world" style="display:none">${worldDebugHtml()}</div>` : ''}
   </div>`);
   app.appendChild(scr);
-  const panels = { classes: 'dbg-classes', skills: 'dbg-skills', equip: 'dbg-equip', relics: 'dbg-relics', enemies: 'dbg-enemies', npcs: 'dbg-npcs', events: 'dbg-events' };
+  const panels = { classes: 'dbg-classes', skills: 'dbg-skills', equip: 'dbg-equip', relics: 'dbg-relics', enemies: 'dbg-enemies', npcs: 'dbg-npcs' };
+  if (debug) { panels.events = 'dbg-events'; panels.world = 'dbg-world'; }
   scr.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => {
     SFX.click();
     scr.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('primary', x === b));
     for (const [tab, id] of Object.entries(panels)) document.getElementById(id).style.display = tab === b.dataset.tab ? '' : 'none';
   });
-  scr.querySelector('#dbg-back').onclick = () => { SFX.click(); titleScreen(); };
+  scr.querySelector('#dbg-back').onclick = () => { SFX.click(); endInspectSession(); titleScreen(); };
+  if (debug) bindWorldPoke();
+}
+
+function showDevChrome() {
+  try { return new URLSearchParams(location.search).has('dev'); }
+  catch { return false; }
 }
 
 function titleScreen() {
+  endInspectSession();
   const saved = loadRun();
   const vol = Math.round(Music.getVolume() * 100);
   const vista = titleBgUrl();
@@ -420,7 +750,7 @@ function titleScreen() {
       <div class="title-veil" aria-hidden="true"></div>
 
       <div class="title-corner-tools">
-        <a class="btn ghost small" href="enemy-boxes.html" id="btn-box-editor" title="Open enemy sprite box editor">Sprite boxes</a>
+        ${showDevChrome() ? '<a class="btn ghost small" href="enemy-boxes.html" id="btn-box-editor" title="Open enemy sprite box editor">Sprite boxes</a>' : ''}
       </div>
 
       <div class="title-hero">
@@ -489,13 +819,13 @@ async function openPauseMenu() {
       <span id="pause-vol-val" class="vol-val">${Math.round(Music.getVolume() * 100)}</span>
       <button class="btn small ghost" id="pause-mute">${isMuted() ? '🔇' : '🔊'}</button>
     </div>
-    <label class="audio-row pause-audio pause-autoplay">
+    ${showDevChrome() || isAutoPlay() ? `<label class="audio-row pause-audio pause-autoplay">
       <span>🧪 Auto-play</span>
       <input type="checkbox" id="pause-autoplay" ${isAutoPlay() ? 'checked' : ''} />
       <span class="pause-autoplay-hint">${coopS
         ? 'This device only — your turns &amp; votes (not a party setting)'
-        : 'Testing — auto-pick cards &amp; combat'}</span>
-    </label>
+        : 'Dev — auto-pick cards &amp; combat'}</span>
+    </label>` : ''}
     <div class="pick-grid">
       <button class="pick-option" data-close="resume"><span class="po-name">Resume the climb</span></button>
       ${coopS ? '' : `<button class="pick-option" data-close="save"><span class="po-name">Save &amp; return to title</span><span class="po-desc">Your climb waits where you left it.</span></button>`}
@@ -685,7 +1015,7 @@ function potentialBand(percentile) {
 }
 
 function creationFlow(coopContext = null) {
-  const pick = { raceId: 'human', classId: 'warrior', originId: ORIGINS[0].id, appearanceId: defaultAppearanceId('warrior'), fateRace: false, fateClass: false };
+  const pick = { raceId: 'human', classId: 'warrior', originId: defaultOriginId('warrior'), appearanceId: defaultAppearanceId('warrior'), fateRace: false, fateClass: false };
   let step = 0; // 0 race, 1 class, 2 origin, 3 name
   let rerolls = 0;
   let gen = null;
@@ -864,7 +1194,10 @@ function creationFlow(coopContext = null) {
       function selectItem(id) {
         if (id === pick[key]) return;
         pick[key] = id;
-        if (isClass) pick.appearanceId = defaultAppearanceId(id);
+        if (isClass) {
+          pick.appearanceId = defaultAppearanceId(id);
+          pick.originId = defaultOriginId(id);
+        }
         if (fateKey) pick[fateKey] = false;
         SFX.click();
         center();
@@ -880,7 +1213,10 @@ function creationFlow(coopContext = null) {
         const pool = list.filter(selectable);
         const chosen = pool[Math.floor(Math.random() * pool.length)];
         pick[key] = chosen.id;
-        if (isClass) pick.appearanceId = defaultAppearanceId(chosen.id);
+        if (isClass) {
+          pick.appearanceId = defaultAppearanceId(chosen.id);
+          pick.originId = defaultOriginId(chosen.id);
+        }
         pick[fateKey] = true;
         SFX.unlock();
         toast(isClass ? 'Fate seals your calling.' : 'Fate seals your bloodline.', 'good');
@@ -1206,7 +1542,7 @@ function coopLobby(myName) {
   coopS._syncRoster?.();
   coopS.net.send({ k: 'reopen' });
 
-  let myPick = { raceId: 'human', classId: 'warrior', originId: ORIGINS[0].id, appearanceId: defaultAppearanceId('warrior'), fateRace: false, fateClass: false };
+  let myPick = { raceId: 'human', classId: 'warrior', originId: defaultOriginId('warrior'), appearanceId: defaultAppearanceId('warrior'), fateRace: false, fateClass: false };
   let myReady = false;
   let decisionMode = 'majority'; // host-controlled (handoff §3)
   const lobbyState = new Map();
@@ -1369,6 +1705,7 @@ function coopLobby(myName) {
         if (kind === 'class') {
           myPick.fateClass = false;
           myPick.appearanceId = defaultAppearanceId(myPick.classId);
+          myPick.originId = defaultOriginId(myPick.classId);
         }
         if (kind === 'race' || kind === 'class') {
           gen = rollStart(myPick.classId, myPick.raceId);
@@ -1391,6 +1728,7 @@ function coopLobby(myName) {
     } else if (kind === 'class') {
       myPick.classId = randomClassId(meta);
       myPick.appearanceId = defaultAppearanceId(myPick.classId);
+      myPick.originId = defaultOriginId(myPick.classId);
       myPick.fateClass = true;
     }
     gen = rollStart(myPick.classId, myPick.raceId);
@@ -1622,6 +1960,7 @@ function statusOf(run, act) {
     appraisal: run.appraisal || null,
     title: meta.equippedTitle || null,
     nameStyle: meta.equippedNameStyle || null,
+    elig: eligibilitySnapshot(run),
   };
 }
 
@@ -1753,14 +2092,14 @@ async function resumePending(stage, p) {
     return renderTravelMap(stage, p.cards, null, travelCtx());
   }
   if (p.kind === 'event' && p.eventId) {
-    const ev = EVENTS.find(e => e.id === p.eventId);
+    const ev = presentEvent(EVENTS.find(e => e.id === p.eventId), run);
     if (ev) {
       run.eventSparkle = !!p.sparkle;
       return renderEventCard(stage, ev);
     }
   }
   if (p.kind === 'shop' && p.eventId) {
-    const ev = EVENTS.find(e => e.id === p.eventId) || { id: p.eventId, title: 'Merchant', shop: true };
+    const ev = presentEvent(EVENTS.find(e => e.id === p.eventId) || { id: p.eventId, title: 'Merchant', shop: true }, run);
     return shopScreen(stage, ev, { resumeStock: p.stock || null });
   }
   if (p.kind === 'combat' && p.enemies?.length) {
@@ -1860,23 +2199,15 @@ async function nextFloor() {
     if (run.safeFloorStreak >= 5) unlock('no_death_5');
   }
 
-  heal(run, run.maxHp * CONFIG.recovery.floorHealPct);
-  restoreMana(run, run.maxMp * CONFIG.recovery.floorManaPct);
-
-  if (run.foodBuff?.floorsLeft != null) {
-    run.foodBuff.floorsLeft -= 1;
-    if (run.foodBuff.floorsLeft <= 0) {
-      run.foodBuff = null;
-      toast('The farm meal\'s warmth fades.', 'sys');
-    }
-  }
-
+  applyFloorBreath(run);
+  const hadFood = run.foodBuff?.floorsLeft != null;
+  tickFoodBuff(run);
+  if (hadFood && !run.foodBuff) toast('The farm meal\'s warmth fades.', 'sys');
   const relics = relicItems(run);
   const lowHeal = relics.find(r => r.lowHpHeal);
-  if (lowHeal && run.hp / run.maxHp < 0.3) {
-    heal(run, run.maxHp * lowHeal.lowHpHeal);
-    toast(`${lowHeal.name} stirs — you breathe easier.`, 'info');
-  }
+  const hpBeforeRelic = run.hp;
+  applyLowHpRelic(run);
+  if (lowHeal && run.hp > hpBeforeRelic) toast(`${lowHeal.name} stirs — you breathe easier.`, 'info');
 
   if (run.fame >= 50) unlock('famous');
   if ((run.guardCount || 0) >= 15) unlock('guardian');
@@ -1888,6 +2219,9 @@ async function nextFloor() {
     saveMeta(meta);
   }
   if (run.floor > meta.bestFloor) { meta.bestFloor = run.floor; saveMeta(meta); }
+
+  previewUpcomingBoss(run);
+  announceCallings();
 
   saveRun(run);
   Music.play(BIOME_MUSIC[run.biomeId] || 'forest');
@@ -1901,7 +2235,7 @@ async function nextFloor() {
           <span class="tag card-floor-tag">FLOOR ${run.floor}</span></div>
         <div class="card-body">
           <h3>${biome.name}</h3>
-          <div class="card-text">${biome.flavor}</div>
+          <div class="card-text">${biomeIntroText(biome, run)}</div>
           <div class="card-choices"><button class="choice-btn" id="go"><span class="choice-label">Step through the gate</span><span class="choice-hint">⟶</span></button></div>
         </div>
       </div></div>`;
@@ -2004,105 +2338,16 @@ function partnerSheetModal(partnerId) {
 }
 
 /* ---------- path-card generation ---------- */
-function rollCardsPerDraw(rng) {
-  const two = CONFIG.events.cardsPerDrawTwoChance ?? 0.1;
-  const four = CONFIG.events.cardsPerDrawFourChance ?? 0.1;
-  const r = rng.next();
-  if (r < two) return 2;
-  if (r < two + four) return 4;
-  return CONFIG.events.cardsPerDraw || 3;
-}
-
+/** Live owner of rng.advance() for travel-map deals. Telemetry must not call this. */
 function generateCards(rng, forParty = null) {
-  const biome = biomeForFloor(run.floor);
-  const cards = [];
-  const usedEvents = [];
-  const n = rollCardsPerDraw(rng);
-  // one slot is combat-weighted; others draw distinct events.
-  // early floors lean toward events so a fresh climber can build tools before
-  // the tower gets serious (combat stays deadly — you're meant to prepare for it)
-  const combatChance = run.floor <= 3 ? 0.35 : run.floor <= 6 ? 0.6 : 0.75;
-  const combatSlot = rng.chance(combatChance) ? rng.int(0, n - 1) : -1;
-  for (let i = 0; i < n; i++) {
-    if (i === combatSlot) {
-      const plan = pickEnemyPlan(rng, biome, forParty?.partySize || 1);
-      cards.push({
-        kind: 'encounter', category: 'combat',
-        enemies: forParty
-          ? buildPartyEnemies(plan.specs, plan.hpMult)
-          : plan.specs.map(g => ({ ...g })),
-        hpMult: plan.hpMult,
-        sparkle: false,
-      });
-      continue;
-    }
-    const ev = drawEvent(rng, run, { exclude: usedEvents });
-    usedEvents.push(ev.id);
-    // ✦ star events: rare affinity shimmer (~10%). Blessed rewards when taken.
-    let affine = false;
-    if (ev.affinity) {
-      const classes = forParty?.classes || [run.classId];
-      if (ev.affinity.classes?.some(c => classes.includes(c))) affine = true;
-      if (ev.affinity.races?.includes(run.raceId)) affine = true;
-      if (ev.affinity.underdog && run.underdog) affine = true;
-    }
-    const card = {
-      kind: 'event',
-      category: ev.category || 'unknown',
-      eventId: ev.id,
-      sparkle: affine && rng.chance(CONFIG.events.sparkleChance ?? 0.1),
-    };
-    // ~10%: veil the identity. drawEvent already picks from the full eligible
-    // pool — mystery is a UI flag, not a separate category filter.
-    if (rng.chance(CONFIG.events.mysteryNodeChance ?? 0.10)) card.hidden = true;
-    cards.push(card);
-  }
-  // §2: honor a waypoint (cartographer) or a map-path hint — force one choice
-  // to that category. Cartographer waypoints win if both are set.
-  const forceCat = run.forcedNextCategory || run.mapHintCategory || null;
-  delete run.forcedNextCategory;
-  delete run.mapHintCategory;
-  if (forceCat) {
-    if (forceCat === 'combat') {
-      const plan = pickEnemyPlan(rng, biome, forParty?.partySize || 1);
-      const enc = {
-        kind: 'encounter', category: 'combat',
-        enemies: forParty
-          ? buildPartyEnemies(plan.specs, plan.hpMult)
-          : plan.specs.map(g => ({ ...g })),
-        hpMult: plan.hpMult,
-        sparkle: false,
-      };
-      let slot = cards.findIndex(c => c.kind !== 'encounter');
-      if (slot < 0) slot = 0;
-      cards[slot] = enc;
-    } else {
-      const pool = EVENTS.filter(e => (e.biome === 'any' || e.biome === run.biomeId)
-        && e.category === forceCat && !(e.once && run.seenEvents.includes(e.id))
-        && (!e.cond || e.cond(run)) && !usedEvents.includes(e.id));
-      if (pool.length) {
-        const ev = rng.pick(pool);
-        usedEvents.push(ev.id);
-        let slot = cards.findIndex(c => c.kind === 'event' && c.category !== forceCat);
-        if (slot < 0) slot = cards.findIndex(c => c.kind === 'event');
-        if (slot < 0) slot = 0;
-        // Waypoints are marked paths, not ✦ star blessings — only affinity can star.
-        let affine = false;
-        if (ev.affinity) {
-          const classes = forParty?.classes || [run.classId];
-          if (ev.affinity.classes?.some(c => classes.includes(c))) affine = true;
-          if (ev.affinity.races?.includes(run.raceId)) affine = true;
-          if (ev.affinity.underdog && run.underdog) affine = true;
-        }
-        cards[slot] = {
-          kind: 'event', category: ev.category || forceCat, eventId: ev.id,
-          sparkle: affine && rng.chance(CONFIG.events.sparkleChance ?? 0.1),
-        };
-      }
-    }
-  }
-  rng.advance();
-  return cards;
+  return dealLiveFloorCards(rng, run, {
+    partySize: forParty?.partySize || 1,
+    classes: forParty?.classes,
+    party: forParty?.party,
+    hydrateEnemies: forParty
+      ? (plan) => buildPartyEnemies(plan.specs, plan.hpMult)
+      : null,
+  });
 }
 
 function renderCardChoice(stage, cards, coopCtx = null) {
@@ -2152,7 +2397,7 @@ function renderCardChoice(stage, cards, coopCtx = null) {
       if (locked) return;
       const i = +cardEl.dataset.i;
       SFX.click();
-      if (!coopCtx) return resolveCard(stage, cards[i]);
+      if (!coopCtx) return resolveCard(stage, cards[i], i);
       const prev = picks.get(coopS.you);
       if (prev === i) return; // same card, nothing to change
       if (prev != null && coopCtx.mode === 'first') return; // first-pick locks your hand
@@ -2169,12 +2414,13 @@ function renderCardChoice(stage, cards, coopCtx = null) {
     coopCtx.bind({ picks, renderVotes, lock: idx => {
       locked = true;
       stage.querySelectorAll('.pick-card').forEach(c => c.classList.toggle('chosen', +c.dataset.i === idx));
-      setTimeout(() => resolveCard(stage, cards[idx]), 700);
+      setTimeout(() => resolveCard(stage, cards[idx], idx), 700);
     } });
   }
 }
 
-function resolveCard(stage, card) {
+function resolveCard(stage, card, cardIndex = null) {
+  if (cardIndex != null) climbTrace?.card(cardIndex);
   if (card.kind === 'encounter') {
     pushEventHistory(run, 'combat');
     clearPending();
@@ -2184,12 +2430,13 @@ function resolveCard(stage, card) {
     }
     return encounterFloor(stage, card.enemies, card.hpMult || 1);
   }
-  const ev = EVENTS.find(e => e.id === card.eventId);
+  const ev = presentEvent(EVENTS.find(e => e.id === card.eventId), run);
   run.seenEvents.push(ev.id);
   run.eventSparkle = !!card.sparkle;
   noteEventTags(ev);
   pushEventHistory(run, ev.category || 'unknown');
-  setPending(ev.shop ? 'shop' : 'event', { eventId: ev.id, sparkle: !!card.sparkle });
+  recordEvent(run, ev);
+  setPending(ev.shop ? 'shop' : 'event', { eventId: ev.id, sparkle: !!card.sparkle, variantId: ev.variantId || null });
   saveRun(run);
   renderEventCard(stage, ev);
 }
@@ -2233,23 +2480,7 @@ function logBossPowerCheck(boss, { gate = true } = {}) {
 /* ---------- combat encounter card (Fight / Sneak / Bribe) ---------- */
 /** Budget-aware encounter plan (bodies first; leftover → mild HP pad). */
 function pickEnemyPlan(rng, biome, partySize = 1) {
-  const depth = run.floor - biome.floors[0];
-  let pool = [...(ENEMIES[biome.id] || ENEMIES.hell)];
-  // Wandering trash can appear in any biome.
-  if (WANDERING_ENEMIES?.length && rng.chance(0.38)) {
-    const wander = depth < 4
-      ? WANDERING_ENEMIES.filter(e => !e.elite)
-      : WANDERING_ENEMIES;
-    if (wander.length) pool = pool.concat(wander);
-  }
-  if (depth < 4) pool = pool.filter(e => !e.elite);
-  return planEncounter(rng, {
-    floor: run.floor,
-    biomeStart: biome.floors[0],
-    pool,
-    partySize,
-    allowElite: depth >= 4,
-  });
+  return planFloorEnemies(rng, run, biome, partySize);
 }
 
 /** Specs only — for call sites that still expect a plain group array. */
@@ -2309,40 +2540,29 @@ async function encounterFloor(stage, prebuiltGroup = null, hpMult = 1) {
       t: 'choice', eventId: 'encounter', title: 'Hostiles Ahead',
       label: act === 'fight' ? 'Fight' : act === 'bribe' ? 'Bribe them' : 'Sneak past',
     });
-    if (act === 'fight') {
-      rng2.advance();
-      return fightGroup(stage, group, { text: 'Steel answers steel.', hpMult: planHp });
+    climbTrace?.approach(act);
+    const resolved = resolveEncounterApproach(run, rng2, group, act, { planHp, hooks: { runRng } });
+    saveRun(run);
+    if (resolved.kind === 'fight') {
+      return fightGroup(stage, group, { text: resolved.text, hpMult: planHp });
     }
-    if (act === 'bribe') {
-      run.gold -= bribe;
-      run.bribes = (run.bribes || 0) + 1;
+    if (resolved.kind === 'bribe') {
       if (run.bribes >= 3) unlock('silver_tongue');
-      rng2.advance(); saveRun(run);
-      return showOutcomePanel(stage, [
-        { text: `You toss the purse. They count it — twice, insultingly — and melt back into the dark. (-${bribe} gold)`, cls: 'gold' },
-      ], [], { title: 'Hostiles Ahead', choice: 'Bribe them', source: 'encounter' });
+      return showOutcomePanel(stage, resolved.lines, [], { title: 'Hostiles Ahead', choice: 'Bribe them', source: 'encounter' });
     }
-    // sneak: a hidden check — no numbers shown (handoff §5)
-    const d = derived(run);
-    const sneakDc = 10 + Math.floor(run.floor / 8);
-    const roll = rng2.int(1, 8);
-    const total = d.dex + roll + Math.floor(d.lk / 4);
-    rng2.advance(); saveRun(run);
-    if (total >= sneakDc) {
-      const xp = 10 + Math.floor(run.floor * 1.2);
-      const ups = gainXp(run, xp, runRng(run));
+    if (resolved.kind === 'sneak') {
       await showOutcomePanel(stage, [
-        { text: `You move like a rumor — they never knew you were there. +${xp} XP`, cls: 'good' },
-      ], ups, { title: 'Hostiles Ahead', choice: 'Sneak past', source: 'encounter' });
-    } else {
-      await modal(`<h3>Spotted!</h3><p class="modal-sub">A twig. It's always a twig.</p>
-        <div class="pick-grid"><button class="pick-option" data-close="x"><span class="po-name">They ambush you</span></button></div>`);
-      return fightGroup(stage, group, {
-        text: 'They were waiting for the twig.',
-        modifier: { name: 'Ambushed', desc: 'Enemies strike first.', enemyFirst: true },
-        hpMult: planHp,
-      });
+        { text: `You move like a rumor — they never knew you were there. +${resolved.xp} XP`, cls: 'good' },
+      ], resolved.ups, { title: 'Hostiles Ahead', choice: 'Sneak past', source: 'encounter' });
+      return;
     }
+    await modal(`<h3>Spotted!</h3><p class="modal-sub">A twig. It's always a twig.</p>
+      <div class="pick-grid"><button class="pick-option" data-close="x"><span class="po-name">They ambush you</span></button></div>`);
+    return fightGroup(stage, group, {
+      text: resolved.text,
+      modifier: resolved.modifier,
+      hpMult: planHp,
+    });
   });
 }
 
@@ -2407,52 +2627,21 @@ async function fightGroup(stage, specs, {
 }
 
 async function afterVictory(stage, enemies, gold, xp, { boss = null, reward = null } = {}) {
-  run.kills += enemies.length;
-  run.gold += gold;
-  run.goldEarned += gold;
-  unlock('first_blood');
-  if (run.gold >= 500) unlock('rich');
-  if (enemies.some(e => e.id === 'mimic')) {
-    unlock('mimic');
-    if (run.hp / run.maxHp < 0.3) unlock('mimic_survivor');
-  }
-  if (enemies.some(e => NPC_DUELS.has(e.id))) unlock('npc_duelist');
+  const { lines, elitePending } = applyVictoryRewards(run, enemies, gold, xp, {
+    boss, reward,
+    hooks: {
+      unlock,
+      noteBossCleared: (floor, name) => noteBossCleared(run, floor, name),
+      npcDuels: NPC_DUELS,
+    },
+  });
   if (coopS && !coopS.alone && coopS.partySize >= 3) unlock('party_clear_3');
-
-  const lines = [{ text: `Victory! +${gold} gold, +${xp} XP`, cls: 'gold' }];
-
-  // No free victory heal — HP stays a resource (relics / potions / skills only).
-  const vh = CONFIG.recovery.victoryHealPct
-    ? heal(run, run.maxHp * CONFIG.recovery.victoryHealPct)
-    : 0;
-  if (vh > 0) lines.push({ text: `You bind your wounds in the quiet after. (+${vh} HP)`, cls: 'good' });
-  const victoryHeal = relicItems(run).find(r => r.victoryHeal);
-  if (victoryHeal) {
-    const amt = heal(run, run.maxHp * victoryHeal.victoryHeal);
-    if (amt) lines.push({ text: `${victoryHeal.name} hums — you recover ${amt} HP.`, cls: 'good' });
-  }
-  const fameRelic = relicItems(run).find(r => r.fameOnVictory);
-  if (fameRelic) { changeFame(run, fameRelic.fameOnVictory); lines.push({ text: 'Your lantern carries the tale. (+Fame)', cls: 'good' }); }
-  if (boss) {
-    noteBossCleared(run, run.floor, boss.name);
-    heal(run, run.maxHp * CONFIG.recovery.bossVictoryHealPct);
-    run.mp = run.maxMp;
-    changeFame(run, 6);
-    lines.push({ text: 'The gate\'s blessing washes over you — wounds knit, strength returns, and the tower learns your name. (+Fame)', cls: 'good' });
-    for (const msg of applySkillBreakpoints(run)) lines.push({ text: msg.text, cls: msg.cls || 'good' });
-    logBossPowerCheck(boss, { gate: false });
-  } else if (enemies.some(e => e.elite)) {
-    // Tiny UNIQUE chance from elite packs on deep floors
-    const rngE = runRng(run);
-    const eliteChance = Math.min(0.06, 0.01 + Math.max(0, run.floor - 15) * 0.0015);
-    if (rngE.chance(eliteChance)) {
-      const u = rollUnique(rngE, run, { preferUseful: true });
-      if (u) {
-        lines.push({ text: 'Among the elite\'s effects, something older than the tower gleams.', cls: 'item' });
-        await offerEquipment(u, lines);
-      }
-    }
-    rngE.advance();
+  if (boss) logBossPowerCheck(boss, { gate: false });
+  else if (elitePending) {
+    await applyEliteVictoryFind(run, lines, {
+      runRng,
+      onItem: (item, ls) => offerEquipment(item, ls),
+    });
   }
   SFX.victory();
   const ups = gainXp(run, xp, runRng(run));
@@ -2509,193 +2698,88 @@ async function applyRewardOption(opt, lines) {
   }
 }
 
+async function pickSpoilsOption(reward, options, skillCost) {
+  let chosen = options[0];
+  const anyAffordable = options.some(op => skillCost(op) <= run.gold);
+  const affordable = options.filter(op => skillCost(op) <= run.gold);
+  if (isAutoPlay() && (affordable.length || options.length)) {
+    const pool = affordable.length ? affordable : options;
+    return pool.reduce((best, op) => {
+      const score = op.kind === 'skill' || op.skill
+        ? skillAutoScore(SKILLS[op.kind === 'skill' ? op.id : op.skill])
+        : gearScore(itemById(op.id));
+      const bestScore = best.kind === 'skill' || best.skill
+        ? skillAutoScore(SKILLS[best.kind === 'skill' ? best.id : best.skill])
+        : gearScore(itemById(best.id));
+      return score > bestScore ? op : best;
+    }, pool[0]);
+  }
+  await modalCustom((m, close) => {
+    m.innerHTML = `<h3>Spoils</h3><p class="modal-sub">${reward?.chooseLabel || 'Take one:'}</p>
+      <div class="pick-grid">${options.map((op, i) => {
+        const nm = op.kind === 'skill' ? SKILLS[op.id]?.name : itemById(op.id)?.name;
+        const desc = op.kind === 'skill' ? SKILLS[op.id]?.desc : itemById(op.id)?.desc;
+        const cost = skillCost(op);
+        const short = anyAffordable && cost > run.gold;
+        return `<button class="pick-option" data-i="${i}" ${short ? 'disabled' : ''}>
+          <span class="po-tag tag">${rewardOptionTag(op)}${cost ? ` · ${cost}g` : ''}</span>
+          <div class="po-name">${nm || op.id}</div>
+          <div class="po-desc">${desc || ''}${cost ? `<br/><span style="color:var(--gold-bright)">Learning fee: ${cost} gold${short ? ' — beyond your purse' : ''}.</span>` : ''}</div></button>`;
+      }).join('')}</div>`;
+    m.querySelectorAll('[data-i]:not([disabled])').forEach(b => b.onclick = () => { chosen = options[+b.dataset.i]; close(); });
+  });
+  return chosen;
+}
+
 async function grantReward(reward, lines, { paySkills = false } = {}) {
-  if (!reward) return;
-  const rng = runRng(run);
-  if (reward.gold) { run.gold += reward.gold; run.goldEarned += reward.gold; lines.push({ text: `+${reward.gold} gold`, cls: 'gold' }); }
-  if (reward.fame) { const a = changeFame(run, reward.fame); lines.push({ text: `+${a} Fame`, cls: 'good' }); }
-  let ups = [];
-  if (reward.xp) {
-    ups = gainXp(run, reward.xp, rng);
-    lines.push({ text: `+${reward.xp} XP`, cls: 'good' });
-  }
-  if (reward.uniqueItem) {
-    const u = rollUnique(rng, run, { preferUseful: true });
-    if (u) await offerEquipment(u, lines);
-    else lines.push({ text: 'The UNIQUE prize has already been claimed by another climber.', cls: 'bad' });
-  }
-  if (reward.wrldItem) await grantWrldFind(lines, typeof reward.wrldItem === 'object' ? reward.wrldItem : {});
-  if (reward.guaranteed?.length) {
-    const total = reward.guaranteed.reduce((s, g) => s + (g.weight || 1), 0);
-    let roll = rng.next() * total;
-    let pick = reward.guaranteed[0];
-    for (const g of reward.guaranteed) { roll -= (g.weight || 1); if (roll <= 0) { pick = g; break; } }
-    await applyRewardOption(pick, lines);
-    if (pick.kind === 'item' && itemById(pick.id)?.rarity === 'unique') unlock('unique_gear');
-    if (pick.kind === 'item' && ['legendary', 'unique', 'wrld'].includes(itemById(pick.id)?.rarity)) unlock('legendary');
-  }
-  if (reward.bonusChance && reward.bonus?.length && rng.chance(reward.bonusChance)) {
-    const bonus = rng.pick(reward.bonus);
-    if (bonus.kind === 'relic') {
-      const r = rollRelic(rng, run.relics);
-      if (r) { run.relics.push(r.id); lines.push({ text: `Bonus relic: ${r.name}`, cls: 'item' }); SFX.unlock(); }
-    } else {
-      lines.push({ text: 'Something extra loosens from the fight…', cls: 'item' });
-      await applyRewardOption(bonus, lines);
-    }
-  }
-  if (reward.farmerLoot) {
-    const gold = rng.int(3, 12);
-    run.gold += gold; run.goldEarned += gold;
-    lines.push({ text: `A few coins from the trough: +${gold} gold`, cls: 'gold' });
-    const plain = ['farm_bread', 'farm_cheese', 'farm_stew'];
-    const n = rng.int(1, 3);
-    for (let i = 0; i < n; i++) {
-      const id = rng.pick(plain);
-      run.consumables.push(id);
-      lines.push({ text: `Received: ${itemById(id).name}`, cls: 'item' });
-    }
-    if (rng.chance(0.4)) {
-      const loot = rng.pick(['farmer_hat', 'farmer_tunic', 'farmer_pants', 'farmer_sickle', 'farmer_pitchfork', 'farmer_rake', 'harvest_swing']);
-      if (SKILLS[loot]) await applyRewardOption({ kind: 'skill', id: loot }, lines);
-      else await applyRewardOption({ kind: 'item', id: loot }, lines);
-    }
-  }
-  if (reward.npcDuelLoot) {
-    const classes = Array.isArray(reward.npcDuelLoot)
-      ? reward.npcDuelLoot
-      : (reward.npcDuelLoot.classes || []);
-    const item = npcDuelLoot(rng, run, {
-      classes,
-      coop: coopS,
-      floor: run.floor,
-    });
-    if (item) {
-      lines.push({ text: 'A climber\'s spoils — hard-won.', cls: 'item' });
-      await offerEquipment(item, lines);
-      if (item.rarity === 'unique') unlock('unique_gear');
-      if (['legendary', 'unique', 'wrld'].includes(item.rarity)) unlock('legendary');
-    } else {
-      lines.push({ text: 'Their pack is empty — the tower already claimed the prize.', cls: 'bad' });
-    }
-  }
-  if (reward.options?.length) {
-    let chosen = reward.options[0];
-    // Combat spoils: techniques carry an acquisition fee by tier — the tower
-    // teaches nothing for free. Items and relics stay plain spoils.
-    const skillCost = op => {
-      if (!paySkills || (op.kind !== 'skill' && !op.skill)) return 0;
-      const sk = SKILLS[op.kind === 'skill' ? op.id : op.skill];
-      return sk ? (CONFIG.skillReward?.costByTier?.[sk.tier || 1] ?? 0) : 0;
-    };
-    const anyAffordable = reward.options.some(op => skillCost(op) <= run.gold);
-    const affordable = reward.options.filter(op => skillCost(op) <= run.gold);
-    if (isAutoPlay() && (affordable.length || reward.options.length)) {
-      const pool = affordable.length ? affordable : reward.options;
-      chosen = pool.reduce((best, op) => {
-        const score = op.kind === 'skill' || op.skill
-          ? skillAutoScore(SKILLS[op.kind === 'skill' ? op.id : op.skill])
-          : gearScore(itemById(op.id));
-        const bestScore = best.kind === 'skill' || best.skill
-          ? skillAutoScore(SKILLS[best.kind === 'skill' ? best.id : best.skill])
-          : gearScore(itemById(best.id));
-        return score > bestScore ? op : best;
-      }, pool[0]);
-    } else {
-      await modalCustom((m, close) => {
-        m.innerHTML = `<h3>Spoils</h3><p class="modal-sub">${reward.chooseLabel || 'Take one:'}</p>
-          <div class="pick-grid">${reward.options.map((op, i) => {
-            const nm = op.kind === 'skill' ? SKILLS[op.id]?.name : itemById(op.id)?.name;
-            const desc = op.kind === 'skill' ? SKILLS[op.id]?.desc : itemById(op.id)?.desc;
-            const cost = skillCost(op);
-            const short = anyAffordable && cost > run.gold;
-            return `<button class="pick-option" data-i="${i}" ${short ? 'disabled' : ''}>
-              <span class="po-tag tag">${rewardOptionTag(op)}${cost ? ` · ${cost}g` : ''}</span>
-              <div class="po-name">${nm || op.id}</div>
-              <div class="po-desc">${desc || ''}${cost ? `<br/><span style="color:var(--gold-bright)">Learning fee: ${cost} gold${short ? ' — beyond your purse' : ''}.</span>` : ''}</div></button>`;
-          }).join('')}</div>`;
-        m.querySelectorAll('[data-i]:not([disabled])').forEach(b => b.onclick = () => { chosen = reward.options[+b.dataset.i]; close(); });
-      });
-    }
-    const fee = Math.min(skillCost(chosen), run.gold);
-    if (fee > 0) {
-      run.gold -= fee;
-      lines.push({ text: `Technique learning fee: -${fee} gold`, cls: 'bad' });
-    }
-    await applyRewardOption(chosen, lines);
-  } else if (!reward.guaranteed && !reward.farmerLoot && !reward.npcDuelLoot) {
-    await applyRewardOption(reward, lines);
-  }
-  rng.advance();
+  if (!reward) return [];
+  const ups = await grantRewardShared(run, reward, lines, {
+    runRng,
+    paySkills,
+    coop: coopS,
+    unlock,
+    onItem: (item, ls) => offerEquipment(item, ls),
+    onLearnSkill: (sk) => maybeEquipSkill(sk),
+    chooseOption: (options, { skillCost }) => pickSpoilsOption(reward, options, skillCost),
+  });
   renderHud();
   return ups;
 }
 
 async function bossRelicPick(stage) {
-  const rng2 = runRng(run);
-  const choices = [rollRelic(rng2, run.relics), rollRelic(rng2, run.relics), rollRelic(rng2, run.relics)]
-    .filter((r, i, a) => r && a.findIndex(x => x && x.id === r.id) === i);
-  rng2.advance();
-  saveRun(run);
-  if (choices.length) {
-    const takeRelic = (r) => {
-      run.relics.push(r.id);
-      SFX.unlock();
-      toast(`Relic claimed: ${r.name}`, 'info');
-      saveRun(run);
-    };
-    if (isAutoPlay()) {
-      takeRelic(choices.reduce((a, b) => (gearScore(b) > gearScore(a) ? b : a), choices[0]));
-    } else {
-      await modalCustom((m, close) => {
-        m.innerHTML = `<h3>The Gate Opens</h3><p class="modal-sub">Something glitters in the hoard. Choose one relic.</p>
-          <div class="pick-grid">${choices.map((r, i) => `
-            <button class="pick-option" data-i="${i}">
-              <span class="po-tag tag ${rarityClass(r.rarity)}">${r.rarity}</span>
-              <div class="po-name">${r.name}</div><div class="po-desc">${r.desc}</div>
-            </button>`).join('')}
-          </div>`;
-        m.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
-          takeRelic(choices[+b.dataset.i]);
-          close();
+  await rollBossHoard(run, {
+    runRng,
+    unlock,
+    coop: coopS,
+    onItem: async (item, ls) => {
+      await offerEquipment(item, ls);
+      if (ls.length) toast(ls[0].text, 'info');
+    },
+    chooseRelic: async (choices) => {
+      if (!choices.length) return null;
+      if (isAutoPlay()) return choices.reduce((a, b) => (gearScore(b) > gearScore(a) ? b : a), choices[0]);
+      return new Promise(resolve => {
+        modalCustom((m, close) => {
+          m.innerHTML = `<h3>The Gate Opens</h3><p class="modal-sub">Something glitters in the hoard. Choose one relic.</p>
+            <div class="pick-grid">${choices.map((r, i) => `
+              <button class="pick-option" data-i="${i}">
+                <span class="po-tag tag ${rarityClass(r.rarity)}">${r.rarity}</span>
+                <div class="po-name">${r.name}</div><div class="po-desc">${r.desc}</div>
+              </button>`).join('')}
+            </div>`;
+          m.querySelectorAll('[data-i]').forEach(b => b.onclick = () => {
+            SFX.unlock();
+            toast(`Relic claimed: ${choices[+b.dataset.i].name}`, 'info');
+            resolve(choices[+b.dataset.i]);
+            close();
+          });
         });
       });
-    }
-  }
-  // §1: the hoard yields gear too — rolled a tier high, luck-weighted toward rarity
-  {
-    const rng3 = runRng(run);
-    // Vanishingly rare WRLD from deep boss hoards (floor 40+)
-    const wrldChance = run.floor >= 40
-      ? Math.min(0.06, 0.015 + (run.floor - 40) * 0.002 + derived(run).lk * 0.0005)
-      : 0;
-    const uniqueChance = Math.min(0.14, 0.04 + run.floor * 0.0015 + derived(run).lk * 0.001);
-    if (wrldChance && rng3.chance(wrldChance)) {
-      const lines = [];
-      await grantWrldFind(lines, { preferUseful: true });
-      if (lines.length) toast(lines[0].text, 'info');
-      rng3.advance(); saveRun(run);
-    } else if (rng3.chance(uniqueChance)) {
-      const u = rollUnique(rng3, run, { preferUseful: true });
-      if (u) {
-        const lines = [];
-        await offerEquipment(u, lines);
-        if (lines.length) toast(lines[0].text, 'info');
-        rng3.advance(); saveRun(run);
-      }
-    } else {
-      const item = rollEquipment(rng3, biomeTier() + 1, 4 + Math.floor(derived(run).lk / 2), { floor: run.floor, run });
-      rng3.advance(); saveRun(run);
-      if (item) {
-        const lines = [];
-        await offerEquipment(item, lines);
-        if (lines.length) toast(lines[0].text, 'info');
-      }
-    }
-  }
-  // Relic + gear is the boss reward; techniques unlock on sparse level milestones.
+    },
+  });
+  saveRun(run);
   renderHud();
-  nextFloorButton(document.getElementById('stage'));
+  nextFloorButton(document.getElementById('stage') || stage);
 }
 
 /* ---------- trial + boss floors (fixed single cards) ---------- */
@@ -2731,6 +2815,10 @@ async function modifierFloor(stage) {
   };
 }
 
+function shownBoss(boss) {
+  return presentBoss(boss, run);
+}
+
 async function bossFloor(stage, { resume = null } = {}) {
   const rngPick = runRng(run);
   const boss = resume?.bossId ? (bossById(resume.bossId) || pickBossForFloor(run.floor, rngPick, run))
@@ -2743,6 +2831,7 @@ async function bossFloor(stage, { resume = null } = {}) {
   } else {
     return fightGroupBoss(stage, resume.enemies, boss, { resume });
   }
+  const shown = shownBoss(boss);
   stage.innerHTML = `
     <div class="card-stage"><div class="panel event-card">
       <div class="card-art"><div class="card-glyph">${boss.glyph}</div>
@@ -2750,7 +2839,7 @@ async function bossFloor(stage, { resume = null } = {}) {
         <span class="tag card-floor-tag">FLOOR ${run.floor}</span></div>
       <div class="card-body">
         <h3>${boss.name}</h3>
-        <div class="card-text">${boss.intro}</div>
+        <div class="card-text">${shown.intro}</div>
         <div class="card-choices">
           <button class="choice-btn" id="go"><span class="choice-label">⚔ Face it</span><span class="choice-hint">no retreat</span></button>
         </div>
@@ -2789,19 +2878,20 @@ async function fightGroupBoss(stage, enemies, boss, { resume = null } = {}) {
   if (resume?.enemies?.length) {
     foes = resume.enemies.map(e => ({ ...e, statuses: { ...(e.statuses || {}) } }));
   }
+  const shown = shownBoss(boss);
   if (!coopS) {
     setPending('combat', {
       enemies: foes.map(e => ({ ...e, statuses: { ...(e.statuses || {}) } })),
       bossId: boss.id,
-      text: `${boss.name}: "${boss.taunt}"`,
+      text: `${shown.name}: "${shown.taunt}"`,
       modifier: null,
     });
   }
   sheetCombatLock = true; renderHud();
-  logCombatStart(foes, { boss: true, intro: `${boss.name}: "${boss.taunt}"` });
+  logCombatStart(foes, { boss: true, intro: `${shown.name}: "${shown.taunt}"` });
   const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
     container: stage, run, rng, enemies: foes,
-    introText: `${boss.name}: "${boss.taunt}"`,
+    introText: `${shown.name}: "${shown.taunt}"`,
     onHud: renderHud,
     ...runOverlayUi(),
     resume,
@@ -2857,28 +2947,11 @@ function buildSharedEnemies(specs, { boss = false, hpMult = 1, partySize = coopS
 }
 
 function isSpecialEventFoe(s) {
-  if (!s?.id) return false;
-  if (s.id === 'mimic') return true;
-  return !!(NPC_ENEMIES[s.id] && !String(s.id).startsWith('farmer_'));
+  return isSpecialEventFoeOf(s);
 }
 
-/** Mimic / non-farmer NPC duel enemies — TDC.eventFight pads (farmers stay weak). */
-function buildEventFightEnemies(specs, { partySize = 1, hpMult = 1 } = {}) {
-  const biome = biomeForFloor(run.floor);
-  const special = specs.some(isSpecialEventFoe);
-  const evHp = special ? eventFightHpMult(partySize) : 1;
-  const evAtk = special ? eventFightAtkMult(partySize) : 1;
-  const trashAtk = special ? 1 : partyTrashAtkMult(partySize, run.floor);
-  return specs.map(s => {
-    const isBoss = !!s.boss;
-    return buildEnemy(s, run.floor, biome.floors[0], {
-      boss: isBoss,
-      hpMult: (hpMult || 1) * evHp * (isBoss ? partyBossHpMult(partySize, run.floor) : 1),
-      atkMult: (special ? evAtk : trashAtk)
-        * (isBoss && !s.eliteAtkRole ? partyBossAtkMult(partySize, run.floor) : 1),
-      partySize,
-    });
-  });
+function buildEventFightEnemies(specs, opts = {}) {
+  return buildEventFightEnemiesOf(run, specs, opts);
 }
 
 function hostPublishFloorContent() {
@@ -2914,7 +2987,8 @@ function hostPublishFloorContent() {
     content = { floor: run.floor, type: 'event', eventId: 'campfire' };
   } else {
     const partyClasses = [run.classId, ...[...coopS.partners.values()].map(p => p.classId).filter(Boolean)];
-    const cards = generateCards(rng, { partySize: coopS.partySize, classes: partyClasses });
+    const party = [...coopS.partners.values()].map(p => p.status?.elig).filter(Boolean);
+    const cards = generateCards(rng, { partySize: coopS.partySize, classes: partyClasses, party });
     content = { floor: run.floor, type: 'cards', cards };
   }
   rng.advance();
@@ -2944,10 +3018,11 @@ async function coopFloor(stage) {
   if (content.type === 'cards') {
     return coopCardChoice(stage, content.cards);
   }
-  const ev = EVENTS.find(e => e.id === content.eventId) || EVENTS.find(e => e.id === 'campfire');
+  const ev = presentEvent(EVENTS.find(e => e.id === content.eventId) || EVENTS.find(e => e.id === 'campfire'), run);
   run.seenEvents.push(ev.id);
   noteEventTags(ev);
   pushEventHistory(run, ev.category || 'recovery');
+  recordEvent(run, ev);
   saveRun(run);
   renderEventCard(stage, ev);
 }
@@ -3076,8 +3151,9 @@ async function sharedFightCard(stage, content) {
   const mod = content.modId ? MODIFIERS.find(m => m.id === content.modId) : null;
   const names = [...new Set(enemies.map(g => g.name))].join(', ');
 
-  const title = boss ? boss.name : mod ? `Trial Floor: ${mod.name}` : 'Hostiles Ahead';
-  const text = boss ? boss.intro
+  const shown = boss ? shownBoss(boss) : null;
+  const title = shown ? shown.name : mod ? `Trial Floor: ${mod.name}` : 'Hostiles Ahead';
+  const text = shown ? shown.intro
     : mod ? `The tower posts terms for this floor:\n\n"${mod.desc}"\n\nThere is no way around a trial floor. There is only through — together.`
     : `The floor narrows, and the dark produces: ${names}. They have noticed all of you. Your party stands together — there is no sneaking in numbers.`;
 
@@ -3122,7 +3198,8 @@ async function coopFightShared(stage, enemies, { boss = null, mod = null, reward
   coopS.broadcastStatus(statusOf(run, 'fighting'), 'fighting');
   const rng = runRng(run);
   sheetCombatLock = true; renderHud();
-  const intro = introText || (boss ? `${boss.name}: "${boss.taunt}"` : 'Side by side, blades out.');
+  const shown = boss ? shownBoss(boss) : null;
+  const intro = introText || (shown ? `${shown.name}: "${shown.taunt}"` : 'Side by side, blades out.');
   logCombatStart(enemies, { boss: !!boss, intro });
   const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
     container: stage, run, rng, enemies,
@@ -3152,7 +3229,7 @@ async function coopFightShared(stage, enemies, { boss = null, mod = null, reward
 
 /* ---------- co-op throne room ---------- */
 async function throneRoomCoop(stage) {
-  const boss = bossById(run.bossPicks?.[51]) || BOSSES[51];
+  const boss = resolveThroneBoss(run);
   if (coopS.isHost) return throneRoom(stage);
   stage.innerHTML = `
     <div class="card-stage"><div class="panel event-card">
@@ -3185,17 +3262,7 @@ function rehydrateEnemies(list) {
    EVENT CARDS
    ============================================================ */
 function reqMet(req) {
-  if (!req) return { ok: true };
-  const d = derived(run);
-  // requirement hints never reveal your numbers (handoff §5)
-  if (req.stat && d[req.stat] < req.min) return { ok: false, why: 'you lack the ' + ({ str: 'strength', dex: 'deftness', int: 'learning', wis: 'insight', lk: 'fortune' }[req.stat] || 'gift') };
-  if (req.class && run.classId !== req.class) return { ok: false, why: `${CLASSES[req.class].name} only` };
-  if (req.gold && run.gold < req.gold) return { ok: false, why: `${req.gold}g needed` };
-  if (req.fame && run.fame < req.fame) return { ok: false, why: 'your name is not yet known' };
-  if (req.flag && !run.flags[req.flag]) return { ok: false, why: '???' };
-  if (req.notFlag && run.flags[req.notFlag]) return { ok: false, why: 'unavailable' };
-  if (req.item && !run.consumables.includes(req.item)) return { ok: false, why: 'item needed' };
-  return { ok: true };
+  return reqMetOf(run, req);
 }
 
 const TYPE_LABEL = { story: 'STORY', risk: 'RISK', blessing: 'BLESSING', treasure: 'TREASURE', rest: 'RESPITE', shop: 'MERCHANT' };
@@ -3482,8 +3549,10 @@ async function coopEventFight(stage, ev, specs, { text = null, reward = null, hp
 }
 
 async function resolveChoice(stage, ev, choice, opts = {}) {
+  climbTrace?.event(choice);
   const rng = runRng(run);
   const sparkle = !!run.eventSparkle;
+  recordEvent(run, ev, { choice: choice.id || choice.label, variantId: ev.variantId || null });
   let outcome = applyTagOutcomeMods(choice.outcome, ev, run);
   if (sparkle) outcome = applySparkleOutcomeMods(outcome, { floor: run.floor, rng });
   appendChronicle(run, {
@@ -3522,11 +3591,11 @@ async function resolveChoice(stage, ev, choice, opts = {}) {
         rng.advance(); // keep runRng aligned with host's int(1,8)
       }
     } else {
-      die = rng.int(1, 8);
-      total = d[spec.stat] + die + bonus;
-      ok = total >= spec.dc;
+      const rolled = rollEventCheck(run, spec, rng);
+      die = rolled.die;
+      total = rolled.total;
+      ok = rolled.ok;
     }
-    // the roll's drama, without the actuarial tables (handoff §5)
     const rollLine = { text: `${({ str: 'Strength', dex: 'Agility', int: 'Intellect', wis: 'Wisdom', lk: 'Luck' }[spec.stat])} is tested… ${ok ? 'and holds. SUCCESS.' : 'and falters. FAILURE.'}`, cls: ok ? 'good' : 'bad' };
     outcome = applyTagOutcomeMods(ok ? outcome.success : outcome.fail, ev, run);
     if (sparkle) outcome = applySparkleOutcomeMods(outcome, { floor: run.floor, rng });
@@ -3537,6 +3606,55 @@ async function resolveChoice(stage, ev, choice, opts = {}) {
 }
 
 async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
+  if (!coopS || coopS.alone) return applyOutcomeSolo(stage, ev, o, rng, lines, opts);
+  return applyOutcomeCoop(stage, ev, o, rng, lines, opts);
+}
+
+async function applyOutcomeSolo(stage, ev, o, rng, lines, opts = {}) {
+  const sparkle = !!(opts.sparkle || run.eventSparkle);
+  const panelOpts = {
+    eventId: ev?.id, title: ev?.title, choice: opts.choiceLabel, source: 'event',
+  };
+  const result = await applyEventOutcome(run, ev, o, rng, {
+    sparkle,
+    lines,
+    runRng,
+    unlock,
+    announceCallings,
+    onItem: (item, ls) => offerEquipment(item, ls),
+    onLearnSkill: (sk) => maybeEquipSkill(sk),
+    chooseFuture: pickFutureCategory,
+    chooseOption: (options, { skillCost }) => pickSpoilsOption(o.reward, options, skillCost),
+  });
+  saveRun(run);
+  renderHud();
+  if (result.kind === 'escape') return victoryScreen('escape');
+  if (result.kind === 'combat') {
+    if (lines.length) {
+      await showOutcomePanel(stage, lines, result.ups || [], {
+        ...panelOpts, continueLabel: 'Steel yourself', advance: false,
+      });
+    }
+    return fightGroup(stage, result.combat.specs, {
+      text: result.combat.text, reward: result.combat.reward, prebuilt: result.combat.prebuilt,
+    });
+  }
+  if (result.kind === 'dead') return endRun('dead');
+  if (opts.originIntro) {
+    await showOutcomePanel(stage, lines, result.ups || [], {
+      ...panelOpts, continueLabel: 'The tower awaits — Floor 1', advance: false,
+    });
+    return enterFloorScreen(true);
+  }
+  if (result.coopTrade) {
+    const tradeLines = await runCoopTrade();
+    lines.push(...tradeLines);
+    saveRun(run); renderHud();
+  }
+  return showOutcomePanel(stage, lines, result.ups || [], panelOpts);
+}
+
+async function applyOutcomeCoop(stage, ev, o, rng, lines, opts = {}) {
   const d = derived(run);
   const sparkle = !!(opts.sparkle || run.eventSparkle);
   const panelOpts = {
@@ -3816,13 +3934,13 @@ async function applyOutcome(stage, ev, o, rng, lines, opts = {}) {
     SFX.unlock();
   }
 
-  if (o.flag) run.flags[o.flag] = true;
-  if (o.clearFlag) delete run.flags[o.clearFlag];
+  applyOutcomeWorld(run, o);
   if (o.sigil && !run.sigils.includes(o.sigil)) {
     run.sigils.push(o.sigil);
     lines.push({ text: `✦ Sigil acquired (${run.sigils.length}/3). Something in the tower shifts.`, cls: 'item' });
     SFX.evolve();
   }
+  announceCallings();
   if (o.revealFloors) {
     const upcoming = [];
     for (let f = run.floor + 1; f <= Math.min(run.floor + o.revealFloors, LAST_FLOOR); f++) {
@@ -4230,7 +4348,7 @@ async function runCoopTrade() {
 }
 
 function biomeTier() {
-  return { forest: 1, ruins: 2, frost: 3, swamp: 4, hell: 5, throne: 5 }[run.biomeId] || 1;
+  return biomeTierOf(run.biomeId);
 }
 
 // §2: let the player choose which kind of path to guarantee on the next floor.
@@ -4358,34 +4476,10 @@ function unequipSlot(slot) {
   run.equipment[slot] = null;
 }
 
-/** Rough power score for auto-play loot decisions (testing). */
-function gearScore(item) {
-  if (!item) return -1;
-  const rarity = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, unique: 6, wrld: 7 };
-  let s = (rarity[item.rarity] || 1) * 25 + (item.tier || 1) * 4;
-  const weights = {
-    atk: 3, def: 2.5, hp: 0.15, mp: 0.12, str: 2, dex: 2, int: 2, wis: 2,
-    crit: 0.8, initiative: 2, dodge: 0.5,
-  };
-  for (const [k, w] of Object.entries(weights)) {
-    if (typeof item[k] === 'number') s += item[k] * w;
-  }
-  for (const k of ['burn', 'freeze', 'poison', 'lifesteal', 'weaken', 'frail', 'tormented']) {
-    if (typeof item[k] === 'number') s += item[k] * 30;
-  }
-  if (item.price) s += item.price * 0.01;
-  return s;
-}
-
-function skillAutoScore(sk) {
-  if (!sk) return -1;
-  return (sk.tier || 1) * 12 + (sk.power || 0) * 0.55 + (sk.charge ? 6 : 0)
-    + (sk.healPct || 0) * 45 + (sk.target === 'all' ? 8 : 0);
-}
 
 /** Auto-play: equip upgrades (incl. best accessory swap), sell junk. */
 function autoPlayTakeEquipment(item, lines) {
-  const sellPrice = Math.round((item.price || 20) * 0.6);
+  const sellPrice = sellGold(item);
   const sellIt = () => {
     run.gold += sellPrice;
     run.goldEarned += sellPrice;
@@ -4494,7 +4588,7 @@ async function offerEquipment(item, lines) {
     autoPlayTakeEquipment(item, lines);
     return;
   }
-  const sellPrice = Math.round(item.price * 0.6);
+  const sellPrice = sellGold(item);
   const isAcc = item.slot === 'accessory';
   const slots = isAcc ? accessorySlots() : [item.slot];
 
@@ -4661,7 +4755,6 @@ const LEVEL_FLAVOR = [
 
 // Technique offers are sparse on purpose — bosses grant loot/relics, not a
 // skill modal every gate. Levels below match early / mid / late climb beats.
-const SKILL_OFFER_LEVELS = [5, 9, 13, 17, 21];
 
 async function levelUpModal(up) {
   SFX.levelup();
@@ -4669,7 +4762,7 @@ async function levelUpModal(up) {
     await modal(`
       <div class="levelup-burst">✨</div>
       <h3 style="text-align:center">Level ${up.level}!</h3>
-      <p class="modal-sub" style="text-align:center">${LEVEL_FLAVOR[up.level % LEVEL_FLAVOR.length]}</p>
+      <p class="modal-sub" style="text-align:center">${LEVEL_FLAVOR[up.level % LEVEL_FLAVOR.length]} You can take a little more punishment than a floor ago.</p>
       <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">Continue</span></button></div>`);
   }
 
@@ -4727,6 +4820,7 @@ async function levelUpModal(up) {
       await modal(`
         <div class="levelup-burst">🌟</div>
         <h3 style="text-align:center">EVOLUTION — ${up.deeper.name}!</h3>
+        <p class="modal-sub" style="text-align:center">The path you chose at the divide deepens.</p>
         <p class="modal-sub" style="text-align:center">${up.deeper.blurb}</p>
         ${up.deeper.skill && SKILLS[up.deeper.skill] ? `<div class="panel" style="padding:12px 14px;margin:12px 0;border:1px solid rgba(232,182,74,.35);text-align:left">${skillPickHtml(SKILLS[up.deeper.skill])}</div>` : ''}
         <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">Rise</span></button></div>`);
@@ -4759,7 +4853,7 @@ function skillEffectTip(s) {
     if (s.ignoreDef) tip += ' · ignores def';
     return tip;
   }
-  if (s.guard) return 'block 30% until next turn · +1⚡';
+  if (s.guard) return `block ${Math.round(CONFIG.guard.blockPct * 100)}% until next turn · +1⚡`;
   const bits = [];
   if (s.shield) bits.push(`block ${Math.round(s.shield * 100)}%`);
   if (s.healPct) bits.push(`heal ${Math.round(s.healPct * 100)}% HP`);
@@ -4790,8 +4884,7 @@ function subclassSkillGrantHtml(sub) {
 async function offerSkillChoice() {
   {
     const rng = runRng(run);
-    const pool = rng.shuffle(learnableSkills(run)).slice(0, 3);
-    rng.advance();
+    const pool = offerSkillPool(run, rng);
     if (!pool.length) return;
     if (isAutoPlay()) {
       const sk = pool.reduce((a, b) => (skillAutoScore(b) > skillAutoScore(a) ? b : a), pool[0]);
@@ -4897,60 +4990,17 @@ async function swapSkillModal(newSkill) {
 async function shopScreen(stage, ev, { resumeStock = null } = {}) {
   Music.play('rest');
   const rng = runRng(run);
-  const tier = biomeTier();
-  let stock = [];
-  if (resumeStock?.length) {
-    stock = resumeStock;
-  } else {
-    const cons = rng.shuffle(CONSUMABLES.filter(c => !c.appraisal)).slice(0, 3);
-    cons.forEach(c => stock.push({ kind: 'consumable', item: c, price: c.price }));
-    if (rng.chance(0.4)) stock.push({ kind: 'consumable', item: CONSUMABLES.find(c => c.appraisal), price: 90 });
-    // Bias toward class-useful gear (~78%). Early/mid climb always keeps ≥1 useful equip.
-    const earlyOrMid = run.floor < 35;
-    for (let i = 0; i < 2; i++) {
-      const item = rollEquipment(rng, tier, 2, {
-        floor: run.floor, run, classId: run.classId, usefulBias: 4,
-        requireUseful: earlyOrMid && i === 0,
-      });
-      if (item) stock.push({ kind: 'equip', item, price: item.price });
-    }
-    if (earlyOrMid) {
-      const hasUseful = stock.some(s => s.kind === 'equip' && itemUsefulForClass(s.item, run.classId));
-      if (!hasUseful) {
-        const forced = rollEquipment(rng, Math.max(tier, 2), 3, {
-          floor: run.floor, run, classId: run.classId, requireUseful: true, usefulBias: 8,
-        });
-        if (forced) {
-          const idx = stock.findIndex(s => s.kind === 'equip');
-          if (idx >= 0) stock[idx] = { kind: 'equip', item: forced, price: forced.price };
-          else stock.push({ kind: 'equip', item: forced, price: forced.price });
-        }
-      }
-    }
-    // Vanishingly rare UNIQUE listing on deep floors
-    if (run.floor >= 18 && rng.chance(0.035 + Math.min(0.04, run.floor * 0.0008))) {
-      const u = rollUnique(rng, run, { preferUseful: true });
-      if (u) stock.push({ kind: 'equip', item: u, price: Math.round(u.price * 1.15) });
-    }
-    // Near-mythic WRLD listing — floor 35+, ~1%
-    if (run.floor >= 35 && rng.chance(0.01 + Math.min(0.015, (run.floor - 35) * 0.0005))) {
-      const w = rollWrld(rng, run, { preferUseful: true, kind: 'equip', coop: coopS, claim: false });
-      if (w) stock.push({ kind: 'equip', item: w, price: Math.round(w.price * 1.25) });
-    }
-    if (rng.chance(0.5)) {
-      const r = rollRelic(rng, run.relics);
-      if (r) stock.push({ kind: 'relic', item: r, price: 120 + tier * 40 });
-    }
-    rng.advance();
-  }
+  let stock = buildShopStock(run, rng, { resumeStock, coop: coopS });
   setPending('shop', { eventId: ev.id, stock });
   saveRun(run);
 
-  // fame opens wallets and lowers prices (handoff §18)
-  const discount = run.fame >= CONFIG.fame.shopDiscountAt ? CONFIG.fame.shopDiscountPct : 0;
+  // fame opens wallets and lowers prices (handoff §18);
+  // a familiar merchant stacks a small face discount on top.
+  const { fameDisc, faceDisc, discount } = shopDiscount(run);
+  let boughtHere = false;
 
   function price(p) {
-    return Math.round(p * (CONFIG.economy.merchantPriceMult || 1) * (1 - discount));
+    return shopPrice(p, discount);
   }
 
   function shopTags(s) {
@@ -4961,14 +5011,14 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
 
   shopRefreshHook = () => render();
   function render() {
-    const healCost = Math.max(10, Math.round((run.maxHp - run.hp) * 0.8 * (CONFIG.economy.merchantPriceMult || 1) * (1 - discount)));
+    const healCost = shopHealCost(run, discount);
     stage.innerHTML = `
       <div class="card-stage"><div class="panel event-card">
         <div class="card-art"><div class="card-glyph">🧳</div>
           <span class="tag card-type-tag">MERCHANT</span><span class="tag card-floor-tag">FLOOR ${run.floor}</span></div>
         <div class="card-body">
           <h3>${ev.title}</h3>
-          <div class="card-text">"Browse, browse! Prices reflect the difficulty of my supply chain, which is <i>vertical</i>."${discount ? '<br/><i>"Wait — I know that face! For a climber of your reputation, a consideration."</i> (fame discount)' : ''}</div>
+          <div class="card-text">${ev.text || '"Browse, browse! Prices reflect the difficulty of my supply chain, which is <i>vertical</i>."'}${discount ? `<br/><i>${faceDisc && !fameDisc ? '"For a familiar face, a consideration."' : '"Wait — I know that face! For a climber of your reputation, a consideration."'}</i> (${[fameDisc && 'fame', faceDisc && 'familiar'].filter(Boolean).join(' + ')} discount)` : ''}</div>
           <div class="shop-list">
             ${stock.map((s, i) => `
               <div class="shop-item">
@@ -4993,6 +5043,7 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
       if (run.gold < p) return;
       run.gold -= p;
       SFX.gold();
+      boughtHere = true;
       if (s.kind === 'consumable') {
         if (s.item.appraisal) {
           const rng2 = runRng(run);
@@ -5021,14 +5072,15 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
       saveRun(run); renderHud(); render();
     });
     stage.querySelector('#buy-heal').onclick = () => {
-      const cost = Math.max(10, Math.round((run.maxHp - run.hp) * 0.8 * (1 - discount)));
-      if (run.gold < cost) return;
-      run.gold -= cost; run.hp = run.maxHp;
+      const r = applyShopHeal(run, discount);
+      if (!r.ok) return;
+      boughtHere = true;
       SFX.heal(); toast('Fully healed');
       saveRun(run); renderHud(); render();
     };
     stage.querySelector('#leave').onclick = async () => {
       SFX.click();
+      if (boughtHere) applyWorldPatch(run, { char: { id: 'merchant', met: true, rel: 1, memory: 'bought' } });
       shopRefreshHook = null;
       clearPending();
       if (coopS) {
@@ -5144,7 +5196,7 @@ function characterSheet({ locked = false } = {}) {
                 ? ''
                 : `<div class="inv-actions">
                   <button class="btn small" data-equip="${i}">Equip</button>
-                  <button class="btn small ghost" data-sellinv="${i}">Sell ${Math.round(it.price * 0.5)}g</button>
+                  <button class="btn small ghost" data-sellinv="${i}">Sell ${sellGold(it, { from: 'inventory' })}g</button>
                 </div>`;
               return `<div class="inv-item">${itemIconHtml(it.baseId || it.id, 30)}<div><div class="item-name ${rarityClass(it.rarity)}">${it.name}</div><div class="item-desc">${it.desc}</div></div>
                 ${actions}</div>`;
@@ -5195,8 +5247,9 @@ function characterSheet({ locked = false } = {}) {
           appraiseRun(rng2, run, { partial: false, location: 'a scroll of appraisal' });
           rng2.advance();
         }
-        if (c.heal) heal(run, c.heal);
-        if (c.healPct) heal(run, Math.round(run.maxHp * c.healPct));
+        const cv = consumableCombatValue(c, run.floor);
+        if (cv.heal) heal(run, cv.heal);
+        if (cv.healPct) heal(run, Math.round(run.maxHp * cv.healPct));
         if (c.mana) restoreMana(run, c.mana);
         if (c.fame) changeFame(run, c.fame);
         if (c.foodBuff) {
@@ -5256,7 +5309,7 @@ function characterSheet({ locked = false } = {}) {
         const it = resolveItem(run, id);
         run.inventory.splice(idx, 1);
         if (run.gearBag && run.gearBag[id]) delete run.gearBag[id];
-        run.gold += Math.round(it.price * 0.5);
+        run.gold += sellGold(it, { from: 'inventory' });
         SFX.gold(); saveRun(run); renderHud(); render();
         shopRefreshHook?.();
       });
@@ -5269,24 +5322,23 @@ function characterSheet({ locked = false } = {}) {
    THE THRONE — floor 51
    ============================================================ */
 async function throneRoom(stage) {
-  const rngPick = runRng(run);
-  const boss = pickBossForFloor(51, rngPick, run);
-  rngPick.advance(); saveRun(run);
-  const hasSigils = run.sigils.length >= 3;
-
+  const started = beginThrone(run, runRng(run));
+  const boss = started.boss;
+  const hasSigils = started.hasSigils;
+  saveRun(run);
   let clauseLine = '';
-  if (run.flags.clause_seven) {
-    const cost = Math.round(run.maxHp * 0.25);
-    run.hp = Math.max(1, run.hp - cost);
-    clauseLine = `<div class="outcome-line bad">A polite cough. The devil materializes, collects ${cost} HP per clause seven, stamps your contract PAID, and vanishes. "Pleasure doing business."</div>`;
-    saveRun(run); renderHud();
+  if (started.lines.some(l => l.cls === 'bad')) {
+    clauseLine = `<div class="outcome-line bad">A polite cough. The devil materializes, collects its due per clause seven, stamps your contract PAID, and vanishes. "Pleasure doing business."</div>`;
+    renderHud();
   }
   let angelLine = '';
   if (run.flags.freed_angel) {
-    run.hp = run.maxHp; run.mp = run.maxMp;
     angelLine = `<div class="outcome-line good">Light floods the antechamber — six wings, briefly, like a blessing that refuses to be witnessed. Your wounds close. Your ${resourceName(run)} sings. A voice: "ANSWER HONESTLY."</div>`;
-    saveRun(run); renderHud();
+    renderHud();
   }
+  const memoryLines = throneMemoryLines(run, boss)
+    .map(t => `<div class="outcome-line">${t}</div>`)
+    .join('');
 
   stage.innerHTML = `
     <div class="card-stage"><div class="panel event-card">
@@ -5296,7 +5348,7 @@ async function throneRoom(stage) {
       <div class="card-body">
         <h3>${boss.name}</h3>
         <div class="card-text">${boss.intro}</div>
-        <div class="outcome-lines">${clauseLine}${angelLine}</div>
+        <div class="outcome-lines">${clauseLine}${angelLine}${memoryLines}</div>
         <div class="card-choices" id="choices"></div>
       </div>
     </div></div>`;
@@ -5329,30 +5381,39 @@ async function throneRoom(stage) {
     addChoice(`<button class="choice-btn" style="border-color:var(--gold)">
       <span class="choice-label">✦ Present the three Sigils — speak the tower's truth</span>
       <span class="choice-hint choice-req">SECRET</span></button>`, () => {
+        climbTrace?.throne('sigils');
         if (coopS) coopS.net.send({ k: 'throne', ending: 'secret' });
         secretEnding(stage);
       });
   }
   if (run.flags.kings_petition) {
     addChoice(`<button class="choice-btn"><span class="choice-label">📜 Deliver the Ghost King's petition</span><span class="choice-hint">six hundred years overdue</span></button>`, async () => {
-      run.flags.kings_petition = false;
+      climbTrace?.throne('petition');
+      const resolved = resolveThroneChoice(run, 'petition', boss);
+      saveRun(run);
       await modal(`<h3>Filed at Last</h3><p class="modal-sub">${boss.name} reads all nine pages. Twice. "He wants his kingdom back, an apology, and — " a squint, " — 'reasonable compensation for emotional distress.'" Laughter cracks the throne. The duel starts with them still winded.</p>
         <div class="pick-grid"><button class="pick-option" data-close="x"><span class="po-name">Draw your weapon</span></button></div>`);
-      throneFight(boss, 0.85);
+      throneFight(resolved.spec, resolved.hpMult);
     });
   }
-  addChoice(`<button class="choice-btn"><span class="choice-label">⚔ "I'm the interesting kind." — Fight</span><span class="choice-hint">the classic ending</span></button>`, () => throneFight(boss, 1));
-  addChoice(`<button class="choice-btn"><span class="choice-label">🗣 Answer honestly: "I don't know yet."</span><span class="choice-hint">${run.flags.angel_lore || run.flags.tree_lore ? 'the crown slips' : 'risky honesty'}</span></button>`, async () => {
+  addChoice(`<button class="choice-btn"><span class="choice-label">⚔ "I'm the interesting kind." — Fight</span><span class="choice-hint">the classic ending</span></button>`, () => {
+    climbTrace?.throne('fight');
+    throneFight(boss, 1);
+  });
+  addChoice(`<button class="choice-btn"><span class="choice-label">🗣 Answer honestly: "I don't know yet."</span><span class="choice-hint">${run.flags.angel_lore || run.flags.tree_lore || run.flags.seen_throne ? 'the crown slips' : 'risky honesty'}</span></button>`, async () => {
     await modal(`<h3>The Question</h3><p class="modal-sub">"Would you take this throne," ${boss.name} asks, "if it were offered?"<br/><br/>"I don't know yet," you say.<br/><br/>The figure on the throne <i>changes</i> — horns melt into a crooked crown, molten flesh into royal plate. Aldric, the Corrupt King, steps forward smiling wrong.<br/><br/>"Honest. Good. The Demon King was always a story we sold climbers. I am the kingdom. Let us settle the paperwork in blood."</p>
       <div class="pick-grid"><button class="pick-option" data-close="x"><span class="po-name">Face the true king</span></button></div>`);
-    changeFame(run, 5);
-    run.flags.corrupt_king_ending = true;
+    climbTrace?.throne('honesty');
+    const resolved = resolveThroneChoice(run, 'honesty', boss);
     renderHud();
-    throneFight(SECRET_BOSS, 1);
+    throneFight(resolved.spec, resolved.hpMult);
   });
 }
 
 async function secretEnding(stage) {
+  const throneBoss = resolveThroneBoss(run);
+  const throneName = throneBoss?.name || 'the figure on the throne';
+  const shortName = throneName.split(',')[0];
   Music.play('victory');
   teardownCoop();
   unlock('secret');
@@ -5375,13 +5436,13 @@ async function secretEnding(stage) {
         <br/><br/>
         <i>"You were a climber. The tower doesn't have a Demon King. It MAKES one — out of whoever wins."</i>
         <br/><br/>
-        Vorath goes very still. The sword of burning air gutters out. "Every century," he says quietly, "one of you reaches this room. You are the first to arrive knowing what it costs to sit down."
+        ${shortName} goes very still. The heat in the room forgets its job. "Every century," ${shortName} says quietly, "one of you reaches this room. You are the first to arrive knowing what it costs to sit down."
         <br/><br/>
-        He steps aside from the throne. You look at it — the power, the permanence, the price. And you do what no winner has ever done.
+        They step aside from the throne. You look at it — the power, the permanence, the price. And you do what no winner has ever done.
         <br/><br/>
         <b>You break it.</b>
         <br/><br/>
-        The tower exhales fifty-one floors of held breath. Somewhere below, every gate opens at once. Vorath — just a tired climber now, blinking in unfamiliar sunlight — shakes your hand once, and walks down.
+        The tower exhales fifty-one floors of held breath. Somewhere below, every gate opens at once. ${shortName} — just a tired climber now, blinking in unfamiliar sunlight — shakes your hand once, and walks down.
       </p>
       <div class="shard-award">◈ <b>+${shards}</b> Soul Shards — and the tower's gratitude</div>
       <div style="display:flex;gap:10px"><button class="btn primary" id="btn-title">Return to Title</button></div>
@@ -5407,6 +5468,7 @@ async function victoryScreen(type) {
   const myName = run?.name || localStorage.getItem('dt_coop_name') || 'Climber';
   const corruptKing = !!run?.flags?.corrupt_king_ending;
   const throneName = run?.flags?.throneBossName || (corruptKing ? 'Aldric, the Corrupt King' : 'the throne\'s champion');
+  const memoryLine = run ? throneEpitaphStain(run) : '';
   const summary = run ? buildClimbSummary(run, type === 'win' ? 'win' : 'escape', runRng(run)) : null;
   if (summary) pushRunHistory(summary);
   const snap = summary || (run ? {
@@ -5437,9 +5499,10 @@ async function victoryScreen(type) {
   if (summary) {
     await showClimbSummary(summary, { shards, wasCoop, myName, isWin });
   }
+  const memoryHtml = memoryLine ? `<br/><br/>${memoryLine}` : '';
   const winEpitaph = corruptKing
-    ? `${throneName} dies laughing — crown cracked, kingdom exposed. The "Demon King" was a mask sold to climbers; the throne was always a man\'s lie stacked fifty-one floors high.<br/><br/>You leave the crown on the stones. Outside, the realm learns it was never ruled by a demon — only by appetite in a nicer hat.<br/><br/>${snap?.name || 'A climber'} the ${snap?.raceName || ''} ${snap?.title || ''} ended the corrupt kingdom.`
-    : `${throneName} falls to one knee, then both — and they are <i>smiling</i>. "The interesting kind after all." The tower shudders as its crown changes... no. You sheathe your weapon and walk past the throne without sitting down. Let the next century wonder why the top floor stands empty.<br/><br/>${snap?.name || 'A climber'} the ${snap?.raceName || ''} ${snap?.title || ''} conquered all fifty-one floors.`;
+    ? `${throneName} dies laughing — crown cracked, kingdom exposed. The "Demon King" was a mask sold to climbers; the throne was always a man\'s lie stacked fifty-one floors high.<br/><br/>You leave the crown on the stones. Outside, the realm learns it was never ruled by a demon — only by appetite in a nicer hat.${memoryHtml}<br/><br/>${snap?.name || 'A climber'} the ${snap?.raceName || ''} ${snap?.title || ''} ended the corrupt kingdom.`
+    : `${throneName} falls to one knee, then both — and they are <i>smiling</i>. "The interesting kind after all." The tower shudders as its crown changes... no. You sheathe your weapon and walk past the throne without sitting down. Let the next century wonder why the top floor stands empty.${memoryHtml}<br/><br/>${snap?.name || 'A climber'} the ${snap?.raceName || ''} ${snap?.title || ''} conquered all fifty-one floors.`;
   showFinalEndScreen({
     wasCoop, myName, shards, isWin, snap,
     title: isWin ? (corruptKing ? 'THE MASK FALLS' : 'THE KING IS DEAD') : 'YOU WENT HOME',
@@ -5620,8 +5683,8 @@ function showClimbSummary(summary, { shards, wasCoop, myName, isWin, fromHistory
           </div>
 
           <div class="cs-page" id="cs-page-3" hidden>
-            <h4 class="cs-h4">Balance log <span class="cs-log-count">${logEntries.length} entries</span></h4>
-            <p class="cs-log-blurb">Event choices, gains/losses, and combat results for tuning.</p>
+            <h4 class="cs-h4">Chronicle <span class="cs-log-count">${logEntries.length} entries</span></h4>
+            <p class="cs-log-blurb">What happened — event choices, gains and losses, and how the fights went.</p>
             <div class="cs-log-list">${logHtml}</div>
           </div>
         </div>
@@ -5650,11 +5713,11 @@ function showClimbSummary(summary, { shards, wasCoop, myName, isWin, fromHistory
     const subs = {
       1: `Floor ${summary.floor} · Overview`,
       2: 'Gear & Relics',
-      3: 'Balance log',
+      3: 'Chronicle',
     };
     const rightLabels = {
       1: 'Gear ▸',
-      2: 'Log ▸',
+      2: 'Chronicle ▸',
       3: fromHistory ? '← Title' : 'Continue ▸',
     };
 

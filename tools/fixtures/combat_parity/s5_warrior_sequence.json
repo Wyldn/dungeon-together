@@ -1,0 +1,86 @@
+{
+  "id": "s5_warrior_sequence",
+  "stage": 5,
+  "method": "useSkill+enemyTurn+upkeep",
+  "seed": 602,
+  "capturedFrom": "js/combat.js Fight (pre-extract characterization)",
+  "extra": {},
+  "expected": {
+    "round": 1,
+    "ended": false,
+    "outcome": null,
+    "charge": 5,
+    "corpses": 0,
+    "usedDeathward": false,
+    "usedUltimate": false,
+    "damageTaken": 3,
+    "target": 0,
+    "actingKey": "e1",
+    "order": [
+      {
+        "key": "e1",
+        "isPlayer": false,
+        "stableId": "e1",
+        "init": 14,
+        "spdStat": 8
+      },
+      {
+        "key": "player",
+        "isPlayer": true,
+        "stableId": "p-me",
+        "init": 9,
+        "spdStat": 7
+      }
+    ],
+    "player": {
+      "hp": 77,
+      "maxHp": 80,
+      "mp": 40,
+      "maxMp": 40,
+      "down": false,
+      "combatTaunt": 0,
+      "usedRevive": false,
+      "guardCount": 1,
+      "statuses": {},
+      "buffs": [],
+      "partyBuffs": [],
+      "guarding": true,
+      "ironStance": null,
+      "scriptedEdge": false
+    },
+    "enemies": [
+      {
+        "uid": "e1",
+        "id": "wolf",
+        "name": "Dire Wolf",
+        "hp": 42,
+        "maxHp": 32,
+        "atk": 3,
+        "def": 1,
+        "spd": 8,
+        "charge": 1,
+        "turnCount": 1,
+        "statuses": {},
+        "phaseTriggers": [],
+        "phase": 1,
+        "twoPhase": false,
+        "_enraged": false,
+        "summon": false
+      }
+    ],
+    "logs": [
+      {
+        "msg": "Slash hits Dire Wolf for 18",
+        "cls": "log-ally"
+      },
+      {
+        "msg": "Dire Wolf hits you for 3.",
+        "cls": "log-foe"
+      },
+      {
+        "msg": "You brace behind your guard.",
+        "cls": "log-ally"
+      }
+    ]
+  }
+}

@@ -4,7 +4,7 @@
   "worldOrder": ["forest", "ruins", "frost", "swamp", "hell", "throne", "wandering"],
   "placeholders": [
     "vampire", "dusk_lurker", "cursed_knight", "wight", "horned_stalker", "void_eye",
-    "yeti", "void_specter", "croc", "mire_abomination", "sin_eater", "eye_horror",
+    "yeti", "void_specter", "sin_eater", "eye_horror",
     "crimson_wretch", "slag_knight", "ashen_sovereign", "heartwood", "ossuary_king",
     "jarl_whitegrave", "bogmother", "demon_slime", "arch_tormentor", "demon_king",
     "thornbeast", "flame_cyclops", "spike_sovereign", "void_cultist", "blood_fiend",

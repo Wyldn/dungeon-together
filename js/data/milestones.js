@@ -1,5 +1,8 @@
 // Shared milestone predicates for secret subclasses, events, relics, etc.
 // Prefer these over ad-hoc lambdas when adding new unlock gates.
+// World-state helpers live in world.js; these wrap the common ones.
+
+import { evalWhen, hasKnowledge, charRel, charState, threadStage } from './world.js';
 
 export const Milestone = {
   level: (n) => (run) => (run.level || 1) >= n,
@@ -21,6 +24,11 @@ export const Milestone = {
   partySize: (n) => (run) => (run.partySize || 1) >= n,
   coop: () => (run) => !!run.coopMode,
   underdog: () => (run) => !!run.underdog,
+  knowledge: (id) => (run) => hasKnowledge(run, id),
+  charMet: (id) => (run) => !!charState(run, id).met,
+  charRel: (id, min) => (run) => charRel(run, id) >= min,
+  thread: (id, stage) => (run) => threadStage(run, id) === stage,
+  when: (spec) => (run) => evalWhen(run, spec),
   all: (...preds) => (run) => preds.every(p => p(run)),
   any: (...preds) => (run) => preds.some(p => p(run)),
 };

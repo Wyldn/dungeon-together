@@ -61,9 +61,11 @@ export const TDC = {
     51: { rounds: [11, 16], hpLoss: [0.40, 0.70] },
   },
 
-  /* ---- full-run survival CDF for 1p–4p (tools/run_sim.js) ----
+  /* ---- survival CDF targets for tools/run_sim.js ONLY ----
      Same bands for every party size — co-op pads/eases keep the curve aligned.
-     Re-check with `node tools/run_sim.js` after changing recovery, budgets, or boss pads. */
+     Re-check with `node tools/run_sim.js` after changing recovery, budgets, or boss pads.
+     NOT live DungeonTogether encounter frequency and NOT observed player behavior.
+     run_sim retains its own 48% combat-vs-event loop and does not call generateFloorCards. */
   clearRate: {
     // Brutal co-op retune: ~80% brick is intentional. Solo softens via soloEase
     // but still sits in these wide bands. tools/test.js pads further for noise.
@@ -178,6 +180,11 @@ export const TDC = {
   resource: {
     baseRegen: 4,                // per-turn class resource (was 3)
     wisPerRegen: 8,              // +1 regen per this much WIS
+    // Class loops that should not fill by sitting. Missing keys use the defaults.
+    byClass: {
+      viking: { baseRegen: 1, wisPerRegen: 0 },   // Fury from blood, not WIS
+      warlock: { baseRegen: 1, wisPerRegen: 16 }, // Pact: Dark Pact is the refill
+    },
   },
 
   /* ---- combat reward scaling vs floor ---- */
@@ -193,6 +200,36 @@ export const TDC = {
     historyRepeatPenalty: 0.55,
     historyMediumPenalty: 0.40,
     historyHeavyPenalty: 0.15,
+    // Narrative director — weight nudges only. Eligibility stays in `when`.
+    // Frozen after the Narrative Director distribution pass. Do not retune
+    // these knobs without a measured failure in tools/pace_validate.js.
+    pace: {
+      narrativeWindow: 4,
+      minDelay: 3,
+      preferDelay: 7,
+      initiationMinDelay: 1,
+      initiationPreferDelay: 2,
+      earlyDelay: 0.25,
+      initiationEarlyDelay: 0.55,
+      agePeak: 1.5,
+      initiationAgePeak: 1.15,
+      congestionOne: 0.7,
+      congestionTwo: 0.5,
+      congestionLast: 0.75,
+      sameFamily: 0.45,
+      sameThread: 0.4,
+      sameNpc: 0.45,
+      intraDraw: 0.55,
+      intraDrawInitiation: 0.8,
+      initiationCongestionFloor: 0.7,
+      relevance: 1.25,
+      initiationBoost: 1.6,
+      priorityStep: 0.12,
+      lateFloor: 40,
+      lateBoost: 1.25,
+      paceMin: 0.2,
+      paceMax: 2.5,
+    },
   },
 
   /* ---- content validators (expand content only after these pass) ---- */
@@ -233,6 +270,10 @@ export const TDC = {
     floorBudgetBonus: 0.15,
   },
 };
+
+/** Printed on run_sim / run-health reports so TDC.clearRate cannot be read as live play. */
+export const TDC_CLEAR_RATE_DISCLAIMER =
+  'TDC.clearRate is a survival-CDF target for tools/run_sim.js, which uses its own 48% combat-vs-event loop. It is not live DungeonTogether encounter frequency and not observed player behavior.';
 
 /** 0..1 climb progress with late-weighted gear cadence (see TDC.expected.curvePow). */
 export function expectedCurveT(floor) {
@@ -442,8 +483,10 @@ export function cappedDmgTakenMult(raw) {
   return Math.max(minTaken, raw);
 }
 
-export function resourceRegen(wis, gearRegen = 0) {
-  return TDC.resource.baseRegen
-    + Math.floor((wis || 0) / TDC.resource.wisPerRegen)
-    + (gearRegen || 0);
+export function resourceRegen(wis, gearRegen = 0, classId = null) {
+  const spec = (classId && TDC.resource.byClass?.[classId]) || null;
+  const base = spec?.baseRegen ?? TDC.resource.baseRegen;
+  const wisPer = spec?.wisPerRegen ?? TDC.resource.wisPerRegen;
+  const fromWis = wisPer > 0 ? Math.floor((wis || 0) / wisPer) : 0;
+  return base + fromWis + (gearRegen || 0);
 }

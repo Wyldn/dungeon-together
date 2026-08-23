@@ -4,6 +4,7 @@
 // Co-op vote/lock contract is preserved verbatim (picks / renderVotes / bind).
 
 import { CATEGORY_META, EVENTS } from './data/events.js';
+import { presentEvent } from './data/world.js';
 import { travelMapBgUrl, eventCatUrl, enemySpriteHtml } from './art.js';
 import { findEnemySpec } from './data/enemies.js';
 import { makeRng } from './rng.js';
@@ -144,6 +145,8 @@ function artFromCategory(category, glyph) {
  * Resolve what a path node should show. Reveals event title/art/risk unless
  * `card.hidden` (mystery veil). Exported for tests.
  */
+let viewRun = null;
+
 export function pathNodeView(card) {
   if (card?.hidden) {
     const m = CATEGORY_META.mystery;
@@ -189,7 +192,8 @@ export function pathNodeView(card) {
     };
   }
 
-  const ev = EVENTS.find(e => e.id === card?.eventId);
+  const raw = EVENTS.find(e => e.id === card?.eventId);
+  const ev = raw && viewRun ? presentEvent(raw, viewRun) : raw;
   if (!ev) {
     const cat = card?.category || 'unknown';
     const m = CATEGORY_META[cat] || CATEGORY_META.unknown;
@@ -312,6 +316,7 @@ function playTieSpin(stage, candidates, winner) {
 
 export function renderTravelMap(stage, cards, coopCtx, ctx) {
   const { run, coopS, resolveCard, biome, flash } = ctx;
+  viewRun = run;
   const A = trail.layout === 'A';
   const CURX = 640, CURY = A ? 520 : 580;
   const n = cards.length;
@@ -399,6 +404,7 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
       <div class="tm-header">
         <div class="tm-biome">${biome.name.toUpperCase()}</div>
         <div class="tm-sub">Choose your path, Awakened — step ${r.floor}</div>
+        <div class="tm-legend">SAFE · MINOR · RISKY · DEADLY</div>
       </div>
       ${partyHtml}
       <div class="tm-corner">
@@ -426,7 +432,7 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
         <div class="tm-cur-body">
           <div class="tm-cur-tag">FLOOR ${r.floor} / 51</div>
           <div class="tm-cur-name">${biome.name}</div>
-          <div class="tm-cur-flavor">${coopCtx ? (coopCtx.mode === 'first' ? 'First pick decides the party\'s road.' : 'The party votes on the road ahead.') : 'The paths ahead name their destinations. A rare fog still hides a few.'}</div>
+          <div class="tm-cur-flavor">${coopCtx ? (coopCtx.mode === 'first' ? 'First pick decides the party\'s road.' : 'The party votes on the road ahead.') : 'Pick a path, face what waits, then climb. The cards name their destinations; a rare fog still hides a few.'}</div>
         </div>
         <div class="tm-here">◆ YOU ARE HERE ◆</div>
       </div>
@@ -517,8 +523,8 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
     if (pathHints[i]?.category) run.mapHintCategory = pathHints[i].category;
     // battle nodes get the walk-across transition; others resolve in place
     const isBattle = cards[i].category === 'combat' || cards[i].category === 'dangerous';
-    if (isBattle && flash) flash(() => resolveCard(stage, cards[i]));
-    else resolveCard(stage, cards[i]);
+    if (isBattle && flash) flash(() => resolveCard(stage, cards[i], i));
+    else resolveCard(stage, cards[i], i);
   }
 
   stage.querySelectorAll('.tm-node').forEach(nodeEl => {

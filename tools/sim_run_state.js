@@ -8,12 +8,16 @@ import { ORIGINS } from '../js/data/origins.js';
 import { SKILLS } from '../js/data/skills.js';
 import {
   CONSUMABLES, itemById, resolveItem, rollEquipment, rollRelic, rollUnique, rollWrld,
-  itemUsefulForClass, itemIncompatibleForClass,
+  itemUsefulForClass, itemIncompatibleForClass, shopConsumablePool, shopListingPrice, sellGold,
 } from '../js/data/items.js';
 import { drawEvent } from '../js/data/events.js';
 import { applyTagOutcomeMods } from '../js/data/eventtags.js';
 import { biomeForFloor, ENEMIES, findEnemySpec, mimicSpec } from '../js/data/enemies.js';
 import { rewardMult } from '../js/data/tdc.js';
+import {
+  presentEvent, recordEvent, applyOutcomeWorld,
+} from '../js/data/world.js';
+import { pushEventHistory } from '../js/data/balance.js';
 import {
   derived, heal, restoreMana, gainXp, changeFame, grantClassWeightedStats,
   pickClassWeightedStat, applySubclass, APPRAISABLE, allowedWeaponTypes, relicItems,
@@ -73,11 +77,11 @@ export function biomeTierFor(run) {
 }
 
 /** Fresh solo climber with real chargen (no sanctum upgrades). */
-export function createSimRun(rng, { classId = null, raceId = null } = {}) {
+export function createSimRun(rng, { classId = null, raceId = null, originId = null, economyPolicy = 'spend' } = {}) {
   const meta = blankMeta();
   const cls = classId || randomClassId(meta, rng);
   const race = raceId || randomRaceId(rng);
-  const origin = rng.pick(ORIGINS)?.id || null;
+  const origin = originId || rng.pick(ORIGINS)?.id || null;
   const gen = rollStart(cls, race, rng.int(1, 1e9));
   const run = newRun(meta, {
     classId: cls,
@@ -85,10 +89,13 @@ export function createSimRun(rng, { classId = null, raceId = null } = {}) {
     originId: origin,
     name: rng.pick(RANDOM_NAMES) || 'Sim',
     seed: rng.int(1, 1e9),
+    kitSeed: rng.int(1, 1e9),
     gen,
   });
   run.floor = 1;
   run.biomeId = biomeForFloor(1).id;
+  run.shopVisits = 0;
+  run.economyPolicy = economyPolicy === 'hoard' ? 'hoard' : 'spend';
   return run;
 }
 
@@ -134,7 +141,7 @@ function equipInto(run, item, slot) {
 /** Equip upgrades; sell junk / incompatible weapons. Returns { act, slot? }. */
 export function autoEquipItem(run, item) {
   if (!item) return { act: 'none' };
-  const sellPrice = Math.round((item.price || 20) * 0.6);
+  const sellPrice = sellGold(item);
   const sellIt = () => {
     run.gold += sellPrice;
     run.goldEarned = (run.goldEarned || 0) + sellPrice;
@@ -535,8 +542,7 @@ export function applyOutcomeHeadless(run, outcome, rng, ev = null, { partySize =
   if (o.upgradeWeapon) {
     run.weaponBonus += o.upgradeScaled ? 4 + Math.floor(run.floor / 8) : 4;
   }
-  if (o.flag) { if (!run.flags) run.flags = {}; run.flags[o.flag] = true; }
-  if (o.clearFlag) delete run.flags?.[o.clearFlag];
+  applyOutcomeWorld(run, o);
   if (o.sigil && !run.sigils.includes(o.sigil)) run.sigils.push(o.sigil);
   if (o.setFuture) {
     const cats = ['recovery', 'merchant', 'equipment', 'training', 'appraisal', 'mystery'];
@@ -579,22 +585,32 @@ export function applyOutcomeHeadless(run, outcome, rng, ev = null, { partySize =
 
 /** Draw + resolve one real event for this climber. */
 export function resolveSimEvent(run, rng, { partySize = 1 } = {}) {
-  const ev = drawEvent(rng, run);
-  if (!ev) return {};
+  const raw = drawEvent(rng, run);
+  if (!raw) return {};
+  const ev = presentEvent(raw, run);
+  if (!run.seenEvents) run.seenEvents = [];
   run.seenEvents.push(ev.id);
-  if (!run.recentCategories) run.recentCategories = [];
-  run.recentCategories.push(ev.category || 'unknown');
-  if (run.recentCategories.length > 8) run.recentCategories.shift();
+  recordEvent(run, ev);
+  pushEventHistory(run, ev.category || 'unknown');
 
   // Shop / pure merchant — real stock + auto-buy (mirrors shopScreen).
   if (ev.shop && !(ev.choices || []).length) {
+    const goldBefore = run.gold;
     resolveSimMerchant(run, rng);
-    return {};
+    return { event: ev, shop: true, goldSpent: Math.max(0, goldBefore - run.gold) };
   }
 
   const choice = pickEventChoice(run, ev, rng);
-  if (!choice) return {};
-  return applyOutcomeHeadless(run, choice.outcome, rng, ev, { partySize });
+  if (!choice) return { event: ev };
+  recordEvent(run, ev, { choice: choice.id || choice.label, variantId: ev.variantId || null });
+  const goldBefore = run.gold;
+  const result = applyOutcomeHeadless(run, choice.outcome, rng, ev, { partySize });
+  return {
+    ...result,
+    event: ev,
+    choice,
+    goldSpent: Math.max(0, goldBefore - run.gold),
+  };
 }
 
 /**
@@ -602,9 +618,10 @@ export function resolveSimEvent(run, rng, { partySize = 1 } = {}) {
  * upgrades / potions / heal with fame discount.
  */
 export function resolveSimMerchant(run, rng) {
+  run.shopVisits = (run.shopVisits || 0) + 1;
   const tier = biomeTierFor(run);
   const stock = [];
-  const cons = rng.shuffle(CONSUMABLES.filter(c => !c.appraisal)).slice(0, 3);
+  const cons = rng.shuffle(shopConsumablePool(tier)).slice(0, 3);
   for (const c of cons) stock.push({ kind: 'consumable', item: c, price: c.price });
   if (rng.chance(0.4)) {
     const appr = CONSUMABLES.find(c => c.appraisal);
@@ -616,6 +633,7 @@ export function resolveSimMerchant(run, rng) {
     const item = rollEquipment(rng, tier, 2, {
       floor: run.floor, run, classId: run.classId, usefulBias: 4,
       requireUseful: earlyOrMid && i === 0,
+      slot: (tier === 1 && i === 0) ? 'weapon' : undefined,
     });
     if (item) stock.push({ kind: 'equip', item, price: item.price });
   }
@@ -634,11 +652,11 @@ export function resolveSimMerchant(run, rng) {
   }
   if (run.floor >= 18 && rng.chance(0.035 + Math.min(0.04, run.floor * 0.0008))) {
     const u = rollUnique(rng, run, { preferUseful: true });
-    if (u) stock.push({ kind: 'equip', item: u, price: Math.round(u.price * 1.15) });
+    if (u) stock.push({ kind: 'equip', item: u, price: shopListingPrice(u) });
   }
   if (run.floor >= 35 && rng.chance(0.01 + Math.min(0.015, (run.floor - 35) * 0.0005))) {
     const w = rollWrld(rng, run, { preferUseful: true, kind: 'equip', claim: true });
-    if (w) stock.push({ kind: 'equip', item: w, price: Math.round(w.price * 1.25) });
+    if (w) stock.push({ kind: 'equip', item: w, price: shopListingPrice(w) });
   }
   if (rng.chance(0.5)) {
     const r = rollRelic(rng, run.relics);
@@ -647,6 +665,19 @@ export function resolveSimMerchant(run, rng) {
 
   const discount = run.fame >= CONFIG.fame.shopDiscountAt ? CONFIG.fame.shopDiscountPct : 0;
   const priceOf = (p) => Math.round(p * (CONFIG.economy.merchantPriceMult || 1) * (1 - discount));
+
+  // Hoarder: skip stock. Emergency heal only if nearly dead.
+  if (run.economyPolicy === 'hoard') {
+    if (run.hp / run.maxHp < 0.3) {
+      const healCost = Math.max(10, Math.round((run.maxHp - run.hp) * 0.8
+        * (CONFIG.economy.merchantPriceMult || 1) * (1 - discount)));
+      if (run.gold >= healCost && run.hp < run.maxHp) {
+        run.gold -= healCost;
+        run.hp = run.maxHp;
+      }
+    }
+    return;
+  }
 
   const isUpgrade = (item) => {
     if (!item?.slot) return false;

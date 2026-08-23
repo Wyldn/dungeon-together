@@ -45,6 +45,8 @@ export function skillCapacity(run) {
     // Flag from boss clear, or already past that floor (legacy saves).
     if (run.flags?.[bp.flag] || run.floor > bp.floor) n += bp.slots;
   }
+  // Old runs stored +2 at F30 as slots_f30. Keep that second slot until F40 lands.
+  if (run.flags?.slots_f30 && !run.flags?.slots_f40 && (run.floor || 0) < 40) n += 1;
   return n;
 }
 
@@ -130,7 +132,7 @@ export function derived(run) {
     confused: gearSum(run, 'confused'),
     lazy: gearSum(run, 'lazy'),
     stun: gearSum(run, 'stun'),
-    manaRegen: resourceRegen(run.stats.wis, gearSum(run, 'manaRegen') + (run.foodBuff?.manaRegen || 0)),
+    manaRegen: resourceRegen(run.stats.wis, gearSum(run, 'manaRegen') + (run.foodBuff?.manaRegen || 0), run.classId),
     initiative: (race.initiative || 0) + gearSum(run, 'initiative') + (run.foodBuff?.initiative || 0),
     fameGainMult: (race.fameGainMult || 1) * gearMult(run, 'fameGainMult'),
     startCharge: gearSum(run, 'startCharge'),
@@ -290,7 +292,7 @@ export function gainXp(run, amount, rng) {
 export function learnableSkills(run) {
   const tier = skillTier(run);
   return Object.values(SKILLS).filter(sk =>
-    sk.class === run.classId && (sk.tier || 1) <= tier && !run.knownSkills.includes(sk.id));
+    sk.class === run.classId && (sk.tier || 1) <= tier && sk.offer !== false && !run.knownSkills.includes(sk.id));
 }
 
 export function heal(run, amount) {

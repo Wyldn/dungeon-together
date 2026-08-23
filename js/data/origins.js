@@ -178,3 +178,22 @@ export const ORIGINS = [
 export function originById(id) {
   return ORIGINS.find(o => o.id === id);
 }
+
+/** Starting origin when a calling is first selected — keeps default kits class-legal. */
+export const DEFAULT_ORIGIN_BY_CLASS = {
+  warrior: 'sword_academy',
+  mage: 'mage_academy',
+  archer: 'ranger_lodge',
+  rogue: 'streets',
+  priest: 'temple',
+  monk: 'temple',
+  warlock: 'mage_academy',
+  bard: 'circus',
+  necromancer: 'archive',
+  spellsword: 'archive',
+  viking: 'mercenary',
+};
+
+export function defaultOriginId(classId) {
+  return DEFAULT_ORIGIN_BY_CLASS[classId] || ORIGINS[0].id;
+}

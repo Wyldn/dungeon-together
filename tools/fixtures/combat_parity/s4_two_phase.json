@@ -1,0 +1,63 @@
+{
+  "id": "s4_two_phase",
+  "stage": 4,
+  "method": "maybeTransform",
+  "seed": 504,
+  "capturedFrom": "js/combat.js Fight (pre-extract characterization)",
+  "extra": {},
+  "expected": {
+    "round": 0,
+    "ended": false,
+    "outcome": null,
+    "charge": 0,
+    "corpses": 0,
+    "usedDeathward": false,
+    "usedUltimate": false,
+    "damageTaken": 0,
+    "target": 0,
+    "actingKey": null,
+    "order": [],
+    "player": {
+      "hp": 80,
+      "maxHp": 80,
+      "mp": 40,
+      "maxMp": 40,
+      "down": false,
+      "combatTaunt": 0,
+      "usedRevive": false,
+      "guardCount": 0,
+      "statuses": {},
+      "buffs": [],
+      "partyBuffs": [],
+      "guarding": false,
+      "ironStance": null,
+      "scriptedEdge": false
+    },
+    "enemies": [
+      {
+        "uid": "king1",
+        "id": "medieval_king",
+        "name": "Aldric Unmasked",
+        "hp": 1493,
+        "maxHp": 1493,
+        "atk": 112,
+        "def": 21,
+        "spd": 12,
+        "charge": 0,
+        "turnCount": 0,
+        "statuses": {},
+        "phaseTriggers": [],
+        "phase": 2,
+        "twoPhase": false,
+        "_enraged": false,
+        "summon": false
+      }
+    ],
+    "logs": [
+      {
+        "msg": "The crown splits. The man underneath is worse.",
+        "cls": "log-sys"
+      }
+    ]
+  }
+}

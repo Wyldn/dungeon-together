@@ -1,0 +1,67 @@
+{
+  "id": "s2_frail_execute",
+  "stage": 2,
+  "method": "hitEnemy",
+  "seed": 305,
+  "capturedFrom": "js/combat.js Fight (pre-extract characterization)",
+  "extra": {},
+  "expected": {
+    "round": 0,
+    "ended": false,
+    "outcome": null,
+    "charge": 1,
+    "corpses": 0,
+    "usedDeathward": false,
+    "usedUltimate": false,
+    "damageTaken": 0,
+    "target": 0,
+    "actingKey": null,
+    "order": [],
+    "player": {
+      "hp": 80,
+      "maxHp": 80,
+      "mp": 40,
+      "maxMp": 40,
+      "down": false,
+      "combatTaunt": 0,
+      "usedRevive": false,
+      "guardCount": 0,
+      "statuses": {},
+      "buffs": [],
+      "partyBuffs": [],
+      "guarding": false,
+      "ironStance": null,
+      "scriptedEdge": false
+    },
+    "enemies": [
+      {
+        "uid": "e1",
+        "id": "wolf",
+        "name": "Dire Wolf",
+        "hp": 0,
+        "maxHp": 32,
+        "atk": 3,
+        "def": 1,
+        "spd": 8,
+        "charge": 0,
+        "turnCount": 0,
+        "statuses": {},
+        "phaseTriggers": [],
+        "phase": 1,
+        "twoPhase": false,
+        "_enraged": false,
+        "summon": false
+      }
+    ],
+    "logs": [
+      {
+        "msg": "Judgement hits Dire Wolf for 35",
+        "cls": "log-ally"
+      },
+      {
+        "msg": "Dire Wolf is defeated!",
+        "cls": "log-ally"
+      }
+    ]
+  }
+}

@@ -30,9 +30,14 @@ export const COMP = {
   stun: (chance) => ({ stun: chance }),
   paralyze: (chance) => ({ paralyze: chance }), // soft CC — lower initiative
   hex: (chance) => ({ hex: chance }),
+  mark: (chance) => ({ mark: chance }),       // Ranger hunt — personal, not hex
   weaken: (chance) => ({ weaken: chance }),   // less damage dealt
-  frail: (chance) => ({ frail: chance }),     // more damage taken
-  tormented: (chance) => ({ tormented: chance }), // frail-like taken mult
+  frail: (chance) => ({ frail: chance }),     // armor-break + execute window
+  tormented: (chance) => ({ tormented: chance }), // DoT + blocks the next boss cleanse
+  consumeFrail: () => ({ consumeFrail: true }),
+  consumeMark: () => ({ consumeMark: true }),
+  corpseSpend: () => ({ corpseSpend: true }),
+  stanceStrikes: (n) => ({ stanceStrikes: n }),
   confused: (chance) => ({ confused: chance }),   // offensive acts risk ally hits / whiffs
   lazy: (chance) => ({ lazy: chance }),           // delayed / skipped act
 

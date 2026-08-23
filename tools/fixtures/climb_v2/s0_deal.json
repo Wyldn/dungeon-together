@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "seed": 44718291,
+    "kitSeed": 44718291,
+    "classId": "warrior",
+    "raceId": "human",
+    "originId": null,
+    "name": "V2",
+    "gen": {
+      "stats": {
+        "hp": 80,
+        "mp": 40,
+        "str": 14,
+        "dex": 10,
+        "int": 12,
+        "wis": 8,
+        "lk": 6
+      },
+      "growthRank": "C",
+      "percentile": 50
+    }
+  },
+  "decisions": [],
+  "expected": {
+    "floor": 1,
+    "rngState": 3415043549,
+    "hp": 80,
+    "maxHp": 80,
+    "mp": 40,
+    "maxMp": 40,
+    "gold": 30,
+    "xp": 0,
+    "xpNext": 32,
+    "level": 1,
+    "skills": [
+      "slash",
+      "shield_bash",
+      "taunt",
+      "war_cry"
+    ],
+    "knownSkills": [
+      "slash",
+      "shield_bash",
+      "taunt",
+      "war_cry"
+    ],
+    "equipment": {
+      "weapon": "rusty_sword",
+      "helmet": null,
+      "chest": "cloth_garb",
+      "legs": null,
+      "boots": null,
+      "accessory1": null,
+      "accessory2": null,
+      "accessory3": null
+    },
+    "relics": [],
+    "consumables": [
+      "potion_s"
+    ],
+    "flags": {},
+    "knowledge": [],
+    "threads": {},
+    "seenEvents": [],
+    "bossPicks": {
+      "10": "elderwood"
+    },
+    "sigils": [],
+    "subclassId": null,
+    "combatTaunt": 0,
+    "usedRevive": false
+  },
+  "cards": [
+    {
+      "kind": "event",
+      "category": "training",
+      "eventId": "rare_mentor",
+      "hidden": false,
+      "sparkle": false,
+      "hpMult": null,
+      "enemies": []
+    },
+    {
+      "kind": "event",
+      "category": "equipment",
+      "eventId": "abandoned_armory",
+      "hidden": false,
+      "sparkle": false,
+      "hpMult": null,
+      "enemies": []
+    },
+    {
+      "kind": "event",
+      "category": "equipment",
+      "eventId": "chest_generic",
+      "hidden": false,
+      "sparkle": false,
+      "hpMult": null,
+      "enemies": []
+    }
+  ]
+}

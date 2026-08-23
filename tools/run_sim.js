@@ -1,11 +1,12 @@
 // Full-climb Monte Carlo — solo / co-op clear-rate survival CDF.
 // Uses real newRun progression: gainXp, equipment/relic rolls, headless events.
 //   node tools/run_sim.js [seed] [trials] [partySize]
-// partySize omitted → print 1p–4p. Measures brick / F30+ / F51 clear vs TDC.clearRate.
+// partySize omitted → print 1p–4p. Survival CDF vs TDC.clearRate (this 48% combat
+// loop only — not live encounter frequency or observed player behavior).
 
 import { CONFIG } from '../js/data/config.js';
 import {
-  TDC, partyBossAtkMult, partyBossHpMult, partyTrashAtkMult,
+  TDC, TDC_CLEAR_RATE_DISCLAIMER, partyBossAtkMult, partyBossHpMult, partyTrashAtkMult,
   eventFightHpMult, eventFightAtkMult,
 } from '../js/data/tdc.js';
 import {
@@ -32,8 +33,9 @@ function setFromKeys(obj) {
   return new Set(Object.keys(obj).map(Number));
 }
 
-/** Survival CDF targets (started runs) — authoritative copy on TDC.clearRate. */
+/** Survival CDF targets for this 48% combat-loop sim — not live encounter frequency. */
 export const CLEAR_RATE_TARGETS = TDC.clearRate;
+export const CLEAR_RATE_DISCLAIMER = TDC_CLEAR_RATE_DISCLAIMER;
 
 function livingRuns(party) {
   return party.filter(r => r.hp > 0 && !r.down);
@@ -139,12 +141,21 @@ function resolveEventCombat(rng, run, combatSpecs, floor, biomeStart, fightRewar
  * One climb for `partySize` real runs (1–4 independent kits).
  * Wipe = whole party down. Returns { cleared, deathFloor, maxFloor, partySize, sample? }.
  */
-export function simulateRun(rng, { partySize = 1, trackProgress = false } = {}) {
+export function simulateRun(rng, { partySize = 1, trackProgress = false, economyPolicy = 'spend', trackEconomy = false } = {}) {
   const n = Math.max(1, Math.min(4, partySize | 0));
   const party = [];
   for (let i = 0; i < n; i++) {
-    party.push(createSimRun(rng));
+    party.push(createSimRun(rng, { economyPolicy }));
   }
+  const economy = trackEconomy ? { goldAt: {}, shopsAt: {} } : null;
+  const noteEconomy = (floor) => {
+    if (!economy || (floor !== 10 && floor !== 30 && floor !== 45)) return;
+    const r = party[0];
+    if (!r || r.hp <= 0) return;
+    economy.goldAt[floor] = r.gold;
+    economy.shopsAt[floor] = r.shopVisits || 0;
+  };
+  const done = (payload) => (economy ? { ...payload, economy } : payload);
 
   const runMeta = { bossPicks: {} };
   // Share boss picks across party for consistent encounters
@@ -158,10 +169,10 @@ export function simulateRun(rng, { partySize = 1, trackProgress = false } = {}) 
     syncFloorMeta(party, floor);
 
     if (!livingRuns(party).length) {
-      return {
+      return done({
         cleared: false, deathFloor: floor, maxFloor, partySize: n,
         sample: trackProgress ? snapshotParty(party, progress) : undefined,
-      };
+      });
     }
 
     const biome = biomeForFloor(floor);
@@ -179,6 +190,7 @@ export function simulateRun(rng, { partySize = 1, trackProgress = false } = {}) 
       healPartyRuns(party, 0.40);
       applyFloorBreath(party);
       if (trackProgress) progress.push(snapFloor(party, floor, 'camp'));
+      noteEconomy(floor);
       continue;
     }
 
@@ -197,18 +209,19 @@ export function simulateRun(rng, { partySize = 1, trackProgress = false } = {}) 
         maxRounds: 60,
       });
       if (!r.won || !livingRuns(party).length) {
-        return {
+        return done({
           cleared: false, deathFloor: floor, maxFloor, partySize: n,
           sample: trackProgress ? snapshotParty(party, progress) : undefined,
-        };
+        });
       }
       applyFloorBreath(livingRuns(party));
       if (trackProgress) progress.push(snapFloor(party, floor, 'boss'));
+      noteEconomy(floor);
       if (floor === LAST) {
-        return {
+        return done({
           cleared: true, deathFloor: null, maxFloor, partySize: n,
           sample: trackProgress ? snapshotParty(party, progress) : undefined,
-        };
+        });
       }
       continue;
     }
@@ -223,13 +236,14 @@ export function simulateRun(rng, { partySize = 1, trackProgress = false } = {}) 
         floor, biomeStart, hpMult: plan.hpMult * (mod.hpMult || 1), maxRounds: 40,
       });
       if (!r.won || !livingRuns(party).length) {
-        return {
+        return done({
           cleared: false, deathFloor: floor, maxFloor, partySize: n,
           sample: trackProgress ? snapshotParty(party, progress) : undefined,
-        };
+        });
       }
       applyFloorBreath(livingRuns(party));
       if (trackProgress) progress.push(snapFloor(party, floor, 'trial'));
+      noteEconomy(floor);
       continue;
     }
 
@@ -243,10 +257,10 @@ export function simulateRun(rng, { partySize = 1, trackProgress = false } = {}) 
         floor, biomeStart, hpMult: plan.hpMult, maxRounds: 40,
       });
       if (!r.won || !livingRuns(party).length) {
-        return {
+        return done({
           cleared: false, deathFloor: floor, maxFloor, partySize: n,
           sample: trackProgress ? snapshotParty(party, progress) : undefined,
-        };
+        });
       }
     } else {
       // Real event draws + headless outcomes (incl. fight choices + combat.reward).
@@ -259,30 +273,31 @@ export function simulateRun(rng, { partySize = 1, trackProgress = false } = {}) 
             rng, run, result.combatSpecs, floor, biomeStart, result.fightReward, 1,
           );
           if (!ok && !livingRuns(party).length) {
-            return {
+            return done({
               cleared: false, deathFloor: floor, maxFloor, partySize: n,
               sample: trackProgress ? snapshotParty(party, progress) : undefined,
-            };
+            });
           }
         }
       }
       if (!livingRuns(party).length) {
-        return {
+        return done({
           cleared: false, deathFloor: floor, maxFloor, partySize: n,
           sample: trackProgress ? snapshotParty(party, progress) : undefined,
-        };
+        });
       }
     }
     applyFloorBreath(livingRuns(party));
     if (trackProgress && (floor % 5 === 0 || floor <= 3)) {
       progress.push(snapFloor(party, floor, 'floor'));
     }
+    noteEconomy(floor);
   }
 
-  return {
+  return done({
     cleared: true, deathFloor: null, maxFloor: LAST, partySize: n,
     sample: trackProgress ? snapshotParty(party, progress) : undefined,
-  };
+  });
 }
 
 function isBossFloor(f) { return BOSS_FLOORS.has(f); }
@@ -381,6 +396,8 @@ export function runClearRateSim({ seed = 20260719, trials = 2000, partySize = 1 
     trials,
     seed,
     partySize: n,
+    disclaimer: TDC_CLEAR_RATE_DISCLAIMER,
+    loop: 'run_sim 48% combat vs one event — not generateFloorCards / live travel-map offers',
     clearRate: clears / trials,
     brickRate: brick / trials,
     reach30: reach30 / trials,
@@ -402,6 +419,7 @@ export function formatClearReport(rep) {
   const label = rep.partySize === 1 ? 'Solo' : `${rep.partySize}p`;
   return [
     `${label} clear-rate sim — seed ${rep.seed}, ${rep.trials} runs`,
+    `  NOTE: ${rep.disclaimer || TDC_CLEAR_RATE_DISCLAIMER}`,
     `  brick ≤F10:  ${band(rep.brickRate, t.brickBy10)}`,
     `  reach F30+:  ${band(rep.reach30, t.reach30)}`,
     `  clear F51:   ${band(rep.clearRate, t.clear51)}`,
@@ -413,6 +431,55 @@ export function formatClearReport(rep) {
 /** Run 1p–4p and return reports. */
 export function runClearRateSuite({ seed = 20260719, trials = 2000 } = {}) {
   return [1, 2, 3, 4].map(partySize => runClearRateSim({ seed, trials, partySize }));
+}
+
+/** Gold / shop snapshots at F10, F30, F45 for spender vs hoarder policies. */
+export function runEconomyProbe({ seed = 20260823, trials = 80, policy = 'spend' } = {}) {
+  const gates = [10, 30, 45];
+  const gold = { 10: [], 30: [], 45: [] };
+  const shops = { 10: [], 30: [], 45: [] };
+  for (let i = 0; i < trials; i++) {
+    const salt = policy === 'hoard' ? 33301 : 0;
+    const rng = makeRng((seed + i * 7919 + salt) >>> 0);
+    const r = simulateRun(rng, { partySize: 1, economyPolicy: policy, trackEconomy: true });
+    for (const g of gates) {
+      const purse = r.economy?.goldAt?.[g];
+      if (purse == null) continue;
+      gold[g].push(purse);
+      shops[g].push(r.economy.shopsAt?.[g] ?? 0);
+    }
+  }
+  const summarize = (arr) => {
+    if (!arr.length) return { n: 0, median: null, p25: null, p75: null };
+    const sorted = arr.slice().sort((a, b) => a - b);
+    return {
+      n: arr.length,
+      median: percentile(sorted, 0.5),
+      p25: percentile(sorted, 0.25),
+      p75: percentile(sorted, 0.75),
+    };
+  };
+  const report = { policy, trials, seed, gates: {} };
+  for (const g of gates) {
+    report.gates[g] = { gold: summarize(gold[g]), shops: summarize(shops[g]) };
+  }
+  return report;
+}
+
+export function formatEconomyProbe(rep) {
+  const fmt = (s, { late = false } = {}) => {
+    if (!s.n) return 'n=0';
+    const core = `n=${s.n}  P25=${s.p25}  med=${s.median}  P75=${s.p75}`;
+    if (late && s.n < 20) return `${core}  INSUFFICIENT DATA — do not use as a gold curve`;
+    return core;
+  };
+  const lines = [`Economy probe (${rep.policy}) — seed ${rep.seed}, ${rep.trials} starts`];
+  for (const [floor, row] of Object.entries(rep.gates)) {
+    const late = Number(floor) >= 30;
+    lines.push(`  F${floor} gold  ${fmt(row.gold, { late })}`);
+    lines.push(`  F${floor} shops ${fmt(row.shops, { late })}`);
+  }
+  return lines.join('\n');
 }
 
 /** Smoke: few tracked climbs to verify gear/relics grow with floor. */
@@ -431,7 +498,14 @@ if (isMain) {
   const seed = Number(process.argv[2] || 20260719);
   const trials = Number(process.argv[3] || 2000);
   const only = process.argv[4] != null ? Number(process.argv[4]) : null;
-  if (process.argv[2] === 'smoke') {
+  if (process.argv[2] === 'economy') {
+    const trials = Number(process.argv[3] || 80);
+    const seed = Number(process.argv[4] || 20260823);
+    for (const policy of ['spend', 'hoard']) {
+      console.log(formatEconomyProbe(runEconomyProbe({ seed, trials, policy })));
+      console.log();
+    }
+  } else if (process.argv[2] === 'smoke') {
     const ps = Number(process.argv[3] || 1);
     const n = Number(process.argv[4] || 3);
     for (const r of smokeProgress({ seed: 42, partySize: ps, trials: n })) {

@@ -274,6 +274,328 @@ BIOME_SCALE = {
 }
 
 
+def infer_archetype(uid: str, elite: bool = False) -> str:
+    key = uid.lower()
+    pairs = (
+        ("golem", "construct"), ("mecha", "construct"), ("armor", "construct"),
+        ("knight_sheet", "construct"), ("effigy", "construct"), ("congregant", "construct"),
+        ("warden", "disruptor"), ("scholar", "disruptor"),
+        ("treant", "tank"), ("soldier", "tank"),
+        ("toad", "tank"), ("wolf", "assassin"), ("hound", "assassin"),
+        ("bat", "assassin"), ("rat", "assassin"), ("nightmare", "assassin"),
+        ("slime", "attrition"), ("mushroom", "attrition"), ("frog", "attrition"),
+        ("worm", "attrition"), ("haunt", "attrition"), ("vampire", "attrition"),
+        ("mummy", "attrition"), ("eye", "controller"), ("skull", "controller"),
+        ("ghost", "controller"), ("witch", "controller"), ("ogre", "bruiser"),
+        ("demon", "bruiser"), ("knight", "bruiser"), ("goblin", "disruptor"),
+        ("skeleton", "disruptor"), ("imp", "disruptor"),
+    )
+    for needle, arch in pairs:
+        if needle in key:
+            return arch
+    return "bruiser" if elite else "disruptor"
+
+
+# Compact mirror of js/data/biome_kits.js — runtime applyGalleryKit still wins
+# if this ever drifts; regen should not stamp one rider on every trash mob.
+_BIOME_TRASH = {
+    "forest": {
+        "attrition": {"name": "Spore Burst", "poison": 0.45, "desc": "caps swell"},
+        "assassin": {"name": "Hamstring", "frail": 0.45, "desc": "goes for the tendon"},
+        "controller": {"name": "Hex Glance", "confused": 0.4, "desc": "too many pupils"},
+        "disruptor": {"name": "Dirty Feint", "stun": 0.4, "desc": "palms something glinting"},
+        "bruiser": {"name": "Crushing Swing", "stun": 0.4, "desc": "puts its weight behind it"},
+        "tank": {"name": "Rootgrasp", "lazy": 0.45, "desc": "roots find ankles"},
+        "construct": {"name": "Bark Slam", "lazy": 0.35, "desc": "wood remembers being a wall"},
+    },
+    "ruins": {
+        "construct": {"name": "Grindstone", "stun": 0.4, "desc": "gears shriek"},
+        "bruiser": {"name": "Oath Cut", "weaken": 0.4, "desc": "a blackened blade rises"},
+        "tank": {"name": "Shield Wall", "selfShield": 0.3, "desc": "dust sheets the kite"},
+        "attrition": {"name": "Grave Grip", "weaken": 0.45, "desc": "cold fingers find a throat"},
+        "controller": {"name": "Hollow Litany", "weaken": 0.35, "aoe": True, "desc": "chants in a dead tongue"},
+        "disruptor": {"name": "Bone Shatter", "frail": 0.4, "aoe": True, "desc": "rattles ominously"},
+        "assassin": {"name": "Chestgaze", "confused": 0.4, "desc": "eyes on the ribs open"},
+    },
+    "frost": {
+        "controller": {"name": "Numb", "paralyze": 0.45, "desc": "fingers forget their job"},
+        "bruiser": {"name": "Rime Slam", "frail": 0.4, "desc": "ice in the knuckles"},
+        "tank": {"name": "Ice Wall", "selfShield": 0.3, "desc": "a pane grows between you"},
+        "assassin": {"name": "Killing Cold", "paralyze": 0.4, "desc": "breath steams with intent"},
+        "attrition": {"name": "Pale Howl", "weaken": 0.35, "aoe": True, "desc": "the cold gains a voice"},
+        "disruptor": {"name": "Slip", "lazy": 0.4, "desc": "the floor ices"},
+        "construct": {"name": "Ice Wall", "selfShield": 0.3, "desc": "a pane grows between you"},
+    },
+    "swamp": {
+        "attrition": {"name": "Fen Spit", "poison": 0.45, "desc": "the spit is patient"},
+        "tank": {"name": "Tongue Lash", "lazy": 0.4, "desc": "something wet uncoils"},
+        "assassin": {"name": "Drain Latch", "weaken": 0.45, "desc": "will not let go"},
+        "bruiser": {"name": "Death Roll", "frail": 0.4, "desc": "jaws widen past reason"},
+        "controller": {"name": "Curdling Hex", "weakenSure": True, "desc": "mutters your name backwards"},
+        "disruptor": {"name": "False Dawn", "confused": 0.35, "aoe": True, "desc": "burns suddenly brighter"},
+        "construct": {"name": "Peat Crush", "lazy": 0.35, "desc": "the bank gives way"},
+    },
+    "hell": {
+        "assassin": {"name": "Immolating Lunge", "burn": 0.45, "desc": "flame between the teeth"},
+        "controller": {"name": "Wrong Psalm", "confused": 0.45, "desc": "the book speaks sideways"},
+        "bruiser": {"name": "Slag Haymaker", "stun": 0.4, "desc": "the swing arrives like weather"},
+        "attrition": {"name": "Cinder Kiss", "burn": 0.45, "desc": "a haunt leans in"},
+        "disruptor": {"name": "Cinder Mock", "weaken": 0.4, "desc": "giggles and points"},
+        "tank": {"name": "Slag Guard", "selfShield": 0.3, "desc": "cooling iron between you"},
+        "construct": {"name": "Forge Slam", "stun": 0.4, "desc": "fists remember the anvil"},
+    },
+    "throne": {
+        "controller": {"name": "Royal Feint", "confused": 0.4, "desc": "a courtly lie"},
+        "bruiser": {"name": "Iron Decree", "weaken": 0.4, "desc": "the crown sheds sparks"},
+        "disruptor": {"name": "Protocol", "paralyze": 0.4, "desc": "you are out of order"},
+        "assassin": {"name": "Quiet Writ", "frail": 0.4, "desc": "signed in your absence"},
+        "attrition": {"name": "Tithe", "weaken": 0.4, "desc": "the court collects"},
+        "tank": {"name": "Throne Guard", "selfShield": 0.3, "desc": "the dais has opinions"},
+        "construct": {"name": "Edict", "weaken": 0.4, "desc": "carved into the step"},
+    },
+    "wandering": {
+        "assassin": {"name": "Nip Tendon", "frail": 0.45, "desc": "darts for the ankles"},
+        "attrition": {"name": "Acid Splash", "poison": 0.35, "aoe": True, "desc": "the blob ripples"},
+        "controller": {"name": "Wail", "confused": 0.4, "aoe": True, "desc": "draws a breath it doesn't need"},
+        "disruptor": {"name": "Skitter", "stun": 0.35, "desc": "too many feet"},
+        "bruiser": {"name": "Heavy Lunge", "stun": 0.35, "desc": "no subtlety left"},
+        "tank": {"name": "Hunker", "selfShield": 0.25, "desc": "makes itself a problem"},
+        "construct": {"name": "Rattle", "frail": 0.35, "desc": "loose parts, still sharp"},
+    },
+}
+
+
+# Elite ladders: setup then payoff. Runtime applyGalleryKit(force) still
+# overwrites these names on gallery IDs so JS remains source of truth.
+# Keep names in lockstep with js/data/biome_kits.js (suite parity test).
+_BIOME_ELITE = {
+    "forest": {
+        "attrition": [
+            {"at": 3, "name": "Spore Pinch", "mult": 1.25, "poison": 0.4, "desc": "a sweet rot"},
+            {"at": 6, "name": "Bloom", "mult": 1.45, "aoe": True, "poisonSure": True, "desc": "the air fills with spores"},
+        ],
+        "assassin": [
+            {"at": 3, "name": "Open Vein", "mult": 1.3, "frail": 0.4, "desc": "finds the weak spot"},
+            {"at": 5, "name": "Blood Hunt", "mult": 1.7, "vsWounded": 1.25, "frail": 0.3, "desc": "finishes what the pack started"},
+        ],
+        "controller": [
+            {"at": 3, "name": "Bewilder", "mult": 1.2, "confused": 0.45, "desc": "the woods rearrange"},
+            {"at": 6, "name": "Lost Path", "mult": 1.5, "aoe": True, "confused": 0.35, "weaken": 0.3, "desc": "north becomes a rumor"},
+        ],
+        "disruptor": [
+            {"at": 3, "name": "Tripwire", "mult": 1.2, "stun": 0.4, "desc": "a snare in the brush"},
+            {"at": 5, "name": "Jackal Cut", "mult": 1.55, "weaken": 0.4, "desc": "laughs while it cuts"},
+        ],
+        "bruiser": [
+            {"at": 4, "name": "Tree-Feller", "mult": 1.45, "stun": 0.35, "desc": "the swing starts from the hips"},
+            {"at": 6, "name": "Uproot", "mult": 1.7, "aoe": True, "lazy": 0.35, "desc": "the ground disagrees"},
+        ],
+        "tank": [
+            {"at": 4, "name": "Rootquake", "mult": 1.3, "aoe": True, "lazy": 0.4, "desc": "the grove holds you"},
+            {"at": 6, "name": "Heartwood", "mult": 1.2, "selfDef": 3, "heal": 0.06, "desc": "rings close over the wound"},
+        ],
+        "construct": [
+            {"at": 3, "name": "Harden", "mult": 1.15, "selfDef": 2, "desc": "sap seals the grain"},
+            {"at": 6, "name": "Falling Limb", "mult": 1.6, "aoe": True, "lazy": 0.35, "desc": "a branch decides to be a club"},
+        ],
+    },
+    "ruins": {
+        "construct": [
+            {"at": 3, "name": "Brace Plates", "mult": 1.15, "selfDef": 3, "desc": "ancient joints lock"},
+            {"at": 5, "name": "Quake Stomp", "mult": 1.45, "aoe": True, "lazy": 0.4, "desc": "the floor was a temple"},
+        ],
+        "bruiser": [
+            {"at": 4, "name": "Oathbreaker's Arc", "mult": 1.35, "aoe": True, "weaken": 0.4, "desc": "the vow still cuts"},
+            {"at": 6, "name": "Grave Oath", "mult": 1.75, "frailSure": True, "desc": "armor begins to weep"},
+        ],
+        "tank": [
+            {"at": 3, "name": "Lockstep", "mult": 1.2, "selfShield": 0.25, "desc": "the band closes ranks"},
+            {"at": 6, "name": "Falling Standard", "mult": 1.55, "aoe": True, "frail": 0.35, "desc": "the banner hits like a hammer"},
+        ],
+        "attrition": [
+            {"at": 3, "name": "Wither Touch", "mult": 1.3, "weaken": 0.4, "desc": "the wrappings drink"},
+            {"at": 6, "name": "Dynasty Tax", "mult": 1.55, "heal": 0.08, "frail": 0.35, "desc": "six hundred years of thirst"},
+        ],
+        "controller": [
+            {"at": 3, "name": "Unmake Glance", "mult": 1.35, "confused": 0.45, "desc": "the pupil dilates"},
+            {"at": 6, "name": "Forget the Floor", "mult": 1.7, "aoe": True, "confused": 0.35, "desc": "space loses its manners"},
+        ],
+        "disruptor": [
+            {"at": 4, "name": "Rattle Volley", "mult": 1.3, "aoe": True, "frail": 0.35, "desc": "splinters seek joints"},
+            {"at": 6, "name": "Collapse", "mult": 1.6, "lazy": 0.35, "desc": "the ribcage remembers falling"},
+        ],
+        "assassin": [
+            {"at": 3, "name": "Mark the Living", "mult": 1.3, "frail": 0.4, "desc": "picks a pulse"},
+            {"at": 5, "name": "Horn Dive", "mult": 1.7, "vsWounded": 1.25, "desc": "commits the horns"},
+        ],
+    },
+    "frost": {
+        "controller": [
+            {"at": 3, "name": "Courtly Spite", "mult": 1.4, "freeze": 0.4, "desc": "December smiles"},
+            {"at": 6, "name": "Flash Freeze", "mult": 1.55, "freezeSure": True, "desc": "the air crystallizes"},
+        ],
+        "bruiser": [
+            {"at": 4, "name": "Avalanche Swing", "mult": 1.4, "aoe": True, "frail": 0.35, "desc": "the club is a door"},
+            {"at": 6, "name": "Shatter", "mult": 1.8, "vsStatus": "frail", "vsStatusMult": 1.25, "stun": 0.3, "desc": "hits the crack it made"},
+        ],
+        "tank": [
+            {"at": 3, "name": "Rime Plate", "mult": 1.15, "selfDef": 3, "desc": "frost thickens on the mail"},
+            {"at": 6, "name": "Glacial Brace", "mult": 1.35, "selfShield": 0.35, "lazy": 0.3, "desc": "the wall leans on you"},
+        ],
+        "assassin": [
+            {"at": 4, "name": "Hoarfrost Bite", "mult": 1.35, "frail": 0.4, "desc": "teeth like icicles"},
+            {"at": 6, "name": "Winter Lunge", "mult": 1.7, "vsStatus": "frail", "vsStatusMult": 1.2, "freeze": 0.25, "desc": "the pack finishes the brittle"},
+        ],
+        "attrition": [
+            {"at": 3, "name": "Chill Tax", "mult": 1.25, "weaken": 0.4, "desc": "warmth is collected"},
+            {"at": 6, "name": "Whiteout", "mult": 1.5, "aoe": True, "paralyze": 0.35, "desc": "the hall forgets color"},
+        ],
+        "disruptor": [
+            {"at": 3, "name": "Black Ice", "mult": 1.2, "lazy": 0.4, "desc": "a polite hazard"},
+            {"at": 5, "name": "Court Reproach", "mult": 1.55, "weaken": 0.4, "desc": "the frozen attendants exhale"},
+        ],
+        "construct": [
+            {"at": 3, "name": "Rime Plate", "mult": 1.15, "selfDef": 3, "desc": "frost thickens"},
+            {"at": 6, "name": "Calve", "mult": 1.6, "aoe": True, "frail": 0.35, "desc": "a slab lets go"},
+        ],
+    },
+    "swamp": {
+        "attrition": [
+            {"at": 3, "name": "Tadpole Fog", "mult": 1.25, "poison": 0.4, "desc": "something hatches in the air"},
+            {"at": 6, "name": "Green Miasma", "mult": 1.55, "aoe": True, "poisonSure": True, "desc": "the aura becomes weather"},
+        ],
+        "tank": [
+            {"at": 3, "name": "Glue-Tongue", "mult": 1.3, "lazy": 0.45, "poison": 0.3, "desc": "you are an appointment"},
+            {"at": 6, "name": "Swallow", "mult": 1.7, "heal": 0.08, "weaken": 0.35, "desc": "the maw decides"},
+        ],
+        "assassin": [
+            {"at": 3, "name": "Leech Kiss", "mult": 1.35, "weaken": 0.4, "desc": "a polite theft"},
+            {"at": 5, "name": "Empty You", "mult": 1.65, "vsWounded": 1.2, "heal": 0.06, "desc": "finishes the drink"},
+        ],
+        "bruiser": [
+            {"at": 4, "name": "Uproot & Swing", "mult": 1.45, "aoe": True, "stun": 0.35, "desc": "a sapling becomes a club"},
+            {"at": 6, "name": "Bog Slam", "mult": 1.75, "frail": 0.4, "desc": "the mire applauds"},
+        ],
+        "controller": [
+            {"at": 3, "name": "Wrong Recipe", "mult": 1.3, "weaken": 0.4, "desc": "the cauldron notices you"},
+            {"at": 6, "name": "The Old Recipe", "mult": 1.7, "aoe": True, "lazy": 0.4, "desc": "it boils over"},
+        ],
+        "disruptor": [
+            {"at": 3, "name": "Will-Light", "mult": 1.2, "confused": 0.4, "desc": "the path lies"},
+            {"at": 6, "name": "Drown the Compass", "mult": 1.5, "aoe": True, "lazy": 0.35, "desc": "down becomes a suggestion"},
+        ],
+        "construct": [
+            {"at": 4, "name": "Sink", "mult": 1.3, "lazy": 0.45, "desc": "the floor is optional"},
+            {"at": 6, "name": "Fen Collapse", "mult": 1.6, "aoe": True, "poison": 0.3, "desc": "everything goes under"},
+        ],
+    },
+    "hell": {
+        "assassin": [
+            {"at": 3, "name": "Cinder Snap", "mult": 1.35, "burn": 0.4, "desc": "a playful ignition"},
+            {"at": 5, "name": "Chase the Smoke", "mult": 1.7, "vsStatus": "burn", "vsStatusMult": 1.2, "burn": 0.3, "desc": "hunts the one already alight"},
+        ],
+        "controller": [
+            {"at": 3, "name": "Burning Gaze", "mult": 1.4, "burnSure": True, "desc": "pupils ignite"},
+            {"at": 6, "name": "Chorus of Ash", "mult": 1.7, "aoe": True, "confused": 0.35, "desc": "every eye a different doom"},
+        ],
+        "bruiser": [
+            {"at": 4, "name": "Magma Haymaker", "mult": 1.45, "aoe": True, "stun": 0.3, "desc": "knuckles go white"},
+            {"at": 6, "name": "Core Hit", "mult": 1.8, "vsStatus": "burn", "vsStatusMult": 1.2, "desc": "cashes the heat"},
+        ],
+        "attrition": [
+            {"at": 3, "name": "Ember Tax", "mult": 1.3, "burn": 0.4, "desc": "takes a little warmth"},
+            {"at": 6, "name": "Ash Bloom", "mult": 1.55, "aoe": True, "burnSure": True, "desc": "the room snows cinders"},
+        ],
+        "disruptor": [
+            {"at": 3, "name": "Tantrum", "mult": 1.2, "aoe": True, "weaken": 0.35, "desc": "too much joy"},
+            {"at": 6, "name": "Scatter Coals", "mult": 1.5, "frail": 0.4, "desc": "the floor is a grate"},
+        ],
+        "tank": [
+            {"at": 3, "name": "Molten Brace", "mult": 1.2, "selfDef": 2, "desc": "the plate re-pours"},
+            {"at": 6, "name": "Core Detonation", "mult": 1.55, "aoe": True, "burnSure": True, "desc": "chest-runes overbrighten"},
+        ],
+        "construct": [
+            {"at": 3, "name": "Vent", "mult": 1.3, "aoe": True, "burn": 0.35, "desc": "slag-heat"},
+            {"at": 6, "name": "Re-Forge", "mult": 1.2, "selfDef": 3, "heal": 0.05, "desc": "the cracks weld shut"},
+        ],
+    },
+    "throne": {
+        "controller": [
+            {"at": 3, "name": "The Story", "mult": 1.3, "confused": 0.45, "desc": "the throne sells a tale"},
+            {"at": 6, "name": "Mask Off", "mult": 1.8, "aoe": True, "frailSure": True, "desc": "the secret ends in blood"},
+        ],
+        "bruiser": [
+            {"at": 4, "name": "Kingdom's Weight", "mult": 1.5, "aoe": True, "weaken": 0.4, "desc": "the room leans on you"},
+            {"at": 6, "name": "The Question", "mult": 1.85, "frailSure": True, "desc": "the air takes a side"},
+        ],
+        "disruptor": [
+            {"at": 3, "name": "Contempt", "mult": 1.25, "weaken": 0.45, "desc": "filed under insolent"},
+            {"at": 6, "name": "Summary Judgment", "mult": 1.75, "tormented": 0.4, "desc": "the ledger closes"},
+        ],
+        "assassin": [
+            {"at": 3, "name": "Name You", "mult": 1.35, "frail": 0.4, "desc": "the throne learned it"},
+            {"at": 6, "name": "Execute", "mult": 1.85, "vsWounded": 1.25, "vsStatus": "frail", "vsStatusMult": 1.2, "desc": "the sentence arrives"},
+        ],
+        "attrition": [
+            {"at": 3, "name": "Rent", "mult": 1.3, "weaken": 0.4, "desc": "due on demand"},
+            {"at": 6, "name": "The Invoice", "mult": 1.7, "tormented": 0.45, "heal": 0.06, "desc": "unpaid interest"},
+        ],
+        "tank": [
+            {"at": 3, "name": "Hold Court", "mult": 1.2, "selfDef": 3, "desc": "nobody sits without leave"},
+            {"at": 6, "name": "Crownfall", "mult": 1.6, "aoe": True, "frail": 0.35, "desc": "gold is still heavy"},
+        ],
+        "construct": [
+            {"at": 4, "name": "Law of Stone", "mult": 1.3, "lazy": 0.4, "desc": "the floor agrees with the king"},
+            {"at": 6, "name": "Seal", "mult": 1.55, "selfShield": 0.3, "desc": "wax and iron"},
+        ],
+    },
+    "wandering": {
+        "assassin": [
+            {"at": 3, "name": "Nip", "mult": 1.25, "frail": 0.4, "desc": "a small, ugly cut"},
+            {"at": 5, "name": "Pile-On", "mult": 1.55, "vsWounded": 1.2, "desc": "the rest arrive"},
+        ],
+        "attrition": [
+            {"at": 3, "name": "Drip", "mult": 1.2, "poison": 0.4, "desc": "it is always dripping"},
+            {"at": 6, "name": "Split", "mult": 1.45, "aoe": True, "poisonSure": True, "desc": "one becomes several problems"},
+        ],
+        "controller": [
+            {"at": 3, "name": "Unquiet", "mult": 1.25, "confused": 0.4, "desc": "a name you almost know"},
+            {"at": 6, "name": "Haunt", "mult": 1.5, "weaken": 0.4, "desc": "it stands in the doorway"},
+        ],
+        "disruptor": [
+            {"at": 3, "name": "Startle", "mult": 1.2, "stun": 0.4, "desc": "from the rafters"},
+            {"at": 5, "name": "Scatter", "mult": 1.45, "aoe": True, "frail": 0.3, "desc": "they come back"},
+        ],
+        "bruiser": [
+            {"at": 4, "name": "Corner", "mult": 1.4, "stun": 0.35, "desc": "the hall shrinks"},
+            {"at": 6, "name": "Body Check", "mult": 1.65, "frail": 0.35, "desc": "mass is the plan"},
+        ],
+        "tank": [
+            {"at": 3, "name": "Brace", "mult": 1.15, "selfDef": 2, "desc": "it came to stay"},
+            {"at": 6, "name": "Shoulder", "mult": 1.5, "lazy": 0.3, "desc": "you are the door"},
+        ],
+        "construct": [
+            {"at": 4, "name": "Shed", "mult": 1.25, "aoe": True, "frail": 0.35, "desc": "screws and teeth"},
+            {"at": 6, "name": "Seize", "mult": 1.5, "lazy": 0.35, "desc": "a hand that was a tool"},
+        ],
+    },
+}
+
+
+def assign_biome_kit(spec: dict, world: str, elite: bool = False) -> None:
+    arch = infer_archetype(spec.get("id") or "", elite)
+    if elite:
+        elite_table = _BIOME_ELITE.get(world) or _BIOME_ELITE["wandering"]
+        ladder = elite_table.get(arch) or elite_table.get("bruiser")
+        if ladder:
+            spec["specials"] = [dict(s) for s in ladder]
+            return
+    table = _BIOME_TRASH.get(world) or _BIOME_TRASH["wandering"]
+    row = table.get(arch) or table.get("disruptor") or {"name": "Strike"}
+    special = {"at": 4, "mult": 1.45, **row}
+    spec["specials"] = [special]
+
+
 def scale_stats(base: dict, world: str) -> dict:
     m = BIOME_SCALE.get(world, 1.0)
     out = dict(base)
@@ -355,9 +677,8 @@ def main():
             spec["chargeGain"] = 1
             spec["bankChance"] = 0.55
         else:
-            spec["specials"] = [
-                {"at": 4, "name": "Strike", "mult": 1.45, "desc": "telegraphs a blow"},
-            ]
+            assign_biome_kit(spec, world if world != "wandering" else "wandering",
+                             elite or category == "elite")
         if category == "npc":
             spec["intelligent"] = True
             spec["elite"] = True

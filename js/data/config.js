@@ -22,10 +22,17 @@ export const CONFIG = {
     critMult: 1.45,          // player crit damage mult (was hard-coded 1.6)
     enemyAtkMult: 1.35,      // enemy atk → damage (was 1.5; early packs overkilled)
     lifestealCapPct: 0.04,   // max heal per hit from any single lifesteal source
-    hexTakenMult: 1.12,      // hexed targets take +12% damage (was +25%)
-    frailTakenMult: 1.12,    // frail / tormented incoming damage
+    hexTakenMult: 1.12,      // hex = curse taken-amp (Warlock noun)
+    frailTakenMult: 1.12,    // frail = incoming amp on the *player* (armor already broken on foes)
+    frailDefIgnore: 0.50,    // frail foes: this fraction of DEF is ignored
+    frailExecuteBonus: 0.08, // extra execute window vs a frail non-boss
+    frailDetonateMult: 1.40, // Judgement / Last Rites consume-frail bonus
+    markTakenMult: 1.20,     // Ranger-only bonus vs a marked quarry
+    markExecuteBonus: 0.10,  // One Shot spends the mark for a wider execute
     weakenDmgMult: 0.70,     // weaken outgoing damage
     burnDmgMult: 0.85,       // burn also blunts outgoing damage (on top of DoT)
+    tormentPctOnEnemy: 0.04, // torment is a DoT + cleanse-block, not frail's twin
+    tormentPctOnPlayer: 0.04,
     poisonPctOnEnemy: 0.10,  // poison DoT vs enemies (% max HP / tick)
     poisonPctOnPlayer: 0.08, // poison DoT vs players
     burnPctOnEnemy: 0.055,   // burn DoT vs enemies
@@ -44,6 +51,16 @@ export const CONFIG = {
        mit = softCap * def / (def + k). Extra DEF past ~k softens hard. */
     defMitigationK: 10,      // inflection — half of softCap at def == k
     defMitigationCap: 0.88,  // max fraction of a hit DEF can erase
+  },
+
+  /* ---- class identity loops (not new skills — how existing meters fill) ---- */
+  identity: {
+    viking: { furyPerDamage: 0.25, furyPerSelfCost: 0.5 },
+    warlock: { hexRefund: 4 },
+    archer: { critRefund: 0.4 },
+    necro: { corpseCap: 1 },
+    packPoisonFrailMult: 1.5,   // poison ticks harder on a frail body
+    burnStandingMult: 1.2,      // hell burn specials punish an already-burning climber
   },
 
   /* ---- combat: Battle Charge ---- */
@@ -79,6 +96,8 @@ export const CONFIG = {
     bankChance: 0.72,
     // Bosses sometimes shrug taunt and pick freely (after taunt pool exists).
     ignoreTauntChance: 0.28,
+    // Solo taunt: delay the special (force a basic; charge is kept).
+    tauntSuppressSpecial: true,
     escortAtkMult: 1.05,     // boss-floor escorts contribute real chip in co-op
   },
 
@@ -86,7 +105,7 @@ export const CONFIG = {
   initiative: {
     die: 6,                          // + random roll 1..die
     beginnerFloors: 3,               // mild early-climb bias only
-    beginnerPlayerBonus: 1,          // bosses/fast foes can still outspeed players
+    beginnerPlayerBonus: 2,          // ~80% player-first vs equal-speed foes; fast elites can still win
   },
 
   /* ---- recovery (HP stays sticky; lean binds for brutal co-op) ---- */
@@ -109,6 +128,10 @@ export const CONFIG = {
     combatGoldMult: 0.7,   // combat purses trimmed — the tower is not an ATM
     merchantWeightBonus: 6, // shops appear a little more often (added to merchant event weight)
     merchantPriceMult: 1.05, // mild price pressure (used when shops price stock)
+    // Shop chase listings sit near the authored event channel (420 / 750–900).
+    // Sell gold uses listing price (see sellGold), not catalog value.
+    shopUniquePrice: 450,
+    shopWrldPrice: 820,
   },
 
   /* ---- death / revival (Guard block is leaner; revive is a separate dial) ---- */
@@ -203,6 +226,7 @@ export const CONFIG = {
   /* ---- technique slots unlocked by clearing boss floors ----
      Wired via applySkillBreakpoints() after boss victories. */
   skillBreakpoints: [
-    { floor: 30, flag: 'slots_f30', slots: 2, label: 'The Frozen Citadel falls' },
+    { floor: 20, flag: 'slots_f20', slots: 1, label: 'The Sunken Ruins fall' },
+    { floor: 40, flag: 'slots_f40', slots: 1, label: 'The Weeping Mire falls' },
   ],
 };

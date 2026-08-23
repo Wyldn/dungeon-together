@@ -1,5 +1,8 @@
-// Headless combat simulation — encounter-first balance tooling.
-// Used by tools/sim.js and tools/test.js. No DOM.
+// LEGACY climb/balance approximation. Not live Fight rules.
+// Do not extend. Do not retune js/combat_core.js to match this file.
+// Used by tools/sim.js, run_sim.js, run_health_climb.js, boss_htk.js, and the
+// TDC.clearRate CDF in tools/test.js. Live combat lives in js/combat_core.js;
+// headless consumers of those rules use tools/combat_headless.js.
 //
 // Player policy mirrors Fight.autoPlayAct (js/combat.js): potion → heal skill →
 // Guard on ready telegraph → strongest affordable skill, lowest-HP target.

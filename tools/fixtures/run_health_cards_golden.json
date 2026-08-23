@@ -1,0 +1,17 @@
+{
+  "classId": "warrior",
+  "raceId": "human",
+  "name": "Gold",
+  "seed": 99,
+  "kitSeed": 99,
+  "genSeed": 1001,
+  "floor": 8,
+  "biomeId": "forest",
+  "rngSeed": 424242,
+  "cards": [
+    { "kind": "encounter", "category": "combat" },
+    { "kind": "event", "category": "social", "eventId": "underdog_purse" },
+    { "kind": "event", "category": "mystery", "eventId": "void_margin" },
+    { "kind": "event", "category": "social", "eventId": "blade_hero_meet" }
+  ]
+}

@@ -1,0 +1,256 @@
+{
+  "meta": {
+    "seed": 44718291,
+    "kitSeed": 44718291,
+    "classId": "warrior",
+    "raceId": "human",
+    "originId": null,
+    "name": "V2",
+    "gen": {
+      "stats": {
+        "hp": 80,
+        "mp": 40,
+        "str": 14,
+        "dex": 10,
+        "int": 12,
+        "wis": 8,
+        "lk": 6
+      },
+      "growthRank": "C",
+      "percentile": 50
+    }
+  },
+  "decisions": [
+    {
+      "t": "card",
+      "i": 1
+    },
+    {
+      "t": "event",
+      "i": 0,
+      "label": "Take what fits your hands"
+    },
+    {
+      "t": "equip",
+      "act": "equip",
+      "slot": "weapon"
+    },
+    {
+      "t": "card",
+      "i": 1
+    },
+    {
+      "t": "shop",
+      "act": "buy",
+      "i": 1
+    },
+    {
+      "t": "shop",
+      "act": "leave"
+    },
+    {
+      "t": "card",
+      "i": 1
+    },
+    {
+      "t": "event",
+      "i": 0,
+      "label": "Share the meal"
+    },
+    {
+      "t": "option",
+      "i": 0
+    },
+    {
+      "t": "card",
+      "i": 1
+    },
+    {
+      "t": "event",
+      "i": 0,
+      "label": "Fight through"
+    },
+    {
+      "t": "combatAuto"
+    }
+  ],
+  "stopAfterFloor": 4,
+  "expected": {
+    "outcome": "stopped",
+    "checkpoint": {
+      "floor": 4,
+      "rngState": 1004461472,
+      "hp": 32,
+      "maxHp": 86,
+      "mp": 16,
+      "maxMp": 45,
+      "gold": 58,
+      "xp": 27,
+      "xpNext": 39,
+      "level": 2,
+      "skills": [
+        "slash",
+        "shield_bash",
+        "taunt",
+        "war_cry"
+      ],
+      "knownSkills": [
+        "slash",
+        "shield_bash",
+        "taunt",
+        "war_cry",
+        "militia_press"
+      ],
+      "equipment": {
+        "weapon": "steel_blade__ee854a",
+        "helmet": null,
+        "chest": "cloth_garb",
+        "legs": null,
+        "boots": null,
+        "accessory1": null,
+        "accessory2": null,
+        "accessory3": null
+      },
+      "relics": [],
+      "consumables": [
+        "potion_s",
+        "farm_bread"
+      ],
+      "flags": {},
+      "knowledge": [],
+      "threads": {},
+      "seenEvents": [
+        "abandoned_armory",
+        "merchant",
+        "roadside_climbers",
+        "orc_logging_camp"
+      ],
+      "bossPicks": {
+        "10": "elderwood"
+      },
+      "sigils": [],
+      "subclassId": null,
+      "combatTaunt": 0,
+      "usedRevive": false
+    },
+    "checkpoints": [
+      {
+        "label": "start",
+        "rngState": 44718291,
+        "floor": 0,
+        "hp": 80,
+        "gold": 30,
+        "xp": 0,
+        "level": 1
+      },
+      {
+        "label": "enter_1_travel",
+        "rngState": 44718291,
+        "floor": 1,
+        "hp": 80,
+        "gold": 30,
+        "xp": 0,
+        "level": 1
+      },
+      {
+        "label": "deal_1",
+        "rngState": 3415043549,
+        "floor": 1,
+        "hp": 80,
+        "gold": 30,
+        "xp": 0,
+        "level": 1
+      },
+      {
+        "label": "after_1",
+        "rngState": 947033421,
+        "floor": 1,
+        "hp": 80,
+        "gold": 30,
+        "xp": 0,
+        "level": 1
+      },
+      {
+        "label": "enter_2_travel",
+        "rngState": 947033421,
+        "floor": 2,
+        "hp": 80,
+        "gold": 30,
+        "xp": 0,
+        "level": 1
+      },
+      {
+        "label": "deal_2",
+        "rngState": 3032373881,
+        "floor": 2,
+        "hp": 80,
+        "gold": 30,
+        "xp": 0,
+        "level": 1
+      },
+      {
+        "label": "after_2",
+        "rngState": 2822651442,
+        "floor": 2,
+        "hp": 80,
+        "gold": 17,
+        "xp": 0,
+        "level": 1
+      },
+      {
+        "label": "enter_3_travel",
+        "rngState": 2822651442,
+        "floor": 3,
+        "hp": 80,
+        "gold": 17,
+        "xp": 0,
+        "level": 1
+      },
+      {
+        "label": "deal_3",
+        "rngState": 723827512,
+        "floor": 3,
+        "hp": 80,
+        "gold": 17,
+        "xp": 0,
+        "level": 1
+      },
+      {
+        "label": "after_3",
+        "rngState": 3389068339,
+        "floor": 3,
+        "hp": 80,
+        "gold": 17,
+        "xp": 0,
+        "level": 1
+      },
+      {
+        "label": "enter_4_travel",
+        "rngState": 3389068339,
+        "floor": 4,
+        "hp": 80,
+        "gold": 17,
+        "xp": 0,
+        "level": 1
+      },
+      {
+        "label": "deal_4",
+        "rngState": 59678038,
+        "floor": 4,
+        "hp": 80,
+        "gold": 17,
+        "xp": 0,
+        "level": 1
+      },
+      {
+        "label": "after_4",
+        "rngState": 1004461472,
+        "floor": 4,
+        "hp": 32,
+        "gold": 58,
+        "xp": 27,
+        "level": 2
+      }
+    ]
+  }
+}

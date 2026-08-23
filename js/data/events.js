@@ -3,7 +3,8 @@
 // Card shape:
 //   { id, biome: 'any'|biomeId, category, type, glyph, title, text, w,
 //     tags?: string[],  // modifiers from eventtags.js (defaults in eventtagmap.js)
-//     cond?(state), once?: true, affinity?: {classes?, races?, underdog?},
+//     cond?(state), when?: object, variants?: [...], family?, onSee?,
+//     once?: true, affinity?: {classes?, races?, underdog?},
 //     choices: [{ label, hint?, req?, outcome }] }
 //
 // category → what the face-down card shows (handoff §4): mystery, merchant,
@@ -25,12 +26,12 @@
 // wrldItem → roll a WRLD (above UNIQUE; one of each per run/party). May be true or { kind:'equip'|'relic'|'weapon'|… }
 // classGear → force a class-usable find (often a weapon)
 
-import { CONFIG } from './config.js';
-import { historyCategoryWeight } from './balance.js';
-import { tagWeightMult } from './eventtags.js';
 import { ROSTER } from './roster_worlds.js';
 import { GALLERY_NPCS } from './gallery_units.js';
 import { tagsForEvent } from './eventtagmap.js';
+import { NARRATIVE_EVENTS } from './narrative_events.js';
+import { eventEligible, choiceBridgeTag } from './world.js';
+import { eventDrawWeight } from './eventpace.js';
 
 export const EVENTS = [
 
@@ -40,12 +41,20 @@ export const EVENTS = [
     affinity: { classes: ['priest'] },
     title: 'The Nameless Shrine',
     text: 'A shrine to a god whose name has been chiseled away. The offering bowl is empty, but the air hums with residual divinity. Someone, or something, still checks the mail here.',
+    variants: [
+      { id: 'bitten', when: { flag: 'defiler' },
+        title: 'The Shrine That Remembers',
+        text: 'The same nameless shrine. The offering bowl is still empty — you saw to that. Tooth-marks in the stone have not healed. The air hums like a held grudge checking the mail.' },
+      { id: 'remembered', when: { flag: 'honored_shrine' },
+        title: 'The Shrine That Remembers',
+        text: 'The nameless shrine again. The offering bowl is not empty this time — a faint warmth sits where you left something. The air hums like a thank-you that forgot the name of the god it is for.' },
+    ],
     choices: [
       { label: 'Pray sincerely', hint: 'blessing + trinket',
-        outcome: { text: 'Warmth settles over you like a borrowed coat. In the offering bowl: a charm that wasn\'t there a moment ago.', hpPct: 0.11, fame: 2, itemRoll: { slot: 'accessory', requireUseful: true } } },
+        outcome: { text: 'Warmth settles over you like a borrowed coat. In the offering bowl: a charm that wasn\'t there a moment ago.', hpPct: 0.11, fame: 2, itemRoll: { slot: 'accessory', requireUseful: true }, flag: 'honored_shrine' } },
       { label: 'Offer 30 gold', req: { gold: 30 }, hint: '-30g, roll for boon',
         outcome: { roll: { stat: 'lk', dc: 10 },
-          success: { text: 'The bowl swallows your coins and coughs up steel. A fair trade, for once.', gold: -30, classGear: true },
+          success: { text: 'The bowl swallows your coins and coughs up steel. A fair trade, for once.', gold: -30, classGear: true, flag: 'honored_shrine' },
           fail: { text: 'The bowl swallows your coins. The shrine says nothing. Divinity, it turns out, keeps no receipts.', gold: -30, fame: -1 } } },
       { label: 'Deface the shrine', hint: 'gold? consequences?',
         outcome: { roll: { stat: 'lk', dc: 13 },
@@ -57,6 +66,60 @@ export const EVENTS = [
     id: 'campfire', biome: 'any', category: 'recovery', type: 'rest', glyph: '🔥', w: 8,
     title: 'A Moment of Peace',
     text: 'A sheltered alcove, dry wood, and — miraculously — no immediate threats. The tower allows rest the way a cat allows a mouse to catch its breath.',
+    variants: [
+      { id: 'alt_gate', when: { any: [
+        { floorMin: 9, floorMax: 9, bossPick: { floor: 10, notId: 'elderwood' } },
+        { floorMin: 19, floorMax: 19, bossPick: { floor: 20, notId: 'lich' } },
+        { floorMin: 29, floorMax: 29, bossPick: { floor: 30, notId: 'frost_queen' } },
+        { floorMin: 39, floorMax: 39, bossPick: { floor: 40, notId: 'hydra' } },
+        { floorMin: 49, floorMax: 49, bossPick: { floor: 50, notId: 'infernal_duke' } },
+      ] },
+        text: 'A sheltered alcove, dry wood, and a rumor that will not sit down: the gate ahead is not who the older climbers named. Something else took the post. The fire pops like a correction.' },
+      { id: 'mira', when: { flag: 'saved_climber', not: { threadAtLeast: { id: 'mira', stage: 'returned' } } },
+        text: 'A sheltered alcove, dry wood, and no immediate threats. You think of the climber you patched in the woods — Mira, if the rumors have the name right — and hope she found a fire like this.' },
+      { id: 'mira_returned_frost', when: { flag: 'saved_climber', threadAtLeast: { id: 'mira', stage: 'returned' }, biome: 'frost' },
+        text: 'A sheltered alcove, dry wood, and no immediate threats. Mira already paid the debt. The note in your kit still has a surface address. The frost is just another floor she isn\'t walking.' },
+      { id: 'mira_returned_swamp', when: { flag: 'saved_climber', threadAtLeast: { id: 'mira', stage: 'returned' }, biome: 'swamp' },
+        text: 'A sheltered alcove, dry wood that should not catch in a mire. Mira is two biomes down, keeping score from the side of the debt that already closed. You are the one still climbing.' },
+      { id: 'mira_left', when: { flag: 'left_climber', notFlag: 'saved_climber' },
+        text: 'A sheltered alcove, dry wood, and no immediate threats. The quiet has a shape. It looks like a girl you robbed while she watched.' },
+      { id: 'forest_smoke', when: { flag: 'angered_forest' },
+        text: 'A sheltered alcove, dry wood, and — for once — no wolves. The smoke from the hive is still in your clothes. The forest is discussing you. Loudly.' },
+      { id: 'forest_peace', when: { flag: 'forest_peace' },
+        text: 'A sheltered alcove, dry wood. A bee sits on the kindling and does not sting. The forest, having been paid, has filed you under ANNOYING BUT SETTLED.' },
+      { id: 'shrine_bitten', when: { flag: 'defiler' },
+        text: 'A sheltered alcove. The fire catches too easily, the way a bitten shrine still remembers teeth. You tell yourself it is only dry wood.' },
+      { id: 'hell_petition', when: { biome: 'hell', flag: 'kings_petition' },
+        append: 'The petition in your pack is warm. Six centuries of complaint does not like the heat.' },
+      { id: 'hell_sigils3', when: { biome: 'hell', sigilCount: 3 },
+        append: 'The three keys in your kit hum like they already know the next room.' },
+      { id: 'hell_secret', when: { biome: 'hell', secretTaken: true },
+        append: 'The path you already took does not have a form on this floor. It waits in you anyway.' },
+      { id: 'hell_seen_throne', when: { biome: 'hell', flag: 'seen_throne' },
+        append: 'You have already seen the book he sets down. The fire knows it too.' },
+      { id: 'hell_v', when: { biome: 'hell', flag: 'ate_v_dinner' },
+        append: 'A cottage once set a plate for you. The fire here is trying to be that kind.' },
+      { id: 'hell_rose', when: { biome: 'hell', any: [{ flag: 'stole_rose' }, { item: 'ice_rose' }] },
+        append: 'The mire\'s grief followed you up. Cold, still, and not finished.' },
+      { id: 'hell_hydra', when: { biome: 'hell', bossCleared: 40, bossPick: { floor: 40, id: 'hydra' } },
+        append: 'Three heads quieter now. The slag does not care. You do, a little.' },
+      { id: 'hell_lyra', when: { biome: 'hell', any: [{ flag: 'bard_friend' }, { knowledge: 'heard_own_verse' }], not: { subclassId: 'doomsinger' } },
+        append: 'Somewhere, an unplayed last bar is waiting for a worse room than this.' },
+      { id: 'hell_sigils', when: { biome: 'hell', sigilCount: 1 },
+        append: 'A sigil ticks against your ribs. Incomplete. Still listening.' },
+      { id: 'hell_seed', when: { biome: 'hell', event: 'seed_bloom' },
+        append: 'Warmth you were told not to sell sits under the ash.' },
+      { id: 'hell_bowed', when: { biome: 'hell', flag: 'kings_bowed', notFlag: ['kings_petition', 'kings_mocked'] },
+        append: 'A court that is not here still thinks you knelt.' },
+      { id: 'mira_scarf', when: { knowledge: 'mira_left_behind', notFlag: ['saved_climber', 'left_climber'] },
+        append: 'A cheap scarf would not last in this fire. The letters on the bark — LEFT, or LAST — still would.' },
+      { id: 'secret_mid', when: { secretTaken: true, biomes: ['frost', 'swamp'] },
+        append: 'The path you already took does not have a form on this floor. It waits in you anyway.' },
+      { id: 'tend_mercy', when: { counterMin: { mercy: 2 }, notFlag: 'saved_climber' },
+        append: 'The alcove is already stacked for two. Whoever left the wood assumed you would share it.' },
+      { id: 'tend_greed', when: { counterMin: { greed: 2 }, notFlag: ['stole_rose', 'defiler'] },
+        append: 'The kindling is already picked over. Someone — or the room — expected your hands to keep taking.' },
+    ],
     choices: [
       { label: 'Sleep', hint: 'recover + supplies',
         outcome: { text: 'You dream of the surface. In the dream, everyone is proud of you. You wake with embers in your hair, strength in your limbs, and a potion that rolled against your boot overnight.', hpPct: 0.2, consumable: 'potion_s' } },
@@ -71,6 +134,14 @@ export const EVENTS = [
     title: 'The Hooded Merchant',
     text: 'A figure in a patchwork cloak has set up shop in a place no shop should exist. "Climbers! My favorite kind of customer. Repeat business is rare, but the margins are excellent."',
     shop: true,
+    onSee: { char: { id: 'merchant', met: true, loc: 'here', memory: 'shopped' } },
+    variants: [
+      { id: 'patron', when: { charRelMin: { merchant: 2 } },
+        title: 'Your Merchant',
+        text: 'He has already unpacked the crate with your kind of mistakes in it. "Patron. Sit. The fame discount stacks with the face discount. Don\'t tell the others — I have a brand to protect."' },
+      { id: 'known', when: { charMet: 'merchant' },
+        text: 'The Hooded Merchant looks up and actually pauses. "You again. I remember the walk. Repeat business! I could weep. I won\'t. Margins."' },
+    ],
     choices: [],
   },
   {
@@ -85,7 +156,7 @@ export const EVENTS = [
       { label: 'Strip the racks thoroughly', hint: 'more gear, slower',
         outcome: { text: 'You take time. Time takes a nick out of you. The haul is worth the nick.', hp: -6, itemRoll: true, consumable: 'potion_s' } },
       { label: 'Leave it for the next desperate soul', hint: 'honor',
-        outcome: { text: 'You close the door on temptation. The tower, weirdly, seems to approve — and slips a minor blessing into your pack anyway.', fame: 2, consumable: 'mana_vial' } },
+        outcome: { text: 'You close the door on temptation. The tower, weirdly, seems to approve — and slips a minor blessing into your pack anyway.', fame: 2, consumable: 'mana_vial', world: { counter: { id: 'mercy', add: 1 }, tag: choiceBridgeTag('abandoned_armory') } } },
     ],
   },
   {
@@ -117,7 +188,7 @@ export const EVENTS = [
       { label: 'Claim coin and a trinket', hint: 'gold + accessory',
         outcome: { text: 'The coin pouch is light. The locket is not.', gold: 35, itemRoll: { slot: 'accessory' } } },
       { label: 'Leave a note and move on', hint: 'kindness',
-        outcome: { text: 'You write: "Still climbing. Take what you need." The tower files it under rare.', fame: 2, xp: 15 } },
+        outcome: { text: 'You write: "Still climbing. Take what you need." The tower files it under rare.', fame: 2, xp: 15, world: { counter: { id: 'mercy', add: 1 }, tag: choiceBridgeTag('discarded_kit') } } },
     ],
   },
   {
@@ -161,7 +232,7 @@ export const EVENTS = [
       { label: 'Sell vitality', hint: 'health for gold',
         outcome: { text: 'He bottles a measure of your life force and pays in exact change. It glows on his shelf, labeled with your name.', hpPct: -0.25, gold: 75 } },
       { label: 'Ask what happens to the bottles', hint: '???',
-        outcome: { text: '"They keep me company." A thousand tiny lights pulse on the shelves behind him, in time with a thousand distant hearts.', xp: 20, fame: 1 } },
+        outcome: { text: '"They keep me company." A thousand tiny lights pulse on the shelves behind him, in time with a thousand distant hearts.', xp: 20, fame: 1, world: { counter: { id: 'curiosity', add: 1 }, tag: choiceBridgeTag('soul_broker') } } },
     ],
   },
   {
@@ -172,8 +243,8 @@ export const EVENTS = [
     choices: [
       { label: 'Knock politely', hint: 'a test of wisdom',
         outcome: { roll: { stat: 'wis', dc: 11 },
-          success: { text: 'The face wakes, yawns, and looks you over. "Mannered. Rare." The door opens onto a room full of gifts — and one that fits your hands suspiciously well.', gold: 45, classGear: true },
-          fail: { text: 'The face wakes up on the wrong side of existence. The door remains a door, but louder about it.', hp: -6 } } },
+          success: { text: 'The face wakes, yawns, and looks you over. "Mannered. Rare." The door opens onto a room full of gifts — and one that fits your hands suspiciously well.', gold: 45, classGear: true, world: { counter: { id: 'curiosity', add: 1 }, tag: choiceBridgeTag('mysterious_door') } },
+          fail: { text: 'The face wakes up on the wrong side of existence. The door remains a door, but louder about it.', hp: -6, world: { counter: { id: 'curiosity', add: 1 }, tag: choiceBridgeTag('mysterious_door') } } } },
       { label: 'Pick the lock', req: { stat: 'dex', min: 12 }, hint: 'deft hands required',
         outcome: { text: 'The lock surrenders to superior fingers. Inside: someone\'s stash, now yours by right of dexterity.', gold: 60, consumable: 'potion_s', itemRoll: { slot: 'accessory' } } },
       { label: 'Ignore it', hint: 'safe',
@@ -182,6 +253,7 @@ export const EVENTS = [
   },
   {
     id: 'bard', biome: 'any', category: 'social', type: 'blessing', npc: 'woman', glyph: '🎻', w: 5,
+    onSee: { char: { id: 'lyra', met: true, memory: 'first_set' }, thread: { id: 'bard', stage: 'met' } },
     title: 'The Bard Who Stayed',
     text: 'A bard sits cross-legged on a broken pillar, tuning a lute. "I came here for material," she says. "Forty floors of material later, I have simply decided to live here. Request?"',
     choices: [
@@ -194,9 +266,16 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'bard_returns', biome: 'any', category: 'social', type: 'blessing', npc: 'woman', glyph: '🎻', w: 14, cond: s => s.flags.bard_friend, once: true,
+    id: 'bard_returns', biome: 'any', category: 'social', type: 'blessing', npc: 'woman', glyph: '🎻', w: 14, once: true,
+    pace: { after: 'bard' },
+    when: { flag: 'bard_friend' },
+    onSee: { char: { id: 'lyra', met: true, memory: 'encore' }, thread: { id: 'bard', stage: 'encore' } },
     title: 'An Encore',
     text: 'The bard again — impossibly, floors above where you left her. "My patron!" She\'s already tuning. "I wrote your verse. Want to hear how your story goes? Spoiler: I gave you good odds."',
+    variants: [
+      { id: 'wearing_encore', when: { item: 'encore_medallion' },
+        text: 'The bard again — impossibly, floors above where you left her. She spots the medallion first. "You kept it. Most people pawn the encore." She\'s already tuning. "I wrote your verse. Want to hear how your story goes? Spoiler: I gave you good odds."' },
+    ],
     choices: [
       { label: 'Listen', hint: 'blessing',
         outcome: { text: 'Hearing your own legend sung before you\'ve finished it is like armor for the soul. You stand a little taller. The tower feels a little shorter.', fullMana: true, xp: 30, fame: 5 } },
@@ -277,7 +356,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'proving_hall', biome: 'any', category: 'advancement', type: 'story', glyph: '🏆', w: 4, cond: s => s.level >= 4,
+    id: 'proving_hall', biome: 'any', category: 'advancement', type: 'story', glyph: '🏆', w: 3, cond: s => s.level >= 4,
     title: 'The Proving Hall',
     text: 'A circular chamber ringed with statues of climbers mid-triumph. A plinth invites you to place your hand and be measured against everyone who ever stood here. The tower loves a ranking.',
     choices: [
@@ -293,7 +372,7 @@ export const EVENTS = [
   },
 
   {
-    id: 'academy_recruiter', biome: 'any', category: 'training', type: 'story', glyph: '🎓', w: 4,
+    id: 'academy_recruiter', biome: 'any', category: 'training', type: 'story', glyph: '🎓', w: 3,
     title: 'The Traveling Lecturer',
     text: 'A folding lectern, a stack of manuals, and a professor on sabbatical from every academy at once. "Field instruction! Techniques the academies HOARD. My rates are criminal because my methods are too."',
     choices: [
@@ -308,7 +387,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'sparring_ring', biome: 'any', category: 'training', type: 'story', glyph: '🥊', w: 4,
+    id: 'sparring_ring', biome: 'any', category: 'training', type: 'story', glyph: '🥊', w: 3,
     title: 'The Standing Challenge',
     text: 'A chalk circle, a bench, and a sign: BEAT THE CHAMP, KEEP THE PURSE. The champ is a retired minotaur with reading glasses and the calm of someone who has never once lost in this circle.',
     choices: [
@@ -350,8 +429,8 @@ export const EVENTS = [
         outcome: { text: 'You request the underlying statute. He produces it. You find the exemption for "climbers of notable deed" in under a minute. His respect is grudging and total.', fame: 3, xp: 30 } },
       { label: 'Refuse outright', hint: 'the tower notices',
         outcome: { roll: { stat: 'lk', dc: 12 },
-          success: { text: '"Noted," he says, and vanishes. Nothing happens. Possibly nothing will. The word "possibly" is doing heavy lifting.', fame: -2 },
-          fail: { text: '"Noted," he says. Two floors of doors are suddenly, administratively, harder to open. Your knuckles pay the difference.', hp: -10, fame: -3 } } },
+          success: { text: '"Noted," he says, and vanishes. Nothing happens. Possibly nothing will. The word "possibly" is doing heavy lifting.', fame: -2, world: { counter: { id: 'defiance', add: 1 }, tag: choiceBridgeTag('tax_collector') } },
+          fail: { text: '"Noted," he says. Two floors of doors are suddenly, administratively, harder to open. Your knuckles pay the difference.', hp: -10, fame: -3, world: { counter: { id: 'defiance', add: 1 }, tag: choiceBridgeTag('tax_collector') } } } },
     ],
   },
   {
@@ -383,7 +462,11 @@ export const EVENTS = [
   {
     id: 'frozen_library', biome: 'frost', category: 'mystery', type: 'story', glyph: '📖', w: 5,
     title: 'The Archive Under Ice',
-    text: 'A library flash-frozen mid-argument: two scholars still seated across a table, ice-bound, each pointing at the other\'s page. The books are legible through the frost.',
+    text: 'A library flash-frozen mid-argument: two scholars still seated across a table, ice-bound, each pointing at the other\'s page. The books are legible through the frost. A third volume, open, names the court: Queen Vessalia the Unmelting, mid-betrayal, still on the throne.',
+    variants: [
+      { id: 'garden_empty', when: { flag: 'stole_rose' },
+        text: 'A library flash-frozen mid-argument. One scholar\'s ice-bound finger now points at a new margin: THE GARDEN EXHALED. SOMEONE TOOK THE HEART. VESSALIA WILL NOT BE IN A RECEIVING MOOD.' },
+    ],
     choices: [
       { label: 'Read the disputed pages', req: { stat: 'int', min: 12 }, hint: 'settle the argument',
         outcome: { text: 'You read both pages. They were BOTH right — it\'s the same theorem approached from opposite ends. You write the synthesis in the margin. Somewhere in the ice, two expressions soften.', statUp: { stat: 'int', amt: 2 }, xp: 40, fame: 2 } },
@@ -413,7 +496,19 @@ export const EVENTS = [
   {
     id: 'ash_pilgrims', biome: 'hell', category: 'social', type: 'story', glyph: '🚶', w: 5,
     title: 'The Ash Pilgrims',
-    text: 'A procession walks the burning floor unbothered — humans, robed in gray, ringing a small bell. Pilgrims, climbing DOWN. "We went to the top," their leader says. "Now we walk it in reverse, to remember the whole of it."',
+    text: 'A procession walks the burning floor unbothered — humans, robed in gray, ringing a small bell. Pilgrims, climbing DOWN. "We went to the top," their leader says. "Now we walk it in reverse, to remember the whole of it. Floor fifty is Duke Malgrimm. He keeps the door. He is polite until he is not."',
+    variants: [
+      { id: 'petition', when: { flag: 'kings_petition' },
+        text: 'A procession walks the burning floor unbothered — humans, robed in gray, ringing a small bell. Their leader spots the petition before she spots you. "A clerk tried to file that on forty-four," she says. "The heat ate the desk. The King Who Stayed is still in your pack. Floor fifty is Duke Malgrimm. He keeps the door. He does not keep complaints."' },
+      { id: 'rose', when: { any: [{ flag: 'stole_rose' }, { item: 'ice_rose' }] },
+        text: 'A procession walks the burning floor unbothered. Their leader looks at your coat, then away, as if the cold on you were a rude story. "We walked the mire coming down. Three heads. One funeral. A heart that is not theirs." She rings the bell once. "Floor fifty is Duke Malgrimm. He keeps the door. Grief is not his department."' },
+      { id: 'hydra', when: { bossCleared: 40, bossPick: { floor: 40, id: 'hydra' } },
+        text: 'A procession walks the burning floor unbothered — humans, robed in gray, ringing a small bell. "We went to the top," their leader says. "Coming down, the weeping had stopped. Three mouths, quiet. That was you, then." A nod that is almost thanks. "Floor fifty is Duke Malgrimm. He keeps the door. He is polite until he is not."' },
+      { id: 'mira_left', when: { flag: 'left_climber', notFlag: 'saved_climber' },
+        text: 'A procession walks the burning floor unbothered. Two of them are arguing, badly, about a girl in the woods — patched, or robbed, depending who you ask. They do not use your name. They do not need to. "Floor fifty is Duke Malgrimm," their leader says, as if changing the subject were mercy. "He keeps the door. He is polite until he is not."' },
+      { id: 'tend_cruelty', when: { counterMin: { cruelty: 2 }, notFlag: 'left_climber' },
+        append: 'They stop arguing about the woods. One of them looks at your pack and does not ask.' },
+    ],
     choices: [
       { label: '"You reached the top? What happened?"', hint: 'lore',
         outcome: { text: '"The King asked us his question." The leader smiles behind her ash-veil. "We answered wrong, and he let us live anyway. That is the terrible thing about him nobody warns you of: he is FAIR."', flag: 'pilgrim_lore', xp: 40 } },
@@ -441,7 +536,7 @@ export const EVENTS = [
 
   /* ---------- directed / scaling growth (build-enabling, early-game strong) ---------- */
   {
-    id: 'trial_stones', biome: 'any', category: 'training', type: 'story', glyph: '🗿', w: 9, cond: s => s.floor <= 14,
+    id: 'trial_stones', biome: 'any', category: 'training', type: 'story', glyph: '🗿', w: 5, cond: s => s.floor <= 14,
     title: 'The Five Trial Stones',
     text: 'Five standing stones ring a worn arena, each carved with an old rune: FORCE, GRACE, MIND, SPIRIT, FORTUNE. Touch one, prove yourself against it, and it will hammer that part of you into something harder. You may attempt only one.',
     choices: [
@@ -460,7 +555,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'true_calling', biome: 'any', category: 'training', type: 'story', glyph: '🎯', w: 6, cond: s => s.floor <= 16,
+    id: 'true_calling', biome: 'any', category: 'training', type: 'story', glyph: '🎯', w: 4, cond: s => s.floor <= 16,
     title: 'The Whispering Dummy',
     text: 'A training dummy stitched from old climber\'s gear tilts its burlap head toward you. "Stop fighting like everyone else," it rasps — impossibly. "Fight like YOU. Show me the thing you do that no one taught you."',
     choices: [
@@ -486,7 +581,8 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'seed_bloom', biome: 'any', category: 'unknown', type: 'blessing', glyph: '🌳', w: 16, once: true, cond: s => s.flags.planted_seed && s.floor >= 22,
+    id: 'seed_bloom', biome: 'any', category: 'unknown', type: 'blessing', glyph: '🌳', w: 16, once: true,
+    when: { flag: 'planted_seed', floorMin: 24 },
     title: 'The Seed Blooms',
     text: 'Deep in the climb, the cold thing behind your ribs finally… uncurls. Warmth floods outward, roots of it threading every limb. The gardener\'s seed has been waiting for exactly this altitude.',
     choices: [
@@ -522,7 +618,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'font_of_focus', biome: 'any', category: 'recovery', type: 'story', glyph: '💧', w: 5, cond: s => s.floor <= 18,
+    id: 'font_of_focus', biome: 'any', category: 'recovery', type: 'story', glyph: '💧', w: 3, cond: s => s.floor <= 18,
     title: 'The Clearwater Font',
     text: 'A spring so clear it looks like nothing at all, ringed with the packs of climbers who stopped to drink and lingered too long. The water, they say, shows you your own edges — and files them.',
     choices: [
@@ -687,8 +783,8 @@ export const EVENTS = [
         outcome: { text: 'A reasonable wish, reasonably granted. The fountain appreciates a realist.', gold: -30, hpPct: 0.11, fame: 1 } },
       { label: 'Take coins OUT instead', hint: 'greedy — risky',
         outcome: { roll: { stat: 'lk', dc: 13 },
-          success: { text: 'You scoop a double handful of other people\'s wishes and nothing terrible happens. Nothing terrible YET.', gold: 70, fame: -3 },
-          fail: { text: 'The water grabs your wrist. You keep the hand. You do not keep your dignity, or the coins.', hp: -14, fame: -4 } } },
+          success: { text: 'You scoop a double handful of other people\'s wishes and nothing terrible happens. Nothing terrible YET.', gold: 70, fame: -3, world: { counter: { id: 'greed', add: 1 }, tag: choiceBridgeTag('gilded_fountain') } },
+          fail: { text: 'The water grabs your wrist. You keep the hand. You do not keep your dignity, or the coins.', hp: -14, fame: -4, world: { counter: { id: 'greed', add: 1 }, tag: choiceBridgeTag('gilded_fountain') } } } },
     ],
   },
 
@@ -782,7 +878,8 @@ export const EVENTS = [
   },
   {
     id: 'awakening_return', biome: 'any', category: 'unknown', type: 'story', glyph: '✨', w: 8, once: true,
-    cond: s => !s.promoted && s.flags.awakening_soon && s.floor >= 20,
+    when: { flag: 'awakening_soon', floorMin: 24 },
+    cond: s => !s.promoted,
     title: 'The Second Knock',
     text: 'The pressure returns — the membrane, the inheritance, the sealed door in your blood. This time it isn\'t asking. This time it\'s ready when you are.',
     choices: [
@@ -821,7 +918,8 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'oath_payoff', biome: 'any', category: 'mystery', type: 'blessing', glyph: '🔥', w: 10, once: true, cond: s => s.coopMode && s.flags.party_oath && s.floor >= 28,
+    id: 'oath_payoff', biome: 'any', category: 'mystery', type: 'blessing', glyph: '🔥', w: 10, once: true,
+    when: { coop: true, flag: 'party_oath', floorMin: 28 },
     title: 'The Witnessed Door',
     text: 'A door of black wax, veined with candle-light, and across it in flowing script: "FOR THOSE WHO SWORE." Your oath-mark warms. The tower, it turns out, keeps its ledgers.',
     choices: [
@@ -874,6 +972,7 @@ export const EVENTS = [
   /* ==================== FOREST (1–10) ==================== */
   {
     id: 'wounded_adventurer', biome: 'forest', category: 'social', type: 'story', npc: 'girl', glyph: '🩹', w: 8, once: true,
+    onSee: { char: { id: 'mira', met: true, loc: 'forest', memory: 'found_bleeding' }, thread: { id: 'mira', stage: 'met' } },
     title: 'The Wounded Climber',
     text: 'A young climber slumps against a tree, clutching a gashed side. Her party left her — "the run matters more," they said. She looks up at you with the specific hope of someone who has stopped expecting it.',
     choices: [
@@ -884,11 +983,13 @@ export const EVENTS = [
       { label: 'Loot her pack while she sleeps', hint: 'profit, infamy',
         outcome: { text: 'She isn\'t asleep. She watches you take it all, saying nothing, which is infinitely worse.', gold: 65, fame: -8, flag: 'left_climber', itemRoll: true } },
       { label: 'Walk past', hint: 'the run matters more',
-        outcome: { text: 'You tell yourself the tower makes these choices, not you. The tower, notably, declines to take the credit.', fame: -2 } },
+        outcome: { text: 'You tell yourself the tower makes these choices, not you. The tower, notably, declines to take the credit.', fame: -2, world: { counter: { id: 'cruelty', add: 1 }, tag: choiceBridgeTag('wounded_adventurer') } } },
     ],
   },
   {
-    id: 'climber_returns', biome: 'any', category: 'social', type: 'blessing', glyph: '🛡️', w: 16, cond: s => s.flags.saved_climber && s.floor > 15, once: true,
+    id: 'climber_returns', biome: 'any', category: 'social', type: 'blessing', glyph: '🛡️', w: 16, once: true, npc: 'girl',
+    when: { flag: 'saved_climber', floorMin: 16 },
+    onSee: { char: { id: 'mira', met: true, loc: 'later', memory: 'repaid' }, thread: { id: 'mira', stage: 'returned' } },
     title: 'A Debt Repaid',
     text: 'A figure in mismatched armor drops from a ledge — the climber you saved, healed and re-equipped. "Told you I keep score." She presses a bundle into your hands. "Paid in full. Now go win, so the story was worth it."',
     choices: [
@@ -918,7 +1019,7 @@ export const EVENTS = [
     text: 'Bandits have barricaded the only path with a fallen log and a hand-painted sign: "TOLE: 40 GOLD." Their leader shrugs. "Everyone\'s gotta eat, and the tower don\'t pay wages."',
     choices: [
       { label: 'Pay the toll', req: { gold: 40 }, hint: 'safe passage',
-        outcome: { text: 'The leader tips his hat. "Pleasure. Mind floor nine — something new moved in and it don\'t take gold."', gold: -40, flag: 'paid_toll' } },
+        outcome: { text: 'The leader tips his hat. "Pleasure. Mind floor nine — the old tree that judges climbers woke up. Sylvanor. It don\'t take gold."', gold: -40, flag: 'paid_toll' } },
       { label: 'Fight them', hint: 'combat',
         outcome: { combat: { enemies: ['bandit', 'bandit'], text: 'Negotiations conclude. Steel is the universal language.' } } },
       { label: 'Sneak around', req: { stat: 'dex', min: 11 }, hint: 'light feet',
@@ -937,7 +1038,7 @@ export const EVENTS = [
           success: { text: 'Slow hands, steady breath. The honey heals as it goes down, tasting of summers that never ended.', fullHeal: true },
           fail: { text: 'The hive objects. The hive objects a THOUSAND times.', hp: -20 } } },
       { label: 'Smoke them out', hint: 'effective, noisy',
-        outcome: { text: 'It works, but the smoke drifts deep into the forest, and something much larger than a bee smells it.', hpPct: 0.17, flag: 'angered_forest' } },
+        outcome: { text: 'It works, but the smoke drifts deep into the forest. Something much larger than a bee smells it — rings, they say, that have judged ten thousand climbers and approved of none.', hpPct: 0.17, flag: 'angered_forest' } },
       { label: 'Leave it', hint: 'safe',
         outcome: { text: 'Some treasures are rent, not loot. The bees hum approvingly at your wisdom.' } },
     ],
@@ -946,18 +1047,19 @@ export const EVENTS = [
     id: 'ancient_tree', biome: 'forest', category: 'mystery', type: 'story', glyph: '🌳', w: 5, once: true,
     affinity: { races: ['beastfolk', 'elf'] },
     title: 'The Tree That Speaks',
-    text: 'The great oak\'s bark shifts into something like a face. "CLIMBER." Its voice is centuries rubbing together. "I HAVE STOOD SINCE THE FIRST FLOOR WAS LAID. ASK. ONE. QUESTION."',
+    text: 'The great oak\'s bark shifts into something like a face. "CLIMBER." Its voice is centuries rubbing together. "I HAVE STOOD SINCE THE FIRST FLOOR WAS LAID. THE ELDERWOOD — SYLVANOR — STILL JUDGES AT THE GATE. ASK. ONE. QUESTION."',
     choices: [
       { label: '"What is the tower?"', hint: 'lore',
         outcome: { text: '"A QUESTION," the tree rumbles, "THAT THE KING AT THE TOP ASKS EVERY CENTURY, AND ANSWERS WRONG." The bark stills. You feel older and wiser and slightly more worried.', statUp: { stat: 'wis', amt: 2 }, xp: 30, flag: 'tree_lore' } },
       { label: '"How do I get stronger?"', hint: 'growth',
         outcome: { text: '"YOU ARE ASKING A TREE," it says, not unkindly, "HOW TO GROW. STAND IN THE LIGHT. DRINK DEEP. DO NOT APOLOGIZE FOR TAKING UP SPACE." Somehow, this works.', statUpRandom: 2 } },
       { label: '"Got any gold?"', hint: 'the tree judges you',
-        outcome: { text: 'A very long pause. Then, from somewhere in its canopy, the tree shakes down a rain of coins left by climbers who asked better questions. "SPEND IT ON WISDOM," it suggests.', gold: 85, fame: -1 } },
+        outcome: { text: 'A very long pause. Then, from somewhere in its canopy, the tree shakes down a rain of coins left by climbers who asked better questions. "SPEND IT ON WISDOM," it suggests.', gold: 85, fame: -1, world: { counter: { id: 'greed', add: 1 }, tag: choiceBridgeTag('ancient_tree') } } },
     ],
   },
   {
-    id: 'wolf_ambush', biome: 'forest', category: 'dangerous', type: 'risk', glyph: '🌒', w: 5, cond: s => s.flags.angered_forest,
+    id: 'wolf_ambush', biome: 'forest', category: 'dangerous', type: 'risk', glyph: '🌒', w: 5,
+    when: { flag: 'angered_forest' },
     title: 'The Forest Remembers',
     text: 'The smoke from the hive drifted far. Yellow eyes ring the clearing — the forest has sent collectors for its grievance.',
     choices: [
@@ -1018,24 +1120,24 @@ export const EVENTS = [
     text: 'Shelves stretch down into darkness, holding the recorded history of the fallen kingdom. Most books crumble at a touch. One — bound in silver — does not. Its lock is a riddle in a dead language.',
     choices: [
       { label: 'Decipher it', req: { stat: 'int', min: 13 }, hint: 'a scholar\'s lock',
-        outcome: { text: 'The script yields. It is a confession: the kingdom BUILT the tower, and the first Demon King was its architect — a hero who reached the top and found the throne empty. Inside the cover, a silver sigil. It hums like it knows your name.\n\n✦ SIGIL OF TRUTH acquired (1 of 3)', sigil: 'truth', xp: 50 } },
+        outcome: { text: 'The script yields. It is a confession: the kingdom BUILT the tower, and the first Demon King was its architect — a hero who reached the top and found the throne empty. A margin note, later: the Lich of the Fallen King still sits the dust-throne on floor twenty, a crown with no head. Inside the cover, a silver sigil. It hums like it knows your name.\n\n✦ SIGIL OF TRUTH acquired (1 of 3)', sigil: 'truth', xp: 50, world: { counter: { id: 'curiosity', add: 1 }, tag: choiceBridgeTag('buried_library') } } },
       { label: 'Force the lock', hint: 'crude but direct',
         outcome: { roll: { stat: 'str', dc: 13 },
           success: { text: 'The lock snaps. The pages are gibberish to you, but the margins are full of gold leaf, and THAT you can read fluently.', gold: 70 },
           fail: { text: 'The book screams. Books should not scream. You put it down and leave at a dignified sprint.', hp: -8 } } },
       { label: 'Read the crumbling books instead', hint: 'gentler knowledge',
-        outcome: { text: 'Tax records, love letters, a child\'s primer. A whole kingdom of ordinary days, sleeping under dust. You climb on, carrying all of it.', xp: 45 } },
+        outcome: { text: 'Tax records, love letters, a child\'s primer. A whole kingdom of ordinary days, sleeping under dust. You climb on, carrying all of it.', xp: 45, world: { counter: { id: 'curiosity', add: 1 }, tag: choiceBridgeTag('buried_library') } } },
     ],
   },
   {
     id: 'royal_crypt', biome: 'ruins', category: 'equipment', type: 'treasure', glyph: '⚰️', w: 6,
     title: 'The Royal Crypt',
-    text: 'Kings and queens in marble rows. Their burial gold glints through cracked sarcophagi. Carved above the door: "TAKE NOTHING. WE ARE STILL USING IT."',
+    text: 'Kings and queens in marble rows. Their burial gold glints through cracked sarcophagi. Carved above the door: "TAKE NOTHING. WE ARE STILL USING IT." A later hand has scratched: THE CROWN STILL FLOATS. FLOOR TWENTY. DO NOT KNEEL UNLESS YOU MEAN A KINGDOM OF DUST.',
     choices: [
       { label: 'Rob the dead', hint: 'wealth, and maybe wrath',
         outcome: { roll: { stat: 'lk', dc: 12 },
-          success: { text: 'You liberate a fortune from people who have been dead for six hundred years. The sign was a bluff. Probably. A burial blade comes free with the coin.', gold: 120, fame: -3, classGear: true },
-          fail: { text: 'A marble hand closes on your wrist. "RUDE," says the sarcophagus.', gold: 40, combat: { enemies: ['skeleton', 'cursed_knight'], text: 'The management has been notified.' } } } },
+          success: { text: 'You liberate a fortune from people who have been dead for six hundred years. The sign was a bluff. Probably. A burial blade comes free with the coin.', gold: 120, fame: -3, classGear: true, world: { counter: { id: 'greed', add: 1 }, tag: choiceBridgeTag('royal_crypt') } },
+          fail: { text: 'A marble hand closes on your wrist. "RUDE," says the sarcophagus.', gold: 40, combat: { enemies: ['skeleton', 'cursed_knight'], text: 'The management has been notified.' }, world: { counter: { id: 'greed', add: 1 }, tag: choiceBridgeTag('royal_crypt') } } } },
       { label: 'Pay respects', hint: 'honor the dead',
         outcome: { text: 'You bow to the forgotten monarchs. A whisper moves through the crypt: "one with MANNERS." Something cold and approving pats your shoulder — and leaves a gift.', fame: 4, relicRoll: true, itemRoll: { slot: 'accessory' } } },
       { label: 'Just take a little', req: { stat: 'dex', min: 12 }, hint: 'modest, careful theft',
@@ -1071,17 +1173,18 @@ export const EVENTS = [
   },
   {
     id: 'ghost_king', biome: 'ruins', category: 'social', type: 'story', npc: 'soldier', glyph: '👻', w: 4, once: true,
+    onSee: { char: { id: 'ghost_king', met: true, loc: 'ruins', memory: 'met' }, thread: { id: 'king', stage: 'met' } },
     title: 'The King Who Stayed',
     text: 'A translucent figure sits on a broken throne, crown askew. "My kingdom fell in a single night when the tower grew through it," the ghost says. "I stayed to file a complaint. The line has not moved in six hundred years."',
     choices: [
       { label: '"Who do you complain TO?"', hint: 'lore',
-        outcome: { text: '"The top," he says, pointing up. "There is always someone at the top. That is the whole problem with towers." He eyes you. "You\'re climbing. Deliver it for me?" A ghostly petition settles into your pack.', flag: 'kings_petition', xp: 35, fame: 2 } },
+        outcome: { text: '"The top," he says, pointing up. "There is always someone at the top. That is the whole problem with towers." A thinner smile. "And on twenty, a lich wearing my cousin\'s crown. Dust with opinions. Ignore him if you can." He eyes you. "You\'re climbing. Deliver it for me?" A ghostly petition settles into your pack.', flag: 'kings_petition', xp: 35, fame: 2 } },
       { label: 'Bow to him', hint: 'respect costs nothing',
-        outcome: { text: 'It has been six centuries since anyone bowed. The king straightens his crown, stands taller, and knights you with a sword of cold light. It counts. Somehow it counts.', fame: 6, statUp: { stat: 'str', amt: 1 }, xp: 20 } },
+        outcome: { text: 'It has been six centuries since anyone bowed. The king straightens his crown, stands taller, and knights you with a sword of cold light. It counts. Somehow it counts.', fame: 6, statUp: { stat: 'str', amt: 1 }, xp: 20, flag: 'kings_bowed' } },
       { label: '"Get over it, it\'s been 600 years."', hint: 'bold strategy',
         outcome: { roll: { stat: 'lk', dc: 13 },
-          success: { text: 'A frozen pause. Then the king LAUGHS, a sound like church bells falling down stairs. "SIX HUNDRED YEARS and no one DARED." He flips you a spectral coin that turns real in your palm.', gold: 100, fame: 4 },
-          fail: { text: 'The temperature drops forty degrees. You are formally cursed by royal decree, which apparently still has legal force here.', hp: -10, fame: -4 } } },
+          success: { text: 'A frozen pause. Then the king LAUGHS, a sound like church bells falling down stairs. "SIX HUNDRED YEARS and no one DARED." He flips you a spectral coin that turns real in your palm.', gold: 100, fame: 4, flag: 'kings_mocked' },
+          fail: { text: 'The temperature drops forty degrees. You are formally cursed by royal decree, which apparently still has legal force here.', hp: -10, fame: -4, flag: 'kings_mocked' } } },
     ],
   },
   {
@@ -1109,10 +1212,10 @@ export const EVENTS = [
     choices: [
       { label: 'Melt them free', hint: 'costly, uncertain',
         outcome: { roll: { stat: 'int', dc: 12 },
-          success: { text: 'The ice yields to careful heat. The climber collapses, gasps a breath forty years overdue, and stares at you. "The Queen—" they rasp. "She freezes the ones who ALMOST make it. Take my things. FINISH IT." They press their pack into your hands and stumble toward the descent.', itemRoll: true, gold: 50, fame: 5, flag: 'freed_climber' },
+          success: { text: 'The ice yields to careful heat. The climber collapses, gasps a breath forty years overdue, and stares at you. "Queen Vessalia—" they rasp. "She freezes the ones who ALMOST make it. Take my things. FINISH IT." They press their pack into your hands and stumble toward the descent.', itemRoll: true, gold: 50, fame: 5, flag: 'freed_climber' },
           fail: { text: 'The ice refuses. Worse — it creaks toward YOU, and you yank your hand back just in time. The frozen climber\'s eyes, you would swear, are apologizing.', hp: -15 } } },
       { label: 'Take their gear', hint: 'they\'re not using it',
-        outcome: { text: 'You chip the pack free of the ice. The frozen eyes track you. You tell yourself they don\'t. They do.', itemRoll: true, fame: -4 } },
+        outcome: { text: 'You chip the pack free of the ice. The frozen eyes track you. You tell yourself they don\'t. They do.', itemRoll: true, fame: -4, world: { counter: { id: 'cruelty', add: 1 }, tag: choiceBridgeTag('frozen_climber') } } },
       { label: 'Salute and move on', hint: 'respect',
         outcome: { text: 'You press your fist to your chest — one climber to another. For a heartbeat, the ice glitters like it noticed.', fame: 2 } },
     ],
@@ -1123,10 +1226,10 @@ export const EVENTS = [
     text: 'A courtyard where time itself has frostbite. Snowflakes hang motionless in the air. In the center, a rose of pure ice blooms on a black stem, and the silence has weight.',
     choices: [
       { label: 'Study the rose', req: { stat: 'wis', min: 14 }, hint: 'deep sight',
-        outcome: { text: 'You watch it without touching, and understanding blooms colder than the ice: the rose is a HEART. The Frost Queen\'s. Removed and planted here where it couldn\'t be broken twice. At its base, a frozen sigil — the second key.\n\n✦ SIGIL OF SORROW acquired (2 of 3)', sigil: 'sorrow', xp: 50 } },
+        outcome: { text: 'You watch it without touching, and understanding blooms colder than the ice: the rose is a HEART. Queen Vessalia the Unmelting\'s. Removed and planted here where it couldn\'t be broken twice. At its base, a frozen sigil — the second key.\n\n✦ SIGIL OF SORROW acquired (2 of 3)', sigil: 'sorrow', xp: 50 } },
       { label: 'Pick the rose', hint: 'beauty has a price',
         outcome: { roll: { stat: 'dex', dc: 13 },
-          success: { text: 'The stem parts. The garden EXHALES — every hanging snowflake falls at once, a held breath released after a hundred years. The rose glitters in your pack, priceless and terribly sad.', gold: 150, fame: -2, flag: 'stole_rose' },
+          success: { text: 'The stem parts. The garden EXHALES — every hanging snowflake falls at once, a held breath released after a hundred years. The rose glitters in your pack, priceless and terribly sad — Vessalia\'s heart, still beating cold.', item: 'ice_rose', fame: -2, flag: 'stole_rose' },
           fail: { text: 'The thorns are faster than you. The cold in the cut goes deeper than blood — it gets into your certainty.', hp: -22 } } },
       { label: 'Leave it in peace', hint: 'some things stay',
         outcome: { text: 'Some things are beautiful because no one has taken them yet. You leave the garden exactly as you found it, and it leaves you a little more whole.', xp: 15, fame: 2, hpPct: 0.06 } },
@@ -1135,7 +1238,11 @@ export const EVENTS = [
   {
     id: 'warm_hearth', biome: 'frost', category: 'recovery', type: 'rest', glyph: '🏠', w: 7,
     title: 'The Impossible Cottage',
-    text: 'A cottage with warm windows sits in the frozen wasteland, smoke curling from its chimney. The door is unlocked. Dinner for one is on the table, still hot. A note: "FOR THE CLIMBER. EAT. REST. THE COLD IS NOT PERSONAL, BUT I AM." — V.',
+    text: 'A cottage with warm windows sits in the frozen wasteland, smoke curling from its chimney. The door is unlocked. Dinner for one is on the table, still hot. A note: "FOR THE CLIMBER. EAT. REST. THE COLD IS NOT PERSONAL, BUT I AM. VESSALIA\'S COURT IS AHEAD. DO NOT BOW TO ICE THAT USED TO BE A PERSON." — V.',
+    variants: [
+      { id: 'rose_taken', when: { flag: 'stole_rose' },
+        text: 'A cottage with warm windows. The note on the table has a new line, in a tighter hand: "YOU TOOK HER HEART. THE COURT WILL KNOW. EAT ANYWAY. THE COLD IS STILL NOT PERSONAL." — V.' },
+    ],
     choices: [
       { label: 'Eat and rest', hint: 'trust "V"',
         outcome: { text: 'You sleep in a stranger\'s bed in an impossible house, and wake healed, warm, and deeply unsettled by the kindness. The dishes have washed themselves. The note now reads: "GOOD LUCK."', fullHeal: true, fullMana: true, flag: 'ate_v_dinner' } },
@@ -1149,6 +1256,10 @@ export const EVENTS = [
     id: 'avalanche', biome: 'frost', category: 'dangerous', type: 'risk', glyph: '🏔️', w: 6,
     title: 'The Groaning Pass',
     text: 'The only way forward is a narrow pass beneath a cliff of packed snow. The mountain above you groans like a sleeper about to turn over. Every sound you make is a negotiation.',
+    variants: [
+      { id: 'court_angry', when: { flag: 'stole_rose' },
+        text: 'The only way forward is a narrow pass. The mountain groans in a voice that has learned your name — Vessalia\'s court, they say, felt the garden exhale. Every sound you make is a negotiation with someone who is already angry.' },
+    ],
     choices: [
       { label: 'Move slow and silent', req: { stat: 'dex', min: 12 }, hint: 'patience and poise',
         outcome: { text: 'Half an hour of held breath and placed footsteps. The mountain sleeps on. On the far side you find the belongings of someone who chose to run.', gold: 45, xp: 20 } },
@@ -1164,8 +1275,13 @@ export const EVENTS = [
   /* ==================== SWAMP (31–40) ==================== */
   {
     id: 'witch_hut', biome: 'swamp', category: 'mystery', type: 'story', glyph: '🧹', w: 6,
+    onSee: { char: { id: 'witch', met: true, loc: 'swamp', memory: 'appointment' }, thread: { id: 'witch', stage: 'met' } },
     title: 'The Hut on Heron Legs',
     text: 'A hut strides through the mire on stilted bird legs, then settles in front of you, blocking the path with the confidence of a scheduled appointment. A crone leans out. "You\'re LATE. Come in. The tea\'s gone bitter twice."',
+    variants: [
+      { id: 'heron', when: { knowledge: 'heron_rumor' },
+        text: 'A hut strides through the mire on stilted bird legs, then settles in front of you, blocking the path with the confidence of a scheduled appointment. A crone leans out. "You\'re LATE. A pilgrim told you I walk. You still arrived like someone who thought she was frostbitten. Come in. The tea\'s gone bitter twice."' },
+    ],
     choices: [
       { label: 'Drink the tea', hint: '???',
         outcome: { roll: { stat: 'wis', dc: 11 },
@@ -1180,7 +1296,7 @@ export const EVENTS = [
   {
     id: 'sunken_bell', biome: 'swamp', category: 'mystery', type: 'story', glyph: '🔔', w: 5, once: true,
     title: 'The Sunken Bell',
-    text: 'A cathedral bell the size of a house lies half-drowned in the mire, green with age. When the wind moves, it hums a note you feel in your bones — a funeral that never finished.',
+    text: 'A cathedral bell the size of a house lies half-drowned in the mire, green with age. When the wind moves, it hums a note you feel in your bones — a funeral that never finished. Pilgrims scratch the same warning into the bronze: THREE HEADS DOWNMIRE. ONE WEEPS. DO NOT CUT THE GRIEF.',
     choices: [
       { label: 'Search under the bell', req: { flag: 'witch_hint' }, hint: 'the witch told you',
         outcome: { text: 'You wade beneath the great bronze rim, exactly as the witch said. In the mud, a sigil of black iron, cold as a held grudge. The third key. The bell tolls once, by itself — approval, or warning.\n\n✦ SIGIL OF WRATH acquired (3 of 3)', sigil: 'wrath', xp: 50 } },
@@ -1212,7 +1328,7 @@ export const EVENTS = [
   {
     id: 'toad_prince', biome: 'swamp', category: 'social', type: 'blessing', glyph: '🐸', w: 4,
     title: 'The Prince of Puddles',
-    text: 'An enormous toad wearing a tiny, genuine crown regards you from a lily pad throne. "YES, cursed prince, YES, a kiss would fix it," he croaks, preempting the question. "No, I don\'t WANT it. Being a toad is fantastic. I eat bugs and answer to NO ONE. Now — you look like you could use a boon, and I collect gratitude."',
+    text: 'An enormous toad wearing a tiny, genuine crown regards you from a lily pad throne. "YES, cursed prince, YES, a kiss would fix it," he croaks, preempting the question. "No, I don\'t WANT it. Being a toad is fantastic. I eat bugs and answer to NO ONE. Downstream, something bigger weeps — three heads, one funeral. I collect gratitude. It collects climbers."',
     choices: [
       { label: 'Accept a boon', hint: 'blessing',
         outcome: { text: 'He burps a small, dignified sphere of royal magic your way. It soaks in with a sensation like being knighted by a very small, very confident king.', statUpRandom: 1, hpPct: 0.14, fame: 2 } },
@@ -1269,7 +1385,7 @@ export const EVENTS = [
       { label: 'Ask what question it asked', hint: 'lore',
         outcome: { text: '"The King asked me: \'Would you take this throne if it were offered?\'" The light\'s burning dims a fraction. "I said yes. Guards who covet thrones become prisoners. It is the tower\'s oldest joke, and it is always funny to exactly one person."', flag: 'angel_lore', xp: 45 } },
       { label: 'Leave it chained', hint: 'not your problem',
-        outcome: { text: '"Wise, perhaps." The light resumes pacing its groove. "Or merely rehearsed. The tower loves a climber who has learned not to look sideways." The pity in its voice follows you up two floors.', fame: -2 } },
+        outcome: { text: '"Wise, perhaps." The light resumes pacing its groove. "Or merely rehearsed. The tower loves a climber who has learned not to look sideways." The pity in its voice follows you up two floors.', fame: -2, world: { counter: { id: 'cruelty', add: 1 }, tag: choiceBridgeTag('chained_angel') } } },
     ],
   },
   {
@@ -1291,7 +1407,7 @@ export const EVENTS = [
   {
     id: 'slag_patrol', biome: 'hell', category: 'combat', type: 'risk', glyph: '⚔️', w: 6,
     title: 'The Slag Patrol',
-    text: 'A knight of cooling iron marches a pair of crimson wretches on chain-leashes. Its chest-runes tick like a furnace clock. "Clearance," it rasps. "Or clearance."',
+    text: 'A knight of cooling iron marches a pair of crimson wretches on chain-leashes. Its chest-runes tick like a furnace clock. "Clearance," it rasps. "Or clearance. The Duke counts the ones who stall."',
     choices: [
       { label: 'Clearance it is', hint: 'combat',
         outcome: { combat: { enemies: ['slag_knight', 'crimson_wretch', 'crimson_wretch'], text: 'The leashes snap. The knight does not hurry.' } } },
@@ -1331,6 +1447,40 @@ export const EVENTS = [
     id: 'last_rest', biome: 'hell', category: 'recovery', type: 'rest', glyph: '🕯️', w: 6,
     title: 'The Vigil Room',
     text: 'A small stone room untouched by the heat. Hundreds of candles, each lit by a climber who rested here before the final floors. Some candles have burned for centuries. Most went out quickly. There is one unlit candle, and a match, waiting.',
+    variants: [
+      { id: 'v_dinner', when: { flag: 'ate_v_dinner' },
+        text: 'A small stone room untouched by the heat. Hundreds of candles. The longest-burning one is labeled V — the same initial as the cottage that fed you in the frost. The match waits. So does the arithmetic.' },
+      { id: 'already_lit', when: { flag: 'lit_candle' },
+        text: 'A small stone room untouched by the heat. Your candle is already among them — a small, stubborn flame in a crowd of centuries. The match has been used. The room still lets you sit.' },
+      { id: 'turned_back', when: { flag: 'refused_escape' },
+        text: 'A small stone room untouched by the heat. Hundreds of candles. One of the newer ones is green-field bright, then snuffed — a climber who looked at the Coward\'s Gate and turned around. The match waits for the ones who finish it.' },
+      { id: 'vigil_petition', when: { flag: 'kings_petition' },
+        append: 'The petition does not ask to be lit. It asks to be delivered.' },
+      { id: 'vigil_secret', when: { secretTaken: true },
+        append: 'The path you already took does not need a candle. It is already a kind of light.' },
+      { id: 'vigil_seen', when: { flag: 'seen_throne' },
+        append: 'You already know the shape of the room above. The candles do not pretend otherwise.' },
+      { id: 'vigil_sigils3', when: { sigilCount: 3 },
+        append: 'The three keys tick in time with the oldest flames, as if they have been here before.' },
+      { id: 'vigil_rose', when: { any: [{ flag: 'stole_rose' }, { item: 'ice_rose' }] },
+        append: 'A colder flame than these would recognize the heart on your coat.' },
+      { id: 'vigil_hydra', when: { bossCleared: 40, bossPick: { floor: 40, id: 'hydra' } },
+        append: 'One of the newer candles weeps without melting. Three mouths, quiet now.' },
+      { id: 'vigil_sigils', when: { sigilCount: 1 },
+        append: 'A sigil ticks. Incomplete. The room has seen people try to light a lock.' },
+      { id: 'vigil_seed', when: { event: 'seed_bloom' },
+        append: 'Warmth you were told not to sell sits among the centuries and does not sell.' },
+      { id: 'vigil_mira_left', when: { flag: 'left_climber', notFlag: 'saved_climber' },
+        append: 'A cheap scarf would not last in this heat. The memory does.' },
+      { id: 'vigil_defiler', when: { flag: 'defiler' },
+        append: 'The newest wax has tooth-marks. Shrines remember, even when they are candles.' },
+      { id: 'vigil_lyra', when: { any: [{ flag: 'bard_friend' }, { knowledge: 'heard_own_verse' }], not: { subclassId: 'doomsinger' } },
+        append: 'Someone has hummed a hole in the quiet — a last bar, left empty on purpose.' },
+      { id: 'tend_curiosity', when: { counterMin: { curiosity: 3 }, notFlag: 'v_lore' },
+        append: 'Several unlit wicks face the same way, like a reading room that forgot it was a shrine.' },
+      { id: 'tend_defiance', when: { counterMin: { defiance: 2 }, notFlag: 'refused_escape' },
+        append: 'One newer candle sits turned away from the match, as if it already said no.' },
+    ],
     choices: [
       { label: 'Light your candle and rest', hint: 'full restore',
         outcome: { text: 'The flame takes. Around you, centuries of climbers\' lights flicker in something like welcome. You sleep dreamless and wake ready. Your candle burns steady among them now — whatever happens above, this much is permanent.', fullHeal: true, fullMana: true, fame: 3, flag: 'lit_candle' } },
@@ -1342,12 +1492,14 @@ export const EVENTS = [
   /* ---- NPC social / duel events (bob-sheet + legacy hero sprites) ---- */
   {
     id: 'blade_hero_meet', biome: 'any', category: 'social', type: 'story', glyph: '⚔️', w: 5, once: true, cond: s => s.floor >= 3,
+    onSee: { char: { id: 'oathbound', met: true, memory: 'first_meeting' }, thread: { id: 'oathbound', stage: 'met' } },
     title: 'The Oathbound Champion',
     text: 'A knight in travel-worn plate sits polishing a shield that still remembers parade grounds. "Counsel, contest, or courtesy," he says. "I offer all three. The tower offers none."',
     npc: { art: 'blade_hero', name: 'Oathbound Champion', blurb: 'A living hero of the old knightly cut — blade, shield, and stubborn hope.' },
     choices: [
       { label: 'Ask for counsel', hint: 'gear or technique',
         outcome: { text: 'He talks like a drill yard that learned mercy. You leave sharper — and heavier by one keepsake.',
+          world: { char: { id: 'oathbound', memory: 'counseled' }, thread: { id: 'oathbound', stage: 'counseled' } },
           reward: { chooseLabel: 'He offers one:', options: [
             { kind: 'item', id: 'veteran_helm' },
             { kind: 'item', id: 'veteran_cuirass' },
@@ -1355,6 +1507,7 @@ export const EVENTS = [
           ] } } },
       { label: 'Spar him', hint: 'hard fight — better spoils + XP',
         outcome: { combat: { enemies: ['blade_hero'], text: 'He salutes, then stops being polite.',
+          world: { char: { id: 'oathbound', memory: 'dueled' }, thread: { id: 'oathbound', stage: 'dueled' } },
           reward: { chooseLabel: 'The champion nods. Take one:', options: [
             { kind: 'item', id: 'veteran_cuirass' },
             { kind: 'skill', id: 'veteran_guard' },
@@ -1611,12 +1764,18 @@ export const EVENTS = [
   },
 ];
 
+EVENTS.push(...NARRATIVE_EVENTS);
+
 /** Events shown on the Compendium NPCs tab. */
 export const NPC_EVENTS = [
   'blade_hero_meet', 'dark_mage_meet', 'pathfinder_meet', 'axe_northman_meet',
   ...Object.keys(GALLERY_NPCS).map(id => `${id}_meet`),
   'cursed_knight_vigil', 'crowned_shadow',
   'roadside_climbers', 'farmstead_meet', 'oldman_trials',
+  'wounded_adventurer', 'climber_returns', 'mira_grudge', 'mira_watch',
+  'bard', 'bard_returns', 'bard_last_song',
+  'ghost_king', 'kings_favor', 'oathbound_watch', 'oathbound_gate',
+  'dark_mage_watch', 'pathfinder_watch', 'axe_northman_watch',
 ];
 
 // Stamp default tags from EVENT_TAG_MAP (inline `tags` on a card wins).
@@ -1639,23 +1798,21 @@ export const CATEGORY_META = {
 };
 
 // Weighted pick honoring biome, conditions, once-flags, underdog comeback
-// weighting, and recent-category history (anti-streak).
-export function drawEvent(rng, state, { exclude = [] } = {}) {
-  const biome = state.biomeId;
-  const pool = EVENTS.filter(e => {
-    if (e.biome !== 'any' && e.biome !== biome) return false;
-    if (e.once && state.seenEvents.includes(e.id)) return false;
-    if (exclude.includes(e.id)) return false;
-    if (e.cond && !e.cond(state)) return false;
-    return true;
+// weighting, recent-category history, and narrative pacing. Weights come
+// from eventDrawWeight — the same function ?dev=world prints.
+export function eventDrawPool(state, { exclude = [], party = [], skipPace = false } = {}) {
+  const excludeFamilies = EVENTS
+    .filter(e => exclude.includes(e.id) && e.family)
+    .map(e => e.family);
+  const pool = EVENTS.filter(e => eventEligible(e, state, { exclude, excludeFamilies, party }));
+  const offered = exclude.map(id => EVENTS.find(e => e.id === id)).filter(Boolean);
+  return pool.map(e => {
+    const wt = eventDrawWeight(e, state, { exclude, offered, skipPace });
+    return { id: e.id, w: wt.w, role: wt.role, e };
   });
-  const recent = state.recentCategories || [];
-  const weighted = pool.map(e => ({
-    w: e.w
-      * (e.comeback && state.underdog ? CONFIG.chargen.comebackWeightMult : 1)
-      * historyCategoryWeight(e.category, recent)
-      * tagWeightMult(e, state),
-    e,
-  }));
+}
+
+export function drawEvent(rng, state, { exclude = [], party = [], skipPace = false } = {}) {
+  const weighted = eventDrawPool(state, { exclude, party, skipPace }).map(({ w, e }) => ({ w, e }));
   return rng.weighted(weighted).e;
 }

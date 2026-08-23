@@ -6,6 +6,7 @@
 
 import { applyAffixes, finalizeLootItem } from './affixes.js';
 import { CLASSES } from './classes.js';
+import { CONFIG } from './config.js';
 
 export const EQUIP_SLOTS = ['weapon', 'helmet', 'chest', 'legs', 'boots', 'accessory1', 'accessory2', 'accessory3'];
 
@@ -19,6 +20,15 @@ export const WEAPONS = [
   { id: 'hand_axe', name: 'Notched Hand Axe', slot: 'weapon', wtype: 'axe', rarity: 'common', tier: 1, atk: 2, str: 1, starter: true, desc: 'Axe · +2 damage, +1 STR. The notches are not decorative.', price: 28 },
   { id: 'novice_mace', name: 'Novice\'s Mace', slot: 'weapon', wtype: 'mace', rarity: 'common', tier: 1, atk: 2, wis: 1, starter: true, desc: 'Mace · +2 damage, +1 WIS.', price: 25 },
   { id: 'wraps', name: 'Cloth Wraps', slot: 'weapon', wtype: 'fist', rarity: 'common', tier: 1, atk: 2, dex: 1, starter: true, desc: 'Fist · +2 damage, +1 DEX. Your hands were always the weapon.', price: 20 },
+
+  // ---- forest rung (non-starter t1 — shops/loot can replace starters before ruins) ----
+  { id: 'grove_shortsword', name: 'Grove Shortsword', slot: 'weapon', wtype: 'sword', rarity: 'common', tier: 1, atk: 3, desc: 'Sword · +3 damage. Still green enough to remember the forest.', price: 42 },
+  { id: 'kindling_hatchet', name: 'Kindling Hatchet', slot: 'weapon', wtype: 'axe', rarity: 'common', tier: 1, atk: 3, str: 1, desc: 'Axe · +3 damage, +1 STR. Split wood. Split problems.', price: 45 },
+  { id: 'riverstone_club', name: 'Riverstone Club', slot: 'weapon', wtype: 'mace', rarity: 'common', tier: 1, atk: 3, wis: 1, desc: 'Mace · +3 damage, +1 WIS. A smooth stone found a handle.', price: 44 },
+  { id: 'greenwood_rod', name: 'Greenwood Rod', slot: 'weapon', wtype: 'staff', rarity: 'common', tier: 1, atk: 2, int: 2, mp: 4, desc: 'Staff · +2 damage, +2 INT, +4 resource. Sap still beads on the grain.', price: 46 },
+  { id: 'sapling_bow', name: 'Sapling Bow', slot: 'weapon', wtype: 'bow', rarity: 'common', tier: 1, atk: 3, dex: 1, desc: 'Bow · +3 damage, +1 DEX. Cut this morning. Shoots this evening.', price: 44 },
+  { id: 'whisper_knife', name: 'Whisper Knife', slot: 'weapon', wtype: 'dagger', rarity: 'common', tier: 1, atk: 3, crit: 4, desc: 'Dagger · +3 damage, +4% crit. Quiet as undergrowth.', price: 43 },
+  { id: 'bark_wraps', name: 'Bark Wraps', slot: 'weapon', wtype: 'fist', rarity: 'common', tier: 1, atk: 3, dex: 1, desc: 'Fist · +3 damage, +1 DEX. The forest lends you knuckles.', price: 40 },
 
   // ---- found/shop weapons ----
   { id: 'steel_blade', name: 'Steel Blade', slot: 'weapon', wtype: 'sword', rarity: 'uncommon', tier: 2, atk: 4, desc: 'Sword · +4 damage. Honest work.', price: 70 },
@@ -62,6 +72,7 @@ export const WEAPONS = [
   { id: 'stage_rapier', name: 'Stage Rapier', slot: 'weapon', wtype: 'sword', rarity: 'rare', tier: 3, atk: 5, dex: 2, lk: 3, fameGainMult: 1.1, weaken: 0.12, desc: 'Sword · +5 damage, +2 DEX, +3 LK, 12% weaken. Applause is optional.', price: 180 },
   { id: 'censer_mace', name: 'Censer Mace', slot: 'weapon', wtype: 'mace', rarity: 'rare', tier: 3, atk: 5, wis: 4, mp: 8, frail: 0.12, desc: 'Mace · +5 damage, +4 WIS, +8 max resource, 12% frail. Smokes faintly.', price: 175 },
   { id: 'iron_knuckles', name: 'Iron Knuckles', slot: 'weapon', wtype: 'fist', rarity: 'uncommon', tier: 2, atk: 5, str: 1, dex: 1, desc: 'Fist · +5 damage, +1 STR, +1 DEX.', price: 80 },
+  { id: 'lotus_knuckles', name: 'Lotus Knuckles', slot: 'weapon', wtype: 'fist', rarity: 'rare', tier: 3, atk: 6, dex: 3, str: 2, crit: 6, weaken: 0.12, desc: 'Fist · +6 damage, +3 DEX, +2 STR, +6% crit, 12% weaken. Open hand, closed argument.', price: 175 },
   { id: 'storm_wraps', name: 'Storm Wraps', slot: 'weapon', wtype: 'fist', rarity: 'epic', tier: 4, atk: 8, dex: 4, crit: 6, initiative: 1, burn: 0.15, desc: 'Fist · +8 damage, +4 DEX, +6% crit, quicker starts, 15% burn.', price: 300 },
   { id: 'pact_blade', name: 'Pact Blade', slot: 'weapon', wtype: 'dagger', rarity: 'rare', tier: 3, atk: 5, int: 2, lifesteal: 0.1, poison: 0.12, desc: 'Dagger · +5 damage, +2 INT, 10% lifesteal, 12% poison. Signed in fine print.', price: 185 },
   { id: 'hex_stiletto', name: 'Hex Stiletto', slot: 'weapon', wtype: 'dagger', rarity: 'epic', tier: 4, atk: 7, int: 3, dex: 2, burn: 0.12, weaken: 0.15, desc: 'Dagger · +7 damage, +3 INT, +2 DEX, 12% burn, 15% weaken.', price: 305 },
@@ -72,10 +83,15 @@ export const WEAPONS = [
   { id: 'sunforged_blade', name: 'Sunforged Blade', slot: 'weapon', wtype: 'sword', rarity: 'legendary', tier: 5, atk: 14, str: 5, crit: 10, dmgMult: 1.1, burn: 0.25, frail: 0.15, desc: 'Legendary · +14 dmg, +5 STR, +10% crit, +10% damage, 25% burn, 15% frail. Forged for a name the tower still remembers.', price: 720 },
   { id: 'skyfall_bow', name: 'Skyfall Bow', slot: 'weapon', wtype: 'bow', rarity: 'legendary', tier: 5, atk: 13, dex: 6, crit: 14, initiative: 1, weaken: 0.22, poison: 0.15, desc: 'Legendary · +13 dmg, +6 DEX, +14% crit, quicker starts, 22% weaken, 15% poison. Arrows find the horizon.', price: 700 },
   { id: 'archon_staff', name: 'Archon Staff', slot: 'weapon', wtype: 'staff', rarity: 'legendary', tier: 5, atk: 12, int: 7, mp: 22, crit: 6, frail: 0.2, weaken: 0.15, desc: 'Legendary · +12 dmg, +7 INT, +22 resource, +6% crit, 20% frail, 15% weaken.', price: 710 },
+  { id: 'sanctum_maul', name: 'Sanctum Maul', slot: 'weapon', wtype: 'mace', rarity: 'legendary', tier: 5, atk: 13, wis: 6, str: 4, mp: 16, frail: 0.22, desc: 'Legendary · +13 dmg, +6 WIS, +4 STR, +16 resource, 22% frail. Rings like a chapel that refused to empty.', price: 705 },
+  { id: 'heavenbreaker_wraps', name: 'Heavenbreaker Wraps', slot: 'weapon', wtype: 'fist', rarity: 'legendary', tier: 5, atk: 13, dex: 6, str: 4, crit: 10, initiative: 1, dmgMult: 1.1, stun: 0.15, desc: 'Legendary · +13 dmg, +6 DEX, +4 STR, +10% crit, quicker starts, +10% damage, 15% stun. The sky flinches first.', price: 700 },
   // ---- UNIQUE (hand-authored; never in ordinary rolls) ----
   { id: 'excalibur', name: 'Excalibur, the Promised Dawn', slot: 'weapon', wtype: 'sword', rarity: 'unique', tier: 5, atk: 26, str: 8, wis: 6, crit: 16, dmgMult: 1.15, frail: 0.25, burn: 0.2, desc: 'UNIQUE · the one-of-one blade. +26 dmg, +8 STR, +6 WIS, +16% crit, +15% damage, 25% frail, 20% burn.', price: 1400, unique: true, noAffix: true },
   { id: 'worldsplitter', name: 'Worldsplitter', slot: 'weapon', wtype: 'axe', rarity: 'unique', tier: 5, atk: 28, str: 10, crit: 12, dmgMult: 1.18, frail: 0.25, weaken: 0.2, desc: 'UNIQUE · an axe that remembers continents. +28 dmg, +10 STR, +12% crit, +18% damage, 25% frail, 20% weaken.', price: 1350, unique: true, noAffix: true },
   { id: 'quietus', name: 'Quietus', slot: 'weapon', wtype: 'dagger', rarity: 'unique', tier: 5, atk: 20, dex: 9, crit: 24, lifesteal: 0.16, dmgMult: 1.08, poison: 0.3, tormented: 0.15, desc: 'UNIQUE · +20 dmg, +9 DEX, +24% crit, 16% lifesteal, +8% damage, 30% poison, 15% torment. Endings arrive early.', price: 1300, unique: true, noAffix: true },
+  { id: 'aetherquill', name: 'Aetherquill', slot: 'weapon', wtype: 'staff', rarity: 'unique', tier: 5, atk: 22, int: 10, wis: 6, mp: 32, manaRegen: 2, dmgMult: 1.12, tormented: 0.15, desc: 'UNIQUE · +22 dmg, +10 INT, +6 WIS, +32 resource, +2 regen/turn, +12% damage, 15% torment. Writes spells that have not happened yet.', price: 1320, unique: true, noAffix: true },
+  { id: 'first_verdict', name: 'The First Verdict', slot: 'weapon', wtype: 'mace', rarity: 'unique', tier: 5, atk: 24, wis: 8, str: 6, frail: 0.25, stun: 0.12, dmgMult: 1.14, desc: 'UNIQUE · +24 dmg, +8 WIS, +6 STR, +14% damage, 25% frail, 12% stun. The sentence predates the crime.', price: 1320, unique: true, noAffix: true },
+  { id: 'unstruck_bell', name: 'The Unstruck Bell', slot: 'weapon', wtype: 'fist', rarity: 'unique', tier: 5, atk: 22, dex: 8, str: 6, crit: 14, initiative: 2, dmgMult: 1.12, stun: 0.2, desc: 'UNIQUE · +22 dmg, +8 DEX, +6 STR, +14% crit, +2 initiative, +12% damage, 20% stun. The hit is the ringing.', price: 1280, unique: true, noAffix: true },
   // ---- WRLD (one of each per run / party; never ordinary loot) ----
   { id: 'caladbolg', name: 'Caladbolg, the World-Cleaver', slot: 'weapon', wtype: 'sword', rarity: 'wrld', tier: 5, atk: 34, str: 12, wis: 6, crit: 18, dmgMult: 1.22, frail: 0.3, burn: 0.25, desc: 'WRLD · the blade that split a kingdom in half. +34 dmg, +12 STR, +6 WIS, +18% crit, +22% damage, 30% frail, 25% burn. There is only one.', price: 3200, wrld: true, noAffix: true },
   { id: 'merlin_staff', name: 'Merlin\'s Staff', slot: 'weapon', wtype: 'staff', rarity: 'wrld', tier: 5, atk: 30, int: 14, wis: 8, mp: 45, manaRegen: 2, crit: 12, dmgMult: 1.18, tormented: 0.25, confused: 0.15, desc: 'WRLD · the staff of the world\'s first archmage. +30 dmg, +14 INT, +8 WIS, +45 resource, +2 regen/turn, +12% crit, +18% damage, 25% torment, 15% confuse.', price: 3200, wrld: true, noAffix: true },
@@ -180,6 +196,7 @@ export const ACCESSORIES = [
   { id: 'monk_bracelet', name: 'Monk\'s Bracelet', slot: 'accessory', rarity: 'uncommon', tier: 2, dex: 2, str: 1, initiative: 1, desc: '+2 DEX, +1 STR, quicker initiative.', price: 95 },
   { id: 'binding_sigil', name: 'Binding Sigil', slot: 'accessory', rarity: 'rare', tier: 3, int: 2, lk: 2, lifesteal: 0.06, desc: '+2 INT, +2 LK, 6% lifesteal.', price: 190 },
   { id: 'encore_medallion', name: 'Encore Medallion', slot: 'accessory', rarity: 'uncommon', tier: 2, lk: 2, fameGainMult: 1.2, desc: '+2 LK; fame travels 20% further.', price: 110 },
+  { id: 'ice_rose', name: "Vessalia's Heart", slot: 'accessory', rarity: 'epic', tier: 4, wis: 3, freeze: 0.1, exclusive: true, desc: '+3 WIS, 10% freeze on hit. A court\'s missing heart, still beating cold. (event-exclusive)', price: 320 },
   { id: 'lyre_charm', name: 'Lyre Charm', slot: 'accessory', rarity: 'rare', tier: 3, lk: 3, dex: 2, fameGainMult: 1.15, desc: '+3 LK, +2 DEX; fame +15%.', price: 185 },
   { id: 'spellthread', name: 'Spellthread Band', slot: 'accessory', rarity: 'rare', tier: 3, int: 3, mp: 14, desc: '+3 INT, +14 max resource.', price: 195 },
   { id: 'wellspring_band', name: 'Wellspring Band', slot: 'accessory', rarity: 'epic', tier: 4, int: 2, wis: 2, mp: 10, manaRegen: 1, desc: '+2 INT, +2 WIS, +10 resource, +1 resource regen/turn.', price: 280 },
@@ -229,17 +246,17 @@ export const RELICS = [
 ];
 
 export const CONSUMABLES = [
-  { id: 'potion_s', name: 'Minor Healing Potion', rarity: 'common', desc: 'Restore 30 HP.', heal: 30, price: 25 },
-  { id: 'potion_l', name: 'Greater Healing Potion', rarity: 'uncommon', desc: 'Restore 70 HP.', heal: 70, price: 60 },
+  { id: 'potion_s', name: 'Minor Healing Potion', rarity: 'common', desc: 'Restore HP. A little more on deeper floors.', heal: 30, healPerFloor: 1, shopMaxTier: 3, price: 25 },
+  { id: 'potion_l', name: 'Greater Healing Potion', rarity: 'uncommon', desc: 'Restore a large measure of HP. Grows with the climb.', heal: 70, healPerFloor: 2, price: 60 },
   { id: 'mana_vial', name: 'Essence Vial', rarity: 'common', desc: 'Restore 40 class resource.', mana: 40, price: 35 },
   { id: 'calming_tea', name: 'Hero\'s Tonic', rarity: 'uncommon', desc: 'Restore 25 HP and steel your reputation (+2 Fame).', heal: 25, fame: 2, price: 45 },
-  { id: 'bomb', name: 'Alchemist\'s Bomb', rarity: 'uncommon', desc: 'Deal 40 damage to all enemies.', bombDmg: 40, price: 55 },
+  { id: 'bomb', name: 'Alchemist\'s Bomb', rarity: 'uncommon', desc: 'Deal damage to all enemies. Sharper the deeper you climb.', bombDmg: 40, bombPerFloor: 2.5, price: 55 },
   { id: 'smelling_salts', name: 'Smelling Salts', rarity: 'rare', desc: 'Cure all ailments and restore 20 HP.', cure: true, heal: 20, price: 70 },
   { id: 'appraisal_scroll', name: 'Scroll of Appraisal', rarity: 'rare', desc: 'A single-use reading of your current potential.', appraisal: true, price: 90 },
   // ---- farm foods (plain) ----
-  { id: 'farm_bread', name: 'Farmhouse Bread', rarity: 'common', desc: 'Restore 18 HP. Dense, honest, slightly judgmental.', heal: 18, price: 12 },
-  { id: 'farm_cheese', name: 'Wheel of Soft Cheese', rarity: 'common', desc: 'Restore 22 HP. The tower\'s mice envy you.', heal: 22, price: 14 },
-  { id: 'farm_stew', name: 'Traveler\'s Stew', rarity: 'common', desc: 'Restore 28 HP. One bowl, many vegetables.', heal: 28, price: 16 },
+  { id: 'farm_bread', name: 'Farmhouse Bread', rarity: 'common', desc: 'Restore 18 HP. Dense, honest, slightly judgmental.', heal: 18, shopMaxTier: 2, price: 12 },
+  { id: 'farm_cheese', name: 'Wheel of Soft Cheese', rarity: 'common', desc: 'Restore 22 HP. The tower\'s mice envy you.', heal: 22, shopMaxTier: 2, price: 14 },
+  { id: 'farm_stew', name: 'Traveler\'s Stew', rarity: 'common', desc: 'Restore 28 HP. One bowl, many vegetables.', heal: 28, shopMaxTier: 2, price: 16 },
   // ---- enchanted farm foods (heal% + short floor buff) ----
   { id: 'enchanted_loaf', name: 'Sun-Warmed Loaf', rarity: 'uncommon', desc: 'Heal 22% HP. +8% damage for 3 floors.', healPct: 0.22, foodBuff: { dmgMult: 1.08, floors: 3 }, price: 40 },
   { id: 'enchanted_honey', name: 'Hivegold Honey', rarity: 'uncommon', desc: 'Heal 20% HP. +1 resource regen for 3 floors.', healPct: 0.2, foodBuff: { manaRegen: 1, floors: 3 }, price: 42 },
@@ -522,4 +539,44 @@ export function rollRelic(rng, owned = [], luckBonus = 0) {
   if (!pool.length) return null;
   const weighted = pool.map(i => ({ w: (RARITY_W[i.rarity] || 1) + luckBonus, item: i }));
   return rng.weighted(weighted).item;
+}
+
+/** Shop consumables that still belong at this biome tier. */
+export function shopConsumablePool(tier = 1) {
+  return CONSUMABLES.filter(c => !c.appraisal && (c.shopMaxTier == null || tier <= c.shopMaxTier));
+}
+
+/** Merchant listing price for UNIQUE / WRLD — event-channel, not catalog value. */
+export function shopListingPrice(item) {
+  if (!item) return 0;
+  if (item.rarity === 'wrld' || item.wrld) return CONFIG.economy.shopWrldPrice ?? 820;
+  if (item.rarity === 'unique' || item.unique) return CONFIG.economy.shopUniquePrice ?? 450;
+  return item.price || 0;
+}
+
+export function isChaseItem(item) {
+  return !!(item && (item.rarity === 'unique' || item.unique || item.rarity === 'wrld' || item.wrld));
+}
+
+/** Gold recovered on sell. Chase pieces use listing price, not catalog value. */
+export function sellGold(item, { from = 'loot' } = {}) {
+  const rate = from === 'inventory' ? 0.5 : 0.6;
+  const base = isChaseItem(item) ? shopListingPrice(item) : (item?.price || 20);
+  return Math.round(base * rate);
+}
+
+/** Merchant buy gold after markup and fame/face discount. */
+export function merchantBuyGold(item, discount = 0) {
+  const disc = Math.max(0, Math.min(0.35, discount || 0));
+  return Math.round(shopListingPrice(item) * (CONFIG.economy.merchantPriceMult || 1) * (1 - disc));
+}
+
+/** Floor-scaled combat numbers for flat heals and bombs. */
+export function consumableCombatValue(c, floor = 1) {
+  const f = Math.max(1, floor || 1);
+  return {
+    heal: (c.heal || 0) + Math.round((c.healPerFloor || 0) * f),
+    bombDmg: (c.bombDmg || 0) + Math.round((c.bombPerFloor || 0) * f),
+    healPct: c.healPct || 0,
+  };
 }

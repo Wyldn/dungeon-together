@@ -1,0 +1,70 @@
+{
+  "id": "s4_hydra_heads",
+  "stage": 4,
+  "method": "bossPhaseChecksSolo",
+  "seed": 503,
+  "capturedFrom": "js/combat.js Fight (pre-extract characterization)",
+  "extra": {},
+  "expected": {
+    "round": 0,
+    "ended": false,
+    "outcome": null,
+    "charge": 0,
+    "corpses": 0,
+    "usedDeathward": false,
+    "usedUltimate": false,
+    "damageTaken": 0,
+    "target": 0,
+    "actingKey": null,
+    "order": [],
+    "player": {
+      "hp": 80,
+      "maxHp": 80,
+      "mp": 40,
+      "maxMp": 40,
+      "down": false,
+      "combatTaunt": 0,
+      "usedRevive": false,
+      "guardCount": 0,
+      "statuses": {},
+      "buffs": [],
+      "partyBuffs": [],
+      "guarding": false,
+      "ironStance": null,
+      "scriptedEdge": false
+    },
+    "enemies": [
+      {
+        "uid": "hydra1",
+        "id": "hydra",
+        "name": "The Grieving Hydra",
+        "hp": 311,
+        "maxHp": 1552,
+        "atk": 94,
+        "def": 19,
+        "spd": 4,
+        "charge": 0,
+        "turnCount": 0,
+        "statuses": {},
+        "phaseTriggers": [
+          0.6,
+          0.3
+        ],
+        "phase": 1,
+        "twoPhase": false,
+        "_enraged": false,
+        "summon": false
+      }
+    ],
+    "logs": [
+      {
+        "msg": "A severed head regrows — angrier. The Hydra swells with grief.",
+        "cls": "log-foe"
+      },
+      {
+        "msg": "A severed head regrows — angrier. The Hydra swells with grief.",
+        "cls": "log-foe"
+      }
+    ]
+  }
+}

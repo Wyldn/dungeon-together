@@ -1,9 +1,17 @@
-// Six starting classes (handoff §21). Each has: a class resource identity,
+// Six starting classes (handoff §21) plus five hidden callings. Each has: a class resource identity,
 // compatible weapon types, two immediate subclasses (level 6 choice), one
 // deeper branch per immediate (level 13), and one SECRET subclass whose
 // requirements are never shown to the player.
 //
 // The full tree is intentionally not rendered anywhere in the UI.
+
+import { secretUnlocked, hasKnowledge } from './world.js';
+
+function metaHasCalling(meta, id, extra) {
+  if ((meta?.unlockedClasses || []).includes(id)) return true;
+  if ((meta?.classFloor10 || []).includes(id)) return true;
+  return !!extra?.(meta);
+}
 
 export const CLASSES = {
   warrior: {
@@ -17,7 +25,7 @@ export const CLASSES = {
     base: { hp: 46, mp: 20, str: 9, dex: 5, int: 3, wis: 5, lk: 4 },
     roll: { hp: 12, mp: 6, str: 5, dex: 3, int: 2, wis: 3, lk: 3 },
     startSkills: ['slash', 'shield_bash', 'taunt'],
-    pool: { common: 'war_cry', rare: 'bulwark_call' },
+    pool: { common: 'war_cry', rare: 'cleave' },
     aoeSkill: 'cleave',
     growthBias: ['str', 'str', 'dex', 'wis'],
   },
@@ -77,7 +85,7 @@ export const CLASSES = {
     base: { hp: 38, mp: 36, str: 4, dex: 4, int: 6, wis: 10, lk: 4 },
     roll: { hp: 10, mp: 12, str: 3, dex: 2, int: 4, wis: 5, lk: 3 },
     startSkills: ['smite', 'mend', 'radiant_ward'],
-    pool: { common: 'crusader_mark', rare: 'aegis_hymn' },
+    pool: { common: 'crusader_mark', rare: 'judgement' },
     aoeSkill: 'judgement',
     growthBias: ['wis', 'wis', 'int', 'str'],
   },
@@ -101,6 +109,9 @@ export const CLASSES = {
     name: 'Warlock',
     epithet: 'Signed something, once. The power is real; the invoice is pending.',
     accent: '#9a5fd9',
+    hidden: true,
+    unlockKeys: { flags: ['clause_seven', 'freed_angel', 'angel_lore'] },
+    unlockCond: meta => metaHasCalling(meta, 'warlock'),
     resource: { name: 'Pact', color: '#8a4fd0' },
     weapons: ['staff', 'dagger'],
     startWeapon: 'oak_staff',
@@ -116,13 +127,16 @@ export const CLASSES = {
     name: 'Bard',
     epithet: 'The tower is a story. Stories can be edited.',
     accent: '#e08fb8',
+    hidden: true,
+    unlockKeys: { flags: ['bard_friend'], knowledge: ['unsung_verse'], items: ['encore_medallion'] },
+    unlockCond: meta => metaHasCalling(meta, 'bard'),
     resource: { name: 'Verve', color: '#d9709f' },
     weapons: ['dagger', 'sword'],
     startWeapon: 'runed_dagger_worn',
     base: { hp: 38, mp: 30, str: 4, dex: 6, int: 5, wis: 5, lk: 9 },
     roll: { hp: 10, mp: 9, str: 3, dex: 4, int: 3, wis: 3, lk: 5 },
     startSkills: ['cutting_quip', 'rallying_chord', 'soothing_refrain'],
-    pool: { common: 'discord', rare: 'iron_ballad' },
+    pool: { common: 'discord', rare: 'cacophony' },
     aoeSkill: 'cacophony',
     growthBias: ['lk', 'lk', 'dex', 'wis'],
   },
@@ -131,6 +145,9 @@ export const CLASSES = {
     name: 'Necromancer',
     epithet: 'The tower is full of the dead. Somebody should ORGANIZE them.',
     accent: '#7a9a6a',
+    hidden: true,
+    unlockKeys: { knowledge: ['pale_rite', 'pale_tome', 'heard_dead_language'] },
+    unlockCond: meta => metaHasCalling(meta, 'necromancer', m => (m?.achievements || []).includes('grave_calling')),
     resource: { name: 'Essence', color: '#6a8a5a' },
     weapons: ['staff', 'dagger'],
     startWeapon: 'oak_staff',
@@ -146,6 +163,9 @@ export const CLASSES = {
     name: 'Spellsword',
     epithet: 'Steel in one hand, syntax in the other. Refuses to specialize.',
     accent: '#5ec8c0',
+    hidden: true,
+    unlockKeys: { flags: ['archive_debt'], knowledge: ['eclipse_cut'] },
+    unlockCond: meta => metaHasCalling(meta, 'spellsword'),
     resource: { name: 'Arcana', color: '#5ec8c0' },
     weapons: ['sword', 'staff'],
     startWeapon: 'runed_shortsword',
@@ -161,8 +181,10 @@ export const CLASSES = {
     name: 'Viking',
     epithet: 'Came for a raid, found a tower. Brought the axe regardless.',
     accent: '#8aa9c0',
-    // Where the Warrior banks Vigor and spends it carefully, Fury is only earned
-    // by trading blood — the kit leans on selfHpCost and lifesteal.
+    hidden: true,
+    unlockKeys: { events: ['axe_northman_meet'] },
+    unlockCond: meta => metaHasCalling(meta, 'viking'),
+    // Fury refills from HP lost and selfHpCost, not from sitting on WIS.
     resource: { name: 'Fury', color: '#b8563f' },
     weapons: ['axe', 'mace'],
     startWeapon: 'hand_axe',
@@ -175,10 +197,37 @@ export const CLASSES = {
   },
 };
 
+function runHasItem(run, id) {
+  const bag = [...Object.values(run.equipment || {}), ...(run.inventory || [])];
+  return bag.some(x => x === id || (typeof x === 'string' && x.startsWith(id + '__')));
+}
+
+/** True if this climb has already earned a hidden calling's story key. */
+export function runEarnsCalling(run, classId) {
+  const keys = CLASSES[classId]?.unlockKeys;
+  if (!keys || !run) return false;
+  for (const f of keys.flags || []) if (run.flags?.[f]) return true;
+  for (const k of keys.knowledge || []) if (hasKnowledge(run, k)) return true;
+  for (const e of keys.events || []) {
+    if ((run.seenEvents || []).includes(e)) return true;
+  }
+  for (const id of keys.items || []) if (runHasItem(run, id)) return true;
+  return false;
+}
+
+/** Hidden callings this run has opened for future chargen (includes the current class). */
+export function earnedCallings(run) {
+  return Object.values(CLASSES)
+    .filter(c => c.hidden && (c.id === run?.classId || runEarnsCalling(run, c.id)))
+    .map(c => c.id);
+}
+
 /* ============================================================
    SUBCLASS TREE (hidden from players)
    tier 1 = level-6 choice · tier 2 = level-13 branch · secret = hidden 3rd
    secretCond(run) — never surfaced in UI; the option simply appears.
+   Secret options must check the world unlock key written by an initiation
+   accept — never a requirement/fallback alone.
    ============================================================ */
 export const SUBCLASSES = {
   /* ---- Warrior ---- */
@@ -210,7 +259,7 @@ export const SUBCLASSES = {
     id: 'doomguard', name: 'Doomguard', parent: 'warrior', tier: 1, secret: true,
     blurb: 'You have killed enough that Death considers you a colleague.',
     hint: 'A black option that was not there for other climbers.',
-    secretCond: run => run.kills >= 15,
+    secretCond: run => secretUnlocked(run, 'doomguard'),
     bonus: { str: 4, wis: 2, hp: 20 }, skill: 'reapers_toll',
     next: null,
   },
@@ -245,7 +294,7 @@ export const SUBCLASSES = {
     id: 'void_scholar', name: 'Void Scholar', parent: 'mage', tier: 1, secret: true,
     blurb: 'You have read the tower\'s footnotes. The tower is embarrassed.',
     hint: 'An option written in ink that isn\'t there.',
-    secretCond: run => (run.sigils?.length || 0) >= 1 || run.flags.tree_lore || run.flags.v_lore || run.flags.witch_hint,
+    secretCond: run => secretUnlocked(run, 'void_scholar'),
     bonus: { int: 5, wis: 3, mp: 20 }, skill: 'unmake',
     next: null,
   },
@@ -279,7 +328,7 @@ export const SUBCLASSES = {
     id: 'stormcaller', name: 'Stormcaller', parent: 'archer', tier: 1, secret: true,
     blurb: 'The sky owes you a favor. Several, actually.',
     hint: 'A crackling option that fortune reveals.',
-    secretCond: run => run.stats.lk >= 12,
+    secretCond: run => secretUnlocked(run, 'stormcaller'),
     bonus: { dex: 3, lk: 4, mp: 10 }, skill: 'lightning_arrow',
     next: null,
   },
@@ -313,7 +362,7 @@ export const SUBCLASSES = {
     id: 'phantom', name: 'Phantom', parent: 'rogue', tier: 1, secret: true,
     blurb: 'Officially, you do not exist. Unofficially, you\'re rich.',
     hint: 'An option only the guilty can read.',
-    secretCond: run => run.flags.defiler || run.flags.stole_rose || run.flags.left_climber || run.gold >= 300,
+    secretCond: run => secretUnlocked(run, 'phantom'),
     bonus: { dex: 4, lk: 3, hp: 10 }, skill: 'ghost_step',
     next: null,
   },
@@ -347,7 +396,7 @@ export const SUBCLASSES = {
     id: 'heretic_saint', name: 'Heretic Saint', parent: 'priest', tier: 1, secret: true,
     blurb: 'You broke the rules and the light forgave you FIRST. The clergy are furious.',
     hint: 'An option that should not be offered to someone like you.',
-    secretCond: run => run.flags.defiler && run.fame >= 15,
+    secretCond: run => secretUnlocked(run, 'heretic_saint'),
     bonus: { wis: 4, lk: 3, mp: 15 }, skill: 'profane_mercy',
     next: null,
   },
@@ -381,7 +430,7 @@ export const SUBCLASSES = {
     id: 'ashen_fist', name: 'Ashen Fist', parent: 'monk', tier: 1, secret: true,
     blurb: 'You guarded until the guarding burned away, and what remained was the strike.',
     hint: 'An option earned in stillness.',
-    secretCond: run => (run.guardCount || 0) >= 8,
+    secretCond: run => secretUnlocked(run, 'ashen_fist'),
     bonus: { str: 4, dex: 3, hp: 15 }, skill: 'phoenix_palm',
     next: null,
   },
@@ -415,7 +464,7 @@ export const SUBCLASSES = {
     id: 'lightbreaker', name: 'Lightbreaker', parent: 'warlock', tier: 1, secret: true,
     blurb: 'The pact never said which side the power had to come from.',
     hint: 'An option written in daylight, impossibly.',
-    secretCond: run => run.flags.freed_angel || (run.flags.defiler && run.fame >= 20),
+    secretCond: run => secretUnlocked(run, 'lightbreaker'),
     bonus: { int: 4, wis: 3, hp: 15 }, skill: 'dawnbreak',
     next: null,
   },
@@ -449,7 +498,7 @@ export const SUBCLASSES = {
     id: 'doomsinger', name: 'Doomsinger', parent: 'bard', tier: 1, secret: true,
     blurb: 'The bard in the tower taught you the verse she never performs.',
     hint: 'An option hummed in a familiar key.',
-    secretCond: run => !!run.flags.bard_friend,
+    secretCond: run => secretUnlocked(run, 'doomsinger'),
     bonus: { lk: 4, int: 3, hp: 10 }, skill: 'last_ballad',
     next: null,
   },
@@ -483,7 +532,8 @@ export const SUBCLASSES = {
     id: 'lichling', name: 'Lichling', parent: 'necromancer', tier: 1, secret: true,
     blurb: 'You put a piece of yourself somewhere safe. The rest of you is negotiable.',
     hint: 'An option with your own handwriting on it.',
-    secretCond: run => (run.sigils?.length || 0) >= 1 || run.kills >= 25,
+    // Only after the pale rite (or its return) is accepted — never from eligibility alone.
+    secretCond: run => secretUnlocked(run, 'lichling'),
     bonus: { int: 4, wis: 3, hp: 15 }, skill: 'phylactery_pulse',
     next: null,
   },
@@ -517,9 +567,7 @@ export const SUBCLASSES = {
     id: 'void_edge', name: 'Void Edge', parent: 'spellsword', tier: 1, secret: true,
     blurb: 'You learned to cut with the space between steel and spell.',
     hint: 'An option that only appears when both hands are equally bloody.',
-    secretCond: run =>
-      (run.stats.str >= 12 && run.stats.int >= 12)
-      || (run.kills >= 20 && run.stats.str >= 10 && run.stats.int >= 10),
+    secretCond: run => secretUnlocked(run, 'void_edge'),
     bonus: { str: 3, int: 4, hp: 12, mp: 12 }, skill: 'eclipse_cut',
     next: null,
   },
@@ -554,7 +602,7 @@ export const SUBCLASSES = {
     blurb: 'You have died correctly enough times that someone upstairs took notice.',
     hint: 'An option that smells of woodsmoke and mead.',
     // Earned the Viking way — by bleeding for it, not by surviving cleanly.
-    secretCond: run => run.kills >= 12 && (run.fame || 0) >= 5,
+    secretCond: run => secretUnlocked(run, 'einherjar'),
     bonus: { str: 4, lk: 3, hp: 20 }, skill: 'valhalla_calls',
     next: null,
   },

@@ -1,11 +1,12 @@
 // Run state + permanent meta progression (localStorage).
 
-import { CLASSES } from './data/classes.js';
+import { CLASSES, earnedCallings } from './data/classes.js';
 import { RACES } from './data/races.js';
 import { CONFIG } from './data/config.js';
 import { rollGrowthRank } from './data/ranks.js';
 import { makeRng, randomSeed } from './rng.js';
 import { defaultAppearanceId } from './data/appearances.js';
+import { emptyWorld, ensureWorld, syncSecretUnlockFromSubclass } from './data/world.js';
 
 const META_KEY = 'dt_meta_v1';
 const RUN_KEY = 'dt_run_v2'; // schema v2: fame, races, 8 equip slots, growth
@@ -136,6 +137,7 @@ const defaultMeta = () => ({
   achievements: [],
   endings: [],
   classFloor10: [],
+  unlockedClasses: [],
   seenIntro: false,
   gateSeen: 0, // shorten the gate animation after repeated viewings
   equippedTitle: null,
@@ -244,6 +246,20 @@ export function playableClassIds(meta) {
     .map(c => c.id);
 }
 
+/** Persist newly earned hidden callings onto meta. Returns ids added this call. */
+export function noteCallings(meta, run) {
+  if (!meta || !run) return [];
+  if (!Array.isArray(meta.unlockedClasses)) meta.unlockedClasses = [];
+  const newly = [];
+  for (const id of earnedCallings(run)) {
+    if (meta.unlockedClasses.includes(id)) continue;
+    meta.unlockedClasses.push(id);
+    newly.push(id);
+  }
+  if (newly.length) saveMeta(meta);
+  return newly;
+}
+
 export function randomRaceId(rng = makeRng(randomSeed())) {
   return rng.pick(Object.keys(RACES));
 }
@@ -300,13 +316,13 @@ export function awakenMonolith(gen, seed = randomSeed()) {
 
 /* ------------------------- RUN (per-climb) ------------------------- */
 
-export function newRun(meta, { classId, raceId = 'human', originId = null, name, seed = randomSeed(), gen: providedGen = null, fateRace = false, fateClass = false, appearanceId = null } = {}) {
+export function newRun(meta, { classId, raceId = 'human', originId = null, name, seed = randomSeed(), gen: providedGen = null, fateRace = false, fateClass = false, appearanceId = null, kitSeed = null } = {}) {
   const opts = { fateRace, fateClass };
   const cls = CLASSES[classId];
   const up = id => upgradeRank(meta, id);
   const gen = providedGen || rollStart(classId, raceId, randomSeed());
   // 3 fixed skills + 1 random from the class pool — rarely (15%), it's the AOE
-  const kitRng = makeRng(randomSeed());
+  const kitRng = makeRng(kitSeed != null ? kitSeed : randomSeed());
   const bonusSkill = cls.pool ? (kitRng.chance(0.15) ? cls.pool.rare : cls.pool.common) : cls.startSkills[0];
 
   const maxHp = gen.stats.hp + up('vitality') * 8;
@@ -365,9 +381,11 @@ export function newRun(meta, { classId, raceId = 'human', originId = null, name,
     consumables: ['potion_s'],
     weaponBonus: 0,
     flags: {},
+    world: emptyWorld(),
     bossPicks: {},
     seenEvents: [],
     recentCategories: [],
+    recentNarrative: [],
     sigils: [],
     kills: 0,
     guardCount: 0,
@@ -416,7 +434,10 @@ function migrateRun(run) {
   run.guardCount = run.guardCount || 0;
   run.appraisal = run.appraisal || null;
   run.recentCategories = run.recentCategories || [];
+  run.recentNarrative = run.recentNarrative || [];
   run.flags = run.flags || {};
+  ensureWorld(run);
+  syncSecretUnlockFromSubclass(run);
   run.bossPicks = run.bossPicks || {};
   run.appearanceId = run.appearanceId || defaultAppearanceId(run.classId);
   run.foodBuff = run.foodBuff || null;

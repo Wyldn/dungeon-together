@@ -9,8 +9,6 @@ export const ROSTER = {
     "void_eye",
     "yeti",
     "void_specter",
-    "croc",
-    "mire_abomination",
     "sin_eater",
     "eye_horror",
     "crimson_wretch",

@@ -1,0 +1,97 @@
+{
+  "id": "s3_necro_corpse",
+  "stage": 3,
+  "method": "gainCorpse+corpseSpend",
+  "seed": 404,
+  "capturedFrom": "js/combat.js Fight (pre-extract characterization)",
+  "extra": {},
+  "expected": {
+    "round": 0,
+    "ended": false,
+    "outcome": null,
+    "charge": 4,
+    "corpses": 0,
+    "usedDeathward": false,
+    "usedUltimate": false,
+    "damageTaken": 0,
+    "target": 1,
+    "actingKey": null,
+    "order": [],
+    "player": {
+      "hp": 80,
+      "maxHp": 80,
+      "mp": 30,
+      "maxMp": 40,
+      "down": false,
+      "combatTaunt": 0,
+      "usedRevive": false,
+      "guardCount": 0,
+      "statuses": {},
+      "buffs": [],
+      "partyBuffs": [],
+      "guarding": false,
+      "ironStance": null,
+      "scriptedEdge": false
+    },
+    "enemies": [
+      {
+        "uid": "e1",
+        "id": "wolf",
+        "name": "Dire Wolf",
+        "hp": 0,
+        "maxHp": 32,
+        "atk": 3,
+        "def": 1,
+        "spd": 8,
+        "charge": 0,
+        "turnCount": 0,
+        "statuses": {},
+        "phaseTriggers": [],
+        "phase": 1,
+        "twoPhase": false,
+        "_enraged": false,
+        "summon": false
+      },
+      {
+        "uid": "e2",
+        "id": "wolf",
+        "name": "Dire Wolf",
+        "hp": 51,
+        "maxHp": 32,
+        "atk": 3,
+        "def": 1,
+        "spd": 8,
+        "charge": 0,
+        "turnCount": 0,
+        "statuses": {},
+        "phaseTriggers": [],
+        "phase": 1,
+        "twoPhase": false,
+        "_enraged": false,
+        "summon": false
+      }
+    ],
+    "logs": [
+      {
+        "msg": "Soul Bolt hits Dire Wolf for 25",
+        "cls": "log-ally"
+      },
+      {
+        "msg": "A corpse is yours to spend.",
+        "cls": "log-ally"
+      },
+      {
+        "msg": "Dire Wolf is defeated!",
+        "cls": "log-ally"
+      },
+      {
+        "msg": "A corpse answers you.",
+        "cls": "log-ally"
+      },
+      {
+        "msg": "Bone Spike hits Dire Wolf for 29",
+        "cls": "log-ally"
+      }
+    ]
+  }
+}

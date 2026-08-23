@@ -3,6 +3,64 @@
 
 import { CONFIG } from './data/config.js';
 
+/** Does a status bag contain this named affliction? */
+export function statusPresent(statuses, key) {
+  if (!statuses || !key) return false;
+  if (key === 'freeze' || key === 'frozen') return !!(statuses.frozen || statuses.freeze);
+  if (key === 'paralyze' || key === 'paralyzed') return !!statuses.paralyzed;
+  if (key === 'stun' || key === 'stunned') return !!statuses.stunned;
+  return !!statuses[key];
+}
+
+function payoffLabel(key) {
+  if (key === 'frail') return 'brittleness';
+  if (key === 'burn') return 'the fire';
+  if (key === 'freeze' || key === 'frozen') return 'the frost';
+  if (key === 'poison') return 'the poison';
+  if (key === 'wounded') return 'the wounded';
+  if (key === 'standing-burn') return 'the fire already on you';
+  return key;
+}
+
+/**
+ * Setup → payoff on an enemy special.
+ * vsStatus: bonus if the climber already has that status.
+ * vsWounded: bonus if hpRatio is below vsWoundedAt (default 0.5).
+ */
+export function enemySpecialPayoff(special, statuses = {}, hpRatio = 1) {
+  const out = { mult: 1, consume: null, reasons: [] };
+  if (!special) return out;
+  if (special.vsStatus && statusPresent(statuses, special.vsStatus)) {
+    const fallback = special.vsStatus === 'burn'
+      ? (CONFIG.identity?.burnStandingMult ?? 1.2)
+      : (CONFIG.identity?.packPoisonFrailMult ?? 1.2);
+    out.mult *= special.vsStatusMult || fallback;
+    out.reasons.push(payoffLabel(special.vsStatus));
+    if (special.consumeStatus) {
+      out.consume = special.vsStatus === 'freeze' ? 'frozen' : special.vsStatus;
+    }
+  }
+  if (special.vsWounded && hpRatio < (special.vsWoundedAt ?? 0.5)) {
+    out.mult *= (typeof special.vsWounded === 'number' && special.vsWounded > 1)
+      ? special.vsWounded
+      : 1.25;
+    out.reasons.push(payoffLabel('wounded'));
+  }
+  // Authored burn specials cash standing fire even without an explicit vsStatus.
+  if (!special.vsStatus && (special.burn || special.burnSure) && statusPresent(statuses, 'burn')) {
+    out.mult *= CONFIG.identity?.burnStandingMult ?? 1.2;
+    out.reasons.push(payoffLabel('standing-burn'));
+  }
+  return out;
+}
+
+/** Player-facing line for a cashed setup. Null when the hit was ordinary. */
+export function enemyPayoffLine(name, pay) {
+  if (!pay || pay.mult <= 1.05) return null;
+  const why = pay.reasons?.length ? pay.reasons.join(' and ') : 'a prepared state';
+  return `${name} cashes ${why}.`;
+}
+
 /* ---------------- initiative (handoff §14) ---------------- */
 // entity: { spdStat, mod = 0, isPlayer, floor }
 export function rollInitiative(rng, entity, floor) {

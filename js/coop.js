@@ -1,7 +1,7 @@
 // Co-op session state. The tower is shared (one seed, host-drawn cards,
 // lock-step floors). Path cards and combat-capable events are party-voted;
-// combat (including event/mimic fights) is shared. Peaceful event rewards
-// still roll personally from shared pools.
+// combat (including event/mimic fights) is shared. Peaceful story, shops,
+// NPC memory, and secret-subclass accepts stay personal — never party votes.
 
 import { Net } from './net.js';
 
@@ -399,6 +399,7 @@ export class CoopSession {
       appraisal: run.appraisal || null,
       title: run.title || null,
       nameStyle: run.nameStyle || null,
+      elig: run.elig || null,
     };
     const key = JSON.stringify(msg);
     if (key === this.lastStatus) return;

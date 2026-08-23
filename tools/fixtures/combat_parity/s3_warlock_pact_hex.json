@@ -1,0 +1,73 @@
+{
+  "id": "s3_warlock_pact_hex",
+  "stage": 3,
+  "method": "useSkill+hitEnemy hex refund",
+  "seed": 402,
+  "capturedFrom": "js/combat.js Fight (pre-extract characterization)",
+  "extra": {},
+  "expected": {
+    "round": 0,
+    "ended": false,
+    "outcome": null,
+    "charge": 5,
+    "corpses": 0,
+    "usedDeathward": false,
+    "usedUltimate": false,
+    "damageTaken": 0,
+    "target": 0,
+    "actingKey": null,
+    "order": [],
+    "player": {
+      "hp": 74,
+      "maxHp": 80,
+      "mp": 35,
+      "maxMp": 40,
+      "down": false,
+      "combatTaunt": 0,
+      "usedRevive": false,
+      "guardCount": 0,
+      "statuses": {},
+      "buffs": [],
+      "partyBuffs": [],
+      "guarding": false,
+      "ironStance": null,
+      "scriptedEdge": false
+    },
+    "enemies": [
+      {
+        "uid": "e1",
+        "id": "wolf",
+        "name": "Dire Wolf",
+        "hp": 34,
+        "maxHp": 32,
+        "atk": 3,
+        "def": 1,
+        "spd": 8,
+        "charge": 0,
+        "turnCount": 0,
+        "statuses": {
+          "hexed": 3
+        },
+        "phaseTriggers": [],
+        "phase": 1,
+        "twoPhase": false,
+        "_enraged": false,
+        "summon": false
+      }
+    ],
+    "logs": [
+      {
+        "msg": "Hex Mark hits Dire Wolf for 22",
+        "cls": "log-ally"
+      },
+      {
+        "msg": "Dire Wolf is hexed — it will suffer more.",
+        "cls": "log-ally"
+      },
+      {
+        "msg": "Eldritch Bolt hits Dire Wolf for 24",
+        "cls": "log-ally"
+      }
+    ]
+  }
+}
