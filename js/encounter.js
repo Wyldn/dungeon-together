@@ -23,7 +23,7 @@ export function buildEventFightEnemies(run, specs, { partySize = 1, hpMult = 1 }
   const evHp = special ? eventFightHpMult(partySize) : 1;
   const evAtk = special ? eventFightAtkMult(partySize) : 1;
   const trashAtk = special ? 1 : partyTrashAtkMult(partySize, run.floor);
-  return specs.map(s => {
+  return specs.map((s, i) => {
     const isBoss = !!s.boss;
     return buildEnemy(s, run.floor, biome.floors[0], {
       boss: isBoss,
@@ -31,6 +31,7 @@ export function buildEventFightEnemies(run, specs, { partySize = 1, hpMult = 1 }
       atkMult: (special ? evAtk : trashAtk)
         * (isBoss && !s.eliteAtkRole ? partyBossAtkMult(partySize, run.floor) : 1),
       partySize,
+      spawnIndex: i,
     });
   });
 }

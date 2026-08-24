@@ -7,18 +7,63 @@ import { biomeTier } from './biome_tier.js';
 import { appraiseRun } from './character.js';
 import { applyWorldPatch } from './data/world.js';
 
+/** Flags this module reads. Catalog walker imports this — do not duplicate lists. */
+export const SHOP_NARRATIVE_READS = {
+  flags: ['guild_notes', 'undercity_ties', 'paid_toll', 'dukes_mark'],
+  chars: ['merchant'],
+};
+
 export function shopDiscount(run) {
   const fameDisc = run.fame >= CONFIG.fame.shopDiscountAt ? CONFIG.fame.shopDiscountPct : 0;
   const faceDisc = Math.max(0, Math.min(0.1, charRel(run, 'merchant') * 0.03));
+  let storyDisc = 0;
+  if (run.flags?.guild_notes) storyDisc += 0.04;
+  else if (run.flags?.undercity_ties) storyDisc += 0.04;
+  else if (run.flags?.paid_toll) storyDisc += 0.03;
+  if (run.flags?.dukes_mark && run.biomeId === 'hell') storyDisc += 0.04;
   return {
     fameDisc,
     faceDisc,
-    discount: Math.min(0.35, fameDisc + faceDisc),
+    storyDisc,
+    discount: Math.min(0.35, fameDisc + faceDisc + storyDisc),
   };
 }
 
+/** Player-facing discount line. Must mention every component that actually shaved the price. */
+export function shopDiscountFlavor(run) {
+  const d = shopDiscount(run);
+  if (!d.discount) return '';
+  let quote;
+  if (d.storyDisc && !d.fameDisc && !d.faceDisc) {
+    if (run.flags?.dukes_mark && run.biomeId === 'hell') {
+      quote = '"The Duke\'s stamp is in the ledger. A consideration."';
+    } else if (run.flags?.paid_toll && !run.flags?.guild_notes && !run.flags?.undercity_ties) {
+      quote = '"You paid the woods. A consideration."';
+    } else {
+      quote = '"Someone downstairs vouched. A consideration."';
+    }
+  } else if (d.faceDisc && !d.fameDisc) {
+    quote = '"For a familiar face, a consideration."';
+  } else {
+    quote = '"Wait — I know that face! For a climber of your reputation, a consideration."';
+  }
+  const tags = [];
+  if (d.fameDisc) tags.push('fame');
+  if (d.faceDisc) tags.push('familiar');
+  if (d.storyDisc) {
+    if (run.flags?.guild_notes) tags.push('guild');
+    else if (run.flags?.undercity_ties) tags.push('undercity');
+    else if (run.flags?.paid_toll) tags.push('toll');
+    if (run.flags?.dukes_mark && run.biomeId === 'hell') tags.push("Duke's mark");
+  }
+  return `${quote} (${tags.join(' + ')} discount)`;
+}
+
 export function shopPrice(rawPrice, discount) {
-  return Math.round(rawPrice * (CONFIG.economy.merchantPriceMult || 1) * (1 - discount));
+  const disc = Math.max(0, Math.min(0.35, Number(discount) || 0));
+  const raw = Number(rawPrice);
+  if (!Number.isFinite(raw)) return 0;
+  return Math.max(0, Math.round(raw * (CONFIG.economy.merchantPriceMult || 1) * (1 - disc)));
 }
 
 export function shopHealCost(run, discount) {
@@ -34,11 +79,13 @@ export function buildShopStock(run, rng, { resumeStock = null, coop = null } = {
   cons.forEach(c => stock.push({ kind: 'consumable', item: c, price: c.price }));
   if (rng.chance(0.4)) stock.push({ kind: 'consumable', item: CONSUMABLES.find(c => c.appraisal), price: 90 });
   const earlyOrMid = run.floor < 35;
+  const excludeIds = run.recentShopItemIds || [];
   for (let i = 0; i < 2; i++) {
     const item = rollEquipment(rng, tier, 2, {
       floor: run.floor, run, classId: run.classId, usefulBias: 4,
       requireUseful: earlyOrMid && i === 0,
       slot: (tier === 1 && i === 0) ? 'weapon' : undefined,
+      excludeIds,
     });
     if (item) stock.push({ kind: 'equip', item, price: item.price });
   }
@@ -47,6 +94,7 @@ export function buildShopStock(run, rng, { resumeStock = null, coop = null } = {
     if (!hasUseful) {
       const forced = rollEquipment(rng, Math.max(tier, 2), 3, {
         floor: run.floor, run, classId: run.classId, requireUseful: true, usefulBias: 8,
+        excludeIds,
       });
       if (forced) {
         const idx = stock.findIndex(s => s.kind === 'equip');
@@ -64,8 +112,16 @@ export function buildShopStock(run, rng, { resumeStock = null, coop = null } = {
     if (w) stock.push({ kind: 'equip', item: w, price: shopListingPrice(w) });
   }
   if (rng.chance(0.5)) {
-    const r = rollRelic(rng, run.relics);
+    const r = rollRelic(rng, [...(run.relics || []), ...excludeIds]);
     if (r) stock.push({ kind: 'relic', item: r, price: 120 + tier * 40 });
+  }
+  if (!Array.isArray(run.recentShopItemIds)) run.recentShopItemIds = [];
+  for (const s of stock) {
+    const catalogId = s.item?.baseId || (s.item?.id || '').split('__')[0];
+    if (catalogId) run.recentShopItemIds.push(catalogId);
+  }
+  if (run.recentShopItemIds.length > 12) {
+    run.recentShopItemIds = run.recentShopItemIds.slice(-8);
   }
   rng.advance();
   return stock;

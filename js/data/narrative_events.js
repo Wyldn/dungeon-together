@@ -23,7 +23,7 @@ export const NARRATIVE_EVENTS = [
     id: 'mira_grudge', family: 'mira', thread: 'mira',
     biome: 'any', category: 'social', type: 'story', npc: 'girl', glyph: '🩹', w: 14, once: true,
     tags: ['secret-flag', 'curse', 'combat-threat'],
-    when: { flag: 'left_climber', floorMin: 14, floorMax: 36 },
+    when: { flag: 'left_climber', floorMin: 14, floorMax: 36, charAlive: 'mira' },
     title: 'The Debt Collector',
     text: 'Mira steps out of a side-passage with a better coat and a worse smile. "You again." She hefts a pack that used to be hers. "I lived. Inconvenient, I know. The tower sold me a second chance cheap. Yours will cost more."',
     choices: [
@@ -57,7 +57,7 @@ export const NARRATIVE_EVENTS = [
     id: 'mira_watch', family: 'mira', thread: 'mira',
     biome: 'hell', category: 'social', type: 'blessing', npc: 'girl', glyph: '🛡️', w: 12, once: true,
     tags: ['secret-flag', 'blessing', 'equipment'],
-    when: { flag: 'saved_climber', floorMin: 42 },
+    when: { flag: 'saved_climber', floorMin: 42, charAlive: 'mira' },
     title: 'The Watcher on the Slag',
     text: 'Mira — older in the way the Scorch ages people, which is overnight — leans on a heat-warped rail. "Told you I keep score." She nods at the river of fire below. "I don\'t go further. You do. That was the deal I made with myself when you didn\'t walk past."',
     choices: [
@@ -110,10 +110,16 @@ export const NARRATIVE_EVENTS = [
     id: 'bard_last_song', family: 'bard', thread: 'bard',
     biome: 'hell', category: 'mystery', type: 'story', npc: 'woman', glyph: '🎻', w: 10, once: true,
     tags: ['secret-flag', 'class-specific', 'mentor'],
-    when: { floorMin: 43, any: [{ flag: 'bard_friend' }, { knowledge: 'heard_own_verse' }, { classId: 'bard' }] },
+    when: {
+      floorMin: 43,
+      any: [{ flag: 'bard_friend' }, { knowledge: 'heard_own_verse' }, { classId: 'bard' }],
+      not: { charDead: 'lyra' },
+    },
     title: 'The Verse She Never Performs',
     text: 'Lyra sits on a slag-stair as if it were a stage. "Last house before the throne," she says. "I have one song I don\'t play. It\'s about a singer who sang the tower down and forgot to leave the last note for herself." She looks at you like a tuning fork. "Want it anyway?"',
     variants: [
+      { id: 'late_patron', when: { knowledge: 'late_patron', not: { any: [{ knowledge: 'doomsong_taken' }, { subclassId: 'doomsinger' }] } },
+        text: 'Lyra sits on a slag-stair as if it were a stage. "Someone left a coin on a stump in the mire," she says. "Late. Still a kind of on time." She looks at you like a tuning fork that already got tipped. "I have one song I don\'t play. Want it anyway?"' },
       { id: 'already_taken', when: { any: [{ knowledge: 'doomsong_taken' }, { subclassId: 'doomsinger' }] },
         text: 'Lyra sits on a slag-stair as if it were a stage. She hears the last note in your mouth before you sit. "You already kept it," she says. "I was going to ask if you wanted it anyway. Too late. Good." She looks at you like a tuning fork that already rang.',
         choices: [
@@ -261,7 +267,7 @@ export const NARRATIVE_EVENTS = [
     id: 'bandit_gratitude', family: 'bandits',
     biome: 'any', category: 'social', type: 'story', glyph: '🪓', w: 9, once: true,
     tags: ['secret-flag', 'blessing', 'merchant'],
-    when: { flag: 'paid_toll', floorMin: 11, floorMax: 28 },
+    when: { flag: 'paid_toll', floorMin: 11, floorMax: 28, charAlive: 'bandit_chief' },
     title: 'The Toll, Revisited',
     text: 'The same bandit leader — or a cousin with the same hat — is running a smaller, sadder barricade. He recognizes your coin before your face. "You paid. In the woods. That almost never happens." He jerks a thumb at a side-path. "Free. And a rumor, because I\'m feeling liquid."',
     choices: [
@@ -503,7 +509,7 @@ export const NARRATIVE_EVENTS = [
     id: 'void_footnote', family: 'void', thread: 'void',
     biome: 'any', category: 'mystery', type: 'story', glyph: '📚', w: 8, once: true,
     tags: ['secret-flag', 'class-specific', 'mentor'],
-    when: { floorMin: 21, floorMax: 29, any: [{ knowledge: 'void_margin_read' }, { flag: 'tree_lore' }, { flag: 'v_lore' }, { origin: 'archive' }] },
+    when: { floorMin: 21, floorMax: 29, any: [{ knowledge: 'void_margin_read' }, { flag: 'tree_lore' }, { flag: 'v_lore' }, { origin: 'archive' }, { knowledge: 'margin_door_read' }, { knowledge: 'margin_door_asked' }] },
     title: 'A Scholar\'s Embarrassment',
     text: 'A living footnote — just a hovering line of script — clears its throat. "You have been collecting margins," it says. "Tree. Candle. Witch. Archive. Pick your poison; they are the same poison. The tower prefers not to be annotated. That is why the option exists."',
     choices: [
@@ -535,7 +541,7 @@ export const NARRATIVE_EVENTS = [
     id: 'shadow_ledger', family: 'phantom',
     biome: 'any', category: 'mystery', type: 'story', glyph: '📓', w: 5, once: true,
     tags: ['secret-flag', 'class-specific', 'curse'],
-    when: { floorMin: 8, any: [{ flag: 'defiler' }, { flag: 'stole_rose' }, { flag: 'left_climber' }, { gold: 180 }] },
+    when: { floorMin: 8, any: [{ flag: 'defiler' }, { flag: 'stole_rose' }, { flag: 'left_climber' }] },
     title: 'A Ledger of People Who Aren\'t',
     text: 'A black book, no title, full of names that have been carefully un-written. Your hand hovers and the page develops a faint impression of your silhouette — official enough to file, unofficial enough to deny. A clerk-ghost whispers: "The guilty can read this. The innocent see a cookbook."',
     choices: [
@@ -750,9 +756,9 @@ export const NARRATIVE_EVENTS = [
     text: 'Thunder in a corridor with no weather. Your bowstring — or the idea of one — hums in time with the scorch-mark on the ceiling. The IOU, if you have it, is suddenly very dry. If you do not, the sky has apparently been keeping its own copy. "Several favors," says the air. "Collect. Or keep walking like someone the weather does not owe."',
     variants: [
       {
-        id: 'luck',
-        when: { statMin: { lk: 12 }, notKnowledge: 'storm_owed' },
-        text: 'Thunder, indoors. Your luck, already a gossip, has filed this as a performance review. The sky does not ask whether you pocketed an IOU. It asks whether you would like the storm attached to the string.',
+        id: 'pathfinder',
+        when: { event: 'pathfinder_meet', notKnowledge: 'storm_owed' },
+        text: 'Thunder, indoors. The Pathfinder\'s dirt is still under your nails. The sky does not ask whether you pocketed an IOU. It asks whether you would like the storm attached to the string.',
       },
     ],
     choices: [
@@ -799,9 +805,9 @@ export const NARRATIVE_EVENTS = [
     text: 'A clerk-ghost with no badge and too many stamps waits beside a black book. Your silhouette is already on the page — official enough to file, unofficial enough to deny. "The guilty can finish this," it whispers. "The innocent still see a cookbook. Signing is not theft. Signing is becoming harder to introduce at parties."',
     variants: [
       {
-        id: 'purse',
-        when: { gold: 180, notKnowledge: 'shadow_ledger' },
-        text: 'The clerk-ghost looks at the weight of your purse the way other people look at a confession. "Wealth is a kind of absence," it says. "People stop seeing the person and start seeing the coin. We can make that official."',
+        id: 'ledger',
+        when: { event: 'shadow_ledger', notKnowledge: 'shadow_ledger' },
+        text: 'The clerk-ghost looks at you the way a file looks at a name it has already started erasing. "You found the book and left it a cookbook," it says. "Wealth was never the point. Becoming harder to introduce is."',
       },
     ],
     choices: [
@@ -849,7 +855,7 @@ export const NARRATIVE_EVENTS = [
     variants: [
       {
         id: 'famous',
-        when: { fame: 20, notKnowledge: 'cracked_halo' },
+        when: { fame: 40, notKnowledge: 'cracked_halo' },
         text: 'Light pools in the shape of a broken ring and a help-wanted sign. Your name is already a rumor. The light does not ask what you did. It asks whether you will let the wrong department love you on purpose.',
       },
     ],
@@ -962,7 +968,7 @@ export const NARRATIVE_EVENTS = [
   },
   {
     id: 'dawn_pact_return', family: 'lightbreaker', thread: 'dawn',
-    biome: 'any', category: 'mystery', type: 'story', glyph: '💔', w: 10,
+    biome: 'any', category: 'mystery', type: 'story', glyph: '💔', w: 16,
     tags: ['secret-flag', 'class-specific', 'advancement'],
     when: {
       classId: 'warlock',
@@ -1137,6 +1143,14 @@ export const NARRATIVE_EVENTS = [
     title: 'What They Say in the Dry Hall',
     text: 'A dry cistern has been turned into a bar by people with low standards and high morale. The bartender looks at you too long. "You\'re the one from the woods," she decides, and does not specify which story she bought.',
     variants: [
+      { id: 'mira_saved', when: { flag: 'saved_climber' },
+        text: 'A dry cistern has been turned into a bar by people with low standards and high morale. The bartender looks at you too long. "You\'re the one who patched the girl in the woods. Mira, they call her now. She drinks here when the stairs spit her out."' },
+      { id: 'mira_left', when: { flag: 'left_climber', notFlag: 'saved_climber' },
+        text: 'A dry cistern has been turned into a bar. The bartender looks at you too long, then at your pack. "You\'re the one from the woods. The version that took the kit while she watched. We have a cheaper cup for that."' },
+      { id: 'defiler', when: { flag: 'defiler' },
+        text: 'A dry cistern has been turned into a bar. The bartender looks at your hands like they still have shrine-dust on them. "The nameless one still checks the mail. We don\'t serve what it bites."' },
+      { id: 'toll', when: { flag: 'paid_toll' },
+        text: 'A dry cistern has been turned into a bar. The bartender tips an imaginary hat. "You paid the woods. Almost nobody does. First cup\'s ugly. On the house."' },
       { id: 'tend_curiosity', when: { counterMin: { curiosity: 2 }, notFlag: ['saved_climber', 'left_climber', 'defiler'] },
         append: 'She has a fourth version, quieter: you keep asking rooms questions they were not built to answer.' },
     ],
@@ -1170,13 +1184,14 @@ export const NARRATIVE_EVENTS = [
     id: 'dark_mage_watch', family: 'channeler',
     biome: 'any', category: 'social', type: 'story', glyph: '🔮', w: 10, once: true,
     tags: ['mentor', 'class-specific', 'secret-flag'],
-    when: { event: 'dark_mage_meet', floorMin: 18, floorMax: 36 },
+    when: { event: 'dark_mage_meet', floorMin: 18, floorMax: 36, charAlive: 'channeler' },
     title: 'The Channeler, Still Grading',
     text: 'The Apostate Channeler is reading a wall. The wall is losing. "You again." She does not look up. "I left a footnote on you. It has grown. Conversation, contest, or courtesy — I already offered those. This time I am checking whether you annotated back."',
     npc: { art: 'dark_mage', name: 'Apostate Channeler', blurb: 'The same mage. A later margin. She remembers the first meeting.' },
+    onSee: { char: { id: 'channeler', met: true, loc: 'later', memory: 'reappeared' } },
     choices: [
       { label: 'Show her what you learned', hint: 'she grades honestly',
-        outcome: { text: 'She marks something invisible. "Pass. Barely. The tower prefers not to be footnoted. That is why the option exists." She leaves you a smear of ink that is somehow a charm.', xp: 28, itemRoll: { slot: 'accessory' }, world: { knowledge: 'void_margin_read', char: { id: 'witch', memory: 'channeler_checked' } } } },
+        outcome: { text: 'She marks something invisible. "Pass. Barely. The tower prefers not to be footnoted. That is why the option exists." She leaves you a smear of ink that is somehow a charm.', xp: 28, itemRoll: { slot: 'accessory' }, world: { knowledge: 'void_margin_read', char: { id: 'channeler', rel: 2, memory: 'channeler_checked' } } } },
       { label: 'Challenge the hex again', hint: 'harder, this high',
         outcome: { combat: { enemies: ['dark_mage'], text: 'The page snaps shut. The air tastes like burnt footnotes and lightning, louder this time.' } } },
       { label: 'Leave her the wall', hint: 'courtesy',
@@ -1187,10 +1202,11 @@ export const NARRATIVE_EVENTS = [
     id: 'pathfinder_watch', family: 'pathfinder',
     biome: 'any', category: 'social', type: 'story', glyph: '🏹', w: 10, once: true,
     tags: ['mentor', 'class-specific'],
-    when: { event: 'pathfinder_meet', floorMin: 16, floorMax: 34 },
+    when: { event: 'pathfinder_meet', floorMin: 16, floorMax: 34, charAlive: 'pathfinder' },
     title: 'A Trail Marker Indoors',
     text: 'The Pathfinder Veteran is leaning on a marker that should not exist on this floor either. "You used the dirt I drew on your palm," they say. Not a question. "The sky keeps a ledger too. If it owes you, collect when the string is drawn."',
     npc: { art: 'pathfinder_veteran', name: 'Pathfinder Veteran', blurb: 'The same ranger. A later trail. They remember the shortcuts.' },
+    onSee: { char: { id: 'pathfinder', met: true, loc: 'later', memory: 'reappeared' } },
     choices: [
       { label: 'Ask about the sky\'s ledger', hint: 'fortune, notarized',
         outcome: { text: 'They tap the marker. Thunder, indoors, once. "IOU. Don\'t lose it." A scrap of dry paper finds your pack.', xp: 24, world: { knowledge: 'storm_owed' } } },
@@ -1204,10 +1220,11 @@ export const NARRATIVE_EVENTS = [
     id: 'axe_northman_watch', family: 'northman',
     biome: 'any', category: 'social', type: 'story', glyph: '🪓', w: 10, once: true,
     tags: ['mentor', 'npc-duel', 'secret-flag'],
-    when: { event: 'axe_northman_meet', floorMin: 16, floorMax: 34 },
+    when: { event: 'axe_northman_meet', floorMin: 16, floorMax: 34, charAlive: 'northman' },
     title: 'The Whetstone, Later',
     text: 'The Axe-Pack Veteran is still whetting steel, on a floor that has no business hosting a coastline. "You kept climbing." He nods like that is the whole review. "Halls upstairs notice people who bleed correctly. If you hear a colleague in the dark, nod back."',
     npc: { art: 'axe_northman', name: 'Axe-Pack Veteran', blurb: 'The same northman. A later stair. The axe remembers you.' },
+    onSee: { char: { id: 'northman', met: true, loc: 'later', memory: 'reappeared' } },
     choices: [
       { label: 'Ask what he means by colleague', hint: 'Death likes manners',
         outcome: { text: 'He grins without warmth. "Not me." After the next body, something in the dark counts with you. Professional courtesy.', xp: 24, world: { knowledge: 'doom_named' } } },
@@ -1230,6 +1247,117 @@ export const NARRATIVE_EVENTS = [
       { label: 'Thank her like a person', hint: 'not a farmer',
         outcome: { text: 'She looks briefly like a kind person, then like a farmer again. "Grow something else next time."', fame: 2, world: { char: { id: 'gardener', rel: 1 } } } },
     ],
+  },
+
+  /* ==================== DELAYED FACES / BIOME FOLLOW-THROUGHS ==================== */
+  {
+    id: 'v_hearth', family: 'vess',
+    biome: 'any', category: 'recovery', type: 'rest', glyph: '🏠', w: 8, once: true,
+    tags: ['secret-flag', 'blessing'],
+    when: { flag: 'ate_v_dinner', floorMin: 32, floorMax: 48, biomes: ['swamp', 'hell'], charAlive: 'vess' },
+    title: 'A Table That Moved',
+    text: 'A cottage that should not be this high has set a plate anyway. The note is shorter: "STILL NOT PERSONAL. EAT. THE COURT BELOW ALREADY KNOWS YOUR NAME. I AM NOT THE COURT." — V.',
+    variants: [
+      { id: 'network', when: { knowledge: 'v_network' },
+        text: 'A cottage that should not be this high has set a plate anyway. The note mentions the witch by not mentioning her: "SHE WALKS. I SIT. WE BOTH LEAVE FOOD OUT. EAT." — V.' },
+      { id: 'rose', when: { any: [{ flag: 'stole_rose' }, { item: 'ice_rose' }] },
+        append: 'The stew is cold in the middle, on purpose.' },
+    ],
+    onSee: { char: { id: 'vess', met: true, loc: 'later', memory: 'moved_the_table' } },
+    choices: [
+      { label: 'Eat. Again', hint: 'trust, twice',
+        outcome: { text: 'The dishes wash themselves in a biome that has no dishes. You leave warmer than the floor allows.', fullHeal: true, fullMana: true, fame: 2, world: { char: { id: 'vess', rel: 1, memory: 'fed_twice' } } } },
+      { label: 'Leave a coin and a name', req: { gold: 10 }, hint: 'tables should be paid',
+        outcome: { text: 'The coin is gone when you look back. The name is not. V, wherever V is, files it under RETURNING.', gold: -10, fame: 2, xp: 16 } },
+      { label: 'Bow to the empty chair and go', hint: 'some hosts stay unseen',
+        outcome: { text: 'The chimney sighs. You take the warmth with you like contraband.', hpPct: 0.12, world: { char: { id: 'vess', memory: 'bowed_to_the_chair' } } } },
+    ],
+  },
+  {
+    id: 'thawed_debt', family: 'frost_climber',
+    biome: 'any', category: 'social', type: 'story', glyph: '🥶', w: 9, once: true,
+    tags: ['secret-flag', 'blessing'],
+    when: { flag: 'freed_climber', floorMin: 32, charAlive: 'frost_climber' },
+    title: 'Forty Years, Still Walking',
+    text: 'The climber you thawed is sitting on a stair that is not ice, rubbing feeling back into their hands. "You melted me." Not thanks, not accusation. A fact. "Vessalia freezes the ones who almost. I almost. You didn\'t. I have been telling people that. Some of them believed me."',
+    variants: [
+      { id: 'rose', when: { any: [{ flag: 'stole_rose' }, { item: 'ice_rose' }] },
+        text: 'The climber you thawed stares at the cold on your coat first. "That\'s her heart. I asked you to finish it. I did not ask you to carry that." They almost laugh. "Finish it anyway."' },
+    ],
+    onSee: { char: { id: 'frost_climber', met: true, loc: 'later', memory: 'found_you' } },
+    choices: [
+      { label: 'Ask what they\'ve been telling people', hint: 'a rumor with your face',
+        outcome: { text: '"That someone still melts the almosts." They press a frost-stiff charm into your palm. "I\'m going down. You\'re going up. That was the deal I made with the ice when it let go."', fame: 2, itemRoll: { slot: 'accessory' }, world: { knowledge: 'thawed_story', char: { id: 'frost_climber', loc: 'descent', memory: 'going_down' } } } },
+      { label: 'Tell them to wait on the surface', hint: 'you finish it',
+        outcome: { text: '"I\'ll try." They look like a person who has been trying for forty years and is willing to try one more thing that is not ice.', fame: 3, xp: 18, world: { char: { id: 'frost_climber', loc: 'surface', memory: 'sent_down' } } } },
+      { label: 'Just nod. Keep climbing', hint: 'the finishing is the point',
+        outcome: { text: 'They nod back. Two people who almost, and one who didn\'t stop.', xp: 14 } },
+    ],
+  },
+  {
+    id: 'gravekeeper_slag', family: 'pale', thread: 'pale',
+    biome: 'hell', category: 'social', type: 'story', glyph: '🪦', w: 9, once: true,
+    tags: ['secret-flag', 'mentor', 'class-specific'],
+    when: { knowledge: 'heard_dead_language', floorMin: 42, not: { charDead: 'gravekeeper' } },
+    title: 'Rent, In the Heat',
+    text: 'The gravekeeper should not be here. The Scorch has no graves, only accounts. They look up from a list that is curling at the edges. "The accent travels," they say. "The basin does not. If you paid, something of you is cooler than this floor. If you didn\'t, the list still has a line."',
+    variants: [
+      { id: 'paid', when: { any: [{ knowledge: 'pale_rite' }, { subclassId: 'lichling' }] },
+        text: 'The gravekeeper should not be here. They tick a box that is already filled. "Paid. The rest of you is negotiable, even in slag. Especially in slag."' },
+    ],
+    npc: 'old_man',
+    onSee: { char: { id: 'gravekeeper', loc: 'hell', memory: 'followed_the_accent' } },
+    choices: [
+      { label: 'Ask if the list goes to the throne', hint: 'it does not',
+        outcome: { text: '"The throne is not a tenant. The throne is a landlord who never collected. You are still the paying kind, or you aren\'t." They go back to the curling list.', xp: 20, world: { knowledge: 'pale_list_travels', char: { id: 'gravekeeper', rel: 1 } } } },
+      { label: 'Leave them the cooler air', hint: 'courtesy, in a kiln',
+        outcome: { text: 'They nod the way lime nods: slowly, and forever.', xp: 12 } },
+    ],
+  },
+  {
+    id: 'scorch_colleague', family: 'mentors',
+    biome: 'hell', category: 'social', type: 'story', glyph: '👤', w: 8, once: true,
+    tags: ['mentor', 'secret-flag'],
+    when: {
+      floorMin: 42,
+      any: [
+        { charMet: 'channeler', charAlive: 'channeler' },
+        { charMet: 'pathfinder', charAlive: 'pathfinder' },
+        { charMet: 'northman', charAlive: 'northman' },
+      ],
+    },
+    title: 'An Old Face, Out of Fuel',
+    text: 'Someone you already met is sitting on a slag-step that is not their biome. They look up like a person who ran out of further on purpose. "You again. I don\'t go past this. You do. That was always the shape of it."',
+    variants: [
+      { id: 'channeler', when: { charMet: 'channeler', charAlive: 'channeler' },
+        npc: { art: 'dark_mage', name: 'Apostate Channeler', blurb: 'The same mage. The last margin. She is not grading the throne.' },
+        text: 'The Apostate Channeler is failing a wall of cooling iron. "You again." She does not look up. "I left a footnote on you. It has grown too loud for this floor. I stop here. You annotate the next room without me."' },
+      { id: 'pathfinder', when: { charMet: 'pathfinder', charAlive: 'pathfinder' },
+        npc: { art: 'pathfinder_veteran', name: 'Pathfinder Veteran', blurb: 'The same ranger. The trail ends on purpose.' },
+        text: 'The Pathfinder Veteran is leaning on a marker that has melted into a hook. "You used the dirt. The sky still has a ledger. I don\'t go past heat that eats maps. You do."' },
+      { id: 'northman', when: { charMet: 'northman', charAlive: 'northman' },
+        npc: { art: 'axe_northman', name: 'Axe-Pack Veteran', blurb: 'The same northman. The whetstone still works in slag.' },
+        text: 'The Axe-Pack Veteran is still whetting steel, which should not work here. "You kept climbing." He nods like a review that is finished. "Halls upstairs notice. This is not those halls. I stop. You don\'t."' },
+    ],
+    choices: [
+      { label: 'Take the last scrap they packed', hint: 'they packed for you',
+        outcome: { text: 'A charm, a nod, and the specific loneliness of being waved on by someone competent.', itemRoll: { slot: 'accessory' }, fame: 2, xp: 16 } },
+      { label: 'Ask them to watch the stair', hint: 'they will, from here',
+        outcome: { text: '"That I can do." They take a position that means something to them. You feel slightly less alone walking away, which is a ridiculous thing to get from a person who is not coming.', hpPct: 0.08, fame: 2 } },
+      { label: 'Just pass', hint: 'the shape of it',
+        outcome: { text: 'Two nods. The Scorch, briefly, contains manners.', xp: 12 } },
+    ],
+  },
+  {
+    id: 'bandit_shop', family: 'bandits',
+    biome: 'any', category: 'merchant', type: 'shop', npc: 'old_man', glyph: '🪓', w: 6, once: true,
+    tags: ['merchant', 'secret-flag'],
+    when: { flag: 'paid_toll', floorMin: 18, floorMax: 36, charAlive: 'bandit_chief' },
+    title: 'The Company Store',
+    text: 'The same hat — or the cousin — has unpacked a crate on a stair that is not a bridge. "You paid. In the woods. I got a promotion sideways into retail." He jerks a thumb. "Prices for people who already settled. Don\'t tell the other climbers. I have a brand to protect, apparently."',
+    shop: true,
+    onSee: { char: { id: 'bandit_chief', loc: 'shop', memory: 'went_retail' }, faction: { id: 'bandits', helped: true } },
+    choices: [],
   },
 
   /* ==================== TENDENCY OPPORTUNITIES ==================== */

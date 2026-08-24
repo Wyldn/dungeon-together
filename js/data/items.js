@@ -115,7 +115,8 @@ export const HELMETS = [
   { id: 'scholar_cap', name: 'Apostate\'s Cap', slot: 'helmet', rarity: 'rare', tier: 3, def: 1, int: 3, mp: 10, exclusive: true, desc: '+1 defense, +3 INT, +10 resource. Smells of spoiled footnotes. (event)', price: 195 },
   { id: 'pathfinder_hood', name: 'Trail Hood', slot: 'helmet', rarity: 'rare', tier: 3, def: 2, dex: 3, crit: 4, exclusive: true, desc: '+2 defense, +3 DEX, +4% crit. Leaves do not snag it. (event)', price: 200 },
   { id: 'axe_pack_helm', name: 'Bearded Helm', slot: 'helmet', rarity: 'rare', tier: 3, def: 3, str: 2, lk: 1, hp: 8, exclusive: true, desc: '+3 defense, +2 STR, +1 LK, +8 HP. The nose-guard has opinions. (event)', price: 205 },
-  { id: 'elder_circlet', name: 'Elder\'s Circlet', slot: 'helmet', rarity: 'legendary', tier: 5, def: 4, wis: 4, int: 3, mp: 12, exclusive: true, desc: 'Legendary · +4 DEF, +4 WIS, +3 INT, +12 resource. A quiet crown. (event)', price: 700 },
+  // Retired: weaker duplicate of elder_crown (same quiet-crown identity). Kept for old-save lookup.
+  { id: 'elder_circlet', name: 'Elder\'s Circlet', slot: 'helmet', rarity: 'legendary', tier: 5, def: 4, wis: 4, int: 3, mp: 12, exclusive: true, retired: true, desc: 'Legendary · +4 DEF, +4 WIS, +3 INT, +12 resource. A quiet crown. (event)', price: 700 },
   { id: 'elder_crown', name: 'Crown of Quiet Trials', slot: 'helmet', rarity: 'unique', tier: 5, def: 6, wis: 6, int: 6, lk: 4, mp: 20, exclusive: true, unique: true, noAffix: true, desc: 'UNIQUE · +6 DEF, +6 WIS/INT, +4 LK, +20 resource. Earned, not found.', price: 1300 },
   { id: 'prayer_veil', name: 'Prayer Veil', slot: 'helmet', rarity: 'rare', tier: 3, def: 1, wis: 3, mp: 8, desc: '+1 defense, +3 WIS, +8 max resource.', price: 145 },
   { id: 'bone_circlet', name: 'Bone Circlet', slot: 'helmet', rarity: 'rare', tier: 3, def: 2, int: 2, lifesteal: 0.05, exclusive: true, desc: '+2 defense, +2 INT, 5% lifesteal. (event-exclusive)', price: 190 },
@@ -137,7 +138,8 @@ export const CHEST_ARMOR = [
   { id: 'axe_pack_mail', name: 'Sea-Reaver Mail', slot: 'chest', rarity: 'rare', tier: 3, def: 5, str: 3, hp: 10, exclusive: true, desc: '+5 defense, +3 STR, +10 HP. Salt in every ring. (event)', price: 225 },
   { id: 'scholar_robe', name: 'Tower Scholar\'s Robe', slot: 'chest', rarity: 'rare', tier: 3, def: 3, int: 4, mp: 14, exclusive: true, desc: '+3 defense, +4 INT, +14 resource. (event)', price: 220 },
   { id: 'vanguard_cuirass', name: 'Vanguard Cuirass', slot: 'chest', rarity: 'rare', tier: 3, def: 5, str: 2, hp: 10, desc: '+5 defense, +2 STR, +10 HP.', price: 185 },
-  { id: 'grave_shroud', name: 'Grave Shroud', slot: 'chest', rarity: 'rare', tier: 3, def: 3, int: 3, mp: 10, exclusive: true, desc: '+3 defense, +3 INT, +10 resource. (event-exclusive)', price: 210 },
+  // Retired: generic caster chest that lost its grant; Pale Choir already has necro_regalia. Kept for old-save lookup.
+  { id: 'grave_shroud', name: 'Grave Shroud', slot: 'chest', rarity: 'rare', tier: 3, def: 3, int: 3, mp: 10, exclusive: true, retired: true, desc: '+3 defense, +3 INT, +10 resource. (event-exclusive)', price: 210 },
   // event-exclusive: the necromancer\'s coat + the vampire\'s cape (§1, §16)
   { id: 'necro_regalia', name: 'Regalia of the Pale Choir', slot: 'chest', rarity: 'epic', tier: 4, def: 4, int: 6, mp: 16, exclusive: true, desc: '+4 defense, +6 INT, +16 max resource. Scales with the dead you command. (event-exclusive)', price: 340 },
   { id: 'vampire_cloak', name: 'Cloak of the Crimson Court', slot: 'chest', rarity: 'rare', tier: 3, def: 3, dodge: 6, lifesteal: 0.1, exclusive: true, desc: '+3 defense, +6% dodge, 10% lifesteal. Torn from a vampire that misjudged you. (event-exclusive)', price: 260 },
@@ -477,18 +479,24 @@ export function rollEquipment(rng, tier, luckBonus = 0, opts = {}) {
   const wantSlot = opts.slot || null;
   const wantWtype = opts.wtype || null;
   // event-exclusive + starter kit + UNIQUE + WRLD never surface in ordinary loot/shops
-  const matches = (i, looseTier = false) => {
+  const excludeIds = opts.excludeIds || [];
+  const matches = (i, looseTier = false, useExclude = true) => {
     if (i.exclusive) return false;
     if (i.starter) return false;
     if (i.rarity === 'unique' || i.unique) return false;
     if (i.rarity === 'wrld' || i.wrld) return false;
     if (wantSlot && i.slot !== wantSlot) return false;
+    if (useExclude && excludeIds.length && excludeIds.includes(i.id)) return false;
     if (wantWtype && i.wtype !== wantWtype) return false;
     if (looseTier) return i.tier <= tier + 1;
     return i.tier <= tier && i.tier >= Math.max(1, tier - 1);
   };
   let pool = ALL_EQUIPMENT.filter(i => matches(i));
   if (!pool.length) pool = ALL_EQUIPMENT.filter(i => matches(i, true));
+  if (!pool.length && excludeIds.length) {
+    pool = ALL_EQUIPMENT.filter(i => matches(i, false, false));
+    if (!pool.length) pool = ALL_EQUIPMENT.filter(i => matches(i, true, false));
+  }
   if (requireUseful) {
     const useful = pool.filter(i => itemUsefulForClass(i, classId));
     if (useful.length) pool = useful;

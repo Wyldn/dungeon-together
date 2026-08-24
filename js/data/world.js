@@ -65,6 +65,24 @@ export const CHARACTERS = {
   devil: { name: 'the Clause Devil', title: 'of the seventh article', role: 'devil', faction: 'scorch' },
   revenant: { name: 'the Crowned Revenant', title: 'who waits on floor fifteen', role: 'boss', faction: 'the_fallen' },
   gravekeeper: { name: 'the Pale Keeper', title: 'who listens to rent', role: 'keeper', faction: 'pale_choir' },
+  channeler: { name: 'the Apostate Channeler', title: 'who left the academy', role: 'mage', faction: 'wanderers' },
+  pathfinder: { name: 'the Pathfinder Veteran', title: 'who maps indoors', role: 'ranger', faction: 'wanderers' },
+  northman: { name: 'the Axe-Pack Veteran', title: 'who bleeds correctly', role: 'raider', faction: 'wanderers' },
+  frost_climber: { name: 'the Thawed Climber', title: 'who almost made the stairs', role: 'climber', faction: 'climbers' },
+  bandit_chief: { name: 'the Toll Captain', title: 'of the Vertical Company', role: 'bandit', faction: 'bandits' },
+};
+
+/**
+ * Portrait keys that uniquely map to a catalog character.
+ * `old_man` is shared (merchant / gravekeeper / toll captain) and must not be inferred.
+ */
+export const NPC_ART_TO_CHAR = {
+  girl: 'mira',
+  woman: 'lyra',
+  soldier: 'ghost_king',
+  dark_mage: 'channeler',
+  pathfinder_veteran: 'pathfinder',
+  axe_northman: 'northman',
 };
 
 export const FACTIONS = {
@@ -82,7 +100,12 @@ export const FACTIONS = {
   unknown: { name: 'Unaligned' },
 };
 
-/** Ordered stages so a thread can be entered late and still make sense. */
+/**
+ * Ordered stages so a thread can be entered late and still make sense.
+ * Secret-route discovery is knowledge, not a thread stage — the thread
+ * begins at initiation (deferred / accept). Forest anger/peace and the
+ * swallowed-seed check live on flags / NPC memory, not extra stages.
+ */
 export const THREADS = {
   mira: { name: "Mira's Debt", stages: ['met', 'saved', 'betrayed', 'ignored', 'rumored', 'returned', 'closed'] },
   bard: { name: "Lyra's Verse", stages: ['met', 'patron', 'heard', 'encore', 'last_song'] },
@@ -90,18 +113,18 @@ export const THREADS = {
   witch: { name: 'The Late Appointment', stages: ['rumored', 'met', 'hinted', 'bell'] },
   pale: { name: 'the Pale Choir', stages: ['whisper', 'tome', 'noticed', 'deferred', 'rite'] },
   oathbound: { name: 'the Oathbound Road', stages: ['met', 'counseled', 'dueled', 'watch', 'gate'] },
-  forest: { name: "the Forest's Memory", stages: ['angered', 'ambushed', 'peace', 'remembered'] },
-  void: { name: 'Margin Notes', stages: ['rumor', 'read', 'footnote', 'deferred', 'annotated'] },
-  seed: { name: 'the Swallowed Seed', stages: ['planted', 'checked', 'bloomed'] },
-  doom: { name: 'Colleague Benefits', stages: ['named', 'deferred', 'benefits'] },
-  storm: { name: 'the Sky Ledger', stages: ['owed', 'deferred', 'collected'] },
-  phantom: { name: 'People Who Aren\'t', stages: ['ledger', 'deferred', 'filed'] },
-  heretic: { name: 'the Halo That Forgave', stages: ['halo', 'deferred', 'vocation'] },
-  ashen: { name: 'the Still Strike', stages: ['stone', 'deferred', 'ash'] },
-  dawn: { name: 'Leftover Dawn', stages: ['story', 'deferred', 'pact'] },
-  eclipse: { name: 'the Gap', stages: ['seen', 'deferred', 'cut'] },
-  valhalla: { name: 'Halls Upstairs', stages: ['named', 'deferred', 'notice'] },
-  doomsong: { name: 'the Unsung Last Note', stages: ['heard', 'deferred', 'taken'] },
+  forest: { name: "the Forest's Memory", stages: ['angered', 'peace', 'remembered'] },
+  void: { name: 'Margin Notes', stages: ['read', 'footnote', 'deferred', 'annotated'] },
+  seed: { name: 'the Swallowed Seed', stages: ['planted', 'bloomed'] },
+  doom: { name: 'Colleague Benefits', stages: ['deferred', 'benefits'] },
+  storm: { name: 'the Sky Ledger', stages: ['deferred', 'collected'] },
+  phantom: { name: 'People Who Aren\'t', stages: ['deferred', 'filed'] },
+  heretic: { name: 'the Halo That Forgave', stages: ['deferred', 'vocation'] },
+  ashen: { name: 'the Still Strike', stages: ['deferred', 'ash'] },
+  dawn: { name: 'Leftover Dawn', stages: ['deferred', 'pact'] },
+  eclipse: { name: 'the Gap', stages: ['deferred', 'cut'] },
+  valhalla: { name: 'Halls Upstairs', stages: ['deferred', 'notice'] },
+  doomsong: { name: 'the Unsung Last Note', stages: ['deferred', 'taken'] },
 };
 
 /**
@@ -129,15 +152,21 @@ export const FLAG_BRIDGES = {
   statue_grudge: { tag: 'statue_grudge', faction: { id: 'the_fallen', rel: -2 } },
   angered_forest: { faction: { id: 'forest', rel: -3 }, thread: { id: 'forest', stage: 'angered' } },
   forest_peace: { faction: { id: 'forest', relSet: 0 }, thread: { id: 'forest', stage: 'peace' } },
-  paid_toll: { faction: { id: 'bandits', rel: 1 }, knowledge: 'paid_toll' },
+  paid_toll: { faction: { id: 'bandits', rel: 1 }, knowledge: 'paid_toll', char: { id: 'bandit_chief', met: true, alive: true, relSet: 2, memory: 'paid' } },
   revenant_oath: { char: { id: 'revenant', met: true, memory: 'knelt' }, sparedBoss: 'crowned_revenant' },
   dukes_mark: { knowledge: 'dukes_mark' },
   pilgrim_lore: { knowledge: 'pilgrim_lore' },
   mentor_words: { knowledge: 'mentor_words' },
   evener_met: { knowledge: 'evener_met' },
-  freed_climber: { knowledge: 'freed_climber', counter: { id: 'mercy', add: 1 } },
+  freed_climber: { knowledge: 'freed_climber', counter: { id: 'mercy', add: 1 }, char: { id: 'frost_climber', met: true, alive: true, memory: 'thawed' } },
   lit_candle: { knowledge: 'lit_candle' },
   refused_escape: { knowledge: 'refused_escape' },
+  origin_arcane: { tag: 'academy' },
+  guild_notes: { tag: 'guild' },
+  undercity_ties: { faction: { id: 'merchants', rel: 1 } },
+  lodge_mark: { tag: 'lodge' },
+  guard_trained: { tag: 'guard' },
+  let_it_ride: { counter: { id: 'defiance', add: 1 } },
 };
 
 /**
@@ -256,7 +285,6 @@ export const SECRET_ROUTES = {
       { id: 'owed', label: 'the sky marked a debt', when: { knowledge: 'storm_owed' } },
     ],
     fallbacks: [
-      { id: 'luck', label: 'fortune filed a complaint upstairs', when: { statMin: { lk: 12 } } },
       { id: 'pathfinder', label: 'used the Pathfinder\'s dirt', when: { event: 'pathfinder_meet' } },
     ],
   },
@@ -271,7 +299,7 @@ export const SECRET_ROUTES = {
       { id: 'ledger', label: 'found the shadow ledger', when: { knowledge: 'shadow_ledger' } },
     ],
     fallbacks: [
-      { id: 'purse', label: 'rich enough to be officially missing', when: { gold: 180 } },
+      { id: 'saw_ledger', label: 'found the un-writing clerk\'s book', when: { event: 'shadow_ledger' } },
     ],
   },
   heretic_saint: {
@@ -283,7 +311,7 @@ export const SECRET_ROUTES = {
       { id: 'halo', label: 'a cracked halo forgave you first', when: { knowledge: 'cracked_halo' } },
     ],
     fallbacks: [
-      { id: 'infamous', label: 'infamous enough that light got there first', when: { fame: 20 } },
+      { id: 'infamous', label: 'infamous enough that light got there first', when: { fame: 40 } },
     ],
   },
   ashen_fist: {
@@ -347,7 +375,7 @@ export const SECRET_ROUTES = {
       { id: 'eclipse', label: 'saw the cut between steel and spell', when: { knowledge: 'eclipse_cut' } },
     ],
     fallbacks: [
-      { id: 'both', label: 'both hands equally bloody', when: { all: [{ statMin: { str: 10 } }, { statMin: { int: 10 } }] } },
+      { id: 'dummy', label: 'found the dummy that hates being chosen', when: { event: 'eclipse_cut' } },
       { id: 'archive', label: 'owe the archive a margin', when: { flag: 'archive_debt' } },
     ],
   },
@@ -360,7 +388,7 @@ export const SECRET_ROUTES = {
     ],
     fallbacks: [
       { id: 'axe', label: 'bled for the Axe-Pack Veteran', when: { event: 'axe_northman_meet' } },
-      { id: 'harvest', label: 'died correctly enough times, counted in other people', when: { kills: 18 } },
+      { id: 'harvest', label: 'died correctly enough times, counted in other people', when: { kills: 22 } },
     ],
   },
 };
@@ -387,6 +415,11 @@ export function charState(run, id) {
 
 export function charRel(run, id) {
   return charState(run, id).rel || 0;
+}
+
+/** True only when the character was created and then marked dead. Does not spawn a record. */
+export function charIsDead(run, id) {
+  return run?.world?.characters?.[id]?.alive === false;
 }
 
 export function factionState(run, id) {

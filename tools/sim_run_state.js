@@ -801,7 +801,9 @@ export function climberFromRun(run) {
 }
 
 /** Write fight results + potion spend back onto the real run. */
-export function applyFightToRun(run, climber, fightResult, { won, xp = 0, gold = 0, boss = false } = {}) {
+export function applyFightToRun(run, climber, fightResult, {
+  won, xp = 0, gold = 0, boss = false, kills = null,
+} = {}) {
   run.hp = Math.max(0, climber.hp);
   run.mp = Math.max(0, Math.min(run.maxMp, climber.mp ?? run.mp));
 
@@ -827,7 +829,8 @@ export function applyFightToRun(run, climber, fightResult, { won, xp = 0, gold =
   }
 
   run.down = false;
-  run.kills = (run.kills || 0) + 1;
+  const bodies = kills != null ? kills : (fightResult.groupSize || 1);
+  run.kills = (run.kills || 0) + Math.max(1, bodies | 0);
   run.gold += gold;
   run.goldEarned += gold;
   heal(run, run.maxHp * CONFIG.recovery.victoryHealPct);

@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 // Simulation V2 — faithful solo climb. Does not call grantCombatLoot, combat_sim, or run_sim.
 
-import { newRun, runRng, loadMeta } from '../js/state.js';
+import { newRun, runRng, loadMeta, rollStart, awakenMonolith } from '../js/state.js';
 import { EVENTS } from '../js/data/events.js';
 import { presentEvent, recordEvent } from '../js/data/world.js';
 import { classifyFloor, dealLiveFloorCards, LAST_FLOOR } from '../js/data/floorcards.js';
-import { biomeForFloor, ENEMIES, MODIFIERS, pickBossForFloor } from '../js/data/enemies.js';
-import { planBossEncounter, pushEventHistory } from '../js/data/balance.js';
+import { biomeForFloor, ENEMIES, pickBossForFloor, pickTrialModifier, ALT_BOSSES } from '../js/data/enemies.js';
+import { CONSUMABLES } from '../js/data/items.js';
+import { planBossEncounter, pushEventHistory, pushEncounterHistory, pushTakenEventHistory } from '../js/data/balance.js';
 import { gainXp } from '../js/character.js';
 import { reqMet } from '../js/requirements.js';
 import { resolveEventBranch, applyEventOutcome } from '../js/outcomes.js';
@@ -16,7 +17,7 @@ import {
 } from '../js/rewards.js';
 import { buildShopStock, shopDiscount, applyShopBuy, applyShopHeal, applyShopLeave } from '../js/shop.js';
 import {
-  planEncounterGroup, encounterOptions, resolveEncounterApproach,
+  planEncounterGroup, encounterOptions, resolveEncounterApproach, isSpecialEventFoe,
 } from '../js/encounter.js';
 import { applyLevelProgression } from '../js/progression.js';
 import { beginThrone, resolveThroneChoice, throneEndingId } from '../js/throne.js';
@@ -26,6 +27,53 @@ import { buildEnemy } from '../js/combat_core.js';
 import { runHeadlessFight } from './combat_headless.js';
 import { baselinePolicy } from './policies/baseline.js';
 import { scriptedPolicy } from './policies/scripted.js';
+
+function specMeta(specs) {
+  return (specs || []).map(s => ({
+    id: s.id,
+    name: s.name || s.id,
+    elite: !!s.elite,
+    boss: !!s.boss,
+  }));
+}
+
+export function resourceSnap(run) {
+  const cons = run.consumables || [];
+  return {
+    hp: run.hp,
+    maxHp: run.maxHp,
+    hpPct: run.maxHp ? run.hp / run.maxHp : 0,
+    gold: run.gold,
+    mp: run.mp,
+    maxMp: run.maxMp,
+    level: run.level,
+    consumables: cons.length,
+    healConsumables: cons.filter(id => {
+      const c = CONSUMABLES.find(x => x.id === id);
+      return !!(c && (c.heal || c.healPct));
+    }).length,
+    relics: (run.relics || []).length,
+    skills: (run.skills || []).length,
+    equipped: Object.values(run.equipment || {}).filter(Boolean).length,
+  };
+}
+
+export function isAltBossId(id) {
+  return Object.values(ALT_BOSSES).some(b => b?.id === id);
+}
+
+export function classifyDeathCause(floorKind, meta, floor) {
+  if (floorKind === 'throne') return 'throne';
+  if (floorKind === 'boss') return floor === 50 ? 'f50_boss' : 'biome_boss';
+  if (floorKind === 'trial') return 'trial';
+  if (meta?.kind === 'event' && !meta.combat) return 'event_attrition';
+  if (meta?.kind === 'event' && meta.combat) {
+    return meta.special ? 'special_encounter' : 'event_combat';
+  }
+  if (meta?.elite) return 'elite';
+  if (meta?.kind === 'encounter' || meta?.combat) return 'normal_encounter';
+  return 'unknown';
+}
 
 function hooksFor(run, policy) {
   return {
@@ -53,7 +101,7 @@ async function applyUps(run, ups, policy) {
 
 function buildTrash(run, specs, hpMult = 1) {
   const biome = biomeForFloor(run.floor);
-  return specs.map(s => buildEnemy(s, run.floor, biome.floors[0], { hpMult }));
+  return specs.map((s, i) => buildEnemy(s, run.floor, biome.floors[0], { hpMult, spawnIndex: i }));
 }
 
 async function doFight(run, policy, enemies, { modifier = null, boss = null, reward = null } = {}) {
@@ -64,10 +112,18 @@ async function doFight(run, policy, enemies, { modifier = null, boss = null, rew
     policy: (f) => policy.chooseCombatAction(f),
     faithful: true,
   });
+  const fightMeta = {
+    combat: true,
+    enemies: specMeta(enemies),
+    elite: (enemies || []).some(e => e.elite),
+    special: (enemies || []).some(e => isSpecialEventFoe(e)),
+    bossId: boss?.id || null,
+    isAltBoss: !!(boss?.id && isAltBossId(boss.id)),
+  };
   if (result.result === 'dead' || run.hp <= 0) {
-    return { outcome: 'dead' };
+    return { outcome: 'dead', meta: fightMeta };
   }
-  if (result.result !== 'win') return { outcome: result.result || 'ok' };
+  if (result.result !== 'win') return { outcome: result.result || 'ok', meta: fightMeta };
   const gold = result.gold || 0;
   const xp = result.xp || 0;
   const { lines, elitePending } = applyVictoryRewards(run, enemies, gold, xp, { boss, reward });
@@ -80,14 +136,19 @@ async function doFight(run, policy, enemies, { modifier = null, boss = null, rew
     await applyUps(run, rewardUps, policy);
   }
   if (boss) await rollBossHoard(run, h);
-  return { outcome: 'cleared', gold, xp, lines };
+  return { outcome: 'cleared', gold, xp, lines, meta: fightMeta };
 }
 
 async function resolveEvent(run, ev, policy) {
   const presented = presentEvent(ev, run);
   run.seenEvents.push(presented.id);
   recordEvent(run, presented);
-  if (presented.shop) return resolveShop(run, presented, policy);
+  pushTakenEventHistory(run, presented.id);
+  const eventMeta = { kind: 'event', eventId: presented.id, eventCategory: presented.category || null };
+  if (presented.shop) {
+    const shop = await resolveShop(run, presented, policy);
+    return { ...shop, meta: { ...eventMeta, kind: 'shop' } };
+  }
 
   let choices = [...(presented.choices || [])];
   if (choices.length && choices.every(c => !reqMet(run, c.req).ok)) {
@@ -104,15 +165,16 @@ async function resolveEvent(run, ev, policy) {
     lines,
   });
   await applyUps(run, result.ups, policy);
-  if (result.kind === 'escape') return { outcome: 'escape' };
-  if (result.kind === 'dead') return { outcome: 'dead' };
+  eventMeta.choice = choice?.label || choice?.id || null;
+  if (result.kind === 'escape') return { outcome: 'escape', meta: eventMeta };
+  if (result.kind === 'dead') return { outcome: 'dead', meta: eventMeta };
   if (result.kind === 'combat') {
     const fight = await doFight(run, policy, result.combat.prebuilt, {
       reward: result.combat.reward,
     });
-    return fight;
+    return { ...fight, meta: { ...eventMeta, ...(fight.meta || {}), kind: 'event', combat: true } };
   }
-  return { outcome: 'ok', lines: result.lines };
+  return { outcome: 'ok', lines: result.lines, meta: eventMeta };
 }
 
 async function resolveShop(run, ev, policy) {
@@ -139,7 +201,7 @@ async function resolveShop(run, ev, policy) {
     }
   }
   applyShopLeave(run, boughtHere);
-  return { outcome: 'ok' };
+  return { outcome: 'ok', meta: { kind: 'shop' } };
 }
 
 async function resolveEncounter(run, policy, prebuilt, hpMult) {
@@ -151,20 +213,28 @@ async function resolveEncounter(run, policy, prebuilt, hpMult) {
   const resolved = resolveEncounterApproach(run, runRng(run), group, act, {
     planHp, hooks: { runRng },
   });
-  if (resolved.kind === 'bribe') return { outcome: 'ok', lines: resolved.lines };
+  const approachMeta = {
+    kind: 'encounter',
+    approach: resolved.kind,
+    enemies: specMeta(group),
+    elite: (group || []).some(e => e.elite),
+  };
+  if (resolved.kind === 'bribe') return { outcome: 'ok', lines: resolved.lines, meta: approachMeta };
   if (resolved.kind === 'sneak') {
     await applyUps(run, resolved.ups, policy);
-    return { outcome: 'ok' };
+    return { outcome: 'ok', meta: approachMeta };
   }
   const enemies = buildTrash(run, resolved.group, resolved.hpMult || planHp);
-  return doFight(run, policy, enemies, {
+  const fight = await doFight(run, policy, enemies, {
     modifier: resolved.modifier || null,
   });
+  return { ...fight, meta: { ...approachMeta, ...(fight.meta || {}), kind: 'encounter' } };
 }
 
 async function resolveTravelCard(run, card, policy) {
   if (card.kind === 'encounter') {
     pushEventHistory(run, 'combat');
+    pushEncounterHistory(run, card.enemies);
     return resolveEncounter(run, policy, card.enemies, card.hpMult || 1);
   }
   const ev = presentEvent(EVENTS.find(e => e.id === card.eventId), run);
@@ -176,16 +246,21 @@ async function resolveTravelCard(run, card, policy) {
 
 async function resolveTrial(run, policy) {
   const rng = runRng(run);
-  const mod = rng.pick(MODIFIERS);
+  const mod = pickTrialModifier(rng, run);
   const biome = biomeForFloor(run.floor);
   const { pickEnemyPlan } = await import('../js/data/floorcards.js');
   const plan = pickEnemyPlan(rng, run, biome, 1);
   rng.advance();
   pushEventHistory(run, 'combat');
+  pushEncounterHistory(run, plan.specs);
   const enemies = buildTrash(run, plan.specs, plan.hpMult);
-  return doFight(run, policy, enemies, {
+  const fight = await doFight(run, policy, enemies, {
     modifier: { ...mod, goldMult: (mod.goldMult || 1) * 1.5 },
   });
+  return {
+    ...fight,
+    meta: { ...(fight.meta || {}), kind: 'trial', trialId: mod?.id || mod?.name || null },
+  };
 }
 
 async function resolveBoss(run, policy) {
@@ -201,11 +276,23 @@ async function resolveBoss(run, policy) {
     partySize: 1,
   });
   rng.advance();
-  const enemies = plan.specs.map(s => buildEnemy(s, run.floor, biome.floors[0], {
+  const enemies = plan.specs.map((s, i) => buildEnemy(s, run.floor, biome.floors[0], {
     boss: !!s.boss || s.id === boss.id,
     hpMult: plan.hpMult,
+    spawnIndex: i,
   }));
-  return doFight(run, policy, enemies, { boss });
+  const fight = await doFight(run, policy, enemies, { boss });
+  return {
+    ...fight,
+    meta: {
+      ...(fight.meta || {}),
+      kind: 'boss',
+      bossId: boss?.id || null,
+      bossName: boss?.name || boss?.id || null,
+      isAltBoss: !!(boss?.id && isAltBossId(boss.id)),
+      bossFloor: run.floor,
+    },
+  };
 }
 
 async function resolveThroneFloor(run, policy) {
@@ -213,15 +300,24 @@ async function resolveThroneFloor(run, policy) {
   const throne = beginThrone(run, rngPick);
   const choice = policy.chooseThrone(run, throne);
   const resolved = resolveThroneChoice(run, choice, throne.boss);
+  const throneMeta = {
+    kind: 'throne',
+    throneChoice: choice,
+    bossId: resolved.spec?.id || throne.boss?.id || null,
+    isAltBoss: !!((resolved.spec?.id || throne.boss?.id) && isAltBossId(resolved.spec?.id || throne.boss?.id)),
+  };
   if (resolved.kind === 'ending') {
     run.over = true;
-    return { outcome: resolved.ending };
+    return { outcome: resolved.ending, meta: { ...throneMeta, fought: false } };
   }
   const enemies = [buildEnemy(resolved.spec, run.floor, run.floor, { boss: true, hpMult: resolved.hpMult })];
   const fight = await doFight(run, policy, enemies, { boss: resolved.spec });
-  if (fight.outcome === 'dead') return fight;
+  if (fight.outcome === 'dead') return { ...fight, meta: { ...throneMeta, ...(fight.meta || {}), fought: true } };
   run.over = true;
-  return { outcome: throneEndingId(choice, 'win') };
+  return {
+    outcome: throneEndingId(choice, 'win'),
+    meta: { ...throneMeta, ...(fight.meta || {}), fought: true },
+  };
 }
 
 export async function simulateClimbV2(run, policy, opts = {}) {
@@ -235,13 +331,18 @@ export async function simulateClimbV2(run, policy, opts = {}) {
   };
   mark('start');
 
+  const trace = [];
   let outcome = null;
   while (!run.over && run.hp > 0 && run.floor < maxFloors) {
     enterNextFloor(run);
     const kind = classifyFloor(run.floor);
     mark(`enter_${run.floor}_${kind}`);
+    const enter = resourceSnap(run);
+    const biome = biomeForFloor(run.floor);
 
     let step;
+    let offered = null;
+    let picked = null;
     if (kind === 'throne') step = await resolveThroneFloor(run, policy);
     else if (kind === 'boss') step = await resolveBoss(run, policy);
     else if (kind === 'trial') step = await resolveTrial(run, policy);
@@ -253,12 +354,33 @@ export async function simulateClimbV2(run, policy, opts = {}) {
       const cards = dealLiveFloorCards(runRng(run), run);
       mark(`deal_${run.floor}`);
       if (opts.stopAfterDeal) {
-        return climbSnapshot(run, { outcome: 'deal', checkpoints: [...checkpoints, { ...climbCheckpoint(run), cards }] });
+        const snap = climbSnapshot(run, { outcome: 'deal', checkpoints: [...checkpoints, { ...climbCheckpoint(run), cards }] });
+        snap.trace = trace;
+        return snap;
       }
       const card = policy.chooseFloorCard(run, cards);
+      offered = cards.map(c => ({ kind: c.kind, category: c.category || null, eventId: c.eventId || null }));
+      picked = { kind: card.kind, category: card.category || null, eventId: card.eventId || null };
       step = await resolveTravelCard(run, card, policy);
     }
     mark(`after_${run.floor}`);
+    const rec = {
+      floor: run.floor,
+      kind,
+      biome: biome.id,
+      enter,
+      leave: resourceSnap(run),
+      outcome: step?.outcome || 'ok',
+      meta: step?.meta || {},
+      offered,
+      picked,
+    };
+    if (step?.outcome === 'dead') {
+      rec.deathCause = classifyDeathCause(kind, step?.meta, run.floor);
+      rec.starved = enter.gold < 15 && enter.healConsumables === 0 && enter.hpPct < 0.35;
+    }
+    trace.push(rec);
+    if (opts.onFloor) opts.onFloor(rec, run);
     if (step?.outcome === 'dead') { outcome = 'dead'; break; }
     if (step?.outcome === 'escape') { outcome = 'escape'; break; }
     if (step?.outcome && ['secret', 'win', 'corrupt_king'].includes(step.outcome)) {
@@ -275,21 +397,30 @@ export async function simulateClimbV2(run, policy, opts = {}) {
     else if (run.over) outcome = 'win';
     else outcome = 'stopped';
   }
-  return climbSnapshot(run, { outcome, checkpoints });
+  const snap = climbSnapshot(run, { outcome, checkpoints });
+  snap.trace = trace;
+  snap.classId = run.classId;
+  snap.seed = run.seed;
+  snap.growthRank = run.growthRank || null;
+  return snap;
 }
 
 export function makeV2Run(opts = {}) {
-  const meta = opts.meta || { upgrades: {}, achievements: [], endings: [], classFloor10: [] };
-  const run = newRun(meta, {
-    classId: opts.classId || 'warrior',
-    raceId: opts.raceId || 'human',
+  const classId = opts.classId || 'warrior';
+  const raceId = opts.raceId || 'human';
+  const seed = opts.seed ?? 44718291;
+  const kitSeed = opts.kitSeed ?? seed;
+  // Seeded chargen. Unseeded rollStart() would invalidate same-seed batches.
+  const gen = opts.gen || awakenMonolith(rollStart(classId, raceId, seed), seed);
+  return newRun(opts.meta || { upgrades: {}, achievements: [], endings: [], classFloor10: [] }, {
+    classId,
+    raceId,
     originId: opts.originId || null,
     name: opts.name || 'V2',
-    seed: opts.seed ?? 44718291,
-    kitSeed: opts.kitSeed ?? opts.seed ?? 44718291,
-    gen: opts.gen || null,
+    seed,
+    kitSeed,
+    gen,
   });
-  return run;
 }
 
 async function main() {

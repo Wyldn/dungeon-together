@@ -542,27 +542,46 @@ export function stripReportTimestamps(rep) {
 }
 
 function parseArgs(argv) {
-  const out = { cmd: argv[2] || 'run', flags: {} };
-  const rest = argv.slice(3);
-  for (let i = 0; i < rest.length; i++) {
-    const a = rest[i];
+  const raw = argv.slice(2);
+  const flags = {};
+  const positional = [];
+  for (let i = 0; i < raw.length; i++) {
+    const a = raw[i];
     if (a.startsWith('--')) {
       const key = a.slice(2);
-      const nxt = rest[i + 1];
-      if (!nxt || nxt.startsWith('--')) out.flags[key] = true;
-      else { out.flags[key] = nxt; i += 1; }
-    } else {
-      if (!out.flags._) out.flags._ = [];
-      out.flags._.push(a);
-    }
+      const nxt = raw[i + 1];
+      if (!nxt || nxt.startsWith('--')) flags[key] = true;
+      else { flags[key] = nxt; i += 1; }
+    } else positional.push(a);
   }
-  return out;
+  let cmd = positional[0] || 'run';
+  if (!positional.length && flags.runs != null) cmd = 'difficulty';
+  flags._ = positional.slice(1);
+  return { cmd, flags };
 }
 
 const isMain = process.argv[1] && /run_health\.js/.test(process.argv[1].replace(/\\/g, '/'));
 if (isMain) {
   const { cmd, flags } = parseArgs(process.argv);
-  if (cmd === 'merchants') {
+  if (cmd === 'difficulty') {
+    import('./run_difficulty.js').then(async ({ runDifficultySuite, formatDifficultyReport, formatCompareDifficulty }) => {
+      const seed = Number(flags.seed || 20260823);
+      const runs = Number(flags.runs || flags.trials || 1000);
+      const policy = String(flags.policy || 'baseline');
+      const classId = flags.class || null;
+      const a = await runDifficultySuite({ seed, runs, policy, classId });
+      console.log(formatDifficultyReport(a));
+      if (flags.compare) {
+        const other = policy === 'reasonable' ? 'baseline' : 'reasonable';
+        const b = await runDifficultySuite({ seed, runs, policy: other, classId });
+        console.log('\n' + formatDifficultyReport(b));
+        console.log('\n' + formatCompareDifficulty(a, b));
+      }
+    }).catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+  } else if (cmd === 'merchants') {
     const seed = Number(flags.seed || 20260823);
     const trials = Number(flags.trials || 300);
     const rep = runMerchantAccess({ seed, trials });

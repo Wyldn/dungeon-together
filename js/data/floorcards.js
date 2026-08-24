@@ -7,7 +7,7 @@ import { EVENTS, drawEvent } from './events.js';
 import { NARRATIVE_EVENTS } from './narrative_events.js';
 import { eventEligible } from './world.js';
 import { biomeForFloor, ENEMIES, BOSSES, WANDERING_ENEMIES } from './enemies.js';
-import { planEncounter } from './balance.js';
+import { planEncounter, pushOfferedEventHistory } from './balance.js';
 
 export const LAST_FLOOR = TDC.lastFloor;
 export const BOSS_FLOORS = Object.keys(BOSSES).map(Number);
@@ -52,8 +52,11 @@ export function rollCardsPerDraw(rng) {
 /** Budget-aware encounter plan (bodies first; leftover → mild HP pad). */
 export function pickEnemyPlan(rng, run, biome, partySize = 1) {
   const depth = run.floor - biome.floors[0];
-  let pool = [...(ENEMIES[biome.id] || ENEMIES.hell)];
-  if (WANDERING_ENEMIES?.length && rng.chance(0.38)) {
+  const native = ENEMIES[biome.id] || ENEMIES.hell;
+  let pool = [...native];
+  // Thin biomes keep wanderers rarer so Frost/Swamp/Hell stay themselves.
+  const wanderChance = native.length <= 12 ? 0.18 : 0.38;
+  if (WANDERING_ENEMIES?.length && rng.chance(wanderChance)) {
     const wander = depth < 4
       ? WANDERING_ENEMIES.filter(e => !e.elite)
       : WANDERING_ENEMIES;
@@ -66,6 +69,8 @@ export function pickEnemyPlan(rng, run, biome, partySize = 1) {
     pool,
     partySize,
     allowElite: depth >= 4,
+    recentIds: run.recentEncounterIds || [],
+    recentBodies: run.recentEncounterBodies || [],
   });
 }
 
@@ -168,6 +173,7 @@ export function generateFloorCards(rng, run, opts = {}) {
  */
 export function dealLiveFloorCards(rng, run, opts = {}) {
   const cards = generateFloorCards(rng, run, opts);
+  pushOfferedEventHistory(run, cards);
   if (typeof rng.advance === 'function') rng.advance();
   return cards;
 }

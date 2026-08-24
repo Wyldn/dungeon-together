@@ -7,7 +7,7 @@
 
 import { CONFIG } from './config.js';
 import { TDC } from './tdc.js';
-import { historyCategoryWeight } from './balance.js';
+import { historyCategoryWeight, historyEventWeight } from './balance.js';
 import { tagWeightMult } from './eventtags.js';
 import { SECRET_ROUTES, THREADS, secretEligible, secretUnlocked } from './world.js';
 
@@ -251,6 +251,7 @@ export function eventDrawWeight(ev, state, ctx = {}) {
   const comeback = ev.comeback && state.underdog ? (CONFIG.chargen.comebackWeightMult || 3) : 1;
   const category = historyCategoryWeight(ev.category, recent);
   const tags = tagWeightMult(ev, state);
+  const eventId = historyEventWeight(ev.id, state.recentEventIds, state.recentTakenEventIds);
 
   const terms = [
     term('base', 'Base weight', base),
@@ -258,6 +259,7 @@ export function eventDrawWeight(ev, state, ctx = {}) {
     term('category', 'Category history', category),
     term('tags', 'Tags', tags),
   ];
+  if (eventId !== 1) terms.push(term('eventId', 'Recent event', eventId));
 
   if (ctx.skipPace) return { w: product(terms), terms, role };
 

@@ -4,8 +4,8 @@
 
 import { CONFIG } from '../js/data/config.js';
 import { EVENTS } from '../js/data/events.js';
-import { ENEMIES, biomeForFloor, pickBossForFloor, MODIFIERS } from '../js/data/enemies.js';
-import { planBossEncounter, pushEventHistory } from '../js/data/balance.js';
+import { ENEMIES, biomeForFloor, pickBossForFloor, pickTrialModifier } from '../js/data/enemies.js';
+import { planBossEncounter, pushEventHistory, pushOfferedEventHistory, pushTakenEventHistory, pushEncounterHistory } from '../js/data/balance.js';
 import {
   presentEvent, recordEvent, secretEligible, secretUnlocked, secretProgress,
   worldDebugSnapshot, SECRET_ROUTES,
@@ -29,6 +29,9 @@ export const LEVEL_MARKS = [EVOLUTION_LEVELS.first, 10, EVOLUTION_LEVELS.second,
 
 const INITIATION_BY_EVENT = Object.fromEntries(
   Object.entries(SECRET_ROUTES).map(([id, spec]) => [spec.initiation, id]),
+);
+const RETURN_BY_EVENT = Object.fromEntries(
+  Object.entries(SECRET_ROUTES).map(([id, spec]) => [`${spec.initiation}_return`, id]),
 );
 
 function emptyCounts() {
@@ -98,7 +101,11 @@ function outcomeDefersSecret(o) {
   return list.some(x => String(x).includes('deferred'));
 }
 
-function pickChoice(run, ev, rng, policy) {
+function pickChoice(run, ev, rng, policy, pickTravelChoice) {
+  if (typeof pickTravelChoice === 'function') {
+    const forced = pickTravelChoice(run, ev, policy);
+    if (forced) return forced;
+  }
   const secretId = ev?.id ? INITIATION_BY_EVENT[ev.id] : null;
   if (secretId && (policy === 'always-accept-secret' || policy === 'always-defer-secret')) {
     const choices = (ev.choices || []).filter(c => reqMetHeadless(run, c.req).ok);
@@ -121,6 +128,7 @@ function fightRun(rng, run, specs, opts) {
     xp: r.won ? xp : 0,
     gold: goldGain,
     boss: !!opts.boss,
+    kills: specs.length,
   });
   if (r.won) grantCombatLoot(run, rng, { boss: !!opts.boss, elite: specs.some(s => s.elite) });
   return {
@@ -136,7 +144,7 @@ function fightRun(rng, run, specs, opts) {
   };
 }
 
-function resolveFixedEvent(run, rng, eventId, policy) {
+function resolveFixedEvent(run, rng, eventId, policy, pickTravelChoice) {
   const raw = EVENTS.find(e => e.id === eventId);
   if (!raw) return {};
   const ev = presentEvent(raw, run);
@@ -144,12 +152,13 @@ function resolveFixedEvent(run, rng, eventId, policy) {
   run.seenEvents.push(ev.id);
   recordEvent(run, ev);
   pushEventHistory(run, ev.category || 'unknown');
+  pushTakenEventHistory(run, ev.id);
   if (ev.shop && !(ev.choices || []).length) {
     const goldBefore = run.gold;
     resolveSimMerchant(run, rng);
     return { event: ev, shop: true, goldSpent: Math.max(0, goldBefore - run.gold) };
   }
-  const choice = pickChoice(run, ev, rng, policy);
+  const choice = pickChoice(run, ev, rng, policy, pickTravelChoice);
   if (!choice) return { event: ev };
   recordEvent(run, ev, { choice: choice.id || choice.label, variantId: ev.variantId || null });
   const goldBefore = run.gold;
@@ -157,7 +166,7 @@ function resolveFixedEvent(run, rng, eventId, policy) {
   return { ...result, event: ev, choice, goldSpent: Math.max(0, goldBefore - run.gold) };
 }
 
-function resolveTravelEvent(run, rng, card, policy) {
+function resolveTravelEvent(run, rng, card, policy, pickTravelChoice) {
   const raw = eventById(card.eventId);
   if (!raw) return {};
   const ev = presentEvent(raw, run);
@@ -165,12 +174,13 @@ function resolveTravelEvent(run, rng, card, policy) {
   run.seenEvents.push(ev.id);
   recordEvent(run, ev);
   pushEventHistory(run, ev.category || 'unknown');
+  pushTakenEventHistory(run, ev.id);
   if (ev.shop && !(ev.choices || []).length) {
     const goldBefore = run.gold;
     resolveSimMerchant(run, rng);
     return { event: ev, shop: true, goldSpent: Math.max(0, goldBefore - run.gold) };
   }
-  const choice = pickChoice(run, ev, rng, policy);
+  const choice = pickChoice(run, ev, rng, policy, pickTravelChoice);
   if (!choice) return { event: ev };
   recordEvent(run, ev, { choice: choice.id || choice.label, variantId: ev.variantId || null });
   const goldBefore = run.gold;
@@ -265,6 +275,8 @@ export function simulateHealthClimb(rng, {
   originId = null,
   skipPace = false,
   survive = false,
+  pickCard = null,
+  pickTravelChoice = null,
 } = {}) {
   const run = createSimRun(rng, { classId, raceId, originId });
   if (!run.climb) run.climb = { bossesCleared: [], bossesSpared: [] };
@@ -282,6 +294,7 @@ export function simulateHealthClimb(rng, {
   const archetypes = {};
   const hpLoss = [];
   const goldHeld = [];
+  const lkHeld = [];
   const goldByBiome = {};
   const npcSeen = {};
   const callbackOffer = [];
@@ -357,6 +370,11 @@ export function simulateHealthClimb(rng, {
       if (!secrets[sid]) secrets[sid] = {};
       if (secrets[sid].offeredFloor == null) secrets[sid].offeredFloor = floor;
     }
+    const rid = extra.event?.id ? RETURN_BY_EVENT[extra.event.id] : null;
+    if (rid) {
+      if (!secrets[rid]) secrets[rid] = {};
+      if (secrets[rid].returnOfferedFloor == null) secrets[rid].returnOfferedFloor = floor;
+    }
   }
 
   function noteTaken(floor, family, extra = {}) {
@@ -414,6 +432,9 @@ export function simulateHealthClimb(rng, {
     });
     stampWorld(run, stamps, floor);
     goldHeld.push({ floor, gold: run.gold });
+    if (floor === 10 || floor === 20 || floor === 30 || floor === 40) {
+      lkHeld.push({ floor, lk: run.stats?.lk || 0 });
+    }
     if (floor === 10 || floor === 15 || floor === 30 || floor === 45) {
       trueMerchantOffersBy[floor] = trueMerchantOffers;
       trueMerchantVisitsBy[floor] = trueMerchantVisits;
@@ -454,7 +475,7 @@ export function simulateHealthClimb(rng, {
 
     if (kind === 'campfire') {
       noteOffer(floor, 'rest', { event: EVENTS.find(e => e.id === 'campfire') });
-      const result = resolveFixedEvent(run, rng, 'campfire', policy);
+      const result = resolveFixedEvent(run, rng, 'campfire', policy, pickTravelChoice);
       noteTaken(floor, 'rest', result);
       breath(run);
       trackGold(biome.id, goldBefore, earnedBefore);
@@ -503,8 +524,9 @@ export function simulateHealthClimb(rng, {
 
     if (kind === 'trial') {
       noteOffer(floor, 'trial');
-      const mod = rng.pick(MODIFIERS);
+      const mod = pickTrialModifier(rng, run);
       const plan = pickEnemyPlan(rng, run, biome, 1);
+      pushEncounterHistory(run, plan.specs);
       eliteOffered.of += 1;
       if (plan.specs.some(s => s.elite)) eliteOffered.n += 1;
       encounterSizes.push(plan.specs.length);
@@ -535,6 +557,7 @@ export function simulateHealthClimb(rng, {
     }
 
     const cards = generateFloorCards(rng, run, { partySize: 1, skipPace });
+    pushOfferedEventHistory(run, cards);
     for (const card of cards) {
       const ev = card.eventId ? eventById(card.eventId) : null;
       const family = broadFamily(card, ev);
@@ -549,13 +572,14 @@ export function simulateHealthClimb(rng, {
       }
     }
 
-    const picked = rng.pick(cards);
+    const picked = pickCard ? (pickCard(cards, run) || rng.pick(cards)) : rng.pick(cards);
     const ev = picked.eventId ? eventById(picked.eventId) : null;
     const family = broadFamily(picked, ev);
     let died = false;
 
     if (picked.kind === 'encounter') {
       pushEventHistory(run, 'combat');
+      pushEncounterHistory(run, picked.enemies || []);
       const fight = fightRun(rng, run, picked.enemies || [], {
         floor, biomeStart: biome.floors[0], hpMult: picked.hpMult || 1, maxRounds: 40,
       });
@@ -566,7 +590,7 @@ export function simulateHealthClimb(rng, {
       potionsUsed += fight.potionsUsed;
       if (!fight.won || run.hp <= 0) died = true;
     } else {
-      const result = resolveTravelEvent(run, rng, picked, policy);
+      const result = resolveTravelEvent(run, rng, picked, policy, pickTravelChoice);
       noteTaken(floor, family, result);
       if (result.combatSpecs?.length) {
         const fight = fightRun(rng, run, result.combatSpecs, {
@@ -612,6 +636,8 @@ export function simulateHealthClimb(rng, {
     if (SECRET_ROUTES[id].parent && run.classId !== SECRET_ROUTES[id].parent) continue;
     if (!secrets[id]) secrets[id] = {};
     const row = secrets[id];
+    const live = secretState(run)[id];
+    if (live) row.finalEligible = !!live.eligible;
     if (row.eligibleFloor != null && row.offeredFloor != null) {
       row.offerDelay = row.offeredFloor - row.eligibleFloor;
     }
@@ -668,6 +694,10 @@ export function simulateHealthClimb(rng, {
     potionsUsed,
     goldByBiome,
     goldHeld,
+    lkHeld,
+    finalKills: run.kills || 0,
+    finalStats: { ...(run.stats || {}) },
+    finalFame: run.fame || 0,
     shopsOffered,
     shopsVisited,
     trueMerchantOffers,

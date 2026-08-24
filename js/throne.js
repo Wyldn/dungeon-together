@@ -2,6 +2,19 @@ import { pickBossForFloor, SECRET_BOSS } from './data/enemies.js';
 import { changeFame } from './character.js';
 import { applyWorldPatch } from './data/world.js';
 
+/** Flags this module reads. Catalog walker imports this — do not duplicate lists. */
+export const THRONE_READS = {
+  flags: ['clause_seven', 'freed_angel', 'kings_petition', 'throneBossId', 'throneBossName'],
+  threads: ['king'],
+  chars: ['ghost_king'],
+};
+
+/** Structured writes this module owns. Catalog walker imports this. */
+export const THRONE_WRITES = {
+  threads: [{ id: 'king', stage: 'delivered' }],
+  chars: ['ghost_king'],
+};
+
 /** Pick F51 boss and apply clause_seven / freed_angel. Advances once. */
 export function beginThrone(run, rng) {
   const boss = pickBossForFloor(51, rng, run);

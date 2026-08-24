@@ -4,12 +4,12 @@
 // scripted playtest bot; everything testable headlessly lives here.
 
 import { CLASSES, SUBCLASSES, subclassOptions } from '../js/data/classes.js';
-import { ACHIEVEMENTS, rollStart, awakenMonolith, fateGrowthBoost, randomRaceId, randomClassId, playableClassIds } from '../js/state.js';
+import { ACHIEVEMENTS, rollStart, awakenMonolith, fateGrowthBoost, randomRaceId, randomClassId, playableClassIds, getChoiceOutcomeHints, setChoiceOutcomeHints, choiceOutcomeHintVisible } from '../js/state.js';
 import { RACES } from '../js/data/races.js';
 import { ORIGINS, defaultOriginId } from '../js/data/origins.js';
 import { SKILLS } from '../js/data/skills.js';
 import { EVENTS, CATEGORY_META } from '../js/data/events.js';
-import { ENEMIES, BOSSES, ALT_BOSSES, SECRET_BOSS, MODIFIERS, biomeForFloor, findEnemySpec, WANDERING_ENEMIES } from '../js/data/enemies.js';
+import { ENEMIES, BOSSES, ALT_BOSSES, SECRET_BOSS, MODIFIERS, pickTrialModifier, biomeForFloor, findEnemySpec, WANDERING_ENEMIES } from '../js/data/enemies.js';
 import {
   applyGalleryKit, inferArchetype, specialHasRider, specialRiderKeys,
   SUPPORTED_SPECIAL_KEYS, biomePaletteKeys, kitFor,
@@ -29,7 +29,9 @@ import {
   guardReviveReconciled, floorBenchmark, encounterBudget, planEncounter,
   enemyThreatCost, mechanicBudgetCost, residualHpMult,
   itemPowerScore, validateItemPower, validateLoadout, estimatePlayerPower,
-  historyCategoryWeight, bossFightTargets, MECHANIC_COSTS,
+  historyCategoryWeight, historyEventWeight, filterEncounterPool,
+  pushEncounterHistory, pushOfferedEventHistory, pushTakenEventHistory,
+  bossFightTargets, MECHANIC_COSTS,
 } from '../js/data/balance.js';
 import { RANK_ORDER, rankFor, rankAtLeast, appraisalRange, rollGrowthRank, growthMult } from '../js/data/ranks.js';
 import { readFileSync } from 'fs';
@@ -86,6 +88,26 @@ console.log('— monolith awakening —');
   t('awakening bumps distinct combat stats', bumps === CONFIG.chargen.awakenStatPicks);
   t('awakening is idempotent', (() => { const hp = gen.stats.hp; awakenMonolith(gen, 7); return gen.stats.hp === hp; })());
   t('awakening keeps percentile intact', gen.percentile === rollStart('warrior', 'human', 42).percentile);
+}
+
+console.log('— choice outcome hint pref —');
+{
+  const prev = globalThis.localStorage;
+  const store = {};
+  globalThis.localStorage = {
+    getItem: k => (k in store ? store[k] : null),
+    setItem: (k, v) => { store[k] = String(v); },
+    removeItem: k => { delete store[k]; },
+  };
+  t('choice outcome hints default on', getChoiceOutcomeHints() === true);
+  t('unlocked outcome preview is shown by default', choiceOutcomeHintVisible() === true);
+  t('choice outcome hints can turn off', setChoiceOutcomeHints(false) === false && getChoiceOutcomeHints() === false);
+  t('off hides unlocked outcome previews', choiceOutcomeHintVisible() === false);
+  t('off still shows locked reasons', choiceOutcomeHintVisible({ locked: true }) === true);
+  t('off still shows kept costs/status', choiceOutcomeHintVisible({ keep: true }) === true);
+  t('choice outcome hints persist', JSON.parse(store.dt_prefs_v1).choiceOutcomeHints === false);
+  t('choice outcome hints can turn back on', setChoiceOutcomeHints(true) === true && getChoiceOutcomeHints() === true);
+  globalThis.localStorage = prev;
 }
 
 console.log('— classes & subclasses (handoff §21) —');
@@ -871,6 +893,103 @@ console.log('— history-aware events —');
   t('fresh category unpenalized', historyCategoryWeight('appraisal', ['merchant', 'combat']) === 1);
 }
 
+console.log('— run variety selection —');
+{
+  t('fresh event id unpenalized', historyEventWeight('merchant') === 1);
+  t('offered event id penalized', historyEventWeight('merchant', ['merchant']) < 1);
+  t('taken event id penalized harder than offered',
+    historyEventWeight('merchant', ['chest_generic'], ['merchant'])
+    < historyEventWeight('merchant', ['merchant'], []));
+  t('empty recent keeps full encounter pool',
+    filterEncounterPool(ENEMIES.forest, []) === ENEMIES.forest);
+  const frost = ENEMIES.frost;
+  const filtered = filterEncounterPool(frost, ['frozen_soldier', 'winter_wolf']);
+  t('recent frost leads drop when pool is large enough',
+    filtered.length < frost.length && !filtered.some(e => e.id === 'frozen_soldier'));
+  t('filter never empties a pool', filterEncounterPool(frost.slice(0, 2), ['frozen_soldier', 'winter_wolf']).length >= 1);
+
+  const freshA = planEncounter(makeRng(77), { floor: 5, biomeStart: 1, pool: ENEMIES.forest, partySize: 1 });
+  const freshB = planEncounter(makeRng(77), { floor: 5, biomeStart: 1, pool: ENEMIES.forest, partySize: 1 });
+  t('planEncounter is deterministic without history',
+    freshA.specs.map(s => s.id).join() === freshB.specs.map(s => s.id).join());
+  const withHist = planEncounter(makeRng(77), {
+    floor: 5, biomeStart: 1, pool: ENEMIES.forest, partySize: 1,
+    recentIds: [freshA.specs[0].id], recentBodies: freshA.specs.map(s => s.id),
+  });
+  t('recent lead is not reused when alternatives exist',
+    withHist.specs[0].id !== freshA.specs[0].id);
+
+  const runA = { lastTrialMod: null };
+  const runB = { lastTrialMod: null };
+  const firstA = pickTrialModifier(makeRng(3), runA);
+  const firstB = pickTrialModifier(makeRng(3), runB);
+  t('first trial modifier matches uniform pick', firstA.id === firstB.id);
+  t('first trial modifier matches rng.pick(MODIFIERS)', firstA.id === makeRng(3).pick(MODIFIERS).id);
+  const second = pickTrialModifier(makeRng(3), runA);
+  t('second trial skips the previous modifier', second.id !== firstA.id);
+
+  const histRun = { recentEventIds: [], recentTakenEventIds: [] };
+  pushOfferedEventHistory(histRun, [{ eventId: 'merchant' }, { eventId: 'old_shrine' }]);
+  pushTakenEventHistory(histRun, 'merchant');
+  t('offered history records event ids', histRun.recentEventIds.includes('merchant'));
+  t('taken history records event ids', histRun.recentTakenEventIds.includes('merchant'));
+  pushEncounterHistory(histRun, [{ id: 'wolf' }, { id: 'rat' }]);
+  t('encounter history records lead', histRun.recentEncounterIds[0] === 'wolf');
+  t('encounter history records bodies', histRun.recentEncounterBodies.includes('rat'));
+
+  const { generateFloorCards, dealLiveFloorCards, cardDealFingerprint, pickEnemyPlan } = await import('../js/data/floorcards.js');
+  const { newRun, rollStart } = await import('../js/state.js');
+  const dealRunA = newRun({ upgrades: {}, achievements: [] }, {
+    classId: 'warrior', raceId: 'human', name: 'Var', seed: 11, kitSeed: 11,
+    gen: rollStart('warrior', 'human', 11),
+  });
+  dealRunA.floor = 1;
+  dealRunA.biomeId = 'forest';
+  const dealRunB = JSON.parse(JSON.stringify(dealRunA));
+  const genCards = generateFloorCards(makeRng(dealRunA.rngState), dealRunA);
+  const liveCards = dealLiveFloorCards(makeRng(dealRunB.rngState), dealRunB);
+  t('first live deal matches generateFloorCards',
+    JSON.stringify(cardDealFingerprint(genCards)) === JSON.stringify(cardDealFingerprint(liveCards)));
+  t('live deal records offered event ids after the draw',
+    (dealRunB.recentEventIds || []).length >= 1);
+
+  const frostRun = { floor: 23, biomeId: 'frost', recentEncounterIds: [], recentEncounterBodies: [] };
+  const forestRun = { floor: 3, biomeId: 'forest', recentEncounterIds: [], recentEncounterBodies: [] };
+  const frostPlan = pickEnemyPlan(makeRng(5), frostRun, biomeForFloor(23), 1);
+  const forestPlan = pickEnemyPlan(makeRng(5), forestRun, biomeForFloor(3), 1);
+  t('frost plan still returns biome enemies', frostPlan.specs.length >= 1);
+  t('forest plan still returns biome enemies', forestPlan.specs.length >= 1);
+
+  const { eventDrawWeight } = await import('../js/data/eventpace.js');
+  const merch = EVENTS.find(e => e.id === 'merchant');
+  const freshW = eventDrawWeight(merch, { floor: 6, recentEventIds: [], recentTakenEventIds: [], recentCategories: [] });
+  const staleW = eventDrawWeight(merch, { floor: 6, recentEventIds: ['merchant'], recentTakenEventIds: ['merchant'], recentCategories: [] });
+  t('merchant weight drops after being seen', staleW.w < freshW.w);
+  t('fresh merchant has no eventId term', !freshW.terms.some(x => x.id === 'eventId'));
+  t('seen merchant has eventId term', staleW.terms.some(x => x.id === 'eventId'));
+
+  const { buildShopStock } = await import('../js/shop.js');
+  const shopRun = newRun({ upgrades: {}, achievements: [] }, {
+    classId: 'warrior', raceId: 'human', name: 'Shop', seed: 44, kitSeed: 44,
+    gen: rollStart('warrior', 'human', 44),
+  });
+  shopRun.floor = 8;
+  shopRun.biomeId = 'forest';
+  shopRun.gold = 400;
+  const shopRng = (n) => {
+    const r = makeRng(n);
+    r.advance = () => {};
+    return r;
+  };
+  const shopA = buildShopStock(shopRun, shopRng(8));
+  const firstIds = shopA.filter(s => s.kind === 'equip').map(s => s.item.id);
+  const shopB = buildShopStock(shopRun, shopRng(8));
+  const secondIds = shopB.filter(s => s.kind === 'equip').map(s => s.item.id);
+  t('shop records listed item ids', (shopRun.recentShopItemIds || []).length >= firstIds.length);
+  t('same-seed second shop changes equipment after history',
+    firstIds.join() !== secondIds.join() || !firstIds.length);
+}
+
 console.log('— combat sim smoke + power percentiles —');
 {
   const rng = makeRng(2026);
@@ -968,7 +1087,7 @@ console.log('— world state & narrative gates —');
     worldDebugSnapshot, explainWhen, explainEligibility, worldPoke,
     cloneRunState, restoreRunState, beginWorldInspect, resetWorldInspect, endWorldInspect,
     syncSecretUnlockFromSubclass, eligibilitySnapshot, choiceBridgeTag,
-    THREADS, CHARACTERS, SECRET_ROUTES, TENDENCIES,
+    threadStage, THREADS, CHARACTERS, SECRET_ROUTES, TENDENCIES,
   } = await import('../js/data/world.js');
   const { newRun } = await import('../js/state.js');
   const run = newRun({ upgrades: {}, achievements: [] }, { classId: 'necromancer', raceId: 'human', name: 'Test' });
@@ -989,6 +1108,7 @@ console.log('— world state & narrative gates —');
   const grudge = EVENTS.find(e => e.id === 'mira_grudge');
   t('mira_grudge authored', !!grudge);
   run.flags.left_climber = true;
+  applyFlagBridge(run, 'left_climber');
   run.floor = 16;
   run.biomeId = 'ruins';
   t('mira_grudge eligible after betrayal', eventEligible(grudge, run));
@@ -1331,18 +1451,20 @@ console.log('— world state & narrative gates —');
     betrayed.floor = 18;
     t('mira grudge stays host-personal', !eventEligible(grudge, hostClean, { party: [eligibilitySnapshot(betrayed)] }));
     hostClean.flags.left_climber = true;
+    applyFlagBridge(hostClean, 'left_climber');
     t('mira grudge still opens on own flag', eventEligible(grudge, hostClean));
   }
   {
     const cases = [
       { id: 'doomguard', classId: 'warrior', other: 'mage', route: r => applyWorldPatch(r, { knowledge: 'doom_named' }), fallback: r => { r.kills = 20; }, initiation: 'doom_benefits', defer: 'doom_benefits_deferred', ret: 'doom_benefits_return' },
       { id: 'void_scholar', classId: 'mage', other: 'warrior', route: r => { r.flags.tree_lore = true; }, fallback: r => { r.originId = 'archive'; }, initiation: 'void_annotation', defer: 'void_annotation_deferred', ret: 'void_annotation_return' },
-      { id: 'stormcaller', classId: 'archer', other: 'warrior', route: r => applyWorldPatch(r, { knowledge: 'storm_owed' }), fallback: r => { r.stats = { ...r.stats, lk: 12 }; }, initiation: 'storm_collect', defer: 'storm_collect_deferred', ret: 'storm_collect_return' },
-      { id: 'phantom', classId: 'rogue', other: 'warrior', route: r => { r.flags.defiler = true; }, fallback: r => { r.gold = 180; }, initiation: 'phantom_file', defer: 'phantom_file_deferred', ret: 'phantom_file_return' },
-      { id: 'heretic_saint', classId: 'priest', other: 'warrior', route: r => applyWorldPatch(r, { knowledge: 'cracked_halo' }), fallback: r => { r.fame = 20; }, initiation: 'halo_vocation', defer: 'halo_vocation_deferred', ret: 'halo_vocation_return' },
+      { id: 'stormcaller', classId: 'archer', other: 'warrior', route: r => applyWorldPatch(r, { knowledge: 'storm_owed' }), fallback: r => { r.seenEvents = ['pathfinder_meet']; }, initiation: 'storm_collect', defer: 'storm_collect_deferred', ret: 'storm_collect_return' },
+      { id: 'phantom', classId: 'rogue', other: 'warrior', route: r => { r.flags.defiler = true; }, fallback: r => { r.seenEvents = ['shadow_ledger']; }, initiation: 'phantom_file', defer: 'phantom_file_deferred', ret: 'phantom_file_return' },
+      { id: 'heretic_saint', classId: 'priest', other: 'warrior', route: r => applyWorldPatch(r, { knowledge: 'cracked_halo' }), fallback: r => { r.fame = 40; }, initiation: 'halo_vocation', defer: 'halo_vocation_deferred', ret: 'halo_vocation_return' },
       { id: 'ashen_fist', classId: 'monk', other: 'warrior', route: r => applyWorldPatch(r, { knowledge: 'still_stone' }), fallback: r => { r.guardCount = 8; }, initiation: 'ashen_strike', defer: 'ashen_strike_deferred', ret: 'ashen_strike_return' },
       { id: 'lightbreaker', classId: 'warlock', other: 'warrior', route: r => { r.flags.freed_angel = true; }, fallback: r => { r.flags.angel_lore = true; }, initiation: 'dawn_pact', defer: 'dawn_pact_deferred', ret: 'dawn_pact_return' },
       { id: 'doomsinger', classId: 'bard', other: 'warrior', route: r => { r.flags.bard_friend = true; }, fallback: r => { r.inventory = ['encore_medallion']; }, initiation: 'doomsong_offer', defer: 'doomsong_deferred', ret: 'doomsong_offer_return' },
+      { id: 'lichling', classId: 'necromancer', other: 'warrior', route: r => applyWorldPatch(r, { knowledge: 'heard_dead_language' }), fallback: r => { r.kills = 25; }, initiation: 'pale_rite', defer: 'pale_rite_deferred', ret: 'pale_rite_return' },
       { id: 'void_edge', classId: 'spellsword', other: 'warrior', route: r => applyWorldPatch(r, { knowledge: 'eclipse_cut' }), fallback: r => { r.flags.archive_debt = true; }, initiation: 'eclipse_accept', defer: 'eclipse_accept_deferred', ret: 'eclipse_accept_return' },
       { id: 'einherjar', classId: 'viking', other: 'warrior', route: r => applyWorldPatch(r, { knowledge: 'doom_named' }), fallback: r => { r.seenEvents = ['axe_northman_meet']; }, initiation: 'valhalla_notice', defer: 'valhalla_notice_deferred', ret: 'valhalla_notice_return' },
     ];
@@ -1379,6 +1501,138 @@ console.log('— world state & narrative gates —');
       t(`${spec.id}: decline opens a later return`, eventEligible(ret, delayed) && !secretUnlocked(delayed, spec.id));
     }
     t('every secret is initiation-gated', Object.entries(SECRET_ROUTES).every(([id, spec]) => spec.unlock && spec.initiation && EVENTS.some(e => e.id === spec.initiation)));
+    t('every secret has a route and a fallback', Object.values(SECRET_ROUTES).every(spec => (spec.routes || []).length && (spec.fallbacks || []).length));
+    {
+      const ranger = mk('archer', 'LuckyEnough');
+      ranger.stats = { ...ranger.stats, lk: 16 };
+      t('ordinary Ranger luck does not unlock Stormcaller', !secretEligible(ranger, 'stormcaller'));
+      t('lk 16 does not open storm_collect', !eventEligible(EVENTS.find(e => e.id === 'storm_collect'), ranger));
+      ranger.seenEvents = ['pathfinder_meet'];
+      t('Pathfinder meeting opens Stormcaller', secretEligible(ranger, 'stormcaller'));
+      t('Pathfinder meeting opens storm_collect', eventEligible(EVENTS.find(e => e.id === 'storm_collect'), ranger));
+      const owed = mk('archer', 'Owed');
+      applyWorldPatch(owed, { knowledge: 'storm_owed' });
+      t('storm_owed knowledge is the intended Stormcaller route', secretEligible(owed, 'stormcaller') && eventEligible(EVENTS.find(e => e.id === 'storm_collect'), owed));
+    }
+    {
+      const blade = mk('warrior', 'Harvest');
+      blade.kills = 19;
+      t('19 kills is not yet Doomguard', !secretEligible(blade, 'doomguard'));
+      blade.kills = 20;
+      const doomCard = EVENTS.find(e => e.id === 'doom_benefits');
+      t('20 kills makes Doomguard eligible', secretEligible(blade, 'doomguard'));
+      t('20 kills opens doom_benefits', eventEligible(doomCard, blade));
+      const { eventDrawPool } = await import('../js/data/events.js');
+      const pool = eventDrawPool(blade);
+      const row = pool.find(p => p.id === 'doom_benefits');
+      t('eligible Doomguard sits in the live draw pool', !!row && row.w >= 16);
+      const seen = { ...blade, recentEventIds: ['doom_benefits', 'merchant'] };
+      const penalized = eventDrawPool(seen).find(p => p.id === 'doom_benefits');
+      t('event-history penalty does not remove doom_benefits', !!penalized && penalized.w > 8);
+      const named = mk('warrior', 'Named');
+      applyWorldPatch(named, { knowledge: 'doom_named' });
+      t('doom_named is the intended Doomguard story route', secretEligible(named, 'doomguard') && eventEligible(doomCard, named));
+      const hall = mk('viking', 'Hall');
+      hall.kills = 21;
+      t('21 kills is not yet Einherjar', !secretEligible(hall, 'einherjar'));
+      hall.kills = 22;
+      t('22 kills makes Einherjar eligible', secretEligible(hall, 'einherjar'));
+    }
+    {
+      const edge = mk('spellsword', 'BothHands');
+      edge.stats = { ...edge.stats, str: 16, int: 16 };
+      t('ordinary spellsword stats do not unlock Void Edge', !secretEligible(edge, 'void_edge'));
+      edge.seenEvents = ['eclipse_cut'];
+      t('finding the eclipse dummy is a Void Edge fallback', secretEligible(edge, 'void_edge'));
+      const practiced = mk('spellsword', 'Practiced');
+      applyWorldPatch(practiced, { knowledge: 'eclipse_cut' });
+      t('eclipse_cut knowledge is the intended Void Edge route', secretEligible(practiced, 'void_edge'));
+    }
+    {
+      const purse = mk('rogue', 'Purse');
+      purse.gold = 450;
+      t('late-run gold does not auto-qualify Phantom', !secretEligible(purse, 'phantom'));
+      purse.seenEvents = ['shadow_ledger'];
+      t('finding the shadow ledger opens Phantom', secretEligible(purse, 'phantom'));
+      const priest = mk('priest', 'Known');
+      priest.fame = 32;
+      t('ordinary priest fame does not auto-qualify Heretic Saint', !secretEligible(priest, 'heretic_saint'));
+      priest.fame = 40;
+      t('deep-run fame still qualifies Heretic Saint', secretEligible(priest, 'heretic_saint'));
+    }
+    {
+      const a = mk('archer', 'DetA');
+      const b = mk('archer', 'DetB');
+      applyWorldPatch(a, { knowledge: 'storm_owed' });
+      applyWorldPatch(b, { knowledge: 'storm_owed' });
+      t('secret eligibility is deterministic', secretEligible(a, 'stormcaller') === secretEligible(b, 'stormcaller'));
+    }
+    {
+      const { returnWindowOk, assess, pickPursuitCard, pickPursuitChoice } = await import('./run_secret_routes.js');
+      const { reqMet } = await import('../js/requirements.js');
+      t('every hidden class has a valid authored route', Object.entries(SECRET_ROUTES).every(([id, spec]) => {
+        const ev = EVENTS.find(e => e.id === spec.initiation);
+        const ret = EVENTS.find(e => e.id === `${spec.initiation}_return`);
+        return spec.parent && spec.routes?.length && spec.fallbacks?.length && ev && ret
+          && ev.when?.secretEligible === id && (ev.biome === 'any' || ev.biome);
+      }));
+      t('no initiation or return has an impossible floor/biome window', Object.keys(SECRET_ROUTES).every(id => {
+        const spec = SECRET_ROUTES[id];
+        const ini = EVENTS.find(e => e.id === spec.initiation);
+        const ret = returnWindowOk(id);
+        const iniFloor = ini?.when?.floorMin ?? 1;
+        const iniBiome = ini?.biome || 'any';
+        const okIni = iniBiome === 'any' || (
+          (iniFloor <= 10 && iniBiome === 'forest')
+          || (iniFloor <= 20 && iniBiome === 'ruins')
+          || (iniFloor <= 30 && iniBiome === 'frost')
+          || (iniFloor <= 40 && iniBiome === 'swamp')
+          || (iniFloor <= 50 && iniBiome === 'hell')
+        );
+        return okIni && ret.ok;
+      }));
+      t('pursuit card picker prefers initiation without extra RNG', (() => {
+        const cards = [
+          { kind: 'encounter' },
+          { kind: 'event', eventId: 'merchant' },
+          { kind: 'event', eventId: 'doom_benefits' },
+        ];
+        return pickPursuitCard('doomguard')(cards).eventId === 'doom_benefits';
+      })());
+      const warlock = mk('warlock', 'Pact');
+      warlock.stats = { ...warlock.stats, str: 4 };
+      const angel = EVENTS.find(e => e.id === 'chained_angel');
+      const unmake = (angel.choices || []).find(c => /pact/i.test(c.label));
+      const smash = (angel.choices || []).find(c => /Break the chains/.test(c.label));
+      t('warlock can unmake angel chains without 15 str', !!(unmake && reqMet(warlock, unmake.req).ok));
+      t('non-warlock still needs 15 str to break chains', !reqMet(mk('mage', 'Arms'), smash.req).ok);
+      warlock.flags.freed_angel = true;
+      t('freeing the angel is a reachable Lightbreaker pursuit path', secretEligible(warlock, 'lightbreaker') && eventEligible(EVENTS.find(e => e.id === 'dawn_pact'), warlock));
+      const def = mk('warrior', 'Later');
+      applyWorldPatch(def, { knowledge: ['doom_named', 'doom_benefits_deferred'] });
+      def.floor = 8;
+      t('prereq order: decline blocks initiation before the return window', !eventEligible(EVENTS.find(e => e.id === 'doom_benefits'), def));
+      def.floor = 18;
+      const ret = EVENTS.find(e => e.id === 'doom_benefits_return');
+      t('prereq order: return opens only after decline + floor 16', eventEligible(ret, def));
+      const hist = { ...def, recentEventIds: ['doom_benefits_return', 'merchant'], recentTakenEventIds: ['doom_benefits'] };
+      const { eventDrawPool } = await import('../js/data/events.js');
+      const retRow = eventDrawPool(hist).find(p => p.id === 'doom_benefits_return');
+      t('event-history penalty does not erase the Doomguard return', !!retRow && retRow.w > 4);
+      t('assess marks automatic stumble as TOO COMMON', assess({
+        naturalQual: 0.92, naturalOffer: 0.87, pursuitQual: 0.98, pursuitOffer: 0.94,
+      }) === 'TOO COMMON');
+      t('assess marks initiation-missing pursuit as STARVED', assess({
+        naturalQual: 0.06, naturalOffer: 0, pursuitQual: 0.71, pursuitOffer: 0.04,
+      }) === 'STARVED');
+      t('pursuit choice picker accepts initiation without climb RNG', (() => {
+        const ev = EVENTS.find(e => e.id === 'doom_benefits');
+        const run = mk('warrior', 'Pick');
+        run.kills = 20;
+        const choice = pickPursuitChoice('doomguard', 'always-accept-secret')(run, ev);
+        return choice?.outcome?.world?.unlockSecret === 'doomguard';
+      })());
+    }
     const eventIds = EVENTS.map(e => e.id);
     t('event ids stay unique', eventIds.length === new Set(eventIds).size);
     {
@@ -1399,6 +1653,33 @@ console.log('— world state & narrative gates —');
       applyWorldPatch(knighted, { unlockSecret: 'doomguard' });
       t('late accept does not swap an existing subclass', knighted.subclassId === 'knight' && secretUnlocked(knighted, 'doomguard'));
       t('late accept still suppresses initiation and return', !eventEligible(card, { ...knighted, seenEvents: [] }) && !eventEligible(EVENTS.find(e => e.id === 'doom_benefits_return'), { ...knighted, floor: 18, seenEvents: [] }));
+      {
+        const heard = mk('warrior', 'RumorOnly');
+        applyWorldPatch(heard, { knowledge: 'doom_named' });
+        t('doom discovery writes knowledge, not the thread', (heard.world.knowledge || []).includes('doom_named') && !threadStage(heard, 'doom') && secretEligible(heard, 'doomguard') && !secretUnlocked(heard, 'doomguard'));
+        t('doom initiation still opens after discovery', eventEligible(EVENTS.find(e => e.id === 'doom_benefits'), heard));
+        applyWorldPatch(heard, { thread: { id: 'doom', stage: 'deferred' }, knowledge: 'doom_benefits_deferred' });
+        t('doom decline writes deferred without unlocking', threadStage(heard, 'doom') === 'deferred' && !secretUnlocked(heard, 'doomguard'));
+        const snap = worldDebugSnapshot(heard);
+        const doomRow = snap.threads.find(x => x.id === 'doom');
+        t('World inspector shows doom at deferred, not a rumor opener', doomRow.status === 'active' && doomRow.stage === 'deferred' && doomRow.stageIndex === 1 && doomRow.stageCount === THREADS.doom.stages.length);
+      }
+      {
+        const crop = mk('mage', 'Crop');
+        applyWorldPatch(crop, { flag: 'planted_seed' });
+        t('seed thread starts planted, not checked', threadStage(crop, 'seed') === 'planted');
+        applyWorldPatch(crop, { char: { id: 'gardener', met: true, memory: 'checked_the_crop' } });
+        t('gardener check is NPC memory, not a seed stage', threadStage(crop, 'seed') === 'planted' && crop.world.characters.gardener?.memories.includes('checked_the_crop'));
+        const seedSnap = worldDebugSnapshot(crop).threads.find(x => x.id === 'seed');
+        t('World inspector seed stays planted until bloom', seedSnap.stage === 'planted' && seedSnap.stageCount === 2);
+      }
+      {
+        const grove = mk('warrior', 'Grove');
+        applyWorldPatch(grove, { flag: 'angered_forest' });
+        t('forest anger writes angered, not ambushed', threadStage(grove, 'forest') === 'angered');
+        applyWorldPatch(grove, { flag: 'forest_peace', clearFlag: 'angered_forest' });
+        t('forest peace is the post-ambush stage', threadStage(grove, 'forest') === 'peace' && !THREADS.forest.stages.includes('ambushed'));
+      }
       const poked = mk('necromancer', 'Dbg');
       applyWorldPatch(poked, { knowledge: 'heard_dead_language' });
       const snap = worldDebugSnapshot(poked);
@@ -1604,6 +1885,299 @@ console.log('— world state & narrative gates —');
   }
 }
 
+console.log('— narrative connectivity —');
+{
+  const { newRun } = await import('../js/state.js');
+  const {
+    applyWorldPatch, applyFlagBridge, eventEligible, presentEvent, presentBoss, evalWhen,
+  } = await import('../js/data/world.js');
+  const { catalogNarrativeGraph, narrativeConnectivityReport, npcCanAppear } = await import('../js/data/narrative_graph.js');
+  const {
+    catalogIntegrityReport, exclusiveFlagViolations, npcArtMismatches,
+    unknownCharacterIds, danglingReaders, impossibleFloorPrereqs, cardReachability,
+    EXCLUSIVE_FLAG_GROUPS,
+  } = await import('../js/data/narrative_integrity.js');
+  const { shopDiscount, shopDiscountFlavor, shopPrice } = await import('../js/shop.js');
+  const { biomeIntroText, throneMemoryLines, throneEpitaphStain } = await import('../js/data/late_memory.js');
+  const { BIOMES } = await import('../js/data/enemies.js');
+
+  const g = catalogNarrativeGraph();
+  t('catalog graph counts flags', g.counts.flagsCreated >= 20 && g.counts.flagsConsumed >= 20);
+  t('origin_arcane is consumed', !!g.flagReads.origin_arcane);
+  t('guild_notes is consumed', !!g.flagReads.guild_notes);
+  t('undercity_ties is consumed', !!g.flagReads.undercity_ties);
+  t('lodge_mark is consumed', !!g.flagReads.lodge_mark);
+  t('guard_trained is consumed', !!g.flagReads.guard_trained);
+  t('let_it_ride is consumed', !!g.flagReads.let_it_ride);
+  t('mentor_words is consumed', !!g.flagReads.mentor_words);
+  t('pilgrim_lore is consumed', !!g.flagReads.pilgrim_lore);
+  t('evener_met is consumed', !!g.flagReads.evener_met);
+  t('mira_named knowledge is consumed', !!g.knowledgeReads.mira_named);
+  t('late_patron knowledge is consumed', !!g.knowledgeReads.late_patron);
+  t('petition_witnessed is consumed', !!g.knowledgeReads.petition_witnessed);
+  t('v_network is consumed', !!g.knowledgeReads.v_network);
+  t('forest_minutes is consumed', !!g.knowledgeReads.forest_minutes);
+  t('dry_hall_gossip is consumed', !!g.knowledgeReads.dry_hall_gossip);
+  t('channeler is a catalog character', g.catalogChars.includes('channeler'));
+  t('graph reports recurring NPCs', g.counts.npcsRecurring >= 8);
+  t('high-value flags are not catalog orphans',
+    !g.orphanFlags.some(o => ['origin_arcane', 'let_it_ride', 'saved_climber', 'paid_toll'].includes(o.id)));
+
+  const deadMira = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'DeadMira' });
+  applyWorldPatch(deadMira, { flag: 'saved_climber' });
+  applyWorldPatch(deadMira, { char: { id: 'mira', alive: false } });
+  deadMira.floor = 18;
+  deadMira.biomeId = 'ruins';
+  t('dead Mira cannot repay a debt', !eventEligible(EVENTS.find(e => e.id === 'climber_returns'), deadMira));
+  deadMira.floor = 44;
+  deadMira.biomeId = 'hell';
+  t('dead Mira cannot watch the slag', !eventEligible(EVENTS.find(e => e.id === 'mira_watch'), deadMira));
+  t('npcCanAppear is false when dead', !npcCanAppear(deadMira, 'mira'));
+
+  const liveMira = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'LiveMira' });
+  applyWorldPatch(liveMira, { flag: 'saved_climber' });
+  liveMira.floor = 18;
+  liveMira.biomeId = 'ruins';
+  t('living Mira can return', eventEligible(EVENTS.find(e => e.id === 'climber_returns'), liveMira));
+  const returned = presentEvent(EVENTS.find(e => e.id === 'climber_returns'), liveMira);
+  t('Mira return offers a stay-below choice', returned.choices.some(c => /stay below/i.test(c.label)));
+
+  const tavern = EVENTS.find(e => e.id === 'tavern_blackwater');
+  const savedHall = presentEvent(tavern, { ...liveMira, floor: 14, biomeId: 'ruins', flags: { saved_climber: true } });
+  t('dry hall names Mira when she was saved', /Mira|patched/i.test(savedHall.text));
+  const robbedHall = presentEvent(tavern, {
+    ...liveMira, floor: 14, biomeId: 'ruins', flags: { left_climber: true },
+  });
+  t('dry hall names the robbery when she was robbed', /robbed|took the kit/i.test(robbedHall.text));
+
+  const wolves = EVENTS.find(e => e.id === 'wolf_ambush');
+  const paid = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'Toll' });
+  paid.flags.angered_forest = true;
+  paid.flags.paid_toll = true;
+  paid.biomeId = 'forest';
+  paid.floor = 8;
+  t('wolf ambush offers a Toll Company out', eventEligible(wolves, paid)
+    && wolves.choices.some(c => c.req?.flag === 'paid_toll'));
+
+  const patrol = EVENTS.find(e => e.id === 'slag_patrol');
+  t('slag patrol honors a freed angel', patrol.choices.some(c => c.req?.flag === 'freed_angel'));
+
+  const hut = EVENTS.find(e => e.id === 'witch_hut');
+  const dinner = presentEvent(hut, {
+    flags: { ate_v_dinner: true }, biomeId: 'swamp', floor: 33, world: { knowledge: [] },
+  });
+  t('witch hut smells V\'s stew', /stew|V still sets plates/i.test(dinner.text));
+
+  const hydra = BOSSES[40];
+  t('hydra files forest minutes', presentBoss(hydra, { world: { knowledge: ['forest_minutes'] } }).variantId === 'minutes');
+  t('hydra rose still outranks minutes', presentBoss(hydra, {
+    flags: { stole_rose: true }, world: { knowledge: ['forest_minutes'] },
+  }).variantId === 'rose');
+
+  const sylvanor = BOSSES[10];
+  t('Sylvanor smells hive-smoke', presentBoss(sylvanor, { flags: { angered_forest: true } }).variantId === 'smoke');
+  t('Sylvanor notices a saved climber', presentBoss(sylvanor, { flags: { saved_climber: true } }).variantId === 'mira');
+
+  const duke = BOSSES[50];
+  t('Duke notices his own mark', presentBoss(duke, { flags: { dukes_mark: true } }).variantId === 'mark');
+  t('Duke clause outranks nothing if mark is set', presentBoss(duke, {
+    flags: { dukes_mark: true, clause_seven: true },
+  }).variantId === 'mark');
+
+  const lastSong = EVENTS.find(e => e.id === 'bard_last_song');
+  const lateTip = presentEvent(lastSong, {
+    floor: 44, biomeId: 'hell', flags: { bard_friend: true },
+    world: { knowledge: ['late_patron'] },
+  });
+  t('last song hears a late mire tip', /coin on a stump|late/i.test(lateTip.text));
+
+  const vCard = EVENTS.find(e => e.id === 'v_hearth');
+  const vRun = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'V' });
+  vRun.flags.ate_v_dinner = true;
+  applyFlagBridge(vRun, 'ate_v_dinner');
+  vRun.floor = 33;
+  vRun.biomeId = 'swamp';
+  t('V\'s table can move into the mire', eventEligible(vCard, vRun));
+  vRun.biomeId = 'frost';
+  t('V\'s table does not duplicate the citadel cottage', !eventEligible(vCard, vRun));
+
+  const thawed = EVENTS.find(e => e.id === 'thawed_debt');
+  const ice = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'Thaw' });
+  applyWorldPatch(ice, { flag: 'freed_climber' });
+  ice.floor = 33;
+  ice.biomeId = 'swamp';
+  t('thawed climber can reappear', eventEligible(thawed, ice));
+  applyWorldPatch(ice, { char: { id: 'frost_climber', alive: false } });
+  t('dead thawed climber cannot reappear', !eventEligible(thawed, ice));
+
+  const faces = EVENTS.find(e => e.id === 'scorch_colleague');
+  const mentor = newRun({ upgrades: {}, achievements: [] }, { classId: 'mage', raceId: 'human', name: 'Ink' });
+  mentor.floor = 44;
+  mentor.biomeId = 'hell';
+  applyWorldPatch(mentor, { char: { id: 'channeler', met: true } });
+  t('channeler can appear on the slag', eventEligible(faces, mentor));
+  const shownFace = presentEvent(faces, mentor);
+  t('scorch colleague prefers the channeler overlay', shownFace.variantId === 'channeler' || /Apostate Channeler|footnote/i.test(shownFace.text));
+  applyWorldPatch(mentor, { char: { id: 'channeler', alive: false } });
+  t('dead channeler cannot take the slag stair', !eventEligible(faces, mentor));
+
+  const guildRun = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'Guild' });
+  const baseShop = shopDiscount(guildRun);
+  guildRun.flags.guild_notes = true;
+  const guildShop = shopDiscount(guildRun);
+  t('guild notes shave the merchant', guildShop.discount > baseShop.discount && guildShop.storyDisc > 0);
+  const hellShop = shopDiscount({ ...guildRun, flags: { dukes_mark: true }, biomeId: 'hell', fame: 0 });
+  t('Duke mark shaves a Scorch stall', hellShop.storyDisc > 0);
+
+  const ruins = BIOMES.find(b => b.id === 'ruins');
+  const ruinIntro = biomeIntroText(ruins, { flags: { angered_forest: true } });
+  t('ruins intro carries hive-smoke', /hive-smoke|smoke/i.test(ruinIntro));
+  const frost = BIOMES.find(b => b.id === 'frost');
+  t('frost intro carries a petition', /petition|complaint/i.test(biomeIntroText(frost, { flags: { kings_petition: true } })));
+  const swamp = BIOMES.find(b => b.id === 'swamp');
+  t('swamp intro carries V\'s cold', /Frost still clings|cold that does not belong/i.test(biomeIntroText(swamp, { flags: { ate_v_dinner: true } })));
+
+  const corridor = EVENTS.find(e => e.id === 'trapped_corridor');
+  t('undercity origin opens a canal-roof option', corridor.choices.some(c => c.req?.flag === 'undercity_ties'));
+
+  const camp = EVENTS.find(e => e.id === 'campfire');
+  const academyFire = presentEvent(camp, {
+    floor: 8, biomeId: 'forest', flags: { origin_arcane: true },
+  });
+  t('campfire remembers the Arcanum', /Immel|academy|diagram/i.test(academyFire.text));
+
+  const channelerWatch = EVENTS.find(e => e.id === 'dark_mage_watch');
+  const graded = channelerWatch.choices[0].outcome.world.char.id;
+  t('channeler grades the channeler, not the witch', graded === 'channeler');
+
+  const report = narrativeConnectivityReport(liveMira);
+  t('world inspector report has catalog counts', report.catalog.flagsCreated > 0 && Array.isArray(report.orphanFlags));
+  t('saved Mira run is not an orphan flag', !report.runOrphans.some(o => o.id === 'saved_climber'));
+
+  const both = { flags: { saved_climber: true, left_climber: true } };
+  t('saved and robbed are not a legal mira-watch pair without a living Mira', true);
+  t('mutually exclusive tavern overlay prefers saved', /patched|Mira/i.test(presentEvent(tavern, {
+    floor: 14, biomeId: 'ruins', flags: both.flags,
+  }).text) && !/took the kit/i.test(presentEvent(tavern, {
+    floor: 14, biomeId: 'ruins', flags: both.flags,
+  }).text));
+
+  t('no unknown catalog character ids', unknownCharacterIds().length === 0);
+  t('unique NPC art does not stamp the wrong character', npcArtMismatches().length === 0);
+  t('no inverted flag floor prerequisites', impossibleFloorPrereqs().length === 0);
+  t('dangling readers are empty or only terminal', danglingReaders().length === 0);
+  for (const id of ['v_hearth', 'thawed_debt', 'gravekeeper_slag', 'scorch_colleague', 'bandit_shop']) {
+    const r = cardReachability(id);
+    t(`${id} is catalog-reachable`, r.ok);
+  }
+  t('integrity report lists the five new cards', catalogIntegrityReport().newCardReachability.every(x => x.ok));
+  {
+    const { catalogDeadState } = await import('./audit_catalog.js');
+    const dead = catalogDeadState();
+    t('grave_shroud is intentionally retired', !!itemById('grave_shroud')?.retired && itemById('grave_shroud').exclusive);
+    t('elder_circlet is intentionally retired', !!itemById('elder_circlet')?.retired && itemById('elder_circlet').exclusive);
+    t('no exclusive non-reserved item is grantless', dead.deadExclusives.length === 0);
+    t('no non-reserved thread stage is unwitable', dead.unusedStages.length === 0);
+    t('retired exclusives stay resolvable', dead.retiredExclusives.some(i => i.id === 'grave_shroud') && dead.retiredExclusives.some(i => i.id === 'elder_circlet'));
+  }
+  t('thread graph has indirect edges', (g.threadEdges || []).length > 0);
+  t('mira is among most-connected or edged threads',
+    (g.threadEdges || []).some(e => e.from === 'mira' || e.to === 'mira')
+    || (g.mostConnectedThreads || []).some(x => x.id === 'mira'));
+
+  const deadLyra = newRun({ upgrades: {}, achievements: [] }, { classId: 'bard', raceId: 'human', name: 'DeadLyra' });
+  applyWorldPatch(deadLyra, { flag: 'bard_friend' });
+  applyWorldPatch(deadLyra, { char: { id: 'lyra', alive: false } });
+  t('dead Lyra cannot encore', !eventEligible(EVENTS.find(e => e.id === 'bard_returns'), deadLyra));
+  deadLyra.floor = 44;
+  deadLyra.biomeId = 'hell';
+  t('dead Lyra cannot sing the last song', !eventEligible(EVENTS.find(e => e.id === 'bard_last_song'), deadLyra));
+  t('bard class who never met Lyra can still hear the last song', eventEligible(EVENTS.find(e => e.id === 'bard_last_song'), {
+    ...newRun({ upgrades: {}, achievements: [] }, { classId: 'bard', raceId: 'human', name: 'ClassBard' }),
+    floor: 44, biomeId: 'hell',
+  }));
+
+  const deadV = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'DeadV' });
+  applyWorldPatch(deadV, { flag: 'ate_v_dinner' });
+  applyWorldPatch(deadV, { char: { id: 'vess', alive: false } });
+  deadV.floor = 33;
+  deadV.biomeId = 'swamp';
+  t('dead V cannot move the table', !eventEligible(EVENTS.find(e => e.id === 'v_hearth'), deadV));
+
+  const deadToll = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'DeadToll' });
+  applyWorldPatch(deadToll, { flag: 'paid_toll' });
+  applyWorldPatch(deadToll, { char: { id: 'bandit_chief', alive: false } });
+  deadToll.floor = 20;
+  deadToll.biomeId = 'ruins';
+  t('dead toll captain cannot open a shop', !eventEligible(EVENTS.find(e => e.id === 'bandit_shop'), deadToll));
+  t('dead toll captain cannot revisit the levy', !eventEligible(EVENTS.find(e => e.id === 'bandit_gratitude'), deadToll));
+
+  const whisperOnly = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'Accent' });
+  applyWorldPatch(whisperOnly, { knowledge: 'heard_dead_language' });
+  whisperOnly.floor = 44;
+  whisperOnly.biomeId = 'hell';
+  t('gravekeeper slag is reachable from the accent alone', eventEligible(EVENTS.find(e => e.id === 'gravekeeper_slag'), whisperOnly));
+  applyWorldPatch(whisperOnly, { char: { id: 'gravekeeper', met: true, alive: false } });
+  t('dead gravekeeper cannot follow the accent', !eventEligible(EVENTS.find(e => e.id === 'gravekeeper_slag'), whisperOnly));
+
+  const deadGrudge = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'DeadGrudge' });
+  applyWorldPatch(deadGrudge, { flag: 'left_climber' });
+  applyWorldPatch(deadGrudge, { char: { id: 'mira', alive: false } });
+  deadGrudge.floor = 16;
+  deadGrudge.biomeId = 'ruins';
+  t('dead Mira cannot collect a debt', !eventEligible(EVENTS.find(e => e.id === 'mira_grudge'), deadGrudge));
+
+  const deadThrone = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'DeadThrone' });
+  applyWorldPatch(deadThrone, { flag: 'saved_climber' });
+  applyWorldPatch(deadThrone, { char: { id: 'mira', alive: false } });
+  t('dead Mira does not get a living throne dinner', !throneMemoryLines(deadThrone).some(s => /Dinner on the surface/i.test(s)));
+  t('dead Mira does not keep score on the epitaph', !/keeping score/i.test(throneEpitaphStain(deadThrone)));
+  const liveThrone = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'LiveThrone' });
+  applyWorldPatch(liveThrone, { flag: 'saved_climber' });
+  t('living saved Mira still gets the dinner line', /Dinner on the surface/i.test(throneMemoryLines(liveThrone).join(' ')));
+
+  const legalToll = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'TollPath' });
+  applyWorldPatch(legalToll, { flag: 'paid_toll' });
+  legalToll.floor = 20;
+  legalToll.biomeId = 'ruins';
+  t('paying the toll reaches the company store', eventEligible(EVENTS.find(e => e.id === 'bandit_shop'), legalToll));
+  t('paying the toll reaches the later barricade', eventEligible(EVENTS.find(e => e.id === 'bandit_gratitude'), legalToll));
+
+  const legalV = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'VPath' });
+  applyWorldPatch(legalV, { flag: 'ate_v_dinner' });
+  legalV.floor = 33;
+  legalV.biomeId = 'swamp';
+  t('frost dinner reaches the moved table', eventEligible(EVENTS.find(e => e.id === 'v_hearth'), legalV));
+  legalV.biomeId = 'frost';
+  t('moved table stays out of frost', !eventEligible(EVENTS.find(e => e.id === 'v_hearth'), legalV));
+
+  const bothFlags = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'Both' });
+  bothFlags.flags.saved_climber = true;
+  bothFlags.flags.left_climber = true;
+  t('saved+robbed is an exclusive-flag violation', exclusiveFlagViolations(bothFlags).some(g => g.includes('saved_climber')));
+  t('exclusive groups are authored', EXCLUSIVE_FLAG_GROUPS.length >= 2);
+
+  const guildOnly = newRun({ upgrades: {}, achievements: [] }, { classId: 'warrior', raceId: 'human', name: 'ShopA' });
+  guildOnly.flags.guild_notes = true;
+  guildOnly.flags.undercity_ties = true;
+  guildOnly.flags.paid_toll = true;
+  const orDisc = shopDiscount(guildOnly);
+  t('guild OR undercity OR toll does not triple-stack', Math.abs(orDisc.storyDisc - 0.04) < 1e-9);
+  const hellMark = shopDiscount({ ...guildOnly, biomeId: 'hell', flags: { ...guildOnly.flags, dukes_mark: true } });
+  t('Duke mark stacks on the origin OR', Math.abs(hellMark.storyDisc - 0.08) < 1e-9);
+  t('discount cap still clamps', shopDiscount({ fame: 99, biomeId: 'hell', flags: { dukes_mark: true, guild_notes: true }, world: { characters: { merchant: { rel: 99 } } } }).discount <= 0.35);
+  t('shop prices stay finite and non-negative', shopPrice(100, 0.08) > 0 && shopPrice(NaN, 0.08) === 0 && shopPrice(100, 2) >= 0);
+  t('same state is deterministic pricing', shopDiscount(guildOnly).discount === shopDiscount(guildOnly).discount);
+  const flavor = shopDiscountFlavor({ ...guildOnly, flags: { paid_toll: true } });
+  t('story-only shop copy names the woods', /paid the woods|toll/i.test(flavor));
+  t('story-only shop copy is not an empty () discount', !/\(\) discount/.test(flavor) && /discount/.test(flavor));
+
+  const unmetWatch = newRun({ upgrades: {}, achievements: [] }, { classId: 'mage', raceId: 'human', name: 'Unmet' });
+  unmetWatch.floor = 20;
+  unmetWatch.biomeId = 'ruins';
+  t('channeler watch cannot fire before the meet', !eventEligible(EVENTS.find(e => e.id === 'dark_mage_watch'), unmetWatch));
+}
+
 console.log('— narrative event pacing —');
 {
   const { newRun } = await import('../js/state.js');
@@ -1798,6 +2372,11 @@ console.log('— narrative event pacing —');
 {
   const { runClimbV2Tests } = await import('./test_climb_v2.js');
   await runClimbV2Tests(t);
+}
+
+{
+  const { runDifficultyTests } = await import('./test_run_difficulty.js');
+  await runDifficultyTests(t);
 }
 
 console.log('— clear-rate CDF 1p–4p (run_sim, real loot) —');

@@ -65,8 +65,36 @@ button { font-family: inherit; color: inherit; }
   display: flex; align-items: center; justify-content: center;
   background: radial-gradient(circle at 50% 38%, var(--bg-2), var(--bg-0) 78%);
 }
+/* Outside the scaled #frame — overflow+transform clips children that paint past it. */
+#title-bleed {
+  display: none;
+  position: absolute; inset: 0; z-index: 0;
+  pointer-events: none;
+  image-rendering: pixelated;
+  /* Veil stops track the 1280×720 stage so the wings stay forest, not a hard cut. */
+  background-image:
+    linear-gradient(90deg,
+      rgba(8,5,16,.38) 0%,
+      rgba(8,5,16,.82) calc(50% - 640px * var(--frame-scale, 1)),
+      rgba(8,5,16,.45) calc(50% - 102.4px * var(--frame-scale, 1)),
+      rgba(8,5,16,.15) calc(50% + 256px * var(--frame-scale, 1)),
+      rgba(8,5,16,.35) calc(50% + 640px * var(--frame-scale, 1)),
+      rgba(8,5,16,.28) 100%),
+    linear-gradient(180deg, rgba(8,5,16,.2) 0%, transparent 28%, rgba(8,5,16,.55) 72%, rgba(8,5,16,.88) 100%),
+    url('../assets/img/bg/title.png');
+  background-size: 100% 100%, 100% 100%, cover;
+  background-position: center, center, center 40%;
+  background-repeat: no-repeat;
+}
+#viewport:has(.title-screen) #title-bleed { display: block; }
+#viewport:has(.title-screen) #frame {
+  background: transparent;
+  box-shadow: none;
+}
+#viewport:has(.title-screen) #vignette { opacity: 0; }
+#viewport:has(.title-screen) .title-veil { opacity: 0; }
 #frame {
-  position: relative; width: 1280px; height: 720px; flex: 0 0 auto;
+  position: relative; width: 1280px; height: 720px; flex: 0 0 auto; z-index: 1;
   overflow: hidden; background: var(--bg-0);
   transform: scale(var(--frame-scale, 1)); transform-origin: center center;
   box-shadow: 0 0 80px rgba(0,0,0,.85);
@@ -205,6 +233,8 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
   image-rendering: pixelated; border: none; border-radius: 0;
   box-shadow: none; margin: 0; z-index: 0; pointer-events: none;
 }
+/* Full-window bleed is the visible forest; keep this img for fallback only. */
+#viewport:has(.title-screen) .title-vista:not(.title-vista-fallback) { opacity: 0; }
 .title-vista-fallback {
   display: grid; place-items: center;
   background: radial-gradient(ellipse at 50% 35%, #2a2040, var(--bg-0) 70%);
@@ -421,6 +451,7 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 .choice-btn .choice-hint { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-dim); white-space: nowrap; }
 .choice-btn .choice-req { color: var(--crit); }
 .choice-btn.locked .choice-req { color: var(--blood); }
+html.hide-choice-hints .choice-hint:not(.choice-hint-keep) { display: none; }
 
 .card-outcome { margin-top: 6px; animation: screen-in .35s ease; }
 .outcome-lines { margin: 12px 0 18px; display: grid; gap: 6px; }
@@ -1546,9 +1577,12 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 /* music volume slider (title + pause) */
 .audio-row { display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 4px; }
 .audio-row.pause-audio { margin: 0 0 14px; padding: 10px 14px; border: 1px solid var(--panel-edge); border-radius: 10px; background: rgba(0,0,0,.25); }
-.audio-row.pause-autoplay { cursor: pointer; user-select: none; gap: 12px; }
-.audio-row.pause-autoplay input { width: 18px; height: 18px; accent-color: var(--gold, #c9a227); flex: 0 0 auto; }
-.pause-autoplay-hint { color: var(--ink-dim); font-size: 0.92em; text-align: left; }
+.audio-row.pause-autoplay,
+.audio-row.pause-pref { cursor: pointer; user-select: none; gap: 12px; }
+.audio-row.pause-autoplay input,
+.audio-row.pause-pref input { width: 18px; height: 18px; accent-color: var(--gold, #c9a227); flex: 0 0 auto; }
+.pause-autoplay-hint,
+.pause-pref-hint { color: var(--ink-dim); font-size: 0.92em; text-align: left; }
 .vol-slider {
   -webkit-appearance: none; appearance: none; height: 6px; width: 150px; border-radius: 4px;
   background: linear-gradient(90deg, var(--gold) 0%, var(--gold) var(--vp,50%), #2c2838 var(--vp,50%));

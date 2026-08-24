@@ -90,6 +90,7 @@ function fightParty(rng, party, specs, opts) {
       xp: r.won ? xpEach : 0,
       gold: r.won ? Math.round(goldEach * (derived(run).goldMult || 1) * (derived(run).combatGoldMult || 1)) : 0,
       boss: !!opts.boss,
+      kills: specs.length,
     });
     if (r.won && won) {
       grantCombatLoot(run, rng, { boss: !!opts.boss, elite });
@@ -128,6 +129,7 @@ function resolveEventCombat(rng, run, combatSpecs, floor, biomeStart, fightRewar
     xp: r.won ? xp : 0,
     gold: r.won ? Math.round(gold * (derived(run).goldMult || 1)) : 0,
     boss: false,
+    kills: combatSpecs.length,
   });
   if (r.won) {
     grantCombatLoot(run, rng, { elite: combatSpecs.some(s => s.elite) });

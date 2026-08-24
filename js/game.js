@@ -5,7 +5,7 @@ import { CLASSES, SUBCLASSES, RANDOM_NAMES, subclassOptions } from './data/class
 import { RACES, applyRacePromotion } from './data/races.js';
 import { ORIGINS, originById, defaultOriginId } from './data/origins.js';
 import { SKILLS } from './data/skills.js';
-import { BIOMES, biomeForFloor, ENEMIES, BOSSES, ALT_BOSSES, MODIFIERS, pickBossForFloor, bossById, resolveThroneBoss, findEnemySpec, NPC_ENEMIES, WANDERING_ENEMIES, SECRET_BOSS, mimicSpec } from './data/enemies.js';
+import { BIOMES, biomeForFloor, ENEMIES, BOSSES, ALT_BOSSES, MODIFIERS, pickBossForFloor, pickTrialModifier, bossById, resolveThroneBoss, findEnemySpec, NPC_ENEMIES, WANDERING_ENEMIES, SECRET_BOSS, mimicSpec } from './data/enemies.js';
 import { EVENTS, CATEGORY_META, drawEvent, NPC_EVENTS } from './data/events.js';
 import {
   presentEvent, presentBoss, recordEvent, applyWorldPatch, applyOutcomeWorld, ensureWorld,
@@ -14,15 +14,16 @@ import {
   TENDENCIES,
 } from './data/world.js';
 import { biomeIntroText, throneMemoryLines, throneEpitaphStain } from './data/late_memory.js';
+import { narrativeConnectivityReport } from './data/narrative_graph.js';
 import { eventDrawWeight } from './data/eventpace.js';
 import { appearancesFor, defaultAppearanceId } from './data/appearances.js';
 import { CONFIG } from './data/config.js';
-import { planBossEncounter, pushEventHistory } from './data/balance.js';
+import { planBossEncounter, pushEventHistory, pushEncounterHistory, pushTakenEventHistory } from './data/balance.js';
 import { dealLiveFloorCards, pickEnemyPlan as planFloorEnemies } from './data/floorcards.js';
 import { rankFor } from './data/ranks.js';
 import { CONSUMABLES, itemById, resolveItem, rollEquipment, rollRelic, rollUnique, rollWrld, npcDuelLoot, markWrldClaimed, EQUIP_SLOTS, RELICS, ALL_EQUIPMENT, WEAPONS, itemUsefulForClass, itemIncompatibleForClass, shopConsumablePool, shopListingPrice, consumableCombatValue, sellGold } from './data/items.js';
 import { applyTagOutcomeMods, applySparkleOutcomeMods } from './data/eventtags.js';
-import { loadMeta, saveMeta, upgradeRank, award, UPGRADES, ACHIEVEMENTS, newRun, saveRun, loadRun, clearRun, runRng, rollStart, startDescriptor, awakenMonolith, fateGrowthBoost, fateGrowthPct, fateGrowthPctOne, randomRaceId, randomClassId, unlockedCosmetics, climberNameHtml, resetSanctumUpgrades, noteCallings } from './state.js';
+import { loadMeta, saveMeta, upgradeRank, award, UPGRADES, ACHIEVEMENTS, newRun, saveRun, loadRun, clearRun, runRng, rollStart, startDescriptor, awakenMonolith, fateGrowthBoost, fateGrowthPct, fateGrowthPctOne, randomRaceId, randomClassId, unlockedCosmetics, climberNameHtml, resetSanctumUpgrades, noteCallings, getChoiceOutcomeHints, setChoiceOutcomeHints } from './state.js';
 import {
   derived, classTitle, skillTier, gainXp, learnableSkills, heal, restoreMana, relicItems,
   equippedItems, changeFame, resourceName, appraiseRun, revealLevel,
@@ -59,7 +60,7 @@ import {
   applyVictoryRewards, applyEliteVictoryFind, grantReward as grantRewardShared,
   rollBossHoard,
 } from './rewards.js';
-import { buildShopStock, shopDiscount, shopPrice, shopHealCost, applyShopHeal } from './shop.js';
+import { buildShopStock, shopDiscount, shopDiscountFlavor, shopPrice, shopHealCost, applyShopHeal } from './shop.js';
 import {
   resolveEncounterApproach,
   isSpecialEventFoe as isSpecialEventFoeOf, buildEventFightEnemies as buildEventFightEnemiesOf,
@@ -104,8 +105,19 @@ export function boot() {
   setParticles('dust');
   setBiomeGlow('#3f3a58');
   syncAutoPlayLoop();
+  applyChoiceHintPref();
   if (devJump()) return;
   titleScreen();
+}
+
+function applyChoiceHintPref(on = getChoiceOutcomeHints()) {
+  document.documentElement.classList.toggle('hide-choice-hints', !on);
+  return on;
+}
+
+function choiceHintSpan(text, { req = false, keep = false, id = '' } = {}) {
+  const cls = ['choice-hint', req ? 'choice-req' : '', keep ? 'choice-hint-keep' : ''].filter(Boolean).join(' ');
+  return `<span${id ? ` id="${id}"` : ''} class="${cls}">${text || ''}</span>`;
 }
 
 // Local-only dev nav (?dev=combat|creation|sheet|map|appraisal) — never ships UI.
@@ -223,6 +235,73 @@ function dbgMark(ok, text) {
   return `<div class="dbg-check ${ok ? 'ok' : 'no'}">${ok ? '✓' : '✗'} ${dbgEsc(text)}</div>`;
 }
 
+function narrativeConnectivityHtml(state, snap) {
+  const rep = narrativeConnectivityReport(state);
+  const c = rep.catalog;
+  const echo = rep.echoes;
+  const row = (k, v) => `<div class="dbg-inspect-row"><b>${dbgEsc(k)}</b><span class="dbg-inspect-val">${dbgEsc(v)}</span></div>`;
+  const orphanBlock = (list) => {
+    if (!list.length) return '<div class="dbg-dim">none</div>';
+    return list.map(o => {
+      const setBy = (o.setBy || []).map(dbgEsc).join('<br>') || 'unknown';
+      const cons = (o.consumers || []).length
+        ? o.consumers.map(dbgEsc).join('<br>')
+        : 'none';
+      return `<div class="dbg-npc">
+        <b>${dbgEsc(o.id)}</b> <span class="dbg-dim">${dbgEsc(o.kind)}</span>
+        <div class="dbg-kv dbg-kv-stack"><span>Set by</span><div>${setBy}</div></div>
+        <div class="dbg-kv dbg-kv-stack"><span>Known consumers</span><div>${cons}</div></div>
+      </div>`;
+    }).join('');
+  };
+  const runOrphans = rep.runOrphans || [];
+  const catalogOrphans = [...rep.orphanFlags, ...rep.orphanKnowledge];
+  const connections = (rep.threadEdges || []).slice(0, 40).map(e =>
+    `<div class="dbg-dim">${dbgEsc(e.from)} → ${dbgEsc(e.to)} <span class="dbg-inspect-val">via ${dbgEsc(e.kind)} ${dbgEsc(e.via)} (${dbgEsc(e.writer)} → ${dbgEsc(e.reader)})</span></div>`
+  ).join('') || '<div class="dbg-dim">none</div>';
+  const connected = (rep.mostConnectedThreads || []).map(t =>
+    `<div class="dbg-inspect-row"><b>${dbgEsc(t.id)}</b><span class="dbg-inspect-val">${t.edges} edges</span></div>`
+  ).join('') || '<div class="dbg-dim">none</div>';
+  const isolated = (rep.isolatedThreads || []).length
+    ? `<div class="dbg-dim">${rep.isolatedThreads.map(dbgEsc).join(', ')}</div>`
+    : '<div class="dbg-dim">none</div>';
+  const recurring = (rep.npcRecurring || []).map(n => {
+    const live = (snap.characters || []).find(ch => ch.id === n.id);
+    const name = live?.name || n.id;
+    return `<div class="dbg-inspect-row"><b>${dbgEsc(name)}</b><span class="dbg-inspect-val">${dbgEsc((n.events || []).join(', '))}</span></div>`;
+  }).join('') || '<div class="dbg-dim">none</div>';
+  return `
+    <div class="dbg-group"><h4>Narrative connectivity</h4>
+      <p class="dbg-dim">Catalog-level write/read analysis. Not scanned every frame.</p>
+      <div class="dbg-inspect">
+        ${row('Flags created', c.flagsCreated)}
+        ${row('Flags consumed', c.flagsConsumed)}
+        ${row('Potential orphan flags', c.orphanFlags)}
+        ${row('Knowledge created', c.knowledgeCreated)}
+        ${row('Knowledge consumed', c.knowledgeConsumed)}
+        ${row('NPCs encountered (catalog)', c.npcsEncountered)}
+        ${row('NPCs recurring', c.npcsRecurring)}
+        ${row('Threads started (catalog)', c.threadsStarted)}
+        ${row('Threads with readers', c.threadsWithReaders)}
+        ${row('Threads intersecting', c.threadsIntersecting)}
+        ${row('Indirect intersections', c.threadsIndirect ?? 0)}
+        ${row('Isolated threads', c.threadsIsolated ?? 0)}
+        ${row('Choice echoes · immediate', echo.immediate)}
+        ${row('Choice echoes · delayed', echo.delayed)}
+        ${row('Choice echoes · late-game', echo.lateGame)}
+        ${row('Choice echoes · none detected', echo.none)}
+      </div>
+      <p class="dbg-dim">This run: flags ${rep.run.flagsSet} · knowledge ${rep.run.knowledge} · NPCs met ${rep.run.npcsEncountered} (${rep.run.npcsRecurring} recurring) · threads ${rep.run.threadsStarted}/${rep.run.threadsResolved} resolved.</p>
+    </div>
+    <details class="dbg-group dbg-collapse" ${runOrphans.length ? 'open' : ''}><summary class="dbg-collapse-sum">Potential orphan state on this run (${runOrphans.length})</summary>${orphanBlock(runOrphans)}</details>
+    <details class="dbg-group dbg-collapse"><summary class="dbg-collapse-sum">Catalog orphan state (${catalogOrphans.length})</summary>${orphanBlock(catalogOrphans)}</details>
+    <details class="dbg-group dbg-collapse"><summary class="dbg-collapse-sum">Recurring NPCs (${rep.npcRecurring.length})</summary><div class="dbg-inspect">${recurring}</div></details>
+    <details class="dbg-group dbg-collapse"><summary class="dbg-collapse-sum">Thread connections (${(rep.threadEdges || []).length})</summary>${connections}</details>
+    <details class="dbg-group dbg-collapse"><summary class="dbg-collapse-sum">Most-connected threads</summary><div class="dbg-inspect">${connected}</div></details>
+    <details class="dbg-group dbg-collapse"><summary class="dbg-collapse-sum">Isolated threads (${(rep.isolatedThreads || []).length})</summary>${isolated}</details>
+  `;
+}
+
 /** Dev-only world inspector — never shown in normal play. */
 function worldDebugHtml() {
   const state = inspectRun();
@@ -333,6 +412,7 @@ function worldDebugHtml() {
     </div>
     <div class="dbg-group"><h4>NPC state</h4>${charRows}</div>
     ${factionRows ? `<div class="dbg-group"><h4>Factions</h4><div class="dbg-inspect">${factionRows}</div></div>` : ''}
+    ${narrativeConnectivityHtml(state, snap)}
     <div class="dbg-group"><h4>Class discovery</h4>
       <p class="dbg-dim">Player-facing line hides route names. Eligibility may open an initiation event; unlock is a diegetic accept.</p>
       ${secretRows}
@@ -819,6 +899,11 @@ async function openPauseMenu() {
       <span id="pause-vol-val" class="vol-val">${Math.round(Music.getVolume() * 100)}</span>
       <button class="btn small ghost" id="pause-mute">${isMuted() ? '🔇' : '🔊'}</button>
     </div>
+    <label class="audio-row pause-audio pause-pref">
+      <span>Show Choice Outcome Hints</span>
+      <input type="checkbox" id="pause-choice-hints" ${getChoiceOutcomeHints() ? 'checked' : ''} />
+      <span class="pause-pref-hint">Right-side reward preview on choices</span>
+    </label>
     ${showDevChrome() || isAutoPlay() ? `<label class="audio-row pause-audio pause-autoplay">
       <span>🧪 Auto-play</span>
       <input type="checkbox" id="pause-autoplay" ${isAutoPlay() ? 'checked' : ''} />
@@ -834,6 +919,8 @@ async function openPauseMenu() {
   wireVolumeSlider(document.getElementById('pause-vol'), document.getElementById('pause-vol-val'));
   const mb = document.getElementById('pause-mute');
   if (mb) mb.onclick = () => { const m = toggleMute(); Music.syncMute(); mb.textContent = m ? '🔇' : '🔊'; };
+  const ch = document.getElementById('pause-choice-hints');
+  if (ch) ch.onchange = () => applyChoiceHintPref(setChoiceOutcomeHints(ch.checked));
   const ap = document.getElementById('pause-autoplay');
   if (ap) ap.onchange = () => setAutoPlay(ap.checked);
   const v = await p;
@@ -2236,7 +2323,7 @@ async function nextFloor() {
         <div class="card-body">
           <h3>${biome.name}</h3>
           <div class="card-text">${biomeIntroText(biome, run)}</div>
-          <div class="card-choices"><button class="choice-btn" id="go"><span class="choice-label">Step through the gate</span><span class="choice-hint">⟶</span></button></div>
+          <div class="card-choices"><button class="choice-btn" id="go"><span class="choice-label">Step through the gate</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
         </div>
       </div></div>`;
     applyCardBg(stage);
@@ -2423,6 +2510,7 @@ function resolveCard(stage, card, cardIndex = null) {
   if (cardIndex != null) climbTrace?.card(cardIndex);
   if (card.kind === 'encounter') {
     pushEventHistory(run, 'combat');
+    pushEncounterHistory(run, card.enemies);
     clearPending();
     if (coopS) {
       const enemies = rehydrateEnemies(card.enemies);
@@ -2435,6 +2523,7 @@ function resolveCard(stage, card, cardIndex = null) {
   run.eventSparkle = !!card.sparkle;
   noteEventTags(ev);
   pushEventHistory(run, ev.category || 'unknown');
+  pushTakenEventHistory(run, ev.id);
   recordEvent(run, ev);
   setPending(ev.shop ? 'shop' : 'event', { eventId: ev.id, sparkle: !!card.sparkle, variantId: ev.variantId || null });
   saveRun(run);
@@ -2515,11 +2604,11 @@ async function encounterFloor(stage, prebuiltGroup = null, hpMult = 1) {
         <h3>Hostiles Ahead</h3>
         <div class="card-text">The floor narrows, and the dark produces: ${names}${group.length > 1 ? ` — ${group.length} of them` : ''}. They have already noticed you. The only question is what happens next.</div>
         <div class="card-choices">
-          <button class="choice-btn" data-act="fight"><span class="choice-label">⚔ Fight</span><span class="choice-hint">XP + gold</span></button>
-          <button class="choice-btn" data-act="sneak"><span class="choice-label">🕶 Sneak past</span><span class="choice-hint">a test of agility</span></button>
+          <button class="choice-btn" data-act="fight"><span class="choice-label">⚔ Fight</span>${choiceHintSpan('XP + gold')}</button>
+          <button class="choice-btn" data-act="sneak"><span class="choice-label">🕶 Sneak past</span>${choiceHintSpan('a test of agility')}</button>
           ${bribable
-            ? `<button class="choice-btn" data-act="bribe" ${run.gold < bribe ? 'disabled' : ''}><span class="choice-label">🪙 Bribe them</span><span class="choice-hint ${run.gold < bribe ? 'choice-req' : ''}">-${bribe}g${fameDiscount > 0 ? ' (your name precedes you)' : ''}</span></button>`
-            : `<button class="choice-btn locked" disabled><span class="choice-label">🪙 Bribe them</span><span class="choice-hint choice-req">🔒 they can't be reasoned with</span></button>`}
+            ? `<button class="choice-btn" data-act="bribe" ${run.gold < bribe ? 'disabled' : ''}><span class="choice-label">🪙 Bribe them</span>${choiceHintSpan(`-${bribe}g${fameDiscount > 0 ? ' (your name precedes you)' : ''}`, { req: run.gold < bribe, keep: true })}</button>`
+            : `<button class="choice-btn locked" disabled><span class="choice-label">🪙 Bribe them</span>${choiceHintSpan("🔒 they can't be reasoned with", { req: true, keep: true })}</button>`}
         </div>
       </div>
     </div></div>`;
@@ -2573,11 +2662,11 @@ async function fightGroup(stage, specs, {
   const biome = biomeForFloor(run.floor);
   const rng = runRng(run);
   const mult = (modifier?.hpMult || 1) * (hpMult || 1);
-  let enemies = prebuilt || specs.map(s => buildEnemy(s, run.floor, biome.floors[0], { hpMult: mult }));
+  let enemies = prebuilt || specs.map((s, i) => buildEnemy(s, run.floor, biome.floors[0], { hpMult: mult, spawnIndex: i }));
   if (!resume && modifier?.extraEnemy) {
     const extra = modifier.extraEnemy === true ? 1 : modifier.extraEnemy;
     for (let i = 0; i < extra; i++) {
-      enemies.push(buildEnemy(runRng(run).pick(ENEMIES[biome.id].filter(e => !e.elite)), run.floor, biome.floors[0], { hpMult: mult }));
+      enemies.push(buildEnemy(runRng(run).pick(ENEMIES[biome.id].filter(e => !e.elite)), run.floor, biome.floors[0], { hpMult: mult, spawnIndex: (prebuilt || specs).length + i }));
     }
   }
   // Resume mid-fight: restore HP/status onto the same enemy list.
@@ -2785,11 +2874,12 @@ async function bossRelicPick(stage) {
 /* ---------- trial + boss floors (fixed single cards) ---------- */
 async function modifierFloor(stage) {
   const rng = runRng(run);
-  const mod = rng.pick(MODIFIERS);
+  const mod = pickTrialModifier(rng, run);
   const biome = biomeForFloor(run.floor);
   const plan = pickEnemyPlan(rng, biome, 1);
   rng.advance(); saveRun(run);
   pushEventHistory(run, 'combat');
+  pushEncounterHistory(run, plan.specs);
 
   stage.innerHTML = `
     <div class="card-stage"><div class="panel event-card">
@@ -2799,7 +2889,7 @@ async function modifierFloor(stage) {
         <h3>Trial Floor: ${mod.name}</h3>
         <div class="card-text">The tower posts terms for this floor, burned into the wall in letters that smoke slightly:\n\n"${mod.desc}"\n\nThere is no way around a trial floor. There is only through.</div>
         <div class="card-choices">
-          <button class="choice-btn" id="go"><span class="choice-label">⚔ Accept the trial</span><span class="choice-hint">bonus loot</span></button>
+          <button class="choice-btn" id="go"><span class="choice-label">⚔ Accept the trial</span>${choiceHintSpan('bonus loot')}</button>
         </div>
       </div>
     </div></div>`;
@@ -2841,7 +2931,7 @@ async function bossFloor(stage, { resume = null } = {}) {
         <h3>${boss.name}</h3>
         <div class="card-text">${shown.intro}</div>
         <div class="card-choices">
-          <button class="choice-btn" id="go"><span class="choice-label">⚔ Face it</span><span class="choice-hint">no retreat</span></button>
+          <button class="choice-btn" id="go"><span class="choice-label">⚔ Face it</span>${choiceHintSpan('no retreat')}</button>
         </div>
       </div>
     </div></div>`;
@@ -2864,7 +2954,7 @@ async function bossFloor(stage, { resume = null } = {}) {
       return buildEnemy(
         // Escorts share the boss floor (depth 0); hit softer than open-floor trash.
         s, run.floor, run.floor,
-        { boss: isBoss, hpMult: plan.hpMult, atkMult: isBoss ? 1 : escortAtk },
+        { boss: isBoss, hpMult: plan.hpMult, atkMult: isBoss ? 1 : escortAtk, spawnIndex: i },
       );
     });
     await fightGroupBoss(stage, enemies, boss);
@@ -2918,8 +3008,8 @@ function buildPartyEnemies(specs, hpMult = 1) {
   const biome = biomeForFloor(run.floor);
   const partySize = coopS?.partySize || 1;
   const trashAtk = partyTrashAtkMult(partySize, run.floor);
-  return specs.map(s => buildEnemy(s, run.floor, biome.floors[0], {
-    hpMult, atkMult: trashAtk, partySize,
+  return specs.map((s, i) => buildEnemy(s, run.floor, biome.floors[0], {
+    hpMult, atkMult: trashAtk, partySize, spawnIndex: i,
   }));
 }
 
@@ -2941,6 +3031,7 @@ function buildSharedEnemies(specs, { boss = false, hpMult = 1, partySize = coopS
         hpMult: hpMult * (isBoss ? bossHp : 1),
         atkMult: isBoss ? bossAtk : (boss ? escortAtk : trashAtk),
         partySize,
+        spawnIndex: i,
       },
     );
   });
@@ -2974,8 +3065,9 @@ function hostPublishFloorContent() {
       enemies: buildSharedEnemies(plan.specs, { boss: true, hpMult: plan.hpMult, partySize: coopS.partySize }),
     };
   } else if (run.floor % 5 === 0) {
-    const mod = rng.pick(MODIFIERS);
+    const mod = pickTrialModifier(rng, run);
     const plan = pickEnemyPlan(rng, biome, coopS.partySize);
+    pushEncounterHistory(run, plan.specs);
     const specs = [...plan.specs];
     if (mod.extraEnemy) {
       const extra = mod.extraEnemy === true ? 1 : mod.extraEnemy;
@@ -3022,6 +3114,7 @@ async function coopFloor(stage) {
   run.seenEvents.push(ev.id);
   noteEventTags(ev);
   pushEventHistory(run, ev.category || 'recovery');
+  pushTakenEventHistory(run, ev.id);
   recordEvent(run, ev);
   saveRun(run);
   renderEventCard(stage, ev);
@@ -3166,7 +3259,7 @@ async function sharedFightCard(stage, content) {
         <h3>${title}</h3>
         <div class="card-text">${text}</div>
         <div class="card-choices">
-          <button class="choice-btn" id="go"><span class="choice-label">⚔ Stand together</span><span class="choice-hint" id="gate-hint">waiting for the party…</span></button>
+          <button class="choice-btn" id="go"><span class="choice-label">⚔ Stand together</span>${choiceHintSpan('waiting for the party…', { keep: true, id: 'gate-hint' })}</button>
         </div>
       </div>
     </div></div>`;
@@ -3343,7 +3436,7 @@ function renderEventCard(stage, ev, { originIntro = false } = {}) {
     const r = reqMet(choice.req);
     const btn = el(`<button class="choice-btn ${r.ok ? '' : 'locked'}" ${r.ok ? '' : 'disabled'}>
       <span class="choice-label">${choice.label}</span>
-      <span class="choice-hint ${choice.req ? 'choice-req' : ''}">${r.ok ? (choice.hint || '') : `🔒 ${r.why}`}</span>
+      ${choiceHintSpan(r.ok ? (choice.hint || '') : `🔒 ${r.why}`, { req: !!choice.req, keep: !r.ok })}
     </button>`);
     btn.onclick = () => { SFX.click(); resolveChoice(stage, ev, choice, { originIntro }); };
     box.appendChild(btn);
@@ -3490,7 +3583,7 @@ function coopEventChoice(stage, ev) {
     const r = reqMet(choice.req);
     const btn = el(`<button class="choice-btn ${r.ok ? '' : 'locked'}" data-ev-idx="${idx}" ${r.ok ? '' : 'disabled'}>
       <span class="choice-label">${choice.label}</span>
-      <span class="choice-hint ${choice.req ? 'choice-req' : ''}">${r.ok ? (choice.hint || '') : `🔒 ${r.why}`}</span>
+      ${choiceHintSpan(r.ok ? (choice.hint || '') : `🔒 ${r.why}`, { req: !!choice.req, keep: !r.ok })}
     </button>`);
     btn.onclick = () => {
       if (resolved || localIdx != null || !r.ok) return;
@@ -4208,9 +4301,9 @@ async function runCoopTrade() {
             <div class="card-choices" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
               <button class="choice-btn" id="trade-confirm" ${(!myOffer || myReady || mySkip) ? 'disabled' : ''}>
                 <span class="choice-label">Confirm trade</span>
-                <span class="choice-hint">${theirOffer && myOffer && theirOffer.rarity !== myOffer.rarity ? 'rarities must match' : 'both must agree'}</span>
+                ${choiceHintSpan(theirOffer && myOffer && theirOffer.rarity !== myOffer.rarity ? 'rarities must match' : 'both must agree', { keep: true })}
               </button>
-              <button class="choice-btn" id="trade-skip"><span class="choice-label">Skip</span><span class="choice-hint">walk away</span></button>
+              <button class="choice-btn" id="trade-skip"><span class="choice-label">Skip</span>${choiceHintSpan('walk away')}</button>
             </div>
           </div>
         </div></div>`;
@@ -4687,7 +4780,7 @@ async function showOutcomePanel(stage, lines, ups = [], {
     <div class="card-stage"><div class="panel event-card card-outcome">
       <div class="card-body">
         <div class="outcome-lines">${lines.map(l => `<div class="outcome-line ${l.cls}">${l.text}</div>`).join('')}</div>
-        <div class="card-choices"><button class="choice-btn" id="continue"><span class="choice-label">${continueLabel}</span><span class="choice-hint">⟶</span></button></div>
+        <div class="card-choices"><button class="choice-btn" id="continue"><span class="choice-label">${continueLabel}</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
       </div>
     </div></div>`);
   stage.innerHTML = '';
@@ -4728,7 +4821,7 @@ function nextFloorButton(stage) {
   const panel = el(`
     <div class="card-stage"><div class="panel event-card card-outcome">
       <div class="card-body">
-        <div class="card-choices"><button class="choice-btn" id="continue"><span class="choice-label">Ascend to the next floor</span><span class="choice-hint">⟶</span></button></div>
+        <div class="card-choices"><button class="choice-btn" id="continue"><span class="choice-label">Ascend to the next floor</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
       </div>
     </div></div>`);
   stage.innerHTML = '';
@@ -4996,7 +5089,7 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
 
   // fame opens wallets and lowers prices (handoff §18);
   // a familiar merchant stacks a small face discount on top.
-  const { fameDisc, faceDisc, discount } = shopDiscount(run);
+  const { discount } = shopDiscount(run);
   let boughtHere = false;
 
   function price(p) {
@@ -5018,7 +5111,7 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
           <span class="tag card-type-tag">MERCHANT</span><span class="tag card-floor-tag">FLOOR ${run.floor}</span></div>
         <div class="card-body">
           <h3>${ev.title}</h3>
-          <div class="card-text">${ev.text || '"Browse, browse! Prices reflect the difficulty of my supply chain, which is <i>vertical</i>."'}${discount ? `<br/><i>${faceDisc && !fameDisc ? '"For a familiar face, a consideration."' : '"Wait — I know that face! For a climber of your reputation, a consideration."'}</i> (${[fameDisc && 'fame', faceDisc && 'familiar'].filter(Boolean).join(' + ')} discount)` : ''}</div>
+          <div class="card-text">${ev.text || '"Browse, browse! Prices reflect the difficulty of my supply chain, which is <i>vertical</i>."'}${discount ? `<br/><i>${shopDiscountFlavor(run)}</i>` : ''}</div>
           <div class="shop-list">
             ${stock.map((s, i) => `
               <div class="shop-item">
@@ -5033,7 +5126,7 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
               <button class="btn small" id="buy-heal" ${run.gold < healCost || run.hp >= run.maxHp ? 'disabled' : ''}>Buy</button>
             </div>
           </div>
-          <div class="card-choices"><button class="choice-btn" id="leave"><span class="choice-label">Take your leave</span><span class="choice-hint">⟶</span></button></div>
+          <div class="card-choices"><button class="choice-btn" id="leave"><span class="choice-label">Take your leave</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
         </div>
       </div></div>`;
 
@@ -5380,14 +5473,14 @@ async function throneRoom(stage) {
   if (hasSigils) {
     addChoice(`<button class="choice-btn" style="border-color:var(--gold)">
       <span class="choice-label">✦ Present the three Sigils — speak the tower's truth</span>
-      <span class="choice-hint choice-req">SECRET</span></button>`, () => {
+      ${choiceHintSpan('SECRET', { req: true, keep: true })}</button>`, () => {
         climbTrace?.throne('sigils');
         if (coopS) coopS.net.send({ k: 'throne', ending: 'secret' });
         secretEnding(stage);
       });
   }
   if (run.flags.kings_petition) {
-    addChoice(`<button class="choice-btn"><span class="choice-label">📜 Deliver the Ghost King's petition</span><span class="choice-hint">six hundred years overdue</span></button>`, async () => {
+    addChoice(`<button class="choice-btn"><span class="choice-label">📜 Deliver the Ghost King's petition</span>${choiceHintSpan('six hundred years overdue')}</button>`, async () => {
       climbTrace?.throne('petition');
       const resolved = resolveThroneChoice(run, 'petition', boss);
       saveRun(run);
@@ -5396,11 +5489,11 @@ async function throneRoom(stage) {
       throneFight(resolved.spec, resolved.hpMult);
     });
   }
-  addChoice(`<button class="choice-btn"><span class="choice-label">⚔ "I'm the interesting kind." — Fight</span><span class="choice-hint">the classic ending</span></button>`, () => {
+  addChoice(`<button class="choice-btn"><span class="choice-label">⚔ "I'm the interesting kind." — Fight</span>${choiceHintSpan('the classic ending')}</button>`, () => {
     climbTrace?.throne('fight');
     throneFight(boss, 1);
   });
-  addChoice(`<button class="choice-btn"><span class="choice-label">🗣 Answer honestly: "I don't know yet."</span><span class="choice-hint">${run.flags.angel_lore || run.flags.tree_lore || run.flags.seen_throne ? 'the crown slips' : 'risky honesty'}</span></button>`, async () => {
+  addChoice(`<button class="choice-btn"><span class="choice-label">🗣 Answer honestly: "I don't know yet."</span>${choiceHintSpan(run.flags.angel_lore || run.flags.tree_lore || run.flags.seen_throne ? 'the crown slips' : 'risky honesty')}</button>`, async () => {
     await modal(`<h3>The Question</h3><p class="modal-sub">"Would you take this throne," ${boss.name} asks, "if it were offered?"<br/><br/>"I don't know yet," you say.<br/><br/>The figure on the throne <i>changes</i> — horns melt into a crooked crown, molten flesh into royal plate. Aldric, the Corrupt King, steps forward smiling wrong.<br/><br/>"Honest. Good. The Demon King was always a story we sold climbers. I am the kingdom. Let us settle the paperwork in blood."</p>
       <div class="pick-grid"><button class="pick-option" data-close="x"><span class="po-name">Face the true king</span></button></div>`);
     climbTrace?.throne('honesty');

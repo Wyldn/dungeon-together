@@ -194,12 +194,24 @@ export const TDC = {
     xpFloorFactor: 0.018,
   },
 
+  /* ---- encounter history (lead / body anti-repeat) ---- */
+  encounters: {
+    historyWindow: 3,
+    bodyWindow: 6,
+    minPoolKeep: 3,
+  },
+
   /* ---- event history (category anti-streak) ---- */
   events: {
     historyWindow: 6,
     historyRepeatPenalty: 0.55,
     historyMediumPenalty: 0.40,
     historyHeavyPenalty: 0.15,
+    eventIdWindow: 6,
+    eventIdTakenLast: 0.22,
+    eventIdTaken: 0.38,
+    eventIdOfferedLast: 0.36,
+    eventIdOffered: 0.52,
     // Narrative director — weight nudges only. Eligibility stays in `when`.
     // Frozen after the Narrative Director distribution pass. Do not retune
     // these knobs without a measured failure in tools/pace_validate.js.

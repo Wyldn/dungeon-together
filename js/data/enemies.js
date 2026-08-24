@@ -609,6 +609,17 @@ export const BOSSES = {
     ],
     intro: 'The oldest tree in the forest uproots itself. It has judged ten thousand climbers.\nIt has approved of none.',
     taunt: 'YOU BURN LIKE ALL THE REST.',
+    variants: [
+      { id: 'smoke', when: { flag: 'angered_forest' },
+        intro: 'The oldest tree in the forest uproots itself. It smells hive-smoke on you first — the hive you woke and never paid.\nTen thousand judged climbers watch through its rings. They have opinions now.',
+        taunt: 'YOU BROUGHT THE SMOKE TO COURT.' },
+      { id: 'peace', when: { flag: 'forest_peace' },
+        intro: 'The oldest tree in the forest uproots itself. A bee sits on a root and does not sting.\nThe minutes say SETTLED. Sylvanor has not read them yet.',
+        taunt: 'THE BEES FORGAVE. I AM NOT A BEE.' },
+      { id: 'mira', when: { flag: 'saved_climber' },
+        intro: 'The oldest tree in the forest uproots itself. It has judged ten thousand climbers.\nIt noticed you stopped for one of them.',
+        taunt: 'KINDNESS IS NOT A VERDICT.' },
+    ],
   },
   // A midboss, not a gate: he sits mid-biome between the Guardian and the Lich,
   // so he's tuned under the F20 curve. Adding the key is all it takes — game.js
@@ -704,6 +715,9 @@ export const BOSSES = {
       { id: 'bell', when: { event: 'sunken_bell' },
         intro: 'Three heads surface from the black water. The sunken bell already named this funeral.',
         taunt: 'ONE WEEPS. DO NOT CUT THE GRIEF.' },
+      { id: 'minutes', when: { knowledge: 'forest_minutes' },
+        intro: 'Three heads surface from the black water. One of them recites, badly: smoke, wolves, a climber who was loud.\nThe bees sent minutes. The weeping head is taking them personally.',
+        taunt: 'THE WOODS FILED YOU. WE INHERITED THE FILE.' },
     ],
   },
   50: {
@@ -718,6 +732,17 @@ export const BOSSES = {
     ],
     intro: '"Fifty floors," the Duke muses, drawing a sword made of other swords.\n"Impressive. The King will want to kill you personally. Let\'s disappoint him."',
     taunt: 'THE THRONE IS A PRIVILEGE. DYING HERE IS FREE.',
+    variants: [
+      { id: 'mark', when: { flag: 'dukes_mark' },
+        intro: '"Fifty floors," the Duke muses. He sees the stamp on your hand and does not laugh.\n"I sent that courtesy downstairs. It was not an invitation to my door."',
+        taunt: 'THE MARK WAS FOR A DIFFERENT STAIR.' },
+      { id: 'clause', when: { flag: 'clause_seven' },
+        intro: '"Fifty floors," the Duke muses. He smells contract on you.\n"Clause seven is not my department. I am still going to bill you for the walk."',
+        taunt: 'THE DEVIL FILES. I COLLECT THE DOOR.' },
+      { id: 'angel', when: { flag: 'freed_angel' },
+        intro: '"Fifty floors," the Duke muses. He looks at the light in your pack like a man who missed a note.\n"The chained one flew. The choir is still arguing. I am not the choir."',
+        taunt: 'KEEP THE FEATHER. PAY THE TOLL.' },
+    ],
   },
   // Throne: sticky 50/50 between Vorath (primary) and Malqor (ALT_BOSSES[51]).
   51: GALLERY_BOSSES.tr_mon_demon,
@@ -897,6 +922,15 @@ export function findEnemySpec(id) {
 }
 
 // Trial-floor battle modifiers (every 5th non-boss floor).
+/** Uniform pick, skipping the last trial so consecutive trials don't rhyme. */
+export function pickTrialModifier(rng, run) {
+  const last = run?.lastTrialMod;
+  const pool = last ? MODIFIERS.filter(m => m.id !== last) : MODIFIERS;
+  const pick = rng.pick(pool.length ? pool : MODIFIERS);
+  if (run) run.lastTrialMod = pick.id;
+  return pick;
+}
+
 export const MODIFIERS = [
   { id: 'ambush', name: 'Ambush!', desc: 'Enemies strike first this battle.', enemyFirst: true },
   { id: 'thirsting_ground', name: 'Thirsting Ground', desc: 'The floor drinks: lose 3% max HP at the end of each round.', hpDrainPct: 0.03 },

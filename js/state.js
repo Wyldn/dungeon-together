@@ -17,6 +17,8 @@ const defaultPrefs = () => ({
   combatLaneDivider: true, // vertical bar separating party from the field
   // Per-device only (never synced in co-op) — each climber toggles their own.
   autoPlay: false,
+  // Right-side reward/consequence preview on event choices. Default ON.
+  choiceOutcomeHints: true,
 });
 
 export function loadPrefs() {
@@ -50,6 +52,22 @@ export function setAutoPlayPref(on) {
   prefs.autoPlay = !!on;
   savePrefs(prefs);
   return prefs.autoPlay;
+}
+
+export function getChoiceOutcomeHints() {
+  return loadPrefs().choiceOutcomeHints !== false;
+}
+
+export function setChoiceOutcomeHints(on) {
+  const prefs = loadPrefs();
+  prefs.choiceOutcomeHints = !!on;
+  savePrefs(prefs);
+  return prefs.choiceOutcomeHints;
+}
+
+/** Right-side choice preview: locked reasons and keep=true (costs/status) always show. */
+export function choiceOutcomeHintVisible({ keep = false, locked = false } = {}) {
+  return !!(keep || locked || getChoiceOutcomeHints());
 }
 
 /* ------------------------- META (permanent) ------------------------- */
@@ -386,6 +404,12 @@ export function newRun(meta, { classId, raceId = 'human', originId = null, name,
     seenEvents: [],
     recentCategories: [],
     recentNarrative: [],
+    recentEventIds: [],
+    recentTakenEventIds: [],
+    recentEncounterIds: [],
+    recentEncounterBodies: [],
+    recentShopItemIds: [],
+    lastTrialMod: null,
     sigils: [],
     kills: 0,
     guardCount: 0,
@@ -435,6 +459,12 @@ function migrateRun(run) {
   run.appraisal = run.appraisal || null;
   run.recentCategories = run.recentCategories || [];
   run.recentNarrative = run.recentNarrative || [];
+  run.recentEventIds = run.recentEventIds || [];
+  run.recentTakenEventIds = run.recentTakenEventIds || [];
+  run.recentEncounterIds = run.recentEncounterIds || [];
+  run.recentEncounterBodies = run.recentEncounterBodies || [];
+  run.recentShopItemIds = run.recentShopItemIds || [];
+  run.lastTrialMod = run.lastTrialMod || null;
   run.flags = run.flags || {};
   ensureWorld(run);
   syncSecretUnlockFromSubclass(run);

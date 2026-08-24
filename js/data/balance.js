@@ -204,6 +204,8 @@ export function planEncounter(rng, {
   partySize = 1,
   allowElite = true,
   maxEnemies = null,
+  recentIds = [],
+  recentBodies = [],
 } = {}) {
   const budget = encounterBudget(floor, partySize);
   let remaining = budget;
@@ -218,19 +220,26 @@ export function planEncounter(rng, {
 
   // Swarm draws (AoE showcase): many cheap pack bodies instead of a heavy
   // lead. Same threat budget — more targets, thinner blood each.
-  const swarmPool = usable.filter(e => !e.elite && e.pack);
-  const swarm = swarmPool.length > 0 && rng.chance(TDC.budget.swarmChance || 0);
+  const leadUsable = filterEncounterPool(usable, recentIds);
+  const swarmPool = leadUsable.filter(e => !e.elite && e.pack);
+  const swarmAll = usable.filter(e => !e.elite && e.pack);
+  const swarm = (swarmPool.length || swarmAll.length) > 0 && rng.chance(TDC.budget.swarmChance || 0);
   const swarmMax = TDC.budget.swarmMaxBodies || 5;
   const swarmCap = cap != null ? Math.min(cap, swarmMax) : swarmMax;
 
-  const lead = swarm ? rng.pick(swarmPool) : rng.pick(usable);
+  const lead = swarm
+    ? rng.pick(swarmPool.length ? swarmPool : swarmAll)
+    : rng.pick(leadUsable.length ? leadUsable : usable);
   const specs = [lead];
   remaining -= enemyThreatCost(lead, floor, biomeStart);
 
   const nonElite = () => usable.filter(e => !e.elite);
   const cheapest = () => {
-    const cands = nonElite();
-    if (!cands.length) return null;
+    const all = nonElite();
+    if (!all.length) return null;
+    const avoid = new Set((recentBodies || []).slice(-(TDC.encounters?.bodyWindow || 6)));
+    const fresh = avoid.size ? all.filter(e => !avoid.has(e.id)) : all;
+    const cands = fresh.length ? fresh : all;
     return cands.reduce((best, e) => {
       const c = enemyThreatCost(e, floor, biomeStart);
       return !best || c < best.cost ? { e, cost: c } : best;
@@ -252,7 +261,8 @@ export function planEncounter(rng, {
     }
     if (cap != null) extras = Math.min(extras, Math.max(0, cap - specs.length));
     for (let i = 0; i < extras; i++) {
-      const mate = rng.chance(0.7) ? lead : (rng.pick(nonElite()) || lead);
+      const sameMateOdds = recentIds.includes(lead.id) ? 0.45 : 0.7;
+      const mate = rng.chance(sameMateOdds) ? lead : (rng.pick(nonElite()) || lead);
       specs.push(mate);
       remaining -= enemyThreatCost(mate, floor, biomeStart);
     }
@@ -535,5 +545,75 @@ export function pushEventHistory(state, category) {
   state.recentCategories.push(category);
   if (state.recentCategories.length > TDC.events.historyWindow * 2) {
     state.recentCategories = state.recentCategories.slice(-TDC.events.historyWindow);
+  }
+}
+
+/**
+ * Soft-penalize the same event id so staple cards (merchant, shrine, chest)
+ * rotate instead of occupying every other travel draw.
+ */
+export function historyEventWeight(eventId, recentOffered = [], recentTaken = []) {
+  if (!eventId) return 1;
+  const cfg = TDC.events || {};
+  const windowN = cfg.eventIdWindow || 6;
+  const offered = (recentOffered || []).slice(-windowN);
+  const taken = (recentTaken || []).slice(-windowN);
+  if (taken.length && taken[taken.length - 1] === eventId) return cfg.eventIdTakenLast ?? 0.28;
+  if (taken.includes(eventId)) return cfg.eventIdTaken ?? 0.45;
+  if (offered.length && offered[offered.length - 1] === eventId) return cfg.eventIdOfferedLast ?? 0.48;
+  if (offered.includes(eventId)) return cfg.eventIdOffered ?? 0.62;
+  return 1;
+}
+
+export function pushOfferedEventHistory(state, cardsOrIds) {
+  if (!state) return;
+  if (!Array.isArray(state.recentEventIds)) state.recentEventIds = [];
+  const ids = (cardsOrIds || []).map(x => (typeof x === 'string' ? x : x?.eventId)).filter(Boolean);
+  for (const id of ids) state.recentEventIds.push(id);
+  const keep = (TDC.events.eventIdWindow || 6) * 2;
+  if (state.recentEventIds.length > keep) {
+    state.recentEventIds = state.recentEventIds.slice(-(TDC.events.eventIdWindow || 6));
+  }
+}
+
+export function pushTakenEventHistory(state, eventId) {
+  if (!state || !eventId) return;
+  if (!Array.isArray(state.recentTakenEventIds)) state.recentTakenEventIds = [];
+  state.recentTakenEventIds.push(eventId);
+  const keep = (TDC.events.eventIdWindow || 6) * 2;
+  if (state.recentTakenEventIds.length > keep) {
+    state.recentTakenEventIds = state.recentTakenEventIds.slice(-(TDC.events.eventIdWindow || 6));
+  }
+}
+
+/** Drop recently fought leads when the biome still has enough alternatives. */
+export function filterEncounterPool(pool, recentIds = [], { minKeep } = {}) {
+  if (!pool?.length || !recentIds?.length) return pool;
+  const window = recentIds.slice(-(TDC.encounters?.historyWindow || 3));
+  const avoid = new Set(window);
+  const floor = minKeep ?? TDC.encounters?.minPoolKeep ?? 3;
+  const kept = pool.filter(e => !avoid.has(e.id));
+  if (kept.length >= Math.min(floor, pool.length)) return kept;
+  const last = window[window.length - 1];
+  const soft = last ? pool.filter(e => e.id !== last) : pool;
+  return soft.length ? soft : pool;
+}
+
+export function pushEncounterHistory(state, specs) {
+  if (!state || !specs?.length) return;
+  if (!Array.isArray(state.recentEncounterIds)) state.recentEncounterIds = [];
+  if (!Array.isArray(state.recentEncounterBodies)) state.recentEncounterBodies = [];
+  const lead = specs[0]?.id;
+  if (lead) state.recentEncounterIds.push(lead);
+  for (const s of specs) {
+    if (s?.id) state.recentEncounterBodies.push(s.id);
+  }
+  const leadKeep = (TDC.encounters?.historyWindow || 3) * 2;
+  const bodyKeep = (TDC.encounters?.bodyWindow || 6) * 2;
+  if (state.recentEncounterIds.length > leadKeep) {
+    state.recentEncounterIds = state.recentEncounterIds.slice(-(TDC.encounters?.historyWindow || 3));
+  }
+  if (state.recentEncounterBodies.length > bodyKeep) {
+    state.recentEncounterBodies = state.recentEncounterBodies.slice(-(TDC.encounters?.bodyWindow || 6));
   }
 }

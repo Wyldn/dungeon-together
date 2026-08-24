@@ -106,7 +106,7 @@ export function initiativePenaltyFromStatuses(statuses = {}) {
 }
 
 export function buildEnemy(spec, floor, biomeStart, {
-  boss = false, hpMult = 1, atkMult = 1, partySize = 1,
+  boss = false, hpMult = 1, atkMult = 1, partySize = 1, uid = null, spawnIndex = 0,
 } = {}) {
   const isBoss = boss || !!spec.boss;
   const biome = biomeForFloor(floor);
@@ -133,13 +133,13 @@ export function buildEnemy(spec, floor, biomeStart, {
     phaseTriggers: [],
     turnCount: 0,
     _m: { hp: sc.hp * hpMult, atk: atkScale, def: sc.def, spd: sc.spd },
-    uid: spec.uid || Math.random().toString(36).slice(2, 8),
+    uid: spec.uid || uid || `${spec.id || 'foe'}-${floor}-${spawnIndex}`,
   };
 }
 
 export function spawnSummon(f, bossEnemy) {
   const spec = summonSpecFor(bossEnemy.summons);
-  const minion = buildEnemy(spec, f.run.floor, f.run.floor);
+  const minion = buildEnemy(spec, f.run.floor, f.run.floor, { uid: `${spec.id || 'summon'}-${f.enemies.length}` });
   minion.summon = true;
   minion.spawnIn = true;
   f.enemies.push(minion);
