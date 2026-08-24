@@ -2,22 +2,25 @@
 // Game-level messages ride inside {t:'msg', data:{k:...}} envelopes.
 
 // When the game is served by the relay itself, same-origin just works.
-// Anywhere else (GitHub Pages, localhost python server), fall back to the
-// public relay below.
+// HTTPS hosts (Vercel) use a same-origin wss proxy that forwards to the
+// public relay. Localhost / missing location keep talking to the relay
+// directly so `python -m http.server` still matches the old workflow.
 export const PUBLIC_RELAY = 'ws://132.226.66.6:3117';
 export const PUBLIC_GAME_URL = 'http://132.226.66.6:3117/';
+export const SECURE_RELAY_PATH = '/api/party';
 
-export function defaultServerUrl() {
-  // https page → ws:// is blocked by mixed-content rules; caller should
-  // detect this via canUseSameOrigin() and direct players to PUBLIC_GAME_URL.
-  if (location.protocol === 'http:' && !['localhost', '127.0.0.1'].includes(location.hostname)) {
-    return `ws://${location.host}`;
+export function defaultServerUrl(loc = globalThis.location) {
+  if (loc?.protocol === 'https:') {
+    return `wss://${loc.host}${SECURE_RELAY_PATH}`;
+  }
+  if (loc?.protocol === 'http:' && loc.hostname && !['localhost', '127.0.0.1'].includes(loc.hostname)) {
+    return `ws://${loc.host}`;
   }
   return PUBLIC_RELAY;
 }
 
 export function isMixedContentBlocked() {
-  return location.protocol === 'https:';
+  return false;
 }
 
 export class Net {
@@ -34,12 +37,13 @@ export class Net {
 
   connect(url) {
     return new Promise((resolve, reject) => {
+      this.intentionalClose = false;
       try { this.ws = new WebSocket(url); } catch (e) { return reject(e); }
       const timer = setTimeout(() => { this.ws.close(); reject(new Error('timeout')); }, 8000);
       this.ws.onopen = () => { clearTimeout(timer); resolve(); };
       this.ws.onerror = () => { clearTimeout(timer); reject(new Error('connect failed')); };
       this.ws.onmessage = ev => this._route(JSON.parse(ev.data));
-      this.ws.onclose = () => this._emitSys('close', {});
+      this.ws.onclose = () => this._emitSys('close', { intentional: !!this.intentionalClose });
     });
   }
 
@@ -100,5 +104,9 @@ export class Net {
   quickjoin(name) { this.ws.send(JSON.stringify({ t: 'quickjoin', name })); }
   listPublic() { this.ws.send(JSON.stringify({ t: 'list' })); }
 
-  close() { try { this.ws?.close(); } catch {} this.ws = null; }
+  close() {
+    this.intentionalClose = true;
+    try { this.ws?.close(); } catch {}
+    this.ws = null;
+  }
 }

@@ -2375,6 +2375,11 @@ console.log('— narrative event pacing —');
 }
 
 {
+  const { runPartyProxyTests } = await import('./test_party_proxy.js');
+  await runPartyProxyTests(t);
+}
+
+{
   const { runDifficultyTests } = await import('./test_run_difficulty.js');
   await runDifficultyTests(t);
 }

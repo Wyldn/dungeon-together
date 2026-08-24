@@ -47,7 +47,7 @@ import { mountCrystal } from './crystal.js';
 import { renderTravelMap, resetTravelTrail, pathNodeView } from './travelmap.js';
 import { app, el, toast, modal, modalCustom, bar, rarityClass } from './ui.js';
 import { makeRng, randomSeed } from './rng.js';
-import { defaultServerUrl, isMixedContentBlocked, PUBLIC_GAME_URL } from './net.js';
+import { defaultServerUrl } from './net.js';
 import { CoopSession, connectCoop } from './coop.js';
 import { Music } from './music.js';
 import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl, raceArtHtml, originArtHtml, raceIconUrl, originIconUrl, eventCatUrl, npcArtUrl, enemySpriteHtml } from './art.js';
@@ -1514,15 +1514,6 @@ function beginRun() {
    CO-OP: menu, lobby, session plumbing
    ============================================================ */
 function coopMenu() {
-  if (isMixedContentBlocked()) {
-    modal(`<h3>Multiplayer lives on the party server</h3>
-      <p class="modal-sub">This page is served over https, which blocks game connections to the relay.
-      Open the game from the party server instead — everything else is identical:</p>
-      <p style="text-align:center;margin:14px 0"><a href="${PUBLIC_GAME_URL}" style="color:var(--gold-bright);font-family:var(--font-display);font-size:18px">${PUBLIC_GAME_URL}</a></p>
-      <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">Got it</span></button></div>`, { dismissible: true });
-    return;
-  }
-
   app.innerHTML = '';
   const scr = el(`<div class="screen" style="max-width:560px">
     <div class="select-header">
@@ -1578,6 +1569,7 @@ function coopMenu() {
       net.join(code, name);
     }
     const roomMsg = await roomPromise;
+    net.sys('close', m => { if (!m.intentional) toast('Lost the party server connection.', 'bad'); });
     coopS = new CoopSession(net);
     if (mode === 'quick' && roomMsg.host) {
       toast('No open parties right now — you host a public one. Climbers can find you.', 'info');
