@@ -305,7 +305,7 @@ export async function runRunHealthTests(t) {
   /* ---- 5. world-state parity ---- */
   {
     const spots = [
-      { id: 'wounded_adventurer', label: 'Heal her', floor: 2 },
+      { id: 'wounded_adventurer', label: 'Spend your vitality to heal her', floor: 2 },
       { id: 'wounded_adventurer', label: 'Loot her pack while she sleeps', floor: 2 },
       { id: 'pale_whisper', label: 'Lean in and listen', floor: 6 },
       { id: 'mira_rumor', label: 'Ask which version they believe', floor: 14, patch: { flags: { saved_climber: true } } },

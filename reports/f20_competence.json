@@ -1,0 +1,5532 @@
+{
+  "meta": {
+    "name": "F20_COMPETENCE",
+    "seed": 20260823,
+    "climbs": 1002,
+    "arrivals": 105,
+    "capturePolicy": "baseline",
+    "generatedAt": "2026-08-24T09:17:45.913Z"
+  },
+  "arrivals": {
+    "n": 105,
+    "avgHp": 69.4,
+    "avgMaxHp": 90.46666666666667,
+    "avgHpPct": 0.7684384884546482,
+    "medHpPct": 0.7590361445783133,
+    "avgMpPct": 0.937785049638232,
+    "avgGold": 267.0952380952381,
+    "avgPotions": 2.3904761904761904,
+    "avgRelics": 2.1809523809523808,
+    "avgSkills": 4.0095238095238095,
+    "avgEquipped": 4.59047619047619,
+    "avgLevel": 8.39047619047619,
+    "pctBelow50": 0.11428571428571428,
+    "pctBelow35": 0.01904761904761905,
+    "pctAtOrAbove80": 0.42857142857142855,
+    "byClass": {
+      "archer": {
+        "n": 42,
+        "avgHp": 70.73809523809524,
+        "avgMaxHp": 86.73809523809524,
+        "avgHpPct": 0.8121005048432156,
+        "medHpPct": 0.8303571428571428,
+        "avgMpPct": 0.9456270965665707,
+        "avgGold": 271.14285714285717,
+        "avgPotions": 2.9047619047619047,
+        "avgRelics": 2.1666666666666665,
+        "avgSkills": 4,
+        "avgEquipped": 4.523809523809524,
+        "avgLevel": 8.166666666666666,
+        "pctBelow50": 0.07142857142857142,
+        "pctBelow35": 0,
+        "pctAtOrAbove80": 0.5238095238095238,
+        "byClass": {}
+      },
+      "warrior": {
+        "n": 22,
+        "avgHp": 79.13636363636364,
+        "avgMaxHp": 107.68181818181819,
+        "avgHpPct": 0.7342058035803263,
+        "medHpPct": 0.7459079283887469,
+        "avgMpPct": 0.9319385283434837,
+        "avgGold": 246.63636363636363,
+        "avgPotions": 2.1818181818181817,
+        "avgRelics": 2.227272727272727,
+        "avgSkills": 4.045454545454546,
+        "avgEquipped": 4.863636363636363,
+        "avgLevel": 8.454545454545455,
+        "pctBelow50": 0.09090909090909091,
+        "pctBelow35": 0.045454545454545456,
+        "pctAtOrAbove80": 0.3181818181818182,
+        "byClass": {}
+      },
+      "priest": {
+        "n": 7,
+        "avgHp": 89.57142857142857,
+        "avgMaxHp": 103.71428571428571,
+        "avgHpPct": 0.8574131289176882,
+        "medHpPct": 0.9326923076923077,
+        "avgMpPct": 1,
+        "avgGold": 247.42857142857142,
+        "avgPotions": 2.142857142857143,
+        "avgRelics": 2.142857142857143,
+        "avgSkills": 4,
+        "avgEquipped": 4.285714285714286,
+        "avgLevel": 8.714285714285714,
+        "pctBelow50": 0.14285714285714285,
+        "pctBelow35": 0,
+        "pctAtOrAbove80": 0.7142857142857143,
+        "byClass": {}
+      },
+      "mage": {
+        "n": 17,
+        "avgHp": 53.05882352941177,
+        "avgMaxHp": 73.47058823529412,
+        "avgHpPct": 0.7207550919238161,
+        "medHpPct": 0.734375,
+        "avgMpPct": 0.9408443208396465,
+        "avgGold": 288.2352941176471,
+        "avgPotions": 1.8235294117647058,
+        "avgRelics": 2.0588235294117645,
+        "avgSkills": 4,
+        "avgEquipped": 4.352941176470588,
+        "avgLevel": 8.705882352941176,
+        "pctBelow50": 0.11764705882352941,
+        "pctBelow35": 0.058823529411764705,
+        "pctAtOrAbove80": 0.29411764705882354,
+        "byClass": {}
+      },
+      "rogue": {
+        "n": 10,
+        "avgHp": 62.1,
+        "avgMaxHp": 76.3,
+        "avgHpPct": 0.8193291730423657,
+        "medHpPct": 0.7956043956043957,
+        "avgMpPct": 0.9206329884357881,
+        "avgGold": 314.7,
+        "avgPotions": 2.4,
+        "avgRelics": 2.2,
+        "avgSkills": 4,
+        "avgEquipped": 4.7,
+        "avgLevel": 8.2,
+        "pctBelow50": 0,
+        "pctBelow35": 0,
+        "pctAtOrAbove80": 0.5,
+        "byClass": {}
+      },
+      "monk": {
+        "n": 7,
+        "avgHp": 60.714285714285715,
+        "avgMaxHp": 107,
+        "avgHpPct": 0.5681817442862135,
+        "medHpPct": 0.48214285714285715,
+        "avgMpPct": 0.8639658848614074,
+        "avgGold": 207.42857142857142,
+        "avgPotions": 1.5714285714285714,
+        "avgRelics": 2.4285714285714284,
+        "avgSkills": 4,
+        "avgEquipped": 4.857142857142857,
+        "avgLevel": 8.714285714285714,
+        "pctBelow50": 0.5714285714285714,
+        "pctBelow35": 0,
+        "pctAtOrAbove80": 0.14285714285714285,
+        "byClass": {}
+      }
+    },
+    "f19Choices": {
+      "Sleep": 105
+    },
+    "f15Wins": 105
+  },
+  "compareF10": {
+    "f10All": {
+      "n": 685,
+      "avgHp": 43.04817518248175,
+      "avgMaxHp": 61.07883211678832,
+      "avgHpPct": 0.7058313646207948,
+      "medHpPct": 0.7123287671232876,
+      "avgMpPct": 0.6428518547928903,
+      "avgGold": 122.57810218978102,
+      "avgPotions": 1.9693430656934308,
+      "avgRelics": 0.029197080291970802,
+      "avgSkills": 4,
+      "avgEquipped": 2.9313868613138685,
+      "avgLevel": 3.6072992700729927,
+      "pctBelow50": 0.1708029197080292,
+      "pctBelow35": 0.04525547445255475,
+      "pctAtOrAbove80": 0.3197080291970803,
+      "byClass": {
+        "warrior": {
+          "n": 119,
+          "avgHp": 46.27731092436975,
+          "avgMaxHp": 69.38655462184875,
+          "avgHpPct": 0.6678093099524001,
+          "medHpPct": 0.6901408450704225,
+          "avgMpPct": 0.6710515168386171,
+          "avgGold": 114.6890756302521,
+          "avgPotions": 1.8235294117647058,
+          "avgRelics": 0.03361344537815126,
+          "avgSkills": 4,
+          "avgEquipped": 2.8823529411764706,
+          "avgLevel": 3.722689075630252,
+          "pctBelow50": 0.20168067226890757,
+          "pctBelow35": 0.058823529411764705,
+          "pctAtOrAbove80": 0.25210084033613445,
+          "byClass": {}
+        },
+        "mage": {
+          "n": 100,
+          "avgHp": 36.51,
+          "avgMaxHp": 53.67,
+          "avgHpPct": 0.6812012722783518,
+          "medHpPct": 0.6754443712969058,
+          "avgMpPct": 0.5793358269114194,
+          "avgGold": 121.33,
+          "avgPotions": 1.77,
+          "avgRelics": 0.02,
+          "avgSkills": 4,
+          "avgEquipped": 3,
+          "avgLevel": 3.7,
+          "pctBelow50": 0.22,
+          "pctBelow35": 0.06,
+          "pctAtOrAbove80": 0.31,
+          "byClass": {}
+        },
+        "archer": {
+          "n": 136,
+          "avgHp": 44.838235294117645,
+          "avgMaxHp": 60.529411764705884,
+          "avgHpPct": 0.7414061160220089,
+          "medHpPct": 0.7437055281882868,
+          "avgMpPct": 0.5714112918191311,
+          "avgGold": 130.66176470588235,
+          "avgPotions": 2.0808823529411766,
+          "avgRelics": 0.022058823529411766,
+          "avgSkills": 4,
+          "avgEquipped": 2.889705882352941,
+          "avgLevel": 3.6838235294117645,
+          "pctBelow50": 0.11029411764705882,
+          "pctBelow35": 0.04411764705882353,
+          "pctAtOrAbove80": 0.38235294117647056,
+          "byClass": {}
+        },
+        "rogue": {
+          "n": 122,
+          "avgHp": 41.41803278688525,
+          "avgMaxHp": 56.614754098360656,
+          "avgHpPct": 0.7289544558896003,
+          "medHpPct": 0.7246053534660262,
+          "avgMpPct": 0.6014186317389119,
+          "avgGold": 149.27868852459017,
+          "avgPotions": 2.1885245901639343,
+          "avgRelics": 0.04918032786885246,
+          "avgSkills": 4,
+          "avgEquipped": 2.860655737704918,
+          "avgLevel": 3.4344262295081966,
+          "pctBelow50": 0.16393442622950818,
+          "pctBelow35": 0.040983606557377046,
+          "pctAtOrAbove80": 0.36065573770491804,
+          "byClass": {}
+        },
+        "priest": {
+          "n": 87,
+          "avgHp": 40.87356321839081,
+          "avgMaxHp": 60.195402298850574,
+          "avgHpPct": 0.6805989829233877,
+          "medHpPct": 0.6818181818181818,
+          "avgMpPct": 0.9689864376683835,
+          "avgGold": 107.11494252873563,
+          "avgPotions": 1.8160919540229885,
+          "avgRelics": 0.022988505747126436,
+          "avgSkills": 4,
+          "avgEquipped": 2.942528735632184,
+          "avgLevel": 3.5172413793103448,
+          "pctBelow50": 0.22988505747126436,
+          "pctBelow35": 0.04597701149425287,
+          "pctAtOrAbove80": 0.27586206896551724,
+          "byClass": {}
+        },
+        "monk": {
+          "n": 121,
+          "avgHp": 46.47107438016529,
+          "avgMaxHp": 64.78512396694215,
+          "avgHpPct": 0.7184236590182989,
+          "medHpPct": 0.7313432835820896,
+          "avgMpPct": 0.5551899049710248,
+          "avgGold": 106.47933884297521,
+          "avgPotions": 2.041322314049587,
+          "avgRelics": 0.024793388429752067,
+          "avgSkills": 4,
+          "avgEquipped": 3.0330578512396693,
+          "avgLevel": 3.5702479338842976,
+          "pctBelow50": 0.1322314049586777,
+          "pctBelow35": 0.024793388429752067,
+          "pctAtOrAbove80": 0.3140495867768595,
+          "byClass": {}
+        }
+      }
+    },
+    "f20AtF10": {
+      "n": 105,
+      "avgHp": 50.304761904761904,
+      "avgMaxHp": 64.70476190476191,
+      "avgHpPct": 0.7787343950757996,
+      "medHpPct": 0.7818181818181819,
+      "avgMpPct": 0.6305945515731164,
+      "avgGold": 118.33333333333333,
+      "avgPotions": 2.038095238095238,
+      "avgRelics": 0.0380952380952381,
+      "avgSkills": 4,
+      "avgEquipped": 2.857142857142857,
+      "avgLevel": 4.133333333333334,
+      "pctBelow50": 0.047619047619047616,
+      "pctBelow35": 0.0380952380952381,
+      "pctAtOrAbove80": 0.47619047619047616,
+      "byClass": {
+        "archer": {
+          "n": 42,
+          "avgHp": 52.42857142857143,
+          "avgMaxHp": 63.07142857142857,
+          "avgHpPct": 0.8308722482916734,
+          "medHpPct": 0.8390854184641933,
+          "avgMpPct": 0.6084552596454988,
+          "avgGold": 125.69047619047619,
+          "avgPotions": 2.0952380952380953,
+          "avgRelics": 0,
+          "avgSkills": 4,
+          "avgEquipped": 2.9047619047619047,
+          "avgLevel": 4.0476190476190474,
+          "pctBelow50": 0.023809523809523808,
+          "pctBelow35": 0.023809523809523808,
+          "pctAtOrAbove80": 0.5476190476190477,
+          "byClass": {}
+        },
+        "warrior": {
+          "n": 22,
+          "avgHp": 52.27272727272727,
+          "avgMaxHp": 75.5,
+          "avgHpPct": 0.6923616657469873,
+          "medHpPct": 0.7092391304347827,
+          "avgMpPct": 0.6679260889800176,
+          "avgGold": 106.5,
+          "avgPotions": 1.5454545454545454,
+          "avgRelics": 0.09090909090909091,
+          "avgSkills": 4,
+          "avgEquipped": 3.0454545454545454,
+          "avgLevel": 4.5,
+          "pctBelow50": 0.09090909090909091,
+          "pctBelow35": 0.045454545454545456,
+          "pctAtOrAbove80": 0.2727272727272727,
+          "byClass": {}
+        },
+        "priest": {
+          "n": 7,
+          "avgHp": 51.714285714285715,
+          "avgMaxHp": 62.285714285714285,
+          "avgHpPct": 0.8188097966459311,
+          "medHpPct": 0.8333333333333334,
+          "avgMpPct": 0.9548872180451128,
+          "avgGold": 112.71428571428571,
+          "avgPotions": 2.142857142857143,
+          "avgRelics": 0,
+          "avgSkills": 4,
+          "avgEquipped": 2.7142857142857144,
+          "avgLevel": 3.5714285714285716,
+          "pctBelow50": 0,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0.5714285714285714,
+          "byClass": {}
+        },
+        "mage": {
+          "n": 17,
+          "avgHp": 44.8235294117647,
+          "avgMaxHp": 58.8235294117647,
+          "avgHpPct": 0.757814197969534,
+          "medHpPct": 0.8392857142857143,
+          "avgMpPct": 0.5736020426300082,
+          "avgGold": 123.76470588235294,
+          "avgPotions": 2,
+          "avgRelics": 0,
+          "avgSkills": 4,
+          "avgEquipped": 2.5294117647058822,
+          "avgLevel": 4.352941176470588,
+          "pctBelow50": 0.11764705882352941,
+          "pctBelow35": 0.11764705882352941,
+          "pctAtOrAbove80": 0.5882352941176471,
+          "byClass": {}
+        },
+        "rogue": {
+          "n": 10,
+          "avgHp": 44.4,
+          "avgMaxHp": 58.5,
+          "avgHpPct": 0.7571268476875191,
+          "medHpPct": 0.7678907721280603,
+          "avgMpPct": 0.5684651557200123,
+          "avgGold": 141.6,
+          "avgPotions": 2.8,
+          "avgRelics": 0.1,
+          "avgSkills": 4,
+          "avgEquipped": 2.9,
+          "avgLevel": 3.8,
+          "pctBelow50": 0,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0.5,
+          "byClass": {}
+        },
+        "monk": {
+          "n": 7,
+          "avgHp": 51.714285714285715,
+          "avgMaxHp": 66.14285714285714,
+          "avgHpPct": 0.7789631413423054,
+          "medHpPct": 0.7352941176470589,
+          "avgMpPct": 0.5489766063256832,
+          "avgGold": 70.57142857142857,
+          "avgPotions": 2.142857142857143,
+          "avgRelics": 0.14285714285714285,
+          "avgSkills": 4,
+          "avgEquipped": 2.857142857142857,
+          "avgLevel": 4,
+          "pctBelow50": 0,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0.2857142857142857,
+          "byClass": {}
+        }
+      }
+    },
+    "f20": {
+      "n": 105,
+      "avgHp": 69.4,
+      "avgMaxHp": 90.46666666666667,
+      "avgHpPct": 0.7684384884546482,
+      "medHpPct": 0.7590361445783133,
+      "avgMpPct": 0.937785049638232,
+      "avgGold": 267.0952380952381,
+      "avgPotions": 2.3904761904761904,
+      "avgRelics": 2.1809523809523808,
+      "avgSkills": 4.0095238095238095,
+      "avgEquipped": 4.59047619047619,
+      "avgLevel": 8.39047619047619,
+      "pctBelow50": 0.11428571428571428,
+      "pctBelow35": 0.01904761904761905,
+      "pctAtOrAbove80": 0.42857142857142855,
+      "byClass": {
+        "archer": {
+          "n": 42,
+          "avgHp": 70.73809523809524,
+          "avgMaxHp": 86.73809523809524,
+          "avgHpPct": 0.8121005048432156,
+          "medHpPct": 0.8303571428571428,
+          "avgMpPct": 0.9456270965665707,
+          "avgGold": 271.14285714285717,
+          "avgPotions": 2.9047619047619047,
+          "avgRelics": 2.1666666666666665,
+          "avgSkills": 4,
+          "avgEquipped": 4.523809523809524,
+          "avgLevel": 8.166666666666666,
+          "pctBelow50": 0.07142857142857142,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0.5238095238095238,
+          "byClass": {}
+        },
+        "warrior": {
+          "n": 22,
+          "avgHp": 79.13636363636364,
+          "avgMaxHp": 107.68181818181819,
+          "avgHpPct": 0.7342058035803263,
+          "medHpPct": 0.7459079283887469,
+          "avgMpPct": 0.9319385283434837,
+          "avgGold": 246.63636363636363,
+          "avgPotions": 2.1818181818181817,
+          "avgRelics": 2.227272727272727,
+          "avgSkills": 4.045454545454546,
+          "avgEquipped": 4.863636363636363,
+          "avgLevel": 8.454545454545455,
+          "pctBelow50": 0.09090909090909091,
+          "pctBelow35": 0.045454545454545456,
+          "pctAtOrAbove80": 0.3181818181818182,
+          "byClass": {}
+        },
+        "priest": {
+          "n": 7,
+          "avgHp": 89.57142857142857,
+          "avgMaxHp": 103.71428571428571,
+          "avgHpPct": 0.8574131289176882,
+          "medHpPct": 0.9326923076923077,
+          "avgMpPct": 1,
+          "avgGold": 247.42857142857142,
+          "avgPotions": 2.142857142857143,
+          "avgRelics": 2.142857142857143,
+          "avgSkills": 4,
+          "avgEquipped": 4.285714285714286,
+          "avgLevel": 8.714285714285714,
+          "pctBelow50": 0.14285714285714285,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0.7142857142857143,
+          "byClass": {}
+        },
+        "mage": {
+          "n": 17,
+          "avgHp": 53.05882352941177,
+          "avgMaxHp": 73.47058823529412,
+          "avgHpPct": 0.7207550919238161,
+          "medHpPct": 0.734375,
+          "avgMpPct": 0.9408443208396465,
+          "avgGold": 288.2352941176471,
+          "avgPotions": 1.8235294117647058,
+          "avgRelics": 2.0588235294117645,
+          "avgSkills": 4,
+          "avgEquipped": 4.352941176470588,
+          "avgLevel": 8.705882352941176,
+          "pctBelow50": 0.11764705882352941,
+          "pctBelow35": 0.058823529411764705,
+          "pctAtOrAbove80": 0.29411764705882354,
+          "byClass": {}
+        },
+        "rogue": {
+          "n": 10,
+          "avgHp": 62.1,
+          "avgMaxHp": 76.3,
+          "avgHpPct": 0.8193291730423657,
+          "medHpPct": 0.7956043956043957,
+          "avgMpPct": 0.9206329884357881,
+          "avgGold": 314.7,
+          "avgPotions": 2.4,
+          "avgRelics": 2.2,
+          "avgSkills": 4,
+          "avgEquipped": 4.7,
+          "avgLevel": 8.2,
+          "pctBelow50": 0,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0.5,
+          "byClass": {}
+        },
+        "monk": {
+          "n": 7,
+          "avgHp": 60.714285714285715,
+          "avgMaxHp": 107,
+          "avgHpPct": 0.5681817442862135,
+          "medHpPct": 0.48214285714285715,
+          "avgMpPct": 0.8639658848614074,
+          "avgGold": 207.42857142857142,
+          "avgPotions": 1.5714285714285714,
+          "avgRelics": 2.4285714285714284,
+          "avgSkills": 4,
+          "avgEquipped": 4.857142857142857,
+          "avgLevel": 8.714285714285714,
+          "pctBelow50": 0.5714285714285714,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0.14285714285714285,
+          "byClass": {}
+        }
+      },
+      "f19Choices": {
+        "Sleep": 105
+      },
+      "f15Wins": 105
+    }
+  },
+  "byBoss": {
+    "undead_executioner": {
+      "autoplay_observed": {
+        "n": 60,
+        "wins": 23,
+        "losses": 37,
+        "winRate": 0.38333333333333336,
+        "potionHeals": 93,
+        "skillHeals": 8,
+        "guards": 0,
+        "wards": 8,
+        "taunts": 0,
+        "summons": 0,
+        "bossHealTicks": 0,
+        "kills": {
+          "THE NEXT NAME": 6,
+          "basic": 15,
+          "Toll the Block": 14,
+          "Procession Cut": 2
+        },
+        "dmgBasic": 4728,
+        "dmgBurn": 0,
+        "dmgPoison": 0,
+        "dmgTorment": 0,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Procession Cut": 235,
+          "THE NEXT NAME": 676,
+          "Toll the Block": 2421
+        },
+        "byClass": {
+          "archer": {
+            "n": 21,
+            "wins": 13,
+            "losses": 8,
+            "winRate": 0.6190476190476191,
+            "potionHeals": 35,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "THE NEXT NAME": 2,
+              "basic": 2,
+              "Toll the Block": 4
+            },
+            "dmgBasic": 1433,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Procession Cut": 34,
+              "THE NEXT NAME": 328,
+              "Toll the Block": 813
+            },
+            "byClass": {},
+            "avgTurns": 7.523809523809524,
+            "avgHpEnter": 0.8205472002063067,
+            "avgHpEnterAbs": 71.71428571428571,
+            "avgHpLeftWin": 0.5350377053219336,
+            "avgBossHpLeftLoss": 0.29682274247491636,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 273.3333333333333,
+            "avgIncoming": 124.19047619047619,
+            "avgPotionHeals": 1.6666666666666667,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 36.32911392405063,
+            "avgIncomingDpt": 16.50632911392405,
+            "expectedTtk": 8.230313588850175,
+            "expectedTtl": 4.344653812445223,
+            "topKills": [
+              {
+                "name": "Toll the Block",
+                "n": 4,
+                "rate": 0.5
+              },
+              {
+                "name": "THE NEXT NAME",
+                "n": 2,
+                "rate": 0.25
+              },
+              {
+                "name": "basic",
+                "n": 2,
+                "rate": 0.25
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5494631901840491,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 813,
+                  "share": 0.31173312883435583
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 328,
+                  "share": 0.12576687116564417
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 34,
+                  "share": 0.01303680981595092
+                }
+              ]
+            }
+          },
+          "warrior": {
+            "n": 14,
+            "wins": 8,
+            "losses": 6,
+            "winRate": 0.5714285714285714,
+            "potionHeals": 24,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "basic": 3,
+              "THE NEXT NAME": 1,
+              "Toll the Block": 2
+            },
+            "dmgBasic": 1379,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "THE NEXT NAME": 96,
+              "Toll the Block": 540
+            },
+            "byClass": {},
+            "avgTurns": 9.285714285714286,
+            "avgHpEnter": 0.731473197807496,
+            "avgHpEnterAbs": 79.35714285714286,
+            "avgHpLeftWin": 0.3846716126585615,
+            "avgBossHpLeftLoss": 0.19453734671125977,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 274.7142857142857,
+            "avgIncoming": 143.92857142857142,
+            "avgPotionHeals": 1.7142857142857142,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 29.584615384615383,
+            "avgIncomingDpt": 15.499999999999998,
+            "expectedTtk": 10.106604264170567,
+            "expectedTtl": 5.119815668202766,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 3,
+                "rate": 0.5
+              },
+              {
+                "name": "Toll the Block",
+                "n": 2,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "THE NEXT NAME",
+                "n": 1,
+                "rate": 0.16666666666666666
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.6843672456575682,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 540,
+                  "share": 0.2679900744416873
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 96,
+                  "share": 0.04764267990074442
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 4,
+            "wins": 0,
+            "losses": 4,
+            "winRate": 0,
+            "potionHeals": 5,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "basic": 3,
+              "Toll the Block": 1
+            },
+            "dmgBasic": 377,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "THE NEXT NAME": 87,
+              "Toll the Block": 190,
+              "Procession Cut": 49
+            },
+            "byClass": {},
+            "avgTurns": 9.25,
+            "avgHpEnter": 0.9450778388278389,
+            "avgHpEnterAbs": 99.25,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.16555183946488294,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 243.5,
+            "avgIncoming": 175.75,
+            "avgPotionHeals": 1.25,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 26.324324324324323,
+            "avgIncomingDpt": 19,
+            "expectedTtk": 11.358316221765914,
+            "expectedTtl": 5.223684210526316,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 3,
+                "rate": 0.75
+              },
+              {
+                "name": "Toll the Block",
+                "n": 1,
+                "rate": 0.25
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5362731152204836,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 190,
+                  "share": 0.2702702702702703
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 87,
+                  "share": 0.12375533428165007
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 49,
+                  "share": 0.06970128022759602
+                }
+              ]
+            }
+          },
+          "mage": {
+            "n": 11,
+            "wins": 0,
+            "losses": 11,
+            "winRate": 0,
+            "potionHeals": 11,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "basic": 4,
+              "Toll the Block": 6,
+              "Procession Cut": 1
+            },
+            "dmgBasic": 661,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Toll the Block": 457,
+              "Procession Cut": 77
+            },
+            "byClass": {},
+            "avgTurns": 5.7272727272727275,
+            "avgHpEnter": 0.7098653116533042,
+            "avgHpEnterAbs": 52.63636363636363,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.4472484037701429,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 151.45454545454547,
+            "avgIncoming": 108.63636363636364,
+            "avgPotionHeals": 1,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 26.444444444444446,
+            "avgIncomingDpt": 18.96825396825397,
+            "expectedTtk": 11.30672268907563,
+            "expectedTtl": 2.7749714720426018,
+            "topKills": [
+              {
+                "name": "Toll the Block",
+                "n": 6,
+                "rate": 0.5454545454545454
+              },
+              {
+                "name": "basic",
+                "n": 4,
+                "rate": 0.36363636363636365
+              },
+              {
+                "name": "Procession Cut",
+                "n": 1,
+                "rate": 0.09090909090909091
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5531380753138075,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 457,
+                  "share": 0.38242677824267785
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 77,
+                  "share": 0.06443514644351464
+                }
+              ]
+            }
+          },
+          "rogue": {
+            "n": 7,
+            "wins": 2,
+            "losses": 5,
+            "winRate": 0.2857142857142857,
+            "potionHeals": 13,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "basic": 3,
+              "Procession Cut": 1,
+              "Toll the Block": 1
+            },
+            "dmgBasic": 600,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Toll the Block": 280,
+              "Procession Cut": 75
+            },
+            "byClass": {},
+            "avgTurns": 8.714285714285714,
+            "avgHpEnter": 0.8493701094483874,
+            "avgHpEnterAbs": 64.14285714285714,
+            "avgHpLeftWin": 0.7565934065934066,
+            "avgBossHpLeftLoss": 0.28695652173913044,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 237.14285714285714,
+            "avgIncoming": 136.42857142857142,
+            "avgPotionHeals": 1.8571428571428572,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 27.213114754098363,
+            "avgIncomingDpt": 15.655737704918034,
+            "expectedTtk": 10.98734939759036,
+            "expectedTtl": 4.097083021690351,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 3,
+                "rate": 0.6
+              },
+              {
+                "name": "Procession Cut",
+                "n": 1,
+                "rate": 0.2
+              },
+              {
+                "name": "Toll the Block",
+                "n": 1,
+                "rate": 0.2
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.6282722513089005,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 280,
+                  "share": 0.2931937172774869
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 75,
+                  "share": 0.07853403141361257
+                }
+              ]
+            }
+          },
+          "monk": {
+            "n": 3,
+            "wins": 0,
+            "losses": 3,
+            "winRate": 0,
+            "potionHeals": 5,
+            "skillHeals": 8,
+            "guards": 0,
+            "wards": 8,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "THE NEXT NAME": 3
+            },
+            "dmgBasic": 278,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Toll the Block": 141,
+              "THE NEXT NAME": 165
+            },
+            "byClass": {},
+            "avgTurns": 10.666666666666666,
+            "avgHpEnter": 0.6750299490865529,
+            "avgHpEnterAbs": 72.33333333333333,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.27201783723522854,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 201.66666666666666,
+            "avgIncoming": 194.66666666666666,
+            "avgPotionHeals": 1.6666666666666667,
+            "avgSkillHeals": 2.6666666666666665,
+            "avgGuards": 0,
+            "avgWards": 2.6666666666666665,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 18.90625,
+            "avgIncomingDpt": 18.25,
+            "expectedTtk": 15.814876033057852,
+            "expectedTtl": 3.9634703196347028,
+            "topKills": [
+              {
+                "name": "THE NEXT NAME",
+                "n": 3,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.476027397260274,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 165,
+                  "share": 0.2825342465753425
+                },
+                {
+                  "name": "Toll the Block",
+                  "v": 141,
+                  "share": 0.24143835616438356
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 8.016666666666667,
+        "avgHpEnter": 0.7838604395088908,
+        "avgHpEnterAbs": 70.98333333333333,
+        "avgHpLeftWin": 0.5020021688539322,
+        "avgBossHpLeftLoss": 0.3074211335080901,
+        "avgBossMaxHp": 299,
+        "avgPlayerDmg": 241.51666666666668,
+        "avgIncoming": 134.33333333333334,
+        "avgPotionHeals": 1.55,
+        "avgSkillHeals": 0.13333333333333333,
+        "avgGuards": 0,
+        "avgWards": 0.13333333333333333,
+        "avgTaunts": 0,
+        "avgSummons": 0,
+        "avgBossHealTicks": 0,
+        "avgPlayerDpt": 30.126819126819125,
+        "avgIncomingDpt": 16.756756756756758,
+        "expectedTtk": 9.924711890138708,
+        "expectedTtl": 4.236102150537635,
+        "topKills": [
+          {
+            "name": "basic",
+            "n": 15,
+            "rate": 0.40540540540540543
+          },
+          {
+            "name": "Toll the Block",
+            "n": 14,
+            "rate": 0.3783783783783784
+          },
+          {
+            "name": "THE NEXT NAME",
+            "n": 6,
+            "rate": 0.16216216216216217
+          },
+          {
+            "name": "Procession Cut",
+            "n": 2,
+            "rate": 0.05405405405405406
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.5866004962779157,
+          "burn": 0,
+          "poison": 0,
+          "torment": 0,
+          "summon": 0,
+          "escort": 0,
+          "specials": [
+            {
+              "name": "Toll the Block",
+              "v": 2421,
+              "share": 0.3003722084367246
+            },
+            {
+              "name": "THE NEXT NAME",
+              "v": 676,
+              "share": 0.08387096774193549
+            },
+            {
+              "name": "Procession Cut",
+              "v": 235,
+              "share": 0.02915632754342432
+            }
+          ]
+        }
+      },
+      "autoplay_full": {
+        "n": 60,
+        "wins": 28,
+        "losses": 32,
+        "winRate": 0.4666666666666667,
+        "potionHeals": 68,
+        "skillHeals": 4,
+        "guards": 0,
+        "wards": 4,
+        "taunts": 0,
+        "summons": 0,
+        "bossHealTicks": 0,
+        "kills": {
+          "Toll the Block": 12,
+          "basic": 13,
+          "THE NEXT NAME": 6,
+          "Procession Cut": 1
+        },
+        "dmgBasic": 4728,
+        "dmgBurn": 0,
+        "dmgPoison": 0,
+        "dmgTorment": 0,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Procession Cut": 235,
+          "THE NEXT NAME": 784,
+          "Toll the Block": 2301
+        },
+        "byClass": {
+          "archer": {
+            "n": 21,
+            "wins": 12,
+            "losses": 9,
+            "winRate": 0.5714285714285714,
+            "potionHeals": 20,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "Toll the Block": 3,
+              "THE NEXT NAME": 3,
+              "basic": 3
+            },
+            "dmgBasic": 1241,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Procession Cut": 34,
+              "Toll the Block": 716,
+              "THE NEXT NAME": 328
+            },
+            "byClass": {},
+            "avgTurns": 6.9523809523809526,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 86.85714285714286,
+            "avgHpLeftWin": 0.4888049726203317,
+            "avgBossHpLeftLoss": 0.1791155704199182,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 282.57142857142856,
+            "avgIncoming": 110.42857142857143,
+            "avgPotionHeals": 0.9523809523809523,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 40.64383561643835,
+            "avgIncomingDpt": 15.883561643835616,
+            "expectedTtk": 7.356589147286822,
+            "expectedTtl": 5.468366906918007,
+            "topKills": [
+              {
+                "name": "Toll the Block",
+                "n": 3,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "THE NEXT NAME",
+                "n": 3,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "basic",
+                "n": 3,
+                "rate": 0.3333333333333333
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5351444588184562,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 716,
+                  "share": 0.308753773178094
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 328,
+                  "share": 0.1414402759810263
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 34,
+                  "share": 0.014661492022423459
+                }
+              ]
+            }
+          },
+          "warrior": {
+            "n": 14,
+            "wins": 9,
+            "losses": 5,
+            "winRate": 0.6428571428571429,
+            "potionHeals": 14,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "Toll the Block": 4,
+              "THE NEXT NAME": 1
+            },
+            "dmgBasic": 1261,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "THE NEXT NAME": 89,
+              "Toll the Block": 532
+            },
+            "byClass": {},
+            "avgTurns": 8.785714285714286,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 108,
+            "avgHpLeftWin": 0.4233474951644016,
+            "avgBossHpLeftLoss": 0.12709030100334448,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 286,
+            "avgIncoming": 134.42857142857142,
+            "avgPotionHeals": 1,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 32.55284552845528,
+            "avgIncomingDpt": 15.300813008130078,
+            "expectedTtk": 9.185064935064936,
+            "expectedTtl": 7.0584484590860805,
+            "topKills": [
+              {
+                "name": "Toll the Block",
+                "n": 4,
+                "rate": 0.8
+              },
+              {
+                "name": "THE NEXT NAME",
+                "n": 1,
+                "rate": 0.2
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.6700318809776833,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 532,
+                  "share": 0.2826780021253985
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 89,
+                  "share": 0.04729011689691817
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 4,
+            "wins": 1,
+            "losses": 3,
+            "winRate": 0.25,
+            "potionHeals": 4,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "basic": 1,
+              "Toll the Block": 1,
+              "THE NEXT NAME": 1
+            },
+            "dmgBasic": 350,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "THE NEXT NAME": 143,
+              "Toll the Block": 190
+            },
+            "byClass": {},
+            "avgTurns": 9.25,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 105,
+            "avgHpLeftWin": 0.0673076923076923,
+            "avgBossHpLeftLoss": 0.21070234113712374,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 247.75,
+            "avgIncoming": 170.75,
+            "avgPotionHeals": 1,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 26.783783783783782,
+            "avgIncomingDpt": 18.45945945945946,
+            "expectedTtk": 11.163471241170535,
+            "expectedTtl": 5.68814055636896,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "Toll the Block",
+                "n": 1,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "THE NEXT NAME",
+                "n": 1,
+                "rate": 0.3333333333333333
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5124450951683748,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 190,
+                  "share": 0.2781844802342606
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 143,
+                  "share": 0.20937042459736457
+                }
+              ]
+            }
+          },
+          "mage": {
+            "n": 11,
+            "wins": 3,
+            "losses": 8,
+            "winRate": 0.2727272727272727,
+            "potionHeals": 10,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "Toll the Block": 3,
+              "basic": 4,
+              "Procession Cut": 1
+            },
+            "dmgBasic": 822,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Toll the Block": 433,
+              "Procession Cut": 93
+            },
+            "byClass": {},
+            "avgTurns": 6.818181818181818,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 73.81818181818181,
+            "avgHpLeftWin": 0.21728096941284245,
+            "avgBossHpLeftLoss": 0.39548494983277593,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 204.54545454545453,
+            "avgIncoming": 122.54545454545455,
+            "avgPotionHeals": 0.9090909090909091,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 29.999999999999996,
+            "avgIncomingDpt": 17.973333333333333,
+            "expectedTtk": 9.966666666666669,
+            "expectedTtl": 4.107094685729701,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 4,
+                "rate": 0.5
+              },
+              {
+                "name": "Toll the Block",
+                "n": 3,
+                "rate": 0.375
+              },
+              {
+                "name": "Procession Cut",
+                "n": 1,
+                "rate": 0.125
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.6097922848664689,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 433,
+                  "share": 0.3212166172106825
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 93,
+                  "share": 0.06899109792284866
+                }
+              ]
+            }
+          },
+          "rogue": {
+            "n": 7,
+            "wins": 3,
+            "losses": 4,
+            "winRate": 0.42857142857142855,
+            "potionHeals": 15,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "basic": 4
+            },
+            "dmgBasic": 746,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "THE NEXT NAME": 104,
+              "Procession Cut": 75,
+              "Toll the Block": 269
+            },
+            "byClass": {},
+            "avgTurns": 9.714285714285714,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 75.57142857142857,
+            "avgHpLeftWin": 0.46241657885493503,
+            "avgBossHpLeftLoss": 0.26421404682274247,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 257.2857142857143,
+            "avgIncoming": 170.57142857142858,
+            "avgPotionHeals": 2.142857142857143,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 26.48529411764706,
+            "avgIncomingDpt": 17.558823529411768,
+            "expectedTtk": 11.28928373126041,
+            "expectedTtl": 4.303900454654222,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 4,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.6247906197654941,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 269,
+                  "share": 0.22529313232830822
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 104,
+                  "share": 0.08710217755443886
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 75,
+                  "share": 0.06281407035175879
+                }
+              ]
+            }
+          },
+          "monk": {
+            "n": 3,
+            "wins": 0,
+            "losses": 3,
+            "winRate": 0,
+            "potionHeals": 5,
+            "skillHeals": 4,
+            "guards": 0,
+            "wards": 4,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "Toll the Block": 1,
+              "basic": 1,
+              "THE NEXT NAME": 1
+            },
+            "dmgBasic": 308,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Toll the Block": 161,
+              "Procession Cut": 33,
+              "THE NEXT NAME": 120
+            },
+            "byClass": {},
+            "avgTurns": 10.333333333333334,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 107.66666666666667,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.20512820512820515,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 232.33333333333334,
+            "avgIncoming": 207.33333333333334,
+            "avgPotionHeals": 1.6666666666666667,
+            "avgSkillHeals": 1.3333333333333333,
+            "avgGuards": 0,
+            "avgWards": 1.3333333333333333,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 22.483870967741936,
+            "avgIncomingDpt": 20.064516129032256,
+            "expectedTtk": 13.29842180774749,
+            "expectedTtl": 5.366023579849947,
+            "topKills": [
+              {
+                "name": "Toll the Block",
+                "n": 1,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "THE NEXT NAME",
+                "n": 1,
+                "rate": 0.3333333333333333
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.49517684887459806,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 161,
+                  "share": 0.25884244372990356
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 120,
+                  "share": 0.19292604501607716
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 33,
+                  "share": 0.05305466237942122
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 8,
+        "avgHpEnter": 1,
+        "avgHpEnterAbs": 90.33333333333333,
+        "avgHpLeftWin": 0.42079240946552215,
+        "avgBossHpLeftLoss": 0.24111622073578598,
+        "avgBossMaxHp": 299,
+        "avgPlayerDmg": 261.28333333333336,
+        "avgIncoming": 134.13333333333333,
+        "avgPotionHeals": 1.1333333333333333,
+        "avgSkillHeals": 0.06666666666666667,
+        "avgGuards": 0,
+        "avgWards": 0.06666666666666667,
+        "avgTaunts": 0,
+        "avgSummons": 0,
+        "avgBossHealTicks": 0,
+        "avgPlayerDpt": 32.66041666666667,
+        "avgIncomingDpt": 16.766666666666666,
+        "expectedTtk": 9.154812783057983,
+        "expectedTtl": 5.387673956262425,
+        "topKills": [
+          {
+            "name": "basic",
+            "n": 13,
+            "rate": 0.40625
+          },
+          {
+            "name": "Toll the Block",
+            "n": 12,
+            "rate": 0.375
+          },
+          {
+            "name": "THE NEXT NAME",
+            "n": 6,
+            "rate": 0.1875
+          },
+          {
+            "name": "Procession Cut",
+            "n": 1,
+            "rate": 0.03125
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.5874751491053678,
+          "burn": 0,
+          "poison": 0,
+          "torment": 0,
+          "summon": 0,
+          "escort": 0,
+          "specials": [
+            {
+              "name": "Toll the Block",
+              "v": 2301,
+              "share": 0.28590954274353875
+            },
+            {
+              "name": "THE NEXT NAME",
+              "v": 784,
+              "share": 0.09741550695825049
+            },
+            {
+              "name": "Procession Cut",
+              "v": 235,
+              "share": 0.029199801192842944
+            }
+          ]
+        }
+      },
+      "bossaware_observed": {
+        "n": 60,
+        "wins": 27,
+        "losses": 33,
+        "winRate": 0.45,
+        "potionHeals": 111,
+        "skillHeals": 21,
+        "guards": 12,
+        "wards": 46,
+        "taunts": 21,
+        "summons": 0,
+        "bossHealTicks": 0,
+        "kills": {
+          "basic": 16,
+          "THE NEXT NAME": 4,
+          "Toll the Block": 10,
+          "Procession Cut": 3
+        },
+        "dmgBasic": 5115,
+        "dmgBurn": 0,
+        "dmgPoison": 0,
+        "dmgTorment": 0,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Toll the Block": 2362,
+          "THE NEXT NAME": 766,
+          "Procession Cut": 438
+        },
+        "byClass": {
+          "archer": {
+            "n": 21,
+            "wins": 13,
+            "losses": 8,
+            "winRate": 0.6190476190476191,
+            "potionHeals": 41,
+            "skillHeals": 0,
+            "guards": 2,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "basic": 2,
+              "Toll the Block": 4,
+              "THE NEXT NAME": 2
+            },
+            "dmgBasic": 1422,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Toll the Block": 926,
+              "THE NEXT NAME": 286,
+              "Procession Cut": 48
+            },
+            "byClass": {},
+            "avgTurns": 7.904761904761905,
+            "avgHpEnter": 0.8205472002063067,
+            "avgHpEnterAbs": 71.71428571428571,
+            "avgHpLeftWin": 0.6523271535377122,
+            "avgBossHpLeftLoss": 0.31438127090301005,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 275.14285714285717,
+            "avgIncoming": 127.71428571428571,
+            "avgPotionHeals": 1.9523809523809523,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.09523809523809523,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 34.807228915662655,
+            "avgIncomingDpt": 16.156626506024097,
+            "expectedTtk": 8.590169608861196,
+            "expectedTtl": 4.438691807819324,
+            "topKills": [
+              {
+                "name": "Toll the Block",
+                "n": 4,
+                "rate": 0.5
+              },
+              {
+                "name": "basic",
+                "n": 2,
+                "rate": 0.25
+              },
+              {
+                "name": "THE NEXT NAME",
+                "n": 2,
+                "rate": 0.25
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5302013422818792,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 926,
+                  "share": 0.3452647278150634
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 286,
+                  "share": 0.10663683818046234
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 48,
+                  "share": 0.017897091722595078
+                }
+              ]
+            }
+          },
+          "warrior": {
+            "n": 14,
+            "wins": 9,
+            "losses": 5,
+            "winRate": 0.6428571428571429,
+            "potionHeals": 28,
+            "skillHeals": 0,
+            "guards": 2,
+            "wards": 21,
+            "taunts": 21,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "Toll the Block": 3,
+              "basic": 2
+            },
+            "dmgBasic": 1314,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "THE NEXT NAME": 152,
+              "Toll the Block": 448,
+              "Procession Cut": 101
+            },
+            "byClass": {},
+            "avgTurns": 11.428571428571429,
+            "avgHpEnter": 0.731473197807496,
+            "avgHpEnterAbs": 79.35714285714286,
+            "avgHpLeftWin": 0.4978114259659773,
+            "avgBossHpLeftLoss": 0.2,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 280.14285714285717,
+            "avgIncoming": 143.92857142857142,
+            "avgPotionHeals": 2,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.14285714285714285,
+            "avgWards": 1.5,
+            "avgTaunts": 1.5,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 24.512500000000003,
+            "avgIncomingDpt": 12.593749999999998,
+            "expectedTtk": 12.197858235594083,
+            "expectedTtl": 6.301311591634174,
+            "topKills": [
+              {
+                "name": "Toll the Block",
+                "n": 3,
+                "rate": 0.6
+              },
+              {
+                "name": "basic",
+                "n": 2,
+                "rate": 0.4
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.6521091811414392,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 448,
+                  "share": 0.22233250620347395
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 152,
+                  "share": 0.07543424317617867
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 101,
+                  "share": 0.05012406947890819
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 4,
+            "wins": 2,
+            "losses": 2,
+            "winRate": 0.5,
+            "potionHeals": 4,
+            "skillHeals": 9,
+            "guards": 1,
+            "wards": 4,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "THE NEXT NAME": 1,
+              "basic": 1
+            },
+            "dmgBasic": 509,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "THE NEXT NAME": 121,
+              "Toll the Block": 191,
+              "Procession Cut": 49
+            },
+            "byClass": {},
+            "avgTurns": 12.5,
+            "avgHpEnter": 0.9450778388278389,
+            "avgHpEnterAbs": 99.25,
+            "avgHpLeftWin": 0.5849217154526889,
+            "avgBossHpLeftLoss": 0.225752508361204,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 254.25,
+            "avgIncoming": 217.5,
+            "avgPotionHeals": 1,
+            "avgSkillHeals": 2.25,
+            "avgGuards": 0.25,
+            "avgWards": 1,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 20.34,
+            "avgIncomingDpt": 17.4,
+            "expectedTtk": 14.700098328416912,
+            "expectedTtl": 5.704022988505748,
+            "topKills": [
+              {
+                "name": "THE NEXT NAME",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5850574712643678,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 191,
+                  "share": 0.21954022988505748
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 121,
+                  "share": 0.13908045977011493
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 49,
+                  "share": 0.05632183908045977
+                }
+              ]
+            }
+          },
+          "mage": {
+            "n": 11,
+            "wins": 0,
+            "losses": 11,
+            "winRate": 0,
+            "potionHeals": 19,
+            "skillHeals": 0,
+            "guards": 1,
+            "wards": 9,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "Toll the Block": 2,
+              "basic": 6,
+              "Procession Cut": 2,
+              "THE NEXT NAME": 1
+            },
+            "dmgBasic": 998,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "THE NEXT NAME": 177,
+              "Toll the Block": 288,
+              "Procession Cut": 141
+            },
+            "byClass": {},
+            "avgTurns": 8,
+            "avgHpEnter": 0.7098653116533042,
+            "avgHpEnterAbs": 52.63636363636363,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.3475220431742171,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 172.9090909090909,
+            "avgIncoming": 145.8181818181818,
+            "avgPotionHeals": 1.7272727272727273,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.09090909090909091,
+            "avgWards": 0.8181818181818182,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 21.613636363636363,
+            "avgIncomingDpt": 18.227272727272727,
+            "expectedTtk": 13.83385909568875,
+            "expectedTtl": 2.8877805486284287,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 6,
+                "rate": 0.5454545454545454
+              },
+              {
+                "name": "Toll the Block",
+                "n": 2,
+                "rate": 0.18181818181818182
+              },
+              {
+                "name": "Procession Cut",
+                "n": 2,
+                "rate": 0.18181818181818182
+              },
+              {
+                "name": "THE NEXT NAME",
+                "n": 1,
+                "rate": 0.09090909090909091
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.6221945137157108,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 288,
+                  "share": 0.17955112219451372
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 177,
+                  "share": 0.11034912718204488
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 141,
+                  "share": 0.08790523690773068
+                }
+              ]
+            }
+          },
+          "rogue": {
+            "n": 7,
+            "wins": 2,
+            "losses": 5,
+            "winRate": 0.2857142857142857,
+            "potionHeals": 14,
+            "skillHeals": 0,
+            "guards": 5,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "basic": 3,
+              "Procession Cut": 1,
+              "Toll the Block": 1
+            },
+            "dmgBasic": 582,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Toll the Block": 333,
+              "Procession Cut": 75
+            },
+            "byClass": {},
+            "avgTurns": 8.428571428571429,
+            "avgHpEnter": 0.8493701094483874,
+            "avgHpEnterAbs": 64.14285714285714,
+            "avgHpLeftWin": 0.7730769230769231,
+            "avgBossHpLeftLoss": 0.4501672240802675,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 198.85714285714286,
+            "avgIncoming": 141.42857142857142,
+            "avgPotionHeals": 2,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.7142857142857143,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 23.593220338983052,
+            "avgIncomingDpt": 16.779661016949152,
+            "expectedTtk": 12.673132183908045,
+            "expectedTtl": 3.8226551226551226,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 3,
+                "rate": 0.6
+              },
+              {
+                "name": "Procession Cut",
+                "n": 1,
+                "rate": 0.2
+              },
+              {
+                "name": "Toll the Block",
+                "n": 1,
+                "rate": 0.2
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5878787878787879,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 333,
+                  "share": 0.33636363636363636
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 75,
+                  "share": 0.07575757575757576
+                }
+              ]
+            }
+          },
+          "monk": {
+            "n": 3,
+            "wins": 1,
+            "losses": 2,
+            "winRate": 0.3333333333333333,
+            "potionHeals": 5,
+            "skillHeals": 12,
+            "guards": 1,
+            "wards": 12,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "basic": 2
+            },
+            "dmgBasic": 290,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "THE NEXT NAME": 30,
+              "Toll the Block": 176,
+              "Procession Cut": 24
+            },
+            "byClass": {},
+            "avgTurns": 12,
+            "avgHpEnter": 0.6750299490865529,
+            "avgHpEnterAbs": 72.33333333333333,
+            "avgHpLeftWin": 0.7452830188679245,
+            "avgBossHpLeftLoss": 0.4983277591973244,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 197,
+            "avgIncoming": 173.33333333333334,
+            "avgPotionHeals": 1.6666666666666667,
+            "avgSkillHeals": 4,
+            "avgGuards": 0.3333333333333333,
+            "avgWards": 4,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 16.416666666666668,
+            "avgIncomingDpt": 14.444444444444445,
+            "expectedTtk": 18.213197969543145,
+            "expectedTtl": 5.007692307692308,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 2,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5576923076923077,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 176,
+                  "share": 0.3384615384615385
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 30,
+                  "share": 0.057692307692307696
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 24,
+                  "share": 0.046153846153846156
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 9.316666666666666,
+        "avgHpEnter": 0.7838604395088908,
+        "avgHpEnterAbs": 70.98333333333333,
+        "avgHpLeftWin": 0.6082161528004149,
+        "avgBossHpLeftLoss": 0.334448160535117,
+        "avgBossMaxHp": 299,
+        "avgPlayerDmg": 243.36666666666667,
+        "avgIncoming": 144.68333333333334,
+        "avgPotionHeals": 1.85,
+        "avgSkillHeals": 0.35,
+        "avgGuards": 0.2,
+        "avgWards": 0.7666666666666667,
+        "avgTaunts": 0.35,
+        "avgSummons": 0,
+        "avgBossHealTicks": 0,
+        "avgPlayerDpt": 26.121645796064403,
+        "avgIncomingDpt": 15.529516994633275,
+        "expectedTtk": 11.446445692370908,
+        "expectedTtl": 4.570865491686826,
+        "topKills": [
+          {
+            "name": "basic",
+            "n": 16,
+            "rate": 0.48484848484848486
+          },
+          {
+            "name": "Toll the Block",
+            "n": 10,
+            "rate": 0.30303030303030304
+          },
+          {
+            "name": "THE NEXT NAME",
+            "n": 4,
+            "rate": 0.12121212121212122
+          },
+          {
+            "name": "Procession Cut",
+            "n": 3,
+            "rate": 0.09090909090909091
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.5892178320469992,
+          "burn": 0,
+          "poison": 0,
+          "torment": 0,
+          "summon": 0,
+          "escort": 0,
+          "specials": [
+            {
+              "name": "Toll the Block",
+              "v": 2362,
+              "share": 0.2720884690703836
+            },
+            {
+              "name": "THE NEXT NAME",
+              "v": 766,
+              "share": 0.08823868217947241
+            },
+            {
+              "name": "Procession Cut",
+              "v": 438,
+              "share": 0.0504550167031448
+            }
+          ]
+        }
+      },
+      "bossaware_full": {
+        "n": 60,
+        "wins": 32,
+        "losses": 28,
+        "winRate": 0.5333333333333333,
+        "potionHeals": 103,
+        "skillHeals": 14,
+        "guards": 12,
+        "wards": 41,
+        "taunts": 21,
+        "summons": 0,
+        "bossHealTicks": 0,
+        "kills": {
+          "basic": 14,
+          "THE NEXT NAME": 5,
+          "Toll the Block": 8,
+          "Procession Cut": 1
+        },
+        "dmgBasic": 5383,
+        "dmgBurn": 0,
+        "dmgPoison": 0,
+        "dmgTorment": 0,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Procession Cut": 484,
+          "Toll the Block": 2327,
+          "THE NEXT NAME": 850
+        },
+        "byClass": {
+          "archer": {
+            "n": 21,
+            "wins": 14,
+            "losses": 7,
+            "winRate": 0.6666666666666666,
+            "potionHeals": 34,
+            "skillHeals": 0,
+            "guards": 6,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "basic": 5,
+              "Toll the Block": 1,
+              "THE NEXT NAME": 1
+            },
+            "dmgBasic": 1445,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Procession Cut": 82,
+              "Toll the Block": 808,
+              "THE NEXT NAME": 277
+            },
+            "byClass": {},
+            "avgTurns": 7.809523809523809,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 86.85714285714286,
+            "avgHpLeftWin": 0.6827715584227786,
+            "avgBossHpLeftLoss": 0.27759197324414714,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 279.3333333333333,
+            "avgIncoming": 124.38095238095238,
+            "avgPotionHeals": 1.619047619047619,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.2857142857142857,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 35.76829268292683,
+            "avgIncomingDpt": 15.926829268292684,
+            "expectedTtk": 8.359359018070236,
+            "expectedTtl": 5.453511266681251,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 5,
+                "rate": 0.7142857142857143
+              },
+              {
+                "name": "Toll the Block",
+                "n": 1,
+                "rate": 0.14285714285714285
+              },
+              {
+                "name": "THE NEXT NAME",
+                "n": 1,
+                "rate": 0.14285714285714285
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5532159264931087,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 808,
+                  "share": 0.3093415007656968
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 277,
+                  "share": 0.1060490045941807
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 82,
+                  "share": 0.03139356814701378
+                }
+              ]
+            }
+          },
+          "warrior": {
+            "n": 14,
+            "wins": 12,
+            "losses": 2,
+            "winRate": 0.8571428571428571,
+            "potionHeals": 26,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 21,
+            "taunts": 21,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "THE NEXT NAME": 2
+            },
+            "dmgBasic": 1469,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "THE NEXT NAME": 270,
+              "Toll the Block": 274,
+              "Procession Cut": 91
+            },
+            "byClass": {},
+            "avgTurns": 11.642857142857142,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 108,
+            "avgHpLeftWin": 0.4751002853762481,
+            "avgBossHpLeftLoss": 0.02842809364548495,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 300.5,
+            "avgIncoming": 150.28571428571428,
+            "avgPotionHeals": 1.8571428571428572,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 1.5,
+            "avgTaunts": 1.5,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 25.809815950920246,
+            "avgIncomingDpt": 12.9079754601227,
+            "expectedTtk": 11.584739719515094,
+            "expectedTtl": 8.366920152091256,
+            "topKills": [
+              {
+                "name": "THE NEXT NAME",
+                "n": 2,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.6981939163498099,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 274,
+                  "share": 0.13022813688212928
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 270,
+                  "share": 0.12832699619771862
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 91,
+                  "share": 0.04325095057034221
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 4,
+            "wins": 2,
+            "losses": 2,
+            "winRate": 0.5,
+            "potionHeals": 4,
+            "skillHeals": 8,
+            "guards": 1,
+            "wards": 2,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "THE NEXT NAME": 1,
+              "Toll the Block": 1
+            },
+            "dmgBasic": 521,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "THE NEXT NAME": 121,
+              "Toll the Block": 184,
+              "Procession Cut": 88
+            },
+            "byClass": {},
+            "avgTurns": 12,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 105,
+            "avgHpLeftWin": 0.6281909462219197,
+            "avgBossHpLeftLoss": 0.19732441471571907,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 270.75,
+            "avgIncoming": 228.5,
+            "avgPotionHeals": 1,
+            "avgSkillHeals": 2,
+            "avgGuards": 0.25,
+            "avgWards": 0.5,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 22.5625,
+            "avgIncomingDpt": 19.041666666666668,
+            "expectedTtk": 13.25207756232687,
+            "expectedTtl": 5.514223194748358,
+            "topKills": [
+              {
+                "name": "THE NEXT NAME",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "Toll the Block",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5700218818380745,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 184,
+                  "share": 0.2013129102844639
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 121,
+                  "share": 0.1323851203501094
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 88,
+                  "share": 0.0962800875273523
+                }
+              ]
+            }
+          },
+          "mage": {
+            "n": 11,
+            "wins": 1,
+            "losses": 10,
+            "winRate": 0.09090909090909091,
+            "potionHeals": 19,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 12,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "Toll the Block": 3,
+              "basic": 5,
+              "Procession Cut": 1,
+              "THE NEXT NAME": 1
+            },
+            "dmgBasic": 1014,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "THE NEXT NAME": 182,
+              "Toll the Block": 462,
+              "Procession Cut": 103
+            },
+            "byClass": {},
+            "avgTurns": 8.909090909090908,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 73.81818181818181,
+            "avgHpLeftWin": 0.3902439024390244,
+            "avgBossHpLeftLoss": 0.2525083612040134,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 210.63636363636363,
+            "avgIncoming": 160.0909090909091,
+            "avgPotionHeals": 1.7272727272727273,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 1.0909090909090908,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 23.642857142857142,
+            "avgIncomingDpt": 17.969387755102044,
+            "expectedTtk": 12.646525679758309,
+            "expectedTtl": 4.107996489597851,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 5,
+                "rate": 0.5
+              },
+              {
+                "name": "Toll the Block",
+                "n": 3,
+                "rate": 0.3
+              },
+              {
+                "name": "Procession Cut",
+                "n": 1,
+                "rate": 0.1
+              },
+              {
+                "name": "THE NEXT NAME",
+                "n": 1,
+                "rate": 0.1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.575809199318569,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 462,
+                  "share": 0.262350936967632
+                },
+                {
+                  "name": "THE NEXT NAME",
+                  "v": 182,
+                  "share": 0.1033503691084611
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 103,
+                  "share": 0.05848949460533787
+                }
+              ]
+            }
+          },
+          "rogue": {
+            "n": 7,
+            "wins": 2,
+            "losses": 5,
+            "winRate": 0.2857142857142857,
+            "potionHeals": 15,
+            "skillHeals": 0,
+            "guards": 5,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "Toll the Block": 2,
+              "basic": 3
+            },
+            "dmgBasic": 644,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Toll the Block": 377,
+              "Procession Cut": 75
+            },
+            "byClass": {},
+            "avgTurns": 8.857142857142858,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 75.57142857142857,
+            "avgHpLeftWin": 0.8225274725274725,
+            "avgBossHpLeftLoss": 0.3879598662207358,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 216.85714285714286,
+            "avgIncoming": 156.57142857142858,
+            "avgPotionHeals": 2.142857142857143,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.7142857142857143,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 24.483870967741936,
+            "avgIncomingDpt": 17.67741935483871,
+            "expectedTtk": 12.212121212121211,
+            "expectedTtl": 4.275026068821688,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 3,
+                "rate": 0.6
+              },
+              {
+                "name": "Toll the Block",
+                "n": 2,
+                "rate": 0.4
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5875912408759124,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 377,
+                  "share": 0.34397810218978103
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 75,
+                  "share": 0.06843065693430657
+                }
+              ]
+            }
+          },
+          "monk": {
+            "n": 3,
+            "wins": 1,
+            "losses": 2,
+            "winRate": 0.3333333333333333,
+            "potionHeals": 5,
+            "skillHeals": 6,
+            "guards": 0,
+            "wards": 6,
+            "taunts": 0,
+            "summons": 0,
+            "bossHealTicks": 0,
+            "kills": {
+              "Toll the Block": 1,
+              "basic": 1
+            },
+            "dmgBasic": 290,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Toll the Block": 222,
+              "Procession Cut": 45
+            },
+            "byClass": {},
+            "avgTurns": 12,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 107.66666666666667,
+            "avgHpLeftWin": 0.7547169811320755,
+            "avgBossHpLeftLoss": 0.22240802675585283,
+            "avgBossMaxHp": 299,
+            "avgPlayerDmg": 252,
+            "avgIncoming": 185.66666666666666,
+            "avgPotionHeals": 1.6666666666666667,
+            "avgSkillHeals": 2,
+            "avgGuards": 0,
+            "avgWards": 2,
+            "avgTaunts": 0,
+            "avgSummons": 0,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 21,
+            "avgIncomingDpt": 15.472222222222221,
+            "expectedTtk": 14.238095238095237,
+            "expectedTtl": 6.9587073608617604,
+            "topKills": [
+              {
+                "name": "Toll the Block",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5206463195691203,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "Toll the Block",
+                  "v": 222,
+                  "share": 0.3985637342908438
+                },
+                {
+                  "name": "Procession Cut",
+                  "v": 45,
+                  "share": 0.0807899461400359
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 9.516666666666667,
+        "avgHpEnter": 1,
+        "avgHpEnterAbs": 90.33333333333333,
+        "avgHpLeftWin": 0.6033250926094926,
+        "avgBossHpLeftLoss": 0.2608695652173913,
+        "avgBossMaxHp": 299,
+        "avgPlayerDmg": 262.45,
+        "avgIncoming": 150.73333333333332,
+        "avgPotionHeals": 1.7166666666666666,
+        "avgSkillHeals": 0.23333333333333334,
+        "avgGuards": 0.2,
+        "avgWards": 0.6833333333333333,
+        "avgTaunts": 0.35,
+        "avgSummons": 0,
+        "avgBossHealTicks": 0,
+        "avgPlayerDpt": 27.577933450087563,
+        "avgIncomingDpt": 15.838879159369524,
+        "expectedTtk": 10.842001651108149,
+        "expectedTtl": 5.70326551673301,
+        "topKills": [
+          {
+            "name": "basic",
+            "n": 14,
+            "rate": 0.5
+          },
+          {
+            "name": "Toll the Block",
+            "n": 8,
+            "rate": 0.2857142857142857
+          },
+          {
+            "name": "THE NEXT NAME",
+            "n": 5,
+            "rate": 0.17857142857142858
+          },
+          {
+            "name": "Procession Cut",
+            "n": 1,
+            "rate": 0.03571428571428571
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.5952012383900929,
+          "burn": 0,
+          "poison": 0,
+          "torment": 0,
+          "summon": 0,
+          "escort": 0,
+          "specials": [
+            {
+              "name": "Toll the Block",
+              "v": 2327,
+              "share": 0.25729765590446707
+            },
+            {
+              "name": "THE NEXT NAME",
+              "v": 850,
+              "share": 0.09398496240601503
+            },
+            {
+              "name": "Procession Cut",
+              "v": 484,
+              "share": 0.053516143299425036
+            }
+          ]
+        }
+      }
+    },
+    "lich": {
+      "autoplay_observed": {
+        "n": 45,
+        "wins": 14,
+        "losses": 31,
+        "winRate": 0.3111111111111111,
+        "potionHeals": 62,
+        "skillHeals": 10,
+        "guards": 4,
+        "wards": 10,
+        "taunts": 0,
+        "summons": 99,
+        "bossHealTicks": 16,
+        "kills": {
+          "DYNASTY'S END": 16,
+          "basic": 7,
+          "Soul Tithe": 2,
+          "torment": 4,
+          "summon": 2
+        },
+        "dmgBasic": 2633,
+        "dmgBurn": 0,
+        "dmgPoison": 0,
+        "dmgTorment": 223,
+        "dmgSummon": 524,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "DYNASTY'S END": 1948,
+          "Soul Tithe": 531
+        },
+        "byClass": {
+          "warrior": {
+            "n": 8,
+            "wins": 1,
+            "losses": 7,
+            "winRate": 0.125,
+            "potionHeals": 10,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 18,
+            "bossHealTicks": 2,
+            "kills": {
+              "DYNASTY'S END": 2,
+              "basic": 2,
+              "torment": 2,
+              "Soul Tithe": 1
+            },
+            "dmgBasic": 549,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 57,
+            "dmgSummon": 98,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 434,
+              "Soul Tithe": 66
+            },
+            "byClass": {},
+            "avgTurns": 8.375,
+            "avgHpEnter": 0.7389878636827792,
+            "avgHpEnterAbs": 78.75,
+            "avgHpLeftWin": 0.11650485436893204,
+            "avgBossHpLeftLoss": 0.24865511057979678,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 284.375,
+            "avgIncoming": 150.5,
+            "avgPotionHeals": 1.25,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 2.25,
+            "avgBossHealTicks": 0.25,
+            "avgPlayerDpt": 33.95522388059702,
+            "avgIncomingDpt": 17.970149253731343,
+            "expectedTtk": 7.038681318681318,
+            "expectedTtl": 4.382267441860465,
+            "topKills": [
+              {
+                "name": "DYNASTY'S END",
+                "n": 2,
+                "rate": 0.2857142857142857
+              },
+              {
+                "name": "basic",
+                "n": 2,
+                "rate": 0.2857142857142857
+              },
+              {
+                "name": "torment",
+                "n": 2,
+                "rate": 0.2857142857142857
+              },
+              {
+                "name": "Soul Tithe",
+                "n": 1,
+                "rate": 0.14285714285714285
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.45598006644518274,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.0473421926910299,
+              "summon": 0.08139534883720931,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 434,
+                  "share": 0.36046511627906974
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 66,
+                  "share": 0.054817275747508304
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 21,
+            "wins": 8,
+            "losses": 13,
+            "winRate": 0.38095238095238093,
+            "potionHeals": 31,
+            "skillHeals": 0,
+            "guards": 2,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 43,
+            "bossHealTicks": 8,
+            "kills": {
+              "basic": 3,
+              "DYNASTY'S END": 5,
+              "Soul Tithe": 1,
+              "torment": 2,
+              "summon": 2
+            },
+            "dmgBasic": 1154,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 92,
+            "dmgSummon": 266,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 790,
+              "Soul Tithe": 302
+            },
+            "byClass": {},
+            "avgTurns": 7.904761904761905,
+            "avgHpEnter": 0.8036538094801248,
+            "avgHpEnterAbs": 69.76190476190476,
+            "avgHpLeftWin": 0.45233272065912933,
+            "avgBossHpLeftLoss": 0.33987769552623104,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 319.42857142857144,
+            "avgIncoming": 124,
+            "avgPotionHeals": 1.4761904761904763,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.09523809523809523,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 2.0476190476190474,
+            "avgBossHealTicks": 0.38095238095238093,
+            "avgPlayerDpt": 40.40963855421687,
+            "avgIncomingDpt": 15.686746987951807,
+            "expectedTtk": 5.9144305307096,
+            "expectedTtl": 4.447187477141394,
+            "topKills": [
+              {
+                "name": "DYNASTY'S END",
+                "n": 5,
+                "rate": 0.38461538461538464
+              },
+              {
+                "name": "basic",
+                "n": 3,
+                "rate": 0.23076923076923078
+              },
+              {
+                "name": "torment",
+                "n": 2,
+                "rate": 0.15384615384615385
+              },
+              {
+                "name": "summon",
+                "n": 2,
+                "rate": 0.15384615384615385
+              },
+              {
+                "name": "Soul Tithe",
+                "n": 1,
+                "rate": 0.07692307692307693
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.4431643625192012,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.03533026113671275,
+              "summon": 0.10215053763440861,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 790,
+                  "share": 0.3033794162826421
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 302,
+                  "share": 0.11597542242703533
+                }
+              ]
+            }
+          },
+          "mage": {
+            "n": 6,
+            "wins": 2,
+            "losses": 4,
+            "winRate": 0.3333333333333333,
+            "potionHeals": 7,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 12,
+            "bossHealTicks": 2,
+            "kills": {
+              "DYNASTY'S END": 4
+            },
+            "dmgBasic": 333,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 9,
+            "dmgSummon": 19,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 244,
+              "Soul Tithe": 60
+            },
+            "byClass": {},
+            "avgTurns": 7.666666666666667,
+            "avgHpEnter": 0.7407196890864215,
+            "avgHpEnterAbs": 53.833333333333336,
+            "avgHpLeftWin": 0.6329113924050633,
+            "avgBossHpLeftLoss": 0.36506276150627615,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 291,
+            "avgIncoming": 110.83333333333333,
+            "avgPotionHeals": 1.1666666666666667,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 2,
+            "avgBossHealTicks": 0.3333333333333333,
+            "avgPlayerDpt": 37.95652173913043,
+            "avgIncomingDpt": 14.456521739130434,
+            "expectedTtk": 6.29667812142039,
+            "expectedTtl": 3.7238095238095243,
+            "topKills": [
+              {
+                "name": "DYNASTY'S END",
+                "n": 4,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5007518796992482,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.013533834586466165,
+              "summon": 0.02857142857142857,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 244,
+                  "share": 0.3669172932330827
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 60,
+                  "share": 0.09022556390977443
+                }
+              ]
+            }
+          },
+          "rogue": {
+            "n": 3,
+            "wins": 2,
+            "losses": 1,
+            "winRate": 0.6666666666666666,
+            "potionHeals": 6,
+            "skillHeals": 0,
+            "guards": 1,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 8,
+            "bossHealTicks": 1,
+            "kills": {
+              "DYNASTY'S END": 1
+            },
+            "dmgBasic": 166,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 21,
+            "dmgSummon": 59,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 169,
+              "Soul Tithe": 20
+            },
+            "byClass": {},
+            "avgTurns": 10.333333333333334,
+            "avgHpEnter": 0.749233654761649,
+            "avgHpEnterAbs": 57.333333333333336,
+            "avgHpLeftWin": 0.33205549470609713,
+            "avgBossHpLeftLoss": 0.08786610878661087,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 330.3333333333333,
+            "avgIncoming": 145,
+            "avgPotionHeals": 2,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.3333333333333333,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 2.6666666666666665,
+            "avgBossHealTicks": 0.3333333333333333,
+            "avgPlayerDpt": 31.96774193548387,
+            "avgIncomingDpt": 14.032258064516128,
+            "expectedTtk": 7.476286579212917,
+            "expectedTtl": 4.085823754789272,
+            "topKills": [
+              {
+                "name": "DYNASTY'S END",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.3816091954022989,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.04827586206896552,
+              "summon": 0.135632183908046,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 169,
+                  "share": 0.38850574712643676
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 20,
+                  "share": 0.04597701149425287
+                }
+              ]
+            }
+          },
+          "monk": {
+            "n": 4,
+            "wins": 0,
+            "losses": 4,
+            "winRate": 0,
+            "potionHeals": 5,
+            "skillHeals": 10,
+            "guards": 1,
+            "wards": 10,
+            "taunts": 0,
+            "summons": 11,
+            "bossHealTicks": 3,
+            "kills": {
+              "basic": 2,
+              "DYNASTY'S END": 2
+            },
+            "dmgBasic": 245,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 20,
+            "dmgSummon": 57,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 170,
+              "Soul Tithe": 83
+            },
+            "byClass": {},
+            "avgTurns": 9.75,
+            "avgHpEnter": 0.4880455906859591,
+            "avgHpEnterAbs": 52,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.47071129707112974,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 249.5,
+            "avgIncoming": 143.75,
+            "avgPotionHeals": 1.25,
+            "avgSkillHeals": 2.5,
+            "avgGuards": 0.25,
+            "avgWards": 2.5,
+            "avgTaunts": 0,
+            "avgSummons": 2.75,
+            "avgBossHealTicks": 0.75,
+            "avgPlayerDpt": 25.58974358974359,
+            "avgIncomingDpt": 14.743589743589743,
+            "expectedTtk": 9.339679358717435,
+            "expectedTtl": 3.5269565217391308,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 2,
+                "rate": 0.5
+              },
+              {
+                "name": "DYNASTY'S END",
+                "n": 2,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.4260869565217391,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.034782608695652174,
+              "summon": 0.09913043478260869,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 170,
+                  "share": 0.2956521739130435
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 83,
+                  "share": 0.1443478260869565
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 3,
+            "wins": 1,
+            "losses": 2,
+            "winRate": 0.3333333333333333,
+            "potionHeals": 3,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 7,
+            "bossHealTicks": 0,
+            "kills": {
+              "DYNASTY'S END": 2
+            },
+            "dmgBasic": 186,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 24,
+            "dmgSummon": 25,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 141
+            },
+            "byClass": {},
+            "avgTurns": 8.666666666666666,
+            "avgHpEnter": 0.7405268490374874,
+            "avgHpEnterAbs": 76.66666666666667,
+            "avgHpLeftWin": 0.028037383177570093,
+            "avgBossHpLeftLoss": 0.44142259414225943,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 254,
+            "avgIncoming": 125.33333333333333,
+            "avgPotionHeals": 1,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 2.3333333333333335,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 29.30769230769231,
+            "avgIncomingDpt": 14.461538461538462,
+            "expectedTtk": 8.154855643044618,
+            "expectedTtl": 5.301418439716312,
+            "topKills": [
+              {
+                "name": "DYNASTY'S END",
+                "n": 2,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.4946808510638298,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.06382978723404255,
+              "summon": 0.06648936170212766,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 141,
+                  "share": 0.375
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 8.333333333333334,
+        "avgHpEnter": 0.747875887048992,
+        "avgHpEnterAbs": 67.28888888888889,
+        "avgHpLeftWin": 0.4066526983601327,
+        "avgBossHpLeftLoss": 0.3378323660413012,
+        "avgBossMaxHp": 239,
+        "avgPlayerDmg": 299.55555555555554,
+        "avgIncoming": 130.2,
+        "avgPotionHeals": 1.3777777777777778,
+        "avgSkillHeals": 0.2222222222222222,
+        "avgGuards": 0.08888888888888889,
+        "avgWards": 0.2222222222222222,
+        "avgTaunts": 0,
+        "avgSummons": 2.2,
+        "avgBossHealTicks": 0.35555555555555557,
+        "avgPlayerDpt": 35.946666666666665,
+        "avgIncomingDpt": 15.623999999999997,
+        "expectedTtk": 6.648738872403561,
+        "expectedTtl": 4.306764521818287,
+        "topKills": [
+          {
+            "name": "DYNASTY'S END",
+            "n": 16,
+            "rate": 0.5161290322580645
+          },
+          {
+            "name": "basic",
+            "n": 7,
+            "rate": 0.22580645161290322
+          },
+          {
+            "name": "torment",
+            "n": 4,
+            "rate": 0.12903225806451613
+          },
+          {
+            "name": "Soul Tithe",
+            "n": 2,
+            "rate": 0.06451612903225806
+          },
+          {
+            "name": "summon",
+            "n": 2,
+            "rate": 0.06451612903225806
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.44939409455538487,
+          "burn": 0,
+          "poison": 0,
+          "torment": 0.03806110257723161,
+          "summon": 0.08943505717699266,
+          "escort": 0,
+          "specials": [
+            {
+              "name": "DYNASTY'S END",
+              "v": 1948,
+              "share": 0.3324799453831712
+            },
+            {
+              "name": "Soul Tithe",
+              "v": 531,
+              "share": 0.09062980030721966
+            }
+          ]
+        }
+      },
+      "autoplay_full": {
+        "n": 45,
+        "wins": 20,
+        "losses": 25,
+        "winRate": 0.4444444444444444,
+        "potionHeals": 58,
+        "skillHeals": 2,
+        "guards": 3,
+        "wards": 2,
+        "taunts": 0,
+        "summons": 102,
+        "bossHealTicks": 15,
+        "kills": {
+          "DYNASTY'S END": 11,
+          "basic": 7,
+          "Soul Tithe": 4,
+          "torment": 3
+        },
+        "dmgBasic": 2849,
+        "dmgBurn": 0,
+        "dmgPoison": 0,
+        "dmgTorment": 286,
+        "dmgSummon": 656,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "DYNASTY'S END": 1801,
+          "Soul Tithe": 590
+        },
+        "byClass": {
+          "warrior": {
+            "n": 8,
+            "wins": 4,
+            "losses": 4,
+            "winRate": 0.5,
+            "potionHeals": 9,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 19,
+            "bossHealTicks": 0,
+            "kills": {
+              "DYNASTY'S END": 2,
+              "basic": 1,
+              "torment": 1
+            },
+            "dmgBasic": 571,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 68,
+            "dmgSummon": 146,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 352
+            },
+            "byClass": {},
+            "avgTurns": 9,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 107.125,
+            "avgHpLeftWin": 0.5212496758444353,
+            "avgBossHpLeftLoss": 0.23640167364016734,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 301,
+            "avgIncoming": 142.125,
+            "avgPotionHeals": 1.125,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 2.375,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 33.44444444444444,
+            "avgIncomingDpt": 15.791666666666666,
+            "expectedTtk": 7.146179401993356,
+            "expectedTtl": 6.783641160949868,
+            "topKills": [
+              {
+                "name": "DYNASTY'S END",
+                "n": 2,
+                "rate": 0.5
+              },
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.25
+              },
+              {
+                "name": "torment",
+                "n": 1,
+                "rate": 0.25
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5021987686895338,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.05980650835532102,
+              "summon": 0.1284080914687775,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 352,
+                  "share": 0.3095866314863676
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 21,
+            "wins": 11,
+            "losses": 10,
+            "winRate": 0.5238095238095238,
+            "potionHeals": 29,
+            "skillHeals": 0,
+            "guards": 2,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 43,
+            "bossHealTicks": 11,
+            "kills": {
+              "basic": 3,
+              "DYNASTY'S END": 6,
+              "Soul Tithe": 1
+            },
+            "dmgBasic": 1186,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 78,
+            "dmgSummon": 289,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 656,
+              "Soul Tithe": 426
+            },
+            "byClass": {},
+            "avgTurns": 8.238095238095237,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 86.61904761904762,
+            "avgHpLeftWin": 0.5919914380910917,
+            "avgBossHpLeftLoss": 0.30669456066945605,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 332.57142857142856,
+            "avgIncoming": 125.47619047619048,
+            "avgPotionHeals": 1.380952380952381,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.09523809523809523,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 2.0476190476190474,
+            "avgBossHealTicks": 0.5238095238095238,
+            "avgPlayerDpt": 40.369942196531795,
+            "avgIncomingDpt": 15.231213872832372,
+            "expectedTtk": 5.92024627720504,
+            "expectedTtl": 5.686943164362519,
+            "topKills": [
+              {
+                "name": "DYNASTY'S END",
+                "n": 6,
+                "rate": 0.6
+              },
+              {
+                "name": "basic",
+                "n": 3,
+                "rate": 0.3
+              },
+              {
+                "name": "Soul Tithe",
+                "n": 1,
+                "rate": 0.1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.45009487666034154,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.029601518026565465,
+              "summon": 0.10967741935483871,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 656,
+                  "share": 0.2489563567362429
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 426,
+                  "share": 0.1616698292220114
+                }
+              ]
+            }
+          },
+          "mage": {
+            "n": 6,
+            "wins": 2,
+            "losses": 4,
+            "winRate": 0.3333333333333333,
+            "potionHeals": 5,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 11,
+            "bossHealTicks": 1,
+            "kills": {
+              "basic": 2,
+              "DYNASTY'S END": 1,
+              "Soul Tithe": 1
+            },
+            "dmgBasic": 351,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 18,
+            "dmgSummon": 39,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 188,
+              "Soul Tithe": 31
+            },
+            "byClass": {},
+            "avgTurns": 7.166666666666667,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 72.83333333333333,
+            "avgHpLeftWin": 0.7193490054249547,
+            "avgBossHpLeftLoss": 0.2123430962343096,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 319,
+            "avgIncoming": 104.5,
+            "avgPotionHeals": 0.8333333333333334,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 1.8333333333333333,
+            "avgBossHealTicks": 0.16666666666666666,
+            "avgPlayerDpt": 44.51162790697674,
+            "avgIncomingDpt": 14.581395348837209,
+            "expectedTtk": 5.369383490073146,
+            "expectedTtl": 4.994949494949495,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 2,
+                "rate": 0.5
+              },
+              {
+                "name": "DYNASTY'S END",
+                "n": 1,
+                "rate": 0.25
+              },
+              {
+                "name": "Soul Tithe",
+                "n": 1,
+                "rate": 0.25
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5598086124401914,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.028708133971291867,
+              "summon": 0.06220095693779904,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 188,
+                  "share": 0.29984051036682613
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 31,
+                  "share": 0.049441786283891544
+                }
+              ]
+            }
+          },
+          "rogue": {
+            "n": 3,
+            "wins": 2,
+            "losses": 1,
+            "winRate": 0.6666666666666666,
+            "potionHeals": 6,
+            "skillHeals": 0,
+            "guards": 1,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 8,
+            "bossHealTicks": 1,
+            "kills": {
+              "Soul Tithe": 1
+            },
+            "dmgBasic": 224,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 30,
+            "dmgSummon": 68,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 165,
+              "Soul Tithe": 46
+            },
+            "byClass": {},
+            "avgTurns": 10.666666666666666,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 78,
+            "avgHpLeftWin": 0.2590909090909091,
+            "avgBossHpLeftLoss": 0.2594142259414226,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 329.6666666666667,
+            "avgIncoming": 177.66666666666666,
+            "avgPotionHeals": 2,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.3333333333333333,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 2.6666666666666665,
+            "avgBossHealTicks": 0.3333333333333333,
+            "avgPlayerDpt": 30.906250000000004,
+            "avgIncomingDpt": 16.65625,
+            "expectedTtk": 7.733063700707785,
+            "expectedTtl": 4.682926829268292,
+            "topKills": [
+              {
+                "name": "Soul Tithe",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.4202626641651032,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.05628517823639775,
+              "summon": 0.1275797373358349,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 165,
+                  "share": 0.30956848030018763
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 46,
+                  "share": 0.08630393996247655
+                }
+              ]
+            }
+          },
+          "monk": {
+            "n": 4,
+            "wins": 0,
+            "losses": 4,
+            "winRate": 0,
+            "potionHeals": 4,
+            "skillHeals": 2,
+            "guards": 0,
+            "wards": 2,
+            "taunts": 0,
+            "summons": 12,
+            "bossHealTicks": 2,
+            "kills": {
+              "DYNASTY'S END": 2,
+              "Soul Tithe": 1,
+              "torment": 1
+            },
+            "dmgBasic": 275,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 44,
+            "dmgSummon": 72,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Soul Tithe": 87,
+              "DYNASTY'S END": 243
+            },
+            "byClass": {},
+            "avgTurns": 10.5,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 106.5,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.04393305439330544,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 346.5,
+            "avgIncoming": 180.25,
+            "avgPotionHeals": 1,
+            "avgSkillHeals": 0.5,
+            "avgGuards": 0,
+            "avgWards": 0.5,
+            "avgTaunts": 0,
+            "avgSummons": 3,
+            "avgBossHealTicks": 0.5,
+            "avgPlayerDpt": 33,
+            "avgIncomingDpt": 17.166666666666668,
+            "expectedTtk": 7.242424242424242,
+            "expectedTtl": 6.2038834951456305,
+            "topKills": [
+              {
+                "name": "DYNASTY'S END",
+                "n": 2,
+                "rate": 0.5
+              },
+              {
+                "name": "Soul Tithe",
+                "n": 1,
+                "rate": 0.25
+              },
+              {
+                "name": "torment",
+                "n": 1,
+                "rate": 0.25
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.3814147018030513,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.06102635228848821,
+              "summon": 0.09986130374479889,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 243,
+                  "share": 0.33703190013869627
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 87,
+                  "share": 0.12066574202496533
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 3,
+            "wins": 1,
+            "losses": 2,
+            "winRate": 0.3333333333333333,
+            "potionHeals": 5,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 9,
+            "bossHealTicks": 0,
+            "kills": {
+              "basic": 1,
+              "torment": 1
+            },
+            "dmgBasic": 242,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 48,
+            "dmgSummon": 42,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 197
+            },
+            "byClass": {},
+            "avgTurns": 11,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 102,
+            "avgHpLeftWin": 0.028037383177570093,
+            "avgBossHpLeftLoss": 0.301255230125523,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 318,
+            "avgIncoming": 176.33333333333334,
+            "avgPotionHeals": 1.6666666666666667,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 3,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 28.90909090909091,
+            "avgIncomingDpt": 16.03030303030303,
+            "expectedTtk": 8.267295597484276,
+            "expectedTtl": 6.362948960302457,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "torment",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.45746691871455575,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.09073724007561437,
+              "summon": 0.07939508506616257,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 197,
+                  "share": 0.3724007561436673
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 8.777777777777779,
+        "avgHpEnter": 1,
+        "avgHpEnterAbs": 90.64444444444445,
+        "avgHpLeftWin": 0.5290910867294525,
+        "avgBossHpLeftLoss": 0.23598326359832641,
+        "avgBossMaxHp": 239,
+        "avgPlayerDmg": 325.22222222222223,
+        "avgIncoming": 137.37777777777777,
+        "avgPotionHeals": 1.288888888888889,
+        "avgSkillHeals": 0.044444444444444446,
+        "avgGuards": 0.06666666666666667,
+        "avgWards": 0.044444444444444446,
+        "avgTaunts": 0,
+        "avgSummons": 2.2666666666666666,
+        "avgBossHealTicks": 0.3333333333333333,
+        "avgPlayerDpt": 37.050632911392405,
+        "avgIncomingDpt": 15.650632911392401,
+        "expectedTtk": 6.450632046463956,
+        "expectedTtl": 5.791743053308891,
+        "topKills": [
+          {
+            "name": "DYNASTY'S END",
+            "n": 11,
+            "rate": 0.44
+          },
+          {
+            "name": "basic",
+            "n": 7,
+            "rate": 0.28
+          },
+          {
+            "name": "Soul Tithe",
+            "n": 4,
+            "rate": 0.16
+          },
+          {
+            "name": "torment",
+            "n": 3,
+            "rate": 0.12
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.4608540925266904,
+          "burn": 0,
+          "poison": 0,
+          "torment": 0.046263345195729534,
+          "summon": 0.10611452604335167,
+          "escort": 0,
+          "specials": [
+            {
+              "name": "DYNASTY'S END",
+              "v": 1801,
+              "share": 0.2913296667745066
+            },
+            {
+              "name": "Soul Tithe",
+              "v": 590,
+              "share": 0.09543836945972177
+            }
+          ]
+        }
+      },
+      "bossaware_observed": {
+        "n": 45,
+        "wins": 11,
+        "losses": 34,
+        "winRate": 0.24444444444444444,
+        "potionHeals": 86,
+        "skillHeals": 38,
+        "guards": 23,
+        "wards": 38,
+        "taunts": 5,
+        "summons": 129,
+        "bossHealTicks": 13,
+        "kills": {
+          "DYNASTY'S END": 13,
+          "basic": 10,
+          "torment": 5,
+          "Soul Tithe": 3,
+          "summon": 3
+        },
+        "dmgBasic": 3194,
+        "dmgBurn": 0,
+        "dmgPoison": 0,
+        "dmgTorment": 487,
+        "dmgSummon": 754,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "DYNASTY'S END": 2547,
+          "Soul Tithe": 459
+        },
+        "byClass": {
+          "warrior": {
+            "n": 8,
+            "wins": 3,
+            "losses": 5,
+            "winRate": 0.375,
+            "potionHeals": 15,
+            "skillHeals": 0,
+            "guards": 5,
+            "wards": 5,
+            "taunts": 5,
+            "summons": 24,
+            "bossHealTicks": 2,
+            "kills": {
+              "torment": 1,
+              "DYNASTY'S END": 2,
+              "Soul Tithe": 1,
+              "basic": 1
+            },
+            "dmgBasic": 666,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 104,
+            "dmgSummon": 128,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 383,
+              "Soul Tithe": 89
+            },
+            "byClass": {},
+            "avgTurns": 10.875,
+            "avgHpEnter": 0.7389878636827792,
+            "avgHpEnterAbs": 78.75,
+            "avgHpLeftWin": 0.27798649304696815,
+            "avgBossHpLeftLoss": 0.3631799163179916,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 316.375,
+            "avgIncoming": 171.25,
+            "avgPotionHeals": 1.875,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.625,
+            "avgWards": 0.625,
+            "avgTaunts": 0.625,
+            "avgSummons": 3,
+            "avgBossHealTicks": 0.25,
+            "avgPlayerDpt": 29.091954022988507,
+            "avgIncomingDpt": 15.74712643678161,
+            "expectedTtk": 8.215329909126828,
+            "expectedTtl": 5.000912408759124,
+            "topKills": [
+              {
+                "name": "DYNASTY'S END",
+                "n": 2,
+                "rate": 0.4
+              },
+              {
+                "name": "torment",
+                "n": 1,
+                "rate": 0.2
+              },
+              {
+                "name": "Soul Tithe",
+                "n": 1,
+                "rate": 0.2
+              },
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.2
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.48613138686131385,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.07591240875912408,
+              "summon": 0.09343065693430656,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 383,
+                  "share": 0.27956204379562044
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 89,
+                  "share": 0.06496350364963503
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 21,
+            "wins": 6,
+            "losses": 15,
+            "winRate": 0.2857142857142857,
+            "potionHeals": 48,
+            "skillHeals": 0,
+            "guards": 12,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 53,
+            "bossHealTicks": 6,
+            "kills": {
+              "DYNASTY'S END": 6,
+              "basic": 3,
+              "summon": 2,
+              "torment": 3,
+              "Soul Tithe": 1
+            },
+            "dmgBasic": 1317,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 174,
+            "dmgSummon": 323,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 1273,
+              "Soul Tithe": 220
+            },
+            "byClass": {},
+            "avgTurns": 9.142857142857142,
+            "avgHpEnter": 0.8036538094801248,
+            "avgHpEnterAbs": 69.76190476190476,
+            "avgHpLeftWin": 0.5139208595111134,
+            "avgBossHpLeftLoss": 0.3118549511854951,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 328.3809523809524,
+            "avgIncoming": 157.47619047619048,
+            "avgPotionHeals": 2.2857142857142856,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.5714285714285714,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 2.5238095238095237,
+            "avgBossHealTicks": 0.2857142857142857,
+            "avgPlayerDpt": 35.91666666666667,
+            "avgIncomingDpt": 17.223958333333336,
+            "expectedTtk": 6.65429234338747,
+            "expectedTtl": 4.050282949587454,
+            "topKills": [
+              {
+                "name": "DYNASTY'S END",
+                "n": 6,
+                "rate": 0.4
+              },
+              {
+                "name": "basic",
+                "n": 3,
+                "rate": 0.2
+              },
+              {
+                "name": "torment",
+                "n": 3,
+                "rate": 0.2
+              },
+              {
+                "name": "summon",
+                "n": 2,
+                "rate": 0.13333333333333333
+              },
+              {
+                "name": "Soul Tithe",
+                "n": 1,
+                "rate": 0.06666666666666667
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.39824614454188084,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.05261566374357424,
+              "summon": 0.09767160568491079,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 1273,
+                  "share": 0.3849410341699425
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 220,
+                  "share": 0.06652555185969157
+                }
+              ]
+            }
+          },
+          "mage": {
+            "n": 6,
+            "wins": 2,
+            "losses": 4,
+            "winRate": 0.3333333333333333,
+            "potionHeals": 9,
+            "skillHeals": 0,
+            "guards": 3,
+            "wards": 4,
+            "taunts": 0,
+            "summons": 16,
+            "bossHealTicks": 3,
+            "kills": {
+              "DYNASTY'S END": 3,
+              "Soul Tithe": 1
+            },
+            "dmgBasic": 380,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 36,
+            "dmgSummon": 28,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 238,
+              "Soul Tithe": 101
+            },
+            "byClass": {},
+            "avgTurns": 9.5,
+            "avgHpEnter": 0.7407196890864215,
+            "avgHpEnterAbs": 53.833333333333336,
+            "avgHpLeftWin": 0.43291139240506327,
+            "avgBossHpLeftLoss": 0.401673640167364,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 318.1666666666667,
+            "avgIncoming": 130.5,
+            "avgPotionHeals": 1.5,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.5,
+            "avgWards": 0.6666666666666666,
+            "avgTaunts": 0,
+            "avgSummons": 2.6666666666666665,
+            "avgBossHealTicks": 0.5,
+            "avgPlayerDpt": 33.49122807017544,
+            "avgIncomingDpt": 13.736842105263158,
+            "expectedTtk": 7.136196961760084,
+            "expectedTtl": 3.9189016602809708,
+            "topKills": [
+              {
+                "name": "DYNASTY'S END",
+                "n": 3,
+                "rate": 0.75
+              },
+              {
+                "name": "Soul Tithe",
+                "n": 1,
+                "rate": 0.25
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.48531289910600256,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.04597701149425287,
+              "summon": 0.035759897828863345,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 238,
+                  "share": 0.30395913154533843
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 101,
+                  "share": 0.12899106002554278
+                }
+              ]
+            }
+          },
+          "rogue": {
+            "n": 3,
+            "wins": 0,
+            "losses": 3,
+            "winRate": 0,
+            "potionHeals": 5,
+            "skillHeals": 0,
+            "guards": 3,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 8,
+            "bossHealTicks": 1,
+            "kills": {
+              "basic": 1,
+              "torment": 1,
+              "summon": 1
+            },
+            "dmgBasic": 197,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 21,
+            "dmgSummon": 37,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Soul Tithe": 29,
+              "DYNASTY'S END": 120
+            },
+            "byClass": {},
+            "avgTurns": 9,
+            "avgHpEnter": 0.749233654761649,
+            "avgHpEnterAbs": 57.333333333333336,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.12970711297071127,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 266,
+            "avgIncoming": 134.66666666666666,
+            "avgPotionHeals": 1.6666666666666667,
+            "avgSkillHeals": 0,
+            "avgGuards": 1,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 2.6666666666666665,
+            "avgBossHealTicks": 0.3333333333333333,
+            "avgPlayerDpt": 29.555555555555557,
+            "avgIncomingDpt": 14.962962962962962,
+            "expectedTtk": 8.086466165413533,
+            "expectedTtl": 3.831683168316832,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "torment",
+                "n": 1,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "summon",
+                "n": 1,
+                "rate": 0.3333333333333333
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.4876237623762376,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.05198019801980198,
+              "summon": 0.09158415841584158,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 120,
+                  "share": 0.297029702970297
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 29,
+                  "share": 0.07178217821782178
+                }
+              ]
+            }
+          },
+          "monk": {
+            "n": 4,
+            "wins": 0,
+            "losses": 4,
+            "winRate": 0,
+            "potionHeals": 5,
+            "skillHeals": 22,
+            "guards": 0,
+            "wards": 22,
+            "taunts": 0,
+            "summons": 14,
+            "bossHealTicks": 1,
+            "kills": {
+              "basic": 3,
+              "DYNASTY'S END": 1
+            },
+            "dmgBasic": 253,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 68,
+            "dmgSummon": 91,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 252,
+              "Soul Tithe": 20
+            },
+            "byClass": {},
+            "avgTurns": 12.25,
+            "avgHpEnter": 0.4880455906859591,
+            "avgHpEnterAbs": 52,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.694560669456067,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 229.75,
+            "avgIncoming": 171,
+            "avgPotionHeals": 1.25,
+            "avgSkillHeals": 5.5,
+            "avgGuards": 0,
+            "avgWards": 5.5,
+            "avgTaunts": 0,
+            "avgSummons": 3.5,
+            "avgBossHealTicks": 0.25,
+            "avgPlayerDpt": 18.755102040816325,
+            "avgIncomingDpt": 13.959183673469388,
+            "expectedTtk": 12.743199129488575,
+            "expectedTtl": 3.725146198830409,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 3,
+                "rate": 0.75
+              },
+              {
+                "name": "DYNASTY'S END",
+                "n": 1,
+                "rate": 0.25
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.36988304093567254,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.09941520467836257,
+              "summon": 0.13304093567251463,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 252,
+                  "share": 0.3684210526315789
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 20,
+                  "share": 0.029239766081871343
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 3,
+            "wins": 0,
+            "losses": 3,
+            "winRate": 0,
+            "potionHeals": 4,
+            "skillHeals": 16,
+            "guards": 0,
+            "wards": 7,
+            "taunts": 0,
+            "summons": 14,
+            "bossHealTicks": 0,
+            "kills": {
+              "DYNASTY'S END": 1,
+              "basic": 2
+            },
+            "dmgBasic": 381,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 84,
+            "dmgSummon": 147,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 281
+            },
+            "byClass": {},
+            "avgTurns": 16.666666666666668,
+            "avgHpEnter": 0.7405268490374874,
+            "avgHpEnterAbs": 76.66666666666667,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.4714086471408647,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 264.6666666666667,
+            "avgIncoming": 297.6666666666667,
+            "avgPotionHeals": 1.3333333333333333,
+            "avgSkillHeals": 5.333333333333333,
+            "avgGuards": 0,
+            "avgWards": 2.3333333333333335,
+            "avgTaunts": 0,
+            "avgSummons": 4.666666666666667,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 15.88,
+            "avgIncomingDpt": 17.86,
+            "expectedTtk": 15.050377833753148,
+            "expectedTtl": 4.2926465098917514,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 2,
+                "rate": 0.6666666666666666
+              },
+              {
+                "name": "DYNASTY'S END",
+                "n": 1,
+                "rate": 0.3333333333333333
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.42665173572228443,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.0940649496080627,
+              "summon": 0.16461366181410975,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 281,
+                  "share": 0.3146696528555431
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 10.266666666666667,
+        "avgHpEnter": 0.747875887048992,
+        "avgHpEnterAbs": 67.28888888888889,
+        "avgHpLeftWin": 0.43484612918342835,
+        "avgBossHpLeftLoss": 0.37300024612355415,
+        "avgBossMaxHp": 239,
+        "avgPlayerDmg": 307.7111111111111,
+        "avgIncoming": 165.35555555555555,
+        "avgPotionHeals": 1.9111111111111112,
+        "avgSkillHeals": 0.8444444444444444,
+        "avgGuards": 0.5111111111111111,
+        "avgWards": 0.8444444444444444,
+        "avgTaunts": 0.1111111111111111,
+        "avgSummons": 2.8666666666666667,
+        "avgBossHealTicks": 0.28888888888888886,
+        "avgPlayerDpt": 29.97186147186147,
+        "avgIncomingDpt": 16.106060606060606,
+        "expectedTtk": 7.97414602440962,
+        "expectedTtl": 4.177861398557542,
+        "topKills": [
+          {
+            "name": "DYNASTY'S END",
+            "n": 13,
+            "rate": 0.38235294117647056
+          },
+          {
+            "name": "basic",
+            "n": 10,
+            "rate": 0.29411764705882354
+          },
+          {
+            "name": "torment",
+            "n": 5,
+            "rate": 0.14705882352941177
+          },
+          {
+            "name": "Soul Tithe",
+            "n": 3,
+            "rate": 0.08823529411764706
+          },
+          {
+            "name": "summon",
+            "n": 3,
+            "rate": 0.08823529411764706
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.4292433812659589,
+          "burn": 0,
+          "poison": 0,
+          "torment": 0.06544819244725171,
+          "summon": 0.10133046633517001,
+          "escort": 0,
+          "specials": [
+            {
+              "name": "DYNASTY'S END",
+              "v": 2547,
+              "share": 0.3422927025937374
+            },
+            {
+              "name": "Soul Tithe",
+              "v": 459,
+              "share": 0.061685257357882
+            }
+          ]
+        }
+      },
+      "bossaware_full": {
+        "n": 45,
+        "wins": 14,
+        "losses": 31,
+        "winRate": 0.3111111111111111,
+        "potionHeals": 79,
+        "skillHeals": 37,
+        "guards": 18,
+        "wards": 40,
+        "taunts": 7,
+        "summons": 141,
+        "bossHealTicks": 18,
+        "kills": {
+          "basic": 15,
+          "summon": 3,
+          "DYNASTY'S END": 10,
+          "Soul Tithe": 1,
+          "torment": 2
+        },
+        "dmgBasic": 3554,
+        "dmgBurn": 0,
+        "dmgPoison": 0,
+        "dmgTorment": 483,
+        "dmgSummon": 899,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "DYNASTY'S END": 2302,
+          "Soul Tithe": 665
+        },
+        "byClass": {
+          "warrior": {
+            "n": 8,
+            "wins": 4,
+            "losses": 4,
+            "winRate": 0.5,
+            "potionHeals": 13,
+            "skillHeals": 0,
+            "guards": 5,
+            "wards": 7,
+            "taunts": 7,
+            "summons": 27,
+            "bossHealTicks": 3,
+            "kills": {
+              "basic": 1,
+              "DYNASTY'S END": 2,
+              "torment": 1
+            },
+            "dmgBasic": 700,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 94,
+            "dmgSummon": 124,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 332,
+              "Soul Tithe": 91
+            },
+            "byClass": {},
+            "avgTurns": 12.125,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 107.125,
+            "avgHpLeftWin": 0.43143981799930065,
+            "avgBossHpLeftLoss": 0.3117154811715481,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 363.375,
+            "avgIncoming": 167.625,
+            "avgPotionHeals": 1.625,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.625,
+            "avgWards": 0.875,
+            "avgTaunts": 0.875,
+            "avgSummons": 3.375,
+            "avgBossHealTicks": 0.375,
+            "avgPlayerDpt": 29.969072164948454,
+            "avgIncomingDpt": 13.824742268041238,
+            "expectedTtk": 7.974888200894393,
+            "expectedTtl": 7.748788217747949,
+            "topKills": [
+              {
+                "name": "DYNASTY'S END",
+                "n": 2,
+                "rate": 0.5
+              },
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.25
+              },
+              {
+                "name": "torment",
+                "n": 1,
+                "rate": 0.25
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5219985085756897,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.07009694258016405,
+              "summon": 0.0924683072334079,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 332,
+                  "share": 0.24757643549589858
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 91,
+                  "share": 0.06785980611483967
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 21,
+            "wins": 6,
+            "losses": 15,
+            "winRate": 0.2857142857142857,
+            "potionHeals": 44,
+            "skillHeals": 0,
+            "guards": 9,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 55,
+            "bossHealTicks": 11,
+            "kills": {
+              "basic": 6,
+              "DYNASTY'S END": 7,
+              "Soul Tithe": 1,
+              "summon": 1
+            },
+            "dmgBasic": 1498,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 142,
+            "dmgSummon": 343,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 1105,
+              "Soul Tithe": 434
+            },
+            "byClass": {},
+            "avgTurns": 9.571428571428571,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 86.61904761904762,
+            "avgHpLeftWin": 0.5674972114745622,
+            "avgBossHpLeftLoss": 0.21450488145048813,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 361.95238095238096,
+            "avgIncoming": 167.71428571428572,
+            "avgPotionHeals": 2.0952380952380953,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.42857142857142855,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 2.619047619047619,
+            "avgBossHealTicks": 0.5238095238095238,
+            "avgPlayerDpt": 37.81592039800995,
+            "avgIncomingDpt": 17.522388059701495,
+            "expectedTtk": 6.320089461912906,
+            "expectedTtl": 4.943335767015494,
+            "topKills": [
+              {
+                "name": "DYNASTY'S END",
+                "n": 7,
+                "rate": 0.4666666666666667
+              },
+              {
+                "name": "basic",
+                "n": 6,
+                "rate": 0.4
+              },
+              {
+                "name": "Soul Tithe",
+                "n": 1,
+                "rate": 0.06666666666666667
+              },
+              {
+                "name": "summon",
+                "n": 1,
+                "rate": 0.06666666666666667
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.4253265190232822,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.04031800113571834,
+              "summon": 0.0973878478137422,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 1105,
+                  "share": 0.3137421919363998
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 434,
+                  "share": 0.12322544009085747
+                }
+              ]
+            }
+          },
+          "mage": {
+            "n": 6,
+            "wins": 3,
+            "losses": 3,
+            "winRate": 0.5,
+            "potionHeals": 7,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 5,
+            "taunts": 0,
+            "summons": 14,
+            "bossHealTicks": 2,
+            "kills": {
+              "basic": 3
+            },
+            "dmgBasic": 374,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 30,
+            "dmgSummon": 61,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 130,
+              "Soul Tithe": 75
+            },
+            "byClass": {},
+            "avgTurns": 8.5,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 72.83333333333333,
+            "avgHpLeftWin": 0.5065702230259193,
+            "avgBossHpLeftLoss": 0.5020920502092051,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 319.8333333333333,
+            "avgIncoming": 111.66666666666667,
+            "avgPotionHeals": 1.1666666666666667,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0.8333333333333334,
+            "avgTaunts": 0,
+            "avgSummons": 2.3333333333333335,
+            "avgBossHealTicks": 0.3333333333333333,
+            "avgPlayerDpt": 37.627450980392155,
+            "avgIncomingDpt": 13.137254901960786,
+            "expectedTtk": 6.351745700885878,
+            "expectedTtl": 5.544029850746268,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 3,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.5582089552238806,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.04477611940298507,
+              "summon": 0.09104477611940298,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 130,
+                  "share": 0.19402985074626866
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 75,
+                  "share": 0.11194029850746269
+                }
+              ]
+            }
+          },
+          "rogue": {
+            "n": 3,
+            "wins": 1,
+            "losses": 2,
+            "winRate": 0.3333333333333333,
+            "potionHeals": 6,
+            "skillHeals": 0,
+            "guards": 3,
+            "wards": 0,
+            "taunts": 0,
+            "summons": 10,
+            "bossHealTicks": 0,
+            "kills": {
+              "summon": 2
+            },
+            "dmgBasic": 211,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 33,
+            "dmgSummon": 68,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 159
+            },
+            "byClass": {},
+            "avgTurns": 11,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 78,
+            "avgHpLeftWin": 0.29411764705882354,
+            "avgBossHpLeftLoss": 0.0502092050209205,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 311.3333333333333,
+            "avgIncoming": 157,
+            "avgPotionHeals": 2,
+            "avgSkillHeals": 0,
+            "avgGuards": 1,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgSummons": 3.3333333333333335,
+            "avgBossHealTicks": 0,
+            "avgPlayerDpt": 28.3030303030303,
+            "avgIncomingDpt": 14.272727272727273,
+            "expectedTtk": 8.444325481798716,
+            "expectedTtl": 5.464968152866242,
+            "topKills": [
+              {
+                "name": "summon",
+                "n": 2,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.44798301486199577,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.07006369426751592,
+              "summon": 0.14437367303609341,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 159,
+                  "share": 0.3375796178343949
+                }
+              ]
+            }
+          },
+          "monk": {
+            "n": 4,
+            "wins": 0,
+            "losses": 4,
+            "winRate": 0,
+            "potionHeals": 5,
+            "skillHeals": 19,
+            "guards": 1,
+            "wards": 19,
+            "taunts": 0,
+            "summons": 17,
+            "bossHealTicks": 1,
+            "kills": {
+              "basic": 2,
+              "DYNASTY'S END": 1,
+              "torment": 1
+            },
+            "dmgBasic": 348,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 80,
+            "dmgSummon": 117,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Soul Tithe": 37,
+              "DYNASTY'S END": 279
+            },
+            "byClass": {},
+            "avgTurns": 14.25,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 106.5,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.4707112970711297,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 334.25,
+            "avgIncoming": 215.25,
+            "avgPotionHeals": 1.25,
+            "avgSkillHeals": 4.75,
+            "avgGuards": 0.25,
+            "avgWards": 4.75,
+            "avgTaunts": 0,
+            "avgSummons": 4.25,
+            "avgBossHealTicks": 0.25,
+            "avgPlayerDpt": 23.45614035087719,
+            "avgIncomingDpt": 15.105263157894736,
+            "expectedTtk": 10.18922961854899,
+            "expectedTtl": 7.050522648083624,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 2,
+                "rate": 0.5
+              },
+              {
+                "name": "DYNASTY'S END",
+                "n": 1,
+                "rate": 0.25
+              },
+              {
+                "name": "torment",
+                "n": 1,
+                "rate": 0.25
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.40418118466898956,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.09291521486643438,
+              "summon": 0.13588850174216027,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 279,
+                  "share": 0.3240418118466899
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 37,
+                  "share": 0.0429732868757259
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 3,
+            "wins": 0,
+            "losses": 3,
+            "winRate": 0,
+            "potionHeals": 4,
+            "skillHeals": 18,
+            "guards": 0,
+            "wards": 9,
+            "taunts": 0,
+            "summons": 18,
+            "bossHealTicks": 1,
+            "kills": {
+              "basic": 3
+            },
+            "dmgBasic": 423,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 104,
+            "dmgSummon": 186,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "DYNASTY'S END": 297,
+              "Soul Tithe": 28
+            },
+            "byClass": {},
+            "avgTurns": 20.666666666666668,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 102,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.31520223152022314,
+            "avgBossMaxHp": 239,
+            "avgPlayerDmg": 369.3333333333333,
+            "avgIncoming": 346,
+            "avgPotionHeals": 1.3333333333333333,
+            "avgSkillHeals": 6,
+            "avgGuards": 0,
+            "avgWards": 3,
+            "avgTaunts": 0,
+            "avgSummons": 6,
+            "avgBossHealTicks": 0.3333333333333333,
+            "avgPlayerDpt": 17.87096774193548,
+            "avgIncomingDpt": 16.741935483870968,
+            "expectedTtk": 13.373646209386283,
+            "expectedTtl": 6.092485549132948,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 3,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.407514450867052,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.1001926782273603,
+              "summon": 0.1791907514450867,
+              "escort": 0,
+              "specials": [
+                {
+                  "name": "DYNASTY'S END",
+                  "v": 297,
+                  "share": 0.2861271676300578
+                },
+                {
+                  "name": "Soul Tithe",
+                  "v": 28,
+                  "share": 0.02697495183044316
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 11.133333333333333,
+        "avgHpEnter": 1,
+        "avgHpEnterAbs": 90.64444444444445,
+        "avgHpLeftWin": 0.496040775498654,
+        "avgBossHpLeftLoss": 0.28708327709542447,
+        "avgBossMaxHp": 239,
+        "avgPlayerDmg": 351.24444444444447,
+        "avgIncoming": 175.62222222222223,
+        "avgPotionHeals": 1.7555555555555555,
+        "avgSkillHeals": 0.8222222222222222,
+        "avgGuards": 0.4,
+        "avgWards": 0.8888888888888888,
+        "avgTaunts": 0.15555555555555556,
+        "avgSummons": 3.1333333333333333,
+        "avgBossHealTicks": 0.4,
+        "avgPlayerDpt": 31.548902195608786,
+        "avgIncomingDpt": 15.774451097804393,
+        "expectedTtk": 7.575540933822598,
+        "expectedTtl": 5.7462820026150405,
+        "topKills": [
+          {
+            "name": "basic",
+            "n": 15,
+            "rate": 0.4838709677419355
+          },
+          {
+            "name": "DYNASTY'S END",
+            "n": 10,
+            "rate": 0.3225806451612903
+          },
+          {
+            "name": "summon",
+            "n": 3,
+            "rate": 0.0967741935483871
+          },
+          {
+            "name": "torment",
+            "n": 2,
+            "rate": 0.06451612903225806
+          },
+          {
+            "name": "Soul Tithe",
+            "n": 1,
+            "rate": 0.03225806451612903
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.4497026445653549,
+          "burn": 0,
+          "poison": 0,
+          "torment": 0.06111603188662533,
+          "summon": 0.11375427053017842,
+          "escort": 0,
+          "specials": [
+            {
+              "name": "DYNASTY'S END",
+              "v": 2302,
+              "share": 0.2912817917246615
+            },
+            {
+              "name": "Soul Tithe",
+              "v": 665,
+              "share": 0.0841452612931798
+            }
+          ]
+        }
+      }
+    }
+  },
+  "crossBoss": null,
+  "pressure": {
+    "lich": {
+      "bossId": "lich",
+      "name": "Lich of the Fallen King",
+      "authoredHp": 340,
+      "authoredAtk": 30,
+      "scaleHp": 0.8782632938279202,
+      "scaleAtk": 0.6347427189004635,
+      "ehp": 299,
+      "eatk": 19,
+      "specials": [
+        {
+          "at": 4,
+          "name": "Soul Tithe",
+          "mult": 1.65
+        },
+        {
+          "at": 5,
+          "name": "DYNASTY'S END",
+          "mult": 2.6
+        }
+      ],
+      "basicRaw": 26,
+      "midSpecial": {
+        "name": "Soul Tithe",
+        "at": 4,
+        "mult": 1.65
+      },
+      "finisher": {
+        "name": "DYNASTY'S END",
+        "at": 5,
+        "mult": 2.6
+      },
+      "summons": "skeleton",
+      "sampleHit": {
+        "basic": 14,
+        "mid": 39,
+        "finisher": 61
+      }
+    },
+    "undead_executioner": {
+      "bossId": "undead_executioner",
+      "name": "Gravesend, the Undead Executioner",
+      "authoredHp": 340,
+      "authoredAtk": 30,
+      "scaleHp": 0.8782632938279202,
+      "scaleAtk": 0.6347427189004635,
+      "ehp": 299,
+      "eatk": 19,
+      "specials": [
+        {
+          "at": 3,
+          "name": "Toll the Block",
+          "mult": 1.55
+        },
+        {
+          "at": 5,
+          "name": "Procession Cut",
+          "mult": 1.85
+        },
+        {
+          "at": 6,
+          "name": "THE NEXT NAME",
+          "mult": 2.7
+        }
+      ],
+      "basicRaw": 26,
+      "midSpecial": {
+        "name": "Procession Cut",
+        "at": 5,
+        "mult": 1.85
+      },
+      "finisher": {
+        "name": "THE NEXT NAME",
+        "at": 6,
+        "mult": 2.7
+      },
+      "summons": null,
+      "sampleHit": {
+        "basic": 14,
+        "mid": 44,
+        "finisher": 64
+      }
+    }
+  },
+  "attrition": {
+    "reachedF15": 261,
+    "f15Deaths": 148,
+    "f15Winners": 113,
+    "reachedF20": 105,
+    "deathFloors": {
+      "16": 5,
+      "17": 2,
+      "18": 1
+    },
+    "floors": {
+      "16": {
+        "n": 113,
+        "deaths": 5,
+        "deathRate": 0.04424778761061947,
+        "combat": 28,
+        "event": 87,
+        "shop": 6,
+        "sneakBribe": 14,
+        "avgEnterHp": 0.5308162825221628,
+        "avgLeaveHp": 0.505946190444941,
+        "avgHpDelta": -0.024870092077221767
+      },
+      "17": {
+        "n": 108,
+        "deaths": 2,
+        "deathRate": 0.018518518518518517,
+        "combat": 31,
+        "event": 83,
+        "shop": 4,
+        "sneakBribe": 17,
+        "avgEnterHp": 0.5404310284189409,
+        "avgLeaveHp": 0.5321726103550358,
+        "avgHpDelta": -0.008258418063904935
+      },
+      "18": {
+        "n": 106,
+        "deaths": 1,
+        "deathRate": 0.009433962264150943,
+        "combat": 31,
+        "event": 77,
+        "shop": 3,
+        "sneakBribe": 15,
+        "avgEnterHp": 0.5531792477263665,
+        "avgLeaveHp": 0.5482414826905087,
+        "avgHpDelta": -0.00493776503585796
+      },
+      "19": {
+        "n": 105,
+        "deaths": 0,
+        "deathRate": 0,
+        "combat": 0,
+        "event": 105,
+        "shop": 0,
+        "sneakBribe": 0,
+        "avgEnterHp": 0.5641088632999781,
+        "avgLeaveHp": 0.7592546323459669,
+        "avgHpDelta": 0.19514576904598854
+      }
+    },
+    "f19Choices": {
+      "Sleep": 105
+    },
+    "f15Survival": 0.4329501915708812
+  },
+  "representatives": [
+    {
+      "seed": 20410418,
+      "classId": "archer",
+      "bossId": "lich",
+      "hp": 87,
+      "maxHp": 104,
+      "hpPct": 0.8365384615384616,
+      "potions": 1,
+      "relics": 2,
+      "skills": 4,
+      "f15Boss": "crowned_revenant"
+    },
+    {
+      "seed": 21507448,
+      "classId": "mage",
+      "bossId": "undead_executioner",
+      "hp": 47,
+      "maxHp": 64,
+      "hpPct": 0.734375,
+      "potions": 3,
+      "relics": 2,
+      "skills": 4,
+      "f15Boss": "crowned_revenant"
+    },
+    {
+      "seed": 21776719,
+      "classId": "monk",
+      "bossId": "undead_executioner",
+      "hp": 54,
+      "maxHp": 112,
+      "hpPct": 0.48214285714285715,
+      "potions": 1,
+      "relics": 2,
+      "skills": 4,
+      "f15Boss": "crowned_revenant"
+    },
+    {
+      "seed": 21796665,
+      "classId": "priest",
+      "bossId": "undead_executioner",
+      "hp": 97,
+      "maxHp": 104,
+      "hpPct": 0.9326923076923077,
+      "potions": 1,
+      "relics": 2,
+      "skills": 4,
+      "f15Boss": "crowned_revenant"
+    },
+    {
+      "seed": 21387772,
+      "classId": "rogue",
+      "bossId": "undead_executioner",
+      "hp": 60,
+      "maxHp": 75,
+      "hpPct": 0.8,
+      "potions": 3,
+      "relics": 2,
+      "skills": 4,
+      "f15Boss": "crowned_revenant"
+    },
+    {
+      "seed": 21816611,
+      "classId": "warrior",
+      "bossId": "undead_executioner",
+      "hp": 87,
+      "maxHp": 115,
+      "hpPct": 0.7565217391304347,
+      "potions": 6,
+      "relics": 2,
+      "skills": 4,
+      "f15Boss": "crowned_revenant"
+    }
+  ],
+  "classification": {
+    "labels": [
+      "CLASS INTERACTION"
+    ],
+    "notes": [
+      "Gravesend, the Undead Executioner: class outliers mage 9.1%"
+    ],
+    "evidence": [
+      "CLASS INTERACTION"
+    ]
+  }
+}

@@ -1343,6 +1343,7 @@ class Fight {
     }
     const sk = SKILLS[action.skillId] || SKILLS.basic_attack;
     if (action.enemy != null) this.setAim(action.enemy);
+    this._pendingHealTo = action.healTo || null;
     const costMult = this.mod.costMult || 1;
     this.useSkill(sk, Math.ceil((sk.cost || 0) * costMult));
   }
@@ -1819,9 +1820,16 @@ class Fight {
       return;
     }
 
-    // healer support: skills marked allyTarget can mend a companion (patch)
+    // healer support: skills marked allyTarget can mend a companion (patch).
+    // Autoplay supplies healTo so we do not hang on the click picker.
     if (sk.allyTarget && this.shared && [...this.allies.values()].some(a => !a.down)) {
-      const to = await this.pickHealTarget();
+      let to = this._pendingHealTo;
+      this._pendingHealTo = null;
+      if (to != null && to !== 'self') {
+        const a = this.allies.get(to);
+        if (!a || a.down || (a.hp ?? 0) <= 0) to = 'self';
+      }
+      if (to == null) to = await this.pickHealTarget();
       if (to !== 'self') {
         const pct = sk.healPct || 0.3;
         this.coop.net.send({ k: 'cheal', to, pct, label: sk.name });
@@ -1838,6 +1846,8 @@ class Fight {
         this.endPlayerAction();
         return;
       }
+    } else {
+      this._pendingHealTo = null;
     }
 
     // Confused: offensive skills risk striking a companion (co-op) or whiffing (solo).

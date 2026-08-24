@@ -84,7 +84,8 @@ export const TDC = {
     depthDef: 0.018,
     floorHp: 0.0145,
     floorAtk: 0.0075,        // +15% absolute-floor ATK
-    // Soft late ramp (solo ~40% win); F10 brick from soloBoss* early.
+    // Soft late ramp (solo ~40% win). Extra F10-only knobs sit below — do not
+    // retune these ramps to fix the Forest gate (they also move F15/F20).
     bossFloorHp: 0.0043,
     bossFloorAtk: 0.0038,
     bossAtkFullFloor: 36,
@@ -93,6 +94,37 @@ export const TDC = {
     soloBossHpEarly: 0.51,
     soloBossAtkFullFloor: 22,
     soloBossAtkEarly: 0.57,
+    // F10 gate only (Sylvanor / Cinderghast). Real F10 kits died in ~5 turns
+    // while still needing ~12+ turns of DPS; trim duration first, then chip.
+    f10SoloHpMult: 0.70,
+    f10SoloAtkMult: 0.88,
+    // F20 gate only (Lich / Gravesend). Same duration mismatch: ~12–14 TTK
+    // vs ~4 TTL. Do not retune ramps / F15 / later bosses to fix this gate.
+    f20SoloHpMult: 0.70,
+    f20SoloAtkMult: 1.00,
+    f20SoloChargeCap: 2,
+    // Extra trim on solo F20 specials with mult >= 2 (Dynasty / THE NEXT NAME).
+    f20SoloFinisherDmgMult: 0.78,
+    // Lich still outlasted on-curve kits after the shared duration cut
+    // (summons + Soul Tithe extend TTK). Gravesend does not get these.
+    f20LichSoloHpMult: 0.80,
+    f20LichSoloAtkMult: 0.88,
+    // F30 gate only (Vessalia / Hroth). Same duration mismatch: ~16–18 TTK
+    // vs ~4 TTL with ~40% boss HP left on death. 0.70 opened the fight
+    // (~27% observed); 0.65 lands a serious gate (~39% observed) without
+    // an ATK cut. ID-gated in buildEnemy so F30 trash/escorts never inherit it.
+    f30SoloHpMult: 0.65,
+    f30SoloAtkMult: 1.00,
+    // F40 gate only (Hydra / Bograth). Duration wall plus % regen and %
+    // head-heal, both of which scale from max HP — one HP cut lowers
+    // nominal and practical eHP together. Do not copy F30's 0.65 blindly:
+    // F40 stays harder via regen/heads, and the same multiplier bites more.
+    // Pass A1 0.75 n=38: eHP 603, observed 10.5%, deaths ~46%, heads 1.1.
+    // Pass A2 0.70 n=38: eHP 563, observed 13.2%, full 15.8%, deaths ~44%.
+    // Pass A3 0.65 n=38: eHP 523, observed 15.8%, full 18.4%, aware-full
+    // 26–29%, deaths ~37–40%, heads 1.3. Duration-only stop.
+    // ID-gated so F40 trash/elites/events/co-op never inherit it.
+    f40SoloHpMult: 0.65,
     // Solo early bosses can scale finishers with more of the bank they built.
     soloBossChargeCap: 5,
     soloBossChargeCapFullFloor: 15,
@@ -150,6 +182,12 @@ export const TDC = {
     atkBySize: { 1: 1, 2: 1.85, 3: 2.25, 4: 2.70 },
     hpPerExtra: 0.40,
     atkPerExtra: 0.40,
+    // Gallery NPC bases (80/16 elite) are late-duel authored and reused
+    // on every floor. Ease Forest-depth optional challenges without
+    // globally nerfing later appearances. Full bite by npcDuelFullFloor.
+    npcDuelHpEase: 0.58,
+    npcDuelAtkEase: 0.72,
+    npcDuelFullFloor: 16,
   },
 
   /* ---- stall enrage (bosses + event elites) ---- */
@@ -333,9 +371,61 @@ export function soloBossAtkEase(floor) {
 export function soloBossChargeForScale(floor, charge) {
   const cap = TDC.enemy.soloBossChargeCap;
   if (cap == null) return charge || 0;
+  if ((floor || 1) === 20 && TDC.enemy.f20SoloChargeCap != null) {
+    return Math.min(charge || 0, TDC.enemy.f20SoloChargeCap);
+  }
   const full = TDC.enemy.soloBossChargeCapFullFloor || 22;
   if ((floor || 1) >= full) return charge || 0;
   return Math.min(charge || 0, cap);
+}
+
+/** Solo F20 finisher pad — identity specials stay authored; only the live hit is eased. */
+export function soloBossSpecialDmgMult(floor, special) {
+  if ((floor || 1) !== 20) return 1;
+  if (!special || (special.mult || 1) < 2) return 1;
+  return TDC.enemy.f20SoloFinisherDmgMult ?? 1;
+}
+
+export const F30_SOLO_GATE_IDS = Object.freeze(['frost_queen', 'tr_mon_centaur']);
+export const F40_SOLO_GATE_IDS = Object.freeze(['hydra', 'tr_live_ogre']);
+
+export function isF30SoloGateBoss(id) {
+  return F30_SOLO_GATE_IDS.includes(id);
+}
+
+export function isF40SoloGateBoss(id) {
+  return F40_SOLO_GATE_IDS.includes(id);
+}
+
+/**
+ * Solo F30 gate knobs. Floor + party + boss id must all match.
+ * Ordinary F30 enemies, escorts, co-op, F20, and F40 return identity.
+ */
+export function f30SoloGateMults(floor, partySize, specOrId) {
+  const id = typeof specOrId === 'string' ? specOrId : specOrId?.id;
+  if ((floor || 1) !== 30 || (partySize || 1) > 1 || !isF30SoloGateBoss(id)) {
+    return { hp: 1, atk: 1 };
+  }
+  return {
+    hp: TDC.enemy.f30SoloHpMult ?? 1,
+    atk: TDC.enemy.f30SoloAtkMult ?? 1,
+  };
+}
+
+/**
+ * Solo F40 gate knobs. Floor + party + Hydra/Bograth id must all match.
+ * Ordinary F40 trash/elites/events, co-op, F30, and F50 return identity.
+ * ATK stays 1 until a later pass proves chip is the remaining wall.
+ */
+export function f40SoloGateMults(floor, partySize, specOrId) {
+  const id = typeof specOrId === 'string' ? specOrId : specOrId?.id;
+  if ((floor || 1) !== 40 || (partySize || 1) > 1 || !isF40SoloGateBoss(id)) {
+    return { hp: 1, atk: 1 };
+  }
+  return {
+    hp: TDC.enemy.f40SoloHpMult ?? 1,
+    atk: 1,
+  };
 }
 
 /** Scale factors applied to a hand-authored enemy spec at a given floor. */
@@ -371,6 +461,14 @@ export function enemyScale(floor, biomeStart, biomeId, {
     if (soloEase && (partySize || 1) <= 1) {
       hp *= soloBossHpEase(floor);
       atk *= soloBossAtkEase(floor);
+      if (floor === 10) {
+        hp *= TDC.enemy.f10SoloHpMult ?? 1;
+        atk *= TDC.enemy.f10SoloAtkMult ?? 1;
+      }
+      if (floor === 20) {
+        hp *= TDC.enemy.f20SoloHpMult ?? 1;
+        atk *= TDC.enemy.f20SoloAtkMult ?? 1;
+      }
     }
   } else {
     // Absolute floor pressure — biome depth alone under-tanks mid-climb commons
@@ -441,6 +539,15 @@ export function eventFightHpMult(partySize = 1) {
 /** Event/mimic/NPC duel ATK pad by party size. */
 export function eventFightAtkMult(partySize = 1) {
   return partySizePad(TDC.eventFight?.atkBySize, TDC.eventFight?.atkPerExtra, partySize);
+}
+
+/** Floor-aware ease for gallery optional duels. 1 = authored late-duel strength. */
+export function npcDuelEase(floor = 1) {
+  const full = TDC.eventFight?.npcDuelFullFloor ?? 16;
+  return {
+    hp: easeRamp(floor, full, TDC.eventFight?.npcDuelHpEase ?? 1),
+    atk: easeRamp(floor, full, TDC.eventFight?.npcDuelAtkEase ?? 1),
+  };
 }
 
 /** Per-target AOE damage share in co-op — n^(-aoeExp); tuned with clearRate CDF. */

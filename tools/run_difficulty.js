@@ -15,6 +15,7 @@ import { TDC, TDC_CLEAR_RATE_DISCLAIMER } from '../js/data/tdc.js';
 import { simulateClimbV2, makeV2Run } from './run_climb_v2.js';
 import { baselinePolicy } from './policies/baseline.js';
 import { reasonablePolicy } from './policies/reasonable.js';
+import { duelistPolicy } from './policies/duelist.js';
 
 globalThis.localStorage = globalThis.localStorage || {
   getItem: () => null, setItem: () => {}, removeItem: () => {},
@@ -34,6 +35,7 @@ export function climbSeed(baseSeed, seedIndex) {
 
 export function makePolicy(name = 'baseline') {
   if (name === 'reasonable') return reasonablePolicy();
+  if (name === 'duelist') return duelistPolicy();
   if (name === 'scripted') {
     throw new Error('scripted policy is for golden replay only, not win-rate estimates');
   }

@@ -18,10 +18,16 @@ function scoreEventChoice(choice) {
   const t = `${choice.label || ''} ${choice.hint || ''}`.toLowerCase();
   let s = 10;
   if (/leave|move on|walk away|nothing/.test(t)) s -= 9;
-  if (/gold|relic|heal|rest|sleep|train|loot|reward|potion/.test(t)) s += 6;
+  const hardFight = /\b(hard fight|brutal fight|deadly|secret fight|boss-tier)\b/.test(t);
+  // \brest\b so "restore resource" is not treated as an HP rest.
+  // Do not let "loot" in a hard-fight hint outrank a safe alternative.
+  if (!hardFight && /gold|relic|\bheal\b|\brest\b|sleep|train|loot|reward|potion/.test(t)) s += 6;
+  if (hardFight) s -= 7;
   if (/sneak|bribe|meditate|pray|offer/.test(t)) s += 2;
   return s;
 }
+
+export { scoreEventChoice };
 
 export function baselinePolicy(opts = {}) {
   return {

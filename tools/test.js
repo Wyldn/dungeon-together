@@ -9,7 +9,7 @@ import { RACES } from '../js/data/races.js';
 import { ORIGINS, defaultOriginId } from '../js/data/origins.js';
 import { SKILLS } from '../js/data/skills.js';
 import { EVENTS, CATEGORY_META } from '../js/data/events.js';
-import { ENEMIES, BOSSES, ALT_BOSSES, SECRET_BOSS, MODIFIERS, pickTrialModifier, biomeForFloor, findEnemySpec, WANDERING_ENEMIES } from '../js/data/enemies.js';
+import { ENEMIES, BOSSES, ALT_BOSSES, SECRET_BOSS, MODIFIERS, pickTrialModifier, biomeForFloor, findEnemySpec, WANDERING_ENEMIES, isGalleryNpc, NPC_ENEMIES } from '../js/data/enemies.js';
 import {
   applyGalleryKit, inferArchetype, specialHasRider, specialRiderKeys,
   SUPPORTED_SPECIAL_KEYS, biomePaletteKeys, kitFor,
@@ -23,7 +23,7 @@ import { CONFIG } from '../js/data/config.js';
 import { pathNodeView } from '../js/travelmap.js';
 import {
   TDC, expectedPower, enemyScale, partyHpMult, rewardMult,
-  softLevelDamage, softHpGain, cappedDmgTakenMult, resourceRegen,
+  softLevelDamage, softHpGain, cappedDmgTakenMult, resourceRegen, npcDuelEase,
 } from '../js/data/tdc.js';
 import {
   guardReviveReconciled, floorBenchmark, encounterBudget, planEncounter,
@@ -40,6 +40,7 @@ import { fileURLToPath } from 'url';
 import { rollInitiative, initiativeOrder, addCharge, tickEnemyCharge, canAfford, skillEffectivePower, pickEnemySpecial, enemyTelegraph, applyGuard, enemySpecialPayoff, enemyPayoffLine, statusPresent } from '../js/systems.js';
 import { makeRng } from '../js/rng.js';
 import { syntheticClimber, simulateFight } from './combat_sim.js';
+import { buildEventFightEnemies } from '../js/encounter.js';
 
 globalThis.localStorage = globalThis.localStorage || { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 
@@ -835,6 +836,22 @@ console.log('— tower difficulty curve —');
   t('resource regen uses TDC base', resourceRegen(0, 0) === TDC.resource.baseRegen);
   t('viking fury is not WIS-sitting regen', resourceRegen(24, 0, 'viking') < resourceRegen(24, 0));
   t('warlock pact regen is leaner than default', resourceRegen(16, 0, 'warlock') < resourceRegen(16, 0));
+  t('gallery NPC ids are tagged', isGalleryNpc('evil_wizard') && isGalleryNpc('martial_hero') && !isGalleryNpc('wolf') && !isGalleryNpc('blade_hero'));
+  t('npc duel ease is partial in Forest', npcDuelEase(6).hp < 0.85 && npcDuelEase(6).atk < 0.90);
+  t('npc duel ease is full by F16', npcDuelEase(16).hp === 1 && npcDuelEase(20).atk === 1);
+  t('npc duel ease ramps with floor', npcDuelEase(4).hp < npcDuelEase(10).hp && npcDuelEase(10).hp < npcDuelEase(16).hp);
+  {
+    const run6 = { floor: 6 };
+    const run20 = { floor: 20 };
+    const spec = NPC_ENEMIES.evil_wizard;
+    const early = buildEventFightEnemies(run6, [spec], { partySize: 1 })[0];
+    const late = buildEventFightEnemies(run20, [spec], { partySize: 1 })[0];
+    t('early gallery duel HP is below later-floor HP', early.maxHp < late.maxHp);
+    t('early gallery duel ATK is below later-floor ATK', early.atk < late.atk);
+    const wolf6 = enemyScale(6, 1, 'forest', { elite: false });
+    t('ordinary Forest HP scale is not the gallery ease table',
+      Math.abs(wolf6.hp - npcDuelEase(6).hp) > 0.05);
+  }
   const sc = enemyScale(5, 1, 'forest');
   // Solo early ATK ease can sit under 1.0; HP should still grow with depth.
   t('buildEnemy-equivalent HP scale above base', sc.hp > 1);
@@ -1341,16 +1358,52 @@ console.log('— world state & narrative gates —');
     const hydra = BOSSES[40];
     t('lich petition outranks bow and mock', presentBoss(lich, { flags: { kings_petition: true, kings_bowed: true, kings_mocked: true } }).variantId === 'petition');
     t('lich petition names the cousin', /cousin/i.test(presentBoss(lich, { flags: { kings_petition: true } }).intro));
+    t('lich petition-oath outranks plain petition', presentBoss(lich, {
+      flags: { kings_petition: true, revenant_oath: true },
+    }).variantId === 'petition_oath');
+    t('lich petition-archive outranks plain petition', presentBoss(lich, {
+      flags: { kings_petition: true }, world: { knowledge: ['tower_built'] },
+    }).variantId === 'petition_archive');
+    t('lich split names uniform vs office', presentBoss(lich, {
+      flags: { revenant_oath: true, kings_mocked: true },
+    }).variantId === 'split' && /uniform/i.test(presentBoss(lich, {
+      flags: { revenant_oath: true, kings_mocked: true },
+    }).intro));
+    t('lich loyal outranks a lone bow', presentBoss(lich, {
+      flags: { revenant_oath: true, kings_bowed: true },
+    }).variantId === 'loyal');
+    t('lich oath lands without a king flag', presentBoss(lich, { flags: { revenant_oath: true } }).variantId === 'oath');
+    t('lich archive lands on the confession', presentBoss(lich, { world: { knowledge: ['tower_built'] } }).variantId === 'archive');
     t('lich mock lands when only mocked', presentBoss(lich, { flags: { kings_mocked: true } }).variantId === 'mock');
     t('lich bow lands when only bowed', presentBoss(lich, { flags: { kings_bowed: true } }).variantId === 'bow');
     t('lich without king state stays generic', !presentBoss(lich, { flags: {} }).variantId && /Kneel/i.test(presentBoss(lich, { flags: {} }).intro));
+    t('impossible petition+mock still prefers petition', presentBoss(lich, {
+      flags: { kings_petition: true, kings_mocked: true },
+    }).variantId === 'petition');
     t('Vessalia rose outranks dinner', presentBoss(queen, { flags: { stole_rose: true, ate_v_dinner: true } }).variantId === 'rose');
     t('Vessalia dinner is the fallback kindness', presentBoss(queen, { flags: { ate_v_dinner: true } }).variantId === 'dinner');
+    t('Vessalia garden outranks dinner', presentBoss(queen, {
+      flags: { ate_v_dinner: true }, world: { knowledge: ['garden_heart'] },
+    }).variantId === 'studied');
     t('Vessalia without frost state stays generic', !presentBoss(queen, { flags: {} }).variantId);
+    t('Hroth rose still outranks the writ', presentBoss(ALT_BOSSES[30], {
+      flags: { stole_rose: true }, world: { knowledge: ['calvien_writ'] },
+    }).variantId === 'rose');
+    t('Hroth answers the writ', presentBoss(ALT_BOSSES[30], {
+      world: { knowledge: ['calvien_writ'] },
+    }).variantId === 'writ');
+    t('revenant oath-petition outranks oath and rumor', presentBoss(revenant, {
+      flags: { revenant_oath: true, kings_petition: true },
+      world: { knowledge: ['revenant_rumor'] },
+    }).variantId === 'oath_petition');
     t('revenant oath outranks the toll rumor', presentBoss(revenant, {
       flags: { revenant_oath: true },
       world: { knowledge: ['revenant_rumor'] },
     }).variantId === 'oath');
+    t('revenant petition outranks rumor and mock', presentBoss(revenant, {
+      flags: { kings_petition: true, kings_mocked: true },
+      world: { knowledge: ['revenant_rumor'] },
+    }).variantId === 'petition');
     t('revenant rumor still cashes without the oath', presentBoss(revenant, {
       world: { knowledge: ['revenant_rumor'] },
     }).variantId === 'rumor');
@@ -1365,7 +1418,16 @@ console.log('— world state & narrative gates —');
     t('hydra bell lands alone', presentBoss(hydra, {
       world: { events: { sunken_bell: { id: 'sunken_bell' } } },
     }).variantId === 'bell');
-    t('alt lich does not inherit cousin copy', !presentBoss(ALT_BOSSES[20], { flags: { kings_petition: true } }).variantId);
+    const gravesend = presentBoss(ALT_BOSSES[20], { flags: { kings_petition: true } });
+    t('Gravesend petition is accounting, not cousin copy', gravesend.variantId === 'petition' && !/cousin/i.test(gravesend.intro) && /stay|groove|line moves/i.test(gravesend.intro));
+    t('Gravesend split does not mimic the Lich office line', presentBoss(ALT_BOSSES[20], {
+      flags: { revenant_oath: true, kings_mocked: true },
+    }).variantId === 'split' && /ledger|groove|names/i.test(presentBoss(ALT_BOSSES[20], {
+      flags: { revenant_oath: true, kings_mocked: true },
+    }).intro) && !/uniform, but not the office/i.test(presentBoss(ALT_BOSSES[20], {
+      flags: { revenant_oath: true, kings_mocked: true },
+    }).intro));
+    t('Gravesend without Ruins state stays the block', !presentBoss(ALT_BOSSES[20], { flags: {} }).variantId && /hold still/i.test(presentBoss(ALT_BOSSES[20], { flags: {} }).intro));
   }
   t('narrative events are in the deck', EVENTS.some(e => e.id === 'pale_whisper') && EVENTS.some(e => e.id === 'bard_last_song'));
   const whisper = EVENTS.find(e => e.id === 'pale_whisper');
@@ -1917,6 +1979,10 @@ console.log('— narrative connectivity —');
   t('petition_witnessed is consumed', !!g.knowledgeReads.petition_witnessed);
   t('v_network is consumed', !!g.knowledgeReads.v_network);
   t('forest_minutes is consumed', !!g.knowledgeReads.forest_minutes);
+  t('calvien_writ is consumed', !!g.knowledgeReads.calvien_writ);
+  t('garden_heart is consumed', !!g.knowledgeReads.garden_heart);
+  t('left_rose is consumed', !!g.knowledgeReads.left_rose);
+  t('citadel_unbowed is consumed', !!g.knowledgeReads.citadel_unbowed);
   t('dry_hall_gossip is consumed', !!g.knowledgeReads.dry_hall_gossip);
   t('channeler is a catalog character', g.catalogChars.includes('channeler'));
   t('graph reports recurring NPCs', g.counts.npcsRecurring >= 8);
@@ -1977,6 +2043,217 @@ console.log('— narrative connectivity —');
   const sylvanor = BOSSES[10];
   t('Sylvanor smells hive-smoke', presentBoss(sylvanor, { flags: { angered_forest: true } }).variantId === 'smoke');
   t('Sylvanor notices a saved climber', presentBoss(sylvanor, { flags: { saved_climber: true } }).variantId === 'mira');
+  t('Sylvanor names the swallowed court', presentBoss(sylvanor, { world: { knowledge: ['rooted_court'] } }).variantId === 'court');
+  t('hive-smoke still outranks the swallowed court', presentBoss(sylvanor, {
+    flags: { angered_forest: true }, world: { knowledge: ['rooted_court'] },
+  }).variantId === 'smoke');
+
+  const cinder = ALT_BOSSES[10];
+  t('Cinderghast names the buried kiln', presentBoss(cinder, { world: { knowledge: ['rooted_court'] } }).variantId === 'court');
+  t('Cinderghast smoke still outranks the kiln', presentBoss(cinder, {
+    flags: { angered_forest: true }, world: { knowledge: ['rooted_court'] },
+  }).variantId === 'smoke');
+
+  const mileToll = EVENTS.find(e => e.id === 'bandit_toll');
+  t('toll offers a milestone reading', mileToll.choices.some(c => /read the milestone/i.test(c.label)));
+  t('reading the milestone writes rooted_court', mileToll.choices.some(c => /read the milestone/i.test(c.label) && c.outcome?.world?.knowledge === 'rooted_court'));
+  t('paying the toll still names Sylvanor', /Sylvanor/i.test(mileToll.choices.find(c => /pay the toll/i.test(c.label)).outcome.text));
+
+  const oak = EVENTS.find(e => e.id === 'ancient_tree');
+  t('speaking tree offers a kingdom question', oak.choices.some(c => /kingdom/i.test(c.label)));
+  t('kingdom question writes rooted_court', oak.choices.some(c => /kingdom/i.test(c.label) && c.outcome?.world?.knowledge === 'rooted_court'));
+  t('tower question still writes tree_lore', oak.choices.some(c => /what is the tower/i.test(c.label) && c.outcome?.flag === 'tree_lore'));
+
+  const road = EVENTS.find(e => e.id === 'roadside_climbers');
+  const roadTalk = presentEvent(road, { floor: 4, biomeId: 'forest' });
+  t('early forest travelers argue about the court', roadTalk.variantId === 'forest_talk' && /kingdom-stone|old tree at the gate/i.test(roadTalk.text));
+  const roadMark = presentEvent(road, { floor: 4, biomeId: 'forest', world: { knowledge: ['rooted_court'] } });
+  t('travelers recognize the scraped court-mark', roadMark.variantId === 'forest_mark' && /same court-mark/i.test(roadMark.text));
+  t('late forest travelers stay generic', presentEvent(road, { floor: 8, biomeId: 'forest' }).variantId == null);
+
+  const campEarly = EVENTS.find(e => e.id === 'campfire');
+  const f9court = presentEvent(campEarly, {
+    floor: 9, biomeId: 'forest', world: { knowledge: ['rooted_court'] }, bossPicks: { 10: 'elderwood' },
+  });
+  t('F9 campfire reflects the swallowed court', /downstairs|holds the door|woke the judge/i.test(f9court.text));
+  const f9kiln = presentEvent(campEarly, {
+    floor: 9, biomeId: 'forest', world: { knowledge: ['rooted_court'] },
+    bossPicks: { 10: 'gv_grotto_escape_2_boss_dragon' },
+  });
+  t('F9 campfire anticipates the kiln when the alt gate is set', /kiln that never cooled/i.test(f9kiln.text));
+  const f9gate = presentEvent(campEarly, { floor: 9, biomeId: 'forest', bossPicks: { 10: 'elderwood' } });
+  t('F9 campfire still anticipates the gate without the clue', /gate judges|whispering about it since the first root/i.test(f9gate.text));
+
+  const king = EVENTS.find(e => e.id === 'ghost_king');
+  t('ghost king recognizes the forest milestone', /milestone in the woods|grove kept the door/i.test(presentEvent(king, {
+    floor: 12, biomeId: 'ruins', world: { knowledge: ['rooted_court'] },
+  }).text));
+
+  t('rooted_court knowledge is consumed', !!g.knowledgeReads.rooted_court);
+
+  const library = EVENTS.find(e => e.id === 'buried_library');
+  t('deciphering the silver book writes tower_built', library.choices.some(c => /Decipher it/i.test(c.label) && c.outcome?.world?.knowledge === 'tower_built'));
+  t('crumbling books do not write the confession', library.choices.some(c => /crumbling books/i.test(c.label) && !c.outcome?.world?.knowledge));
+  const libAfterKing = presentEvent(library, { biomeId: 'ruins', seenEvents: ['ghost_king'] });
+  t('library after the king shows the contradiction', libAfterKing.variantId === 'after_king' && /disagrees|grew through/i.test(libAfterKing.text));
+  t('library without the king stays the lock', presentEvent(library, { biomeId: 'ruins' }).variantId == null);
+  t('ghost king archive overlay changes the lore choice', presentEvent(king, {
+    floor: 13, biomeId: 'ruins', world: { knowledge: ['tower_built'] },
+  }).variantId === 'archive' && presentEvent(king, {
+    floor: 13, biomeId: 'ruins', world: { knowledge: ['tower_built'] },
+  }).choices.some(c => /archive says you built it/i.test(c.label)));
+  t('ghost king oath overlay outranks the forest milestone', presentEvent(king, {
+    floor: 13, biomeId: 'ruins', flags: { revenant_oath: true }, world: { knowledge: ['rooted_court'] },
+  }).variantId === 'oath' && /uniform|He remained/i.test(presentEvent(king, {
+    floor: 13, biomeId: 'ruins', flags: { revenant_oath: true }, world: { knowledge: ['rooted_court'] },
+  }).text));
+  t('ghost king oath+archive outranks either thread', presentEvent(king, {
+    floor: 13, biomeId: 'ruins', flags: { revenant_oath: true }, world: { knowledge: ['tower_built'] },
+  }).variantId === 'oath_archive');
+  t('ghost king notices a closed watch', presentEvent(king, {
+    floor: 16, biomeId: 'ruins', flags: {}, climb: { bossesCleared: [{ floor: 15, id: 'crowned_revenant' }] },
+  }).variantId === 'fought');
+  t('ghost king notices a skipped watch', presentEvent(king, {
+    floor: 13, biomeId: 'ruins', seenEvents: ['crowned_shadow'],
+  }).variantId === 'seen');
+  t('fought outranks a skipped-watch leftover', presentEvent(king, {
+    floor: 16, biomeId: 'ruins', seenEvents: ['crowned_shadow'],
+    climb: { bossesCleared: [{ floor: 15, id: 'crowned_revenant' }] },
+  }).variantId === 'fought');
+
+  const shadow = EVENTS.find(e => e.id === 'crowned_shadow');
+  t('revenant recognizes the petition and changes the oath', presentEvent(shadow, {
+    floor: 13, biomeId: 'ruins', flags: { kings_petition: true },
+  }).variantId === 'petition' && presentEvent(shadow, {
+    floor: 13, biomeId: 'ruins', flags: { kings_petition: true },
+  }).choices.some(c => /knight who waited/i.test(c.label)));
+  t('revenant oath after a mock is not a joke', presentEvent(shadow, {
+    floor: 13, biomeId: 'ruins', flags: { kings_mocked: true },
+  }).variantId === 'mocked');
+  t('petition outranks mock on the kneeling silhouette', presentEvent(shadow, {
+    floor: 13, biomeId: 'ruins', flags: { kings_petition: true, kings_mocked: true },
+  }).variantId === 'petition');
+  t('crowned_shadow without king state stays generic', presentEvent(shadow, {
+    floor: 13, biomeId: 'ruins', flags: {},
+  }).variantId == null);
+
+  const statue = EVENTS.find(e => e.id === 'cursed_statue');
+  t('weeping statue is court-cut even cold', /court-cut|siege/i.test(statue.text));
+  t('statue after the king belongs to the fallen court', /fallen court|crown did not come home/i.test(presentEvent(statue, {
+    biomeId: 'ruins', seenEvents: ['ghost_king'],
+  }).text));
+
+  const campRuins = EVENTS.find(e => e.id === 'campfire');
+  const f19archive = presentEvent(campRuins, {
+    floor: 19, biomeId: 'ruins', seenEvents: ['ghost_king'],
+    world: { knowledge: ['tower_built'] }, bossPicks: { 20: 'lich' },
+  });
+  t('F19 campfire reflects the library contradiction', /King says the tower buried them|archive says they invited it/i.test(f19archive.text));
+  const f19split = presentEvent(campRuins, {
+    floor: 19, biomeId: 'ruins', flags: { revenant_oath: true, kings_mocked: true },
+    bossPicks: { 20: 'lich' },
+  });
+  t('F19 campfire reflects a split kneel', /bowed to the knight|laughed at the king/i.test(f19split.text));
+  const f19petition = presentEvent(campRuins, {
+    floor: 19, biomeId: 'ruins', flags: { kings_petition: true }, bossPicks: { 20: 'lich' },
+  });
+  t('F19 campfire carries the dead government', /petition from a government that died/i.test(f19petition.text));
+  const f19gate = presentEvent(campRuins, { floor: 19, biomeId: 'ruins', bossPicks: { 20: 'lich' } });
+  t('F19 campfire still aims at the dust-crown and ice', /dust-crown|After that, ice/i.test(f19gate.text));
+  const f19grave = presentEvent(campRuins, {
+    floor: 19, biomeId: 'ruins', flags: { kings_petition: true },
+    bossPicks: { 20: 'undead_executioner' },
+  });
+  t('F19 campfire names Gravesend as accounting', /Gravesend|Accounting does not kneel/i.test(f19grave.text));
+  t('F19 archive outranks a split kneel', presentEvent(campRuins, {
+    floor: 19, biomeId: 'ruins', seenEvents: ['ghost_king'],
+    flags: { revenant_oath: true, kings_mocked: true },
+    world: { knowledge: ['tower_built'] }, bossPicks: { 20: 'lich' },
+  }).variantId === 'f19_archive');
+  t('tower_built without the king does not fake the argument', presentEvent(campRuins, {
+    floor: 19, biomeId: 'ruins', world: { knowledge: ['tower_built'] }, bossPicks: { 20: 'lich' },
+  }).variantId === 'f19_gate');
+  t('tower_built knowledge is consumed', !!g.knowledgeReads.tower_built);
+
+  const memory = EVENTS.find(e => e.id === 'revenant_memory');
+  t('revenant memory tastes a carried petition', /petition in your pack/i.test(presentEvent(memory, {
+    floor: 17, biomeId: 'ruins', flags: { revenant_oath: true, kings_petition: true },
+  }).text));
+
+  const archive = EVENTS.find(e => e.id === 'frozen_library');
+  t('archive names Calvien before you pick a page', /Calvien/i.test(archive.text));
+  t('reading the disputed pages writes calvien_writ', archive.choices.some(c => /disputed pages/i.test(c.label) && c.outcome?.world?.knowledge === 'calvien_writ'));
+  t('archive still lets you leave the argument', archive.choices.some(c => /leave the argument/i.test(c.label)));
+  t('archive reacts when the heart was left', presentEvent(archive, {
+    biomeId: 'frost', world: { knowledge: ['left_rose'] },
+  }).variantId === 'garden_left');
+  t('taken rose still outranks a studied garden in the archive', presentEvent(archive, {
+    biomeId: 'frost', flags: { stole_rose: true }, world: { knowledge: ['garden_heart'] },
+  }).variantId === 'garden_empty');
+
+  const garden = EVENTS.find(e => e.id === 'ice_garden');
+  t('studying the rose writes garden_heart', garden.choices.some(c => /study the rose/i.test(c.label) && c.outcome?.world?.knowledge === 'garden_heart'));
+  t('leaving the rose writes left_rose', garden.choices.some(c => /leave it in peace/i.test(c.label) && c.outcome?.world?.knowledge === 'left_rose'));
+  t('picking the rose still writes stole_rose', garden.choices.some(c => /pick the rose/i.test(c.label) && c.outcome?.success?.flag === 'stole_rose'));
+  t('the garden notices a Ruins bow', /knelt for a different court/i.test(presentEvent(garden, {
+    biomeId: 'frost', flags: { kings_bowed: true },
+  }).text));
+
+  const thaw = EVENTS.find(e => e.id === 'frozen_climber');
+  t('thawed climber leaves finish-it open', /court almost finished something/i.test(thaw.choices.find(c => /melt them free/i.test(c.label)).outcome.success.text));
+  t('thawed climber ties finish-it to the court argument', /which is the finishing/i.test(presentEvent(thaw, {
+    biomeId: 'frost', world: { knowledge: ['calvien_writ'] },
+  }).choices.find(c => /melt them free/i.test(c.label)).outcome.success.text));
+
+  const cottage = EVENTS.find(e => e.id === 'warm_hearth');
+  t('V still warns not to bow', /DO NOT BOW/i.test(cottage.text));
+  t('cottage files a studied heart', /LOOKED|DID NOT TAKE/i.test(presentEvent(cottage, {
+    biomeId: 'frost', world: { knowledge: ['garden_heart'] },
+  }).text));
+  t('cottage files a Ruins bow against the ice', /BOWED TO DUST|DO NOT DO IT AGAIN/i.test(presentEvent(cottage, {
+    biomeId: 'frost', flags: { kings_bowed: true },
+  }).text));
+
+  const pass = EVENTS.find(e => e.id === 'avalanche');
+  t('the pass notices a declined claim', /declined a claim/i.test(presentEvent(pass, {
+    biomeId: 'frost', world: { knowledge: ['left_rose'] },
+  }).text));
+
+  const knighthood = EVENTS.find(e => e.id === 'kings_favor');
+  t('Frost court has an opinion about a Ruins bow', /different dead kingdom|frozen mid-betrayal/i.test(knighthood.text));
+  t('knighthood offers a refusal that is not a second gift', knighthood.choices.some(c => /will not bow twice/i.test(c.label) && !c.outcome?.classGear && c.outcome?.world?.knowledge === 'citadel_unbowed'));
+
+  const f29court = presentEvent(campEarly, {
+    floor: 29, biomeId: 'frost', world: { knowledge: ['calvien_writ'] }, bossPicks: { 30: 'frost_queen' },
+  });
+  t('F29 campfire reflects the open writ', /who moved first|do not have hers/i.test(f29court.text));
+  const f29hroth = presentEvent(campEarly, {
+    floor: 29, biomeId: 'frost', world: { knowledge: ['calvien_writ'] },
+    bossPicks: { 30: 'tr_mon_centaur' },
+  });
+  t('F29 campfire names Hroth as the fetcher when the alt gate is set', /outrider fetches|writ never finished/i.test(f29hroth.text));
+  const f29gate = presentEvent(campEarly, { floor: 29, biomeId: 'frost', bossPicks: { 30: 'frost_queen' } });
+  t('F29 campfire still asks the betrayal without the clue', /finishes a betrayal|refuses to/i.test(f29gate.text));
+
+  const queen = BOSSES[30];
+  t('Vessalia answers the writ', presentBoss(queen, { world: { knowledge: ['calvien_writ'] } }).variantId === 'writ');
+  t('Vessalia rose still outranks the writ', presentBoss(queen, {
+    flags: { stole_rose: true }, world: { knowledge: ['calvien_writ'] },
+  }).variantId === 'rose');
+  t('leaving the rose outranks dinner', presentBoss(queen, {
+    flags: { ate_v_dinner: true }, world: { knowledge: ['left_rose'] },
+  }).variantId === 'left');
+  t('refusing a second bow outranks a used kneel', presentBoss(queen, {
+    flags: { kings_bowed: true }, world: { knowledge: ['citadel_unbowed'] },
+  }).variantId === 'unbowed');
+
+  const hroth = ALT_BOSSES[30];
+  t('Hroth frames the betrayal as a ride', /SHE SITS|I FETCH|writ still has a rider/i.test(presentBoss(hroth, {
+    world: { knowledge: ['calvien_writ'] },
+  }).intro));
+  t('Hroth garden-leave is not Vessalia copy', /YOU LEFT IT|did not exhale/i.test(presentBoss(hroth, {
+    world: { knowledge: ['left_rose'] },
+  }).intro) && !/does not rise from her throne/i.test(presentBoss(hroth, { world: { knowledge: ['left_rose'] } }).intro));
 
   const duke = BOSSES[50];
   t('Duke notices his own mark', presentBoss(duke, { flags: { dukes_mark: true } }).variantId === 'mark');
@@ -2032,10 +2309,20 @@ console.log('— narrative connectivity —');
   const ruins = BIOMES.find(b => b.id === 'ruins');
   const ruinIntro = biomeIntroText(ruins, { flags: { angered_forest: true } });
   t('ruins intro carries hive-smoke', /hive-smoke|smoke/i.test(ruinIntro));
+  t('ruins intro prefers the swallowed court over hive-smoke', /court-mark in the moss|rest of that sentence/i.test(biomeIntroText(ruins, {
+    flags: { angered_forest: true }, world: { knowledge: ['rooted_court'] },
+  })));
   const frost = BIOMES.find(b => b.id === 'frost');
   t('frost intro carries a petition', /petition|complaint/i.test(biomeIntroText(frost, { flags: { kings_petition: true } })));
+  t('frost intro files a Ruins bow as a warning', /knelt for a ghost|froze people for less/i.test(biomeIntroText(frost, { flags: { kings_bowed: true } })));
   const swamp = BIOMES.find(b => b.id === 'swamp');
   t('swamp intro carries V\'s cold', /Frost still clings|cold that does not belong/i.test(biomeIntroText(swamp, { flags: { ate_v_dinner: true } })));
+  t('swamp intro carries meltwater toward the bells', /Meltwater|runoff|bell is already wet/i.test(biomeIntroText(swamp, {
+    world: { knowledge: ['left_rose'] },
+  })));
+  t('rose still outranks meltwater on the mire stair', /Frost still clings|cold that does not belong/i.test(biomeIntroText(swamp, {
+    flags: { stole_rose: true }, world: { knowledge: ['left_rose'] },
+  })));
 
   const corridor = EVENTS.find(e => e.id === 'trapped_corridor');
   t('undercity origin opens a canal-roof option', corridor.choices.some(c => c.req?.flag === 'undercity_ties'));
@@ -2370,18 +2657,48 @@ console.log('— narrative event pacing —');
 }
 
 {
+  const { runCombatPolicyTests } = await import('./test_combat_policy.js');
+  runCombatPolicyTests(t);
+}
+
+{
   const { runClimbV2Tests } = await import('./test_climb_v2.js');
   await runClimbV2Tests(t);
 }
 
 {
-  const { runPartyProxyTests } = await import('./test_party_proxy.js');
-  await runPartyProxyTests(t);
+  const { runDifficultyTests } = await import('./test_run_difficulty.js');
+  await runDifficultyTests(t);
 }
 
 {
-  const { runDifficultyTests } = await import('./test_run_difficulty.js');
-  await runDifficultyTests(t);
+  const { runF10ProbeTests } = await import('./test_f10_probe.js');
+  await runF10ProbeTests(t);
+}
+
+{
+  const { runF20ProbeTests } = await import('./test_f20_probe.js');
+  await runF20ProbeTests(t);
+}
+
+{
+  const { runF30ProbeTests } = await import('./test_f30_probe.js');
+  await runF30ProbeTests(t);
+}
+
+{
+  const { runF40ProbeTests } = await import('./test_f40_probe.js');
+  await runF40ProbeTests(t);
+}
+
+{
+  const { runF50ProbeTests } = await import('./test_f50_probe.js');
+  await runF50ProbeTests(t);
+}
+
+{
+  const { runF48ProbeTests } = await import('./test_f48_probe.js');
+  await runF48ProbeTests(t);
 }
 
 console.log('— clear-rate CDF 1p–4p (run_sim, real loot) —');

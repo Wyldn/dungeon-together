@@ -2,10 +2,10 @@
 // chosen approach advances again. Callers must not add extra advances.
 
 import { CONFIG } from './data/config.js';
-import { biomeForFloor, ENEMIES, NPC_ENEMIES, mimicSpec, findEnemySpec } from './data/enemies.js';
+import { biomeForFloor, ENEMIES, NPC_ENEMIES, mimicSpec, findEnemySpec, isGalleryNpc } from './data/enemies.js';
 import {
   partyBossAtkMult, partyBossHpMult, partyTrashAtkMult,
-  eventFightHpMult, eventFightAtkMult,
+  eventFightHpMult, eventFightAtkMult, npcDuelEase,
 } from './data/tdc.js';
 import { derived, gainXp } from './character.js';
 import { buildEnemy } from './combat_core.js';
@@ -25,10 +25,11 @@ export function buildEventFightEnemies(run, specs, { partySize = 1, hpMult = 1 }
   const trashAtk = special ? 1 : partyTrashAtkMult(partySize, run.floor);
   return specs.map((s, i) => {
     const isBoss = !!s.boss;
+    const duel = (!isBoss && isGalleryNpc(s.id)) ? npcDuelEase(run.floor) : { hp: 1, atk: 1 };
     return buildEnemy(s, run.floor, biome.floors[0], {
       boss: isBoss,
-      hpMult: (hpMult || 1) * evHp * (isBoss ? partyBossHpMult(partySize, run.floor) : 1),
-      atkMult: (special ? evAtk : trashAtk)
+      hpMult: (hpMult || 1) * evHp * duel.hp * (isBoss ? partyBossHpMult(partySize, run.floor) : 1),
+      atkMult: (special ? evAtk : trashAtk) * duel.atk
         * (isBoss && !s.eliteAtkRole ? partyBossAtkMult(partySize, run.floor) : 1),
       partySize,
       spawnIndex: i,

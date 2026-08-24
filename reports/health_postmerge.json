@@ -1,0 +1,7095 @@
+{
+  "meta": {
+    "name": "POSTMERGE",
+    "seed": 20260823,
+    "trials": 1000,
+    "policy": "autoplay-random-path",
+    "partySize": 1,
+    "classId": null,
+    "git": null,
+    "contentFingerprint": "floors:51|events:2662:f9148c44|narr:1045:1ba91759|sec:d2ba2a2e",
+    "generatedAt": "2026-08-24T09:51:43.792Z"
+  },
+  "honesty": {
+    "offer": [
+      "generateFloorCards",
+      "special floors (boss/trial/campfire/throne)"
+    ],
+    "taken": "autoplay-random-path + pickEventChoice + simulateFight",
+    "fields": {
+      "meta": "FAITHFUL / OFFER-SIDE",
+      "honesty": "FAITHFUL / OFFER-SIDE",
+      "summary.n": "FAITHFUL / OFFER-SIDE",
+      "summary.cleared": "MODELED / AUTOPLAY",
+      "summary.medianDeathFloor": "MODELED / AUTOPLAY",
+      "summary.level6": "MODELED / AUTOPLAY",
+      "summary.level13": "MODELED / AUTOPLAY",
+      "summary.narrativeOfferPer10": "FAITHFUL / OFFER-SIDE",
+      "summary.shopsOffered": "FAITHFUL / OFFER-SIDE",
+      "pacing": "MODELED / AUTOPLAY",
+      "cards.offerRates": "FAITHFUL / OFFER-SIDE",
+      "cards.offerTotal": "FAITHFUL / OFFER-SIDE",
+      "cards.takenRates": "MODELED / AUTOPLAY",
+      "cards.takenTotal": "MODELED / AUTOPLAY",
+      "narrative.offerPer10": "FAITHFUL / OFFER-SIDE",
+      "narrative.takenPer10": "MODELED / AUTOPLAY",
+      "narrative.longestNarrativeStreak": "MODELED / AUTOPLAY",
+      "narrative.longestTakenStreak": "MODELED / AUTOPLAY",
+      "narrative.callbackOfferDelay": "FAITHFUL / OFFER-SIDE",
+      "narrative.callbackTakenDelay": "MODELED / AUTOPLAY",
+      "narrative.prereqDelay": "MODELED / AUTOPLAY",
+      "narrative.threadsOpened": "MODELED / AUTOPLAY",
+      "narrative.threadsResolved": "MODELED / AUTOPLAY",
+      "narrative.unresolvedActiveMean": "MODELED / AUTOPLAY",
+      "secrets.*.eligibleFloor": "FAITHFUL / OFFER-SIDE",
+      "secrets.*.offeredFloor": "FAITHFUL / OFFER-SIDE",
+      "secrets.*.offerDelay": "FAITHFUL / OFFER-SIDE",
+      "secrets.*.outcomes": "MODELED / AUTOPLAY",
+      "secrets.*.via": "MODELED / AUTOPLAY",
+      "combat.encounterSize": "FAITHFUL / OFFER-SIDE",
+      "combat.eliteOfferRate": "FAITHFUL / OFFER-SIDE",
+      "combat.archetypes": "FAITHFUL / OFFER-SIDE",
+      "combat.hpLoss": "MODELED / AUTOPLAY",
+      "combat.potionsUsed": "MODELED / AUTOPLAY",
+      "economy.shopsOffered": "FAITHFUL / OFFER-SIDE",
+      "economy.goldHeld": "MODELED / AUTOPLAY",
+      "economy.lateUnspent": "MODELED / AUTOPLAY",
+      "economy.shopsVisited": "MODELED / AUTOPLAY",
+      "economy.itemAcquire": "MODELED / AUTOPLAY",
+      "economy.itemReplace": "MODELED / AUTOPLAY",
+      "economy.goldByBiome": "MODELED / AUTOPLAY",
+      "lateGame.reached40": "MODELED / AUTOPLAY",
+      "lateGame.floorsWithPayoffOfferShare": "MODELED / AUTOPLAY",
+      "lateGame.takenPayoffMean": "MODELED / AUTOPLAY",
+      "lateGame.knowledgeAt40Mean": "MODELED / AUTOPLAY",
+      "lateGame.liveThreadsAt40Mean": "MODELED / AUTOPLAY",
+      "lateGame.liveSecretsAt40Mean": "MODELED / AUTOPLAY",
+      "byGrowthRank": "MODELED / AUTOPLAY",
+      "byClass": "MODELED / AUTOPLAY",
+      "byOrigin": "MODELED / AUTOPLAY"
+    },
+    "tdcClearRate": "TDC.clearRate is a survival-CDF target for tools/run_sim.js, which uses its own 48% combat-vs-event loop. It is not live DungeonTogether encounter frequency and not observed player behavior.",
+    "notes": [
+      "FAITHFUL / OFFER-SIDE fields come from live generation and eligibility rules.",
+      "MODELED / AUTOPLAY fields depend on synthetic path pick, event choice, combat autoplay, or shop spend.",
+      "Taken mix is not human path preference.",
+      "Combat always fights (no sneak/bribe).",
+      "Headless fights omit full status-DoT loops.",
+      "Shop spend is greedy auto-buy.",
+      "L6/L13 subclass pick is random among options.",
+      "TDC.clearRate is a survival-CDF target for tools/run_sim.js, which uses its own 48% combat-vs-event loop. It is not live DungeonTogether encounter frequency and not observed player behavior."
+    ]
+  },
+  "summary": {
+    "n": 1000,
+    "cleared": 0.003,
+    "medianDeathFloor": 8,
+    "level6": {
+      "n": 296,
+      "missing": 704,
+      "p25": 10,
+      "p50": 10,
+      "p75": 10,
+      "mean": 10.27027027027027
+    },
+    "level13": {
+      "n": 19,
+      "missing": 981,
+      "p25": 28.5,
+      "p50": 30,
+      "p75": 30.5,
+      "mean": 29.94736842105263
+    },
+    "narrativeOfferPer10": {
+      "n": 1000,
+      "missing": 0,
+      "p25": 7,
+      "p50": 8.235294117647058,
+      "p75": 10,
+      "mean": 8.642268741617402
+    },
+    "shopsOffered": {
+      "n": 1000,
+      "missing": 0,
+      "p25": 0,
+      "p50": 1,
+      "p75": 2,
+      "mean": 1.195
+    }
+  },
+  "pacing": {
+    "level6": {
+      "n": 296,
+      "missing": 704,
+      "p25": 10,
+      "p50": 10,
+      "p75": 10,
+      "mean": 10.27027027027027
+    },
+    "level10": {
+      "n": 63,
+      "missing": 937,
+      "p25": 17,
+      "p50": 20,
+      "p75": 20,
+      "mean": 19.523809523809526
+    },
+    "level13": {
+      "n": 19,
+      "missing": 981,
+      "p25": 28.5,
+      "p50": 30,
+      "p75": 30.5,
+      "mean": 29.94736842105263
+    },
+    "level16": {
+      "n": 3,
+      "missing": 997,
+      "p25": 45,
+      "p50": 46,
+      "p75": 46,
+      "mean": 45.333333333333336
+    },
+    "level20": {
+      "n": 0,
+      "missing": 1000,
+      "p25": null,
+      "p50": null,
+      "p75": null,
+      "mean": null
+    }
+  },
+  "cards": {
+    "offerRates": {
+      "combat": 0.18324240062353858,
+      "narrative": 0.33643803585346843,
+      "shop": 0.0465705378020265,
+      "rest": 0.06348402182385035,
+      "trial": 0.03702260327357755,
+      "boss": 0.03437256430241621,
+      "other": 0.29886983632112235
+    },
+    "takenRates": {
+      "combat": 0.15776277724204435,
+      "narrative": 0.27589199614271936,
+      "shop": 0.03944069431051109,
+      "rest": 0.10723240115718419,
+      "trial": 0.09161041465766634,
+      "boss": 0.08505303760848602,
+      "other": 0.24300867888138863
+    },
+    "offerTotal": 25660,
+    "takenTotal": 10370
+  },
+  "narrative": {
+    "offerPer10": {
+      "n": 1000,
+      "missing": 0,
+      "p25": 7,
+      "p50": 8.235294117647058,
+      "p75": 10,
+      "mean": 8.642268741617402
+    },
+    "takenPer10": {
+      "n": 1000,
+      "missing": 0,
+      "p25": 2,
+      "p50": 2.696969696969697,
+      "p75": 3.75,
+      "mean": 2.903717305850617
+    },
+    "longestNarrativeStreak": {
+      "n": 1000,
+      "missing": 0,
+      "p25": 1,
+      "p50": 1,
+      "p75": 2,
+      "mean": 1.479
+    },
+    "longestTakenStreak": {
+      "n": 1000,
+      "missing": 0,
+      "p25": 1,
+      "p50": 2,
+      "p75": 2,
+      "mean": 1.993
+    },
+    "callbackOfferDelay": {
+      "n": 58,
+      "missing": 0,
+      "p25": 4,
+      "p50": 5,
+      "p75": 9.25,
+      "mean": 6.551724137931035
+    },
+    "callbackTakenDelay": {
+      "n": 3,
+      "missing": 0,
+      "p25": 9,
+      "p50": 11,
+      "p75": 13.5,
+      "mean": 11.333333333333334
+    },
+    "prereqDelay": {
+      "n": 76,
+      "missing": 0,
+      "p25": 9,
+      "p50": 12,
+      "p75": 17.25,
+      "mean": 13.697368421052632
+    },
+    "threadsOpened": {
+      "n": 1000,
+      "missing": 0,
+      "p25": 0,
+      "p50": 1,
+      "p75": 1,
+      "mean": 0.643
+    },
+    "threadsResolved": {
+      "n": 1000,
+      "missing": 0,
+      "p25": 0,
+      "p50": 0,
+      "p75": 0,
+      "mean": 0.009
+    },
+    "unresolvedActiveMean": 0.5176470588235295
+  },
+  "secrets": {
+    "stormcaller": {
+      "n": 154,
+      "eligibleFloor": {
+        "n": 12,
+        "missing": 142,
+        "p25": 6.75,
+        "p50": 12,
+        "p75": 13,
+        "mean": 13
+      },
+      "offeredFloor": {
+        "n": 7,
+        "missing": 147,
+        "p25": 12,
+        "p50": 16,
+        "p75": 16,
+        "mean": 13.714285714285714
+      },
+      "offerDelay": {
+        "n": 7,
+        "missing": 147,
+        "p25": 1.5,
+        "p50": 3,
+        "p75": 7,
+        "mean": 4.714285714285714
+      },
+      "outcomes": {
+        "never-seen": 147,
+        "deferred": 4,
+        "offered-not-taken": 2,
+        "accepted": 1
+      },
+      "via": {
+        "route": 2,
+        "fallback": 10,
+        "unknown": 0
+      }
+    },
+    "heretic_saint": {
+      "n": 168,
+      "eligibleFloor": {
+        "n": 13,
+        "missing": 155,
+        "p25": 15,
+        "p50": 16,
+        "p75": 20,
+        "mean": 16.76923076923077
+      },
+      "offeredFloor": {
+        "n": 3,
+        "missing": 165,
+        "p25": 19,
+        "p50": 21,
+        "p75": 28.5,
+        "mean": 24.666666666666668
+      },
+      "offerDelay": {
+        "n": 3,
+        "missing": 165,
+        "p25": 1.5,
+        "p50": 2,
+        "p75": 9,
+        "mean": 6.333333333333333
+      },
+      "outcomes": {
+        "never-seen": 165,
+        "offered-not-taken": 2,
+        "accepted": 1
+      },
+      "via": {
+        "route": 5,
+        "fallback": 8,
+        "unknown": 0
+      }
+    },
+    "ashen_fist": {
+      "n": 178,
+      "eligibleFloor": {
+        "n": 1,
+        "missing": 177,
+        "p25": 12,
+        "p50": 12,
+        "p75": 12,
+        "mean": 12
+      },
+      "offeredFloor": {
+        "n": 0,
+        "missing": 178,
+        "p25": null,
+        "p50": null,
+        "p75": null,
+        "mean": null
+      },
+      "offerDelay": {
+        "n": 0,
+        "missing": 178,
+        "p25": null,
+        "p50": null,
+        "p75": null,
+        "mean": null
+      },
+      "outcomes": {
+        "never-seen": 178
+      },
+      "via": {
+        "route": 1,
+        "fallback": 0,
+        "unknown": 0
+      }
+    },
+    "void_scholar": {
+      "n": 166,
+      "eligibleFloor": {
+        "n": 4,
+        "missing": 162,
+        "p25": 7.75,
+        "p50": 10.5,
+        "p75": 13.75,
+        "mean": 11
+      },
+      "offeredFloor": {
+        "n": 4,
+        "missing": 162,
+        "p25": 6.75,
+        "p50": 7,
+        "p75": 9.75,
+        "mean": 9.5
+      },
+      "offerDelay": {
+        "n": 1,
+        "missing": 165,
+        "p25": 2,
+        "p50": 2,
+        "p75": 2,
+        "mean": 2
+      },
+      "outcomes": {
+        "never-seen": 162,
+        "accepted": 1,
+        "deferred": 2,
+        "offered-not-taken": 1
+      },
+      "via": {
+        "route": 1,
+        "fallback": 3,
+        "unknown": 0
+      }
+    },
+    "phantom": {
+      "n": 147,
+      "eligibleFloor": {
+        "n": 26,
+        "missing": 121,
+        "p25": 2,
+        "p50": 3,
+        "p75": 3.75,
+        "mean": 3.269230769230769
+      },
+      "offeredFloor": {
+        "n": 8,
+        "missing": 139,
+        "p25": 7,
+        "p50": 8,
+        "p75": 8,
+        "mean": 7.875
+      },
+      "offerDelay": {
+        "n": 8,
+        "missing": 139,
+        "p25": 3,
+        "p50": 4.5,
+        "p75": 5.5,
+        "mean": 4.75
+      },
+      "outcomes": {
+        "never-seen": 139,
+        "offered-not-taken": 5,
+        "deferred": 2,
+        "accepted": 1
+      },
+      "via": {
+        "route": 26,
+        "fallback": 0,
+        "unknown": 0
+      }
+    },
+    "doomguard": {
+      "n": 187,
+      "eligibleFloor": {
+        "n": 5,
+        "missing": 182,
+        "p25": 25,
+        "p50": 30,
+        "p75": 33,
+        "mean": 29.6
+      },
+      "offeredFloor": {
+        "n": 5,
+        "missing": 182,
+        "p25": 34,
+        "p50": 36,
+        "p75": 36,
+        "mean": 34.8
+      },
+      "offerDelay": {
+        "n": 5,
+        "missing": 182,
+        "p25": 3,
+        "p50": 4,
+        "p75": 6,
+        "mean": 5.2
+      },
+      "outcomes": {
+        "never-seen": 182,
+        "deferred": 1,
+        "offered-not-taken": 4
+      },
+      "via": {
+        "route": 0,
+        "fallback": 5,
+        "unknown": 0
+      }
+    }
+  },
+  "combat": {
+    "encounterSize": {
+      "n": 5270,
+      "missing": 0,
+      "p25": 2,
+      "p50": 2,
+      "p75": 2,
+      "mean": 2.0261859582542696
+    },
+    "eliteOfferRate": 0.098292220113852,
+    "hpLoss": {
+      "n": 4212,
+      "missing": 0,
+      "p25": 0.2,
+      "p50": 0.383974358974359,
+      "p75": 0.9117647058823529,
+      "mean": 0.48096818728577156
+    },
+    "potionsUsed": {
+      "n": 1000,
+      "missing": 0,
+      "p25": 1,
+      "p50": 2,
+      "p75": 3,
+      "mean": 2.427
+    },
+    "archetypes": {
+      "attrition": 1887,
+      "assassin": 3297,
+      "disruptor": 3759,
+      "controller": 901,
+      "bruiser": 307,
+      "tank": 279,
+      "construct": 248
+    }
+  },
+  "economy": {
+    "goldHeld": {
+      "n": 10370,
+      "missing": 0,
+      "p25": 50,
+      "p50": 110,
+      "p75": 196.75,
+      "mean": 166.73548698167792
+    },
+    "lateUnspent": {
+      "n": 16,
+      "missing": 0,
+      "p25": 1104,
+      "p50": 1309,
+      "p75": 1809,
+      "mean": 1387.8125
+    },
+    "shopsOffered": {
+      "n": 1000,
+      "missing": 0,
+      "p25": 0,
+      "p50": 1,
+      "p75": 2,
+      "mean": 1.195
+    },
+    "shopsVisited": {
+      "n": 1000,
+      "missing": 0,
+      "p25": 0,
+      "p50": 0,
+      "p75": 1,
+      "mean": 0.409
+    },
+    "itemAcquire": {
+      "n": 1000,
+      "missing": 0,
+      "p25": 2,
+      "p50": 4,
+      "p75": 7,
+      "mean": 5.206
+    },
+    "itemReplace": {
+      "n": 1000,
+      "missing": 0,
+      "p25": 0,
+      "p50": 1,
+      "p75": 2,
+      "mean": 1.372
+    },
+    "goldByBiome": {
+      "forest": {
+        "earned": {
+          "n": 1000,
+          "missing": 0,
+          "p25": 78,
+          "p50": 132.5,
+          "p75": 195.25,
+          "mean": 142.968
+        },
+        "spent": {
+          "n": 1000,
+          "missing": 0,
+          "p25": 0,
+          "p50": 20,
+          "p75": 50,
+          "mean": 31.63
+        }
+      },
+      "ruins": {
+        "earned": {
+          "n": 352,
+          "missing": 0,
+          "p25": 0,
+          "p50": 75,
+          "p75": 197.75,
+          "mean": 126.00852272727273
+        },
+        "spent": {
+          "n": 352,
+          "missing": 0,
+          "p25": 0,
+          "p50": 0,
+          "p75": 50,
+          "mean": 39.12784090909091
+        }
+      },
+      "frost": {
+        "earned": {
+          "n": 55,
+          "missing": 0,
+          "p25": 81.5,
+          "p50": 212,
+          "p75": 390.5,
+          "mean": 258.6727272727273
+        },
+        "spent": {
+          "n": 55,
+          "missing": 0,
+          "p25": 0,
+          "p50": 25,
+          "p75": 200,
+          "mean": 129.85454545454544
+        }
+      },
+      "swamp": {
+        "earned": {
+          "n": 17,
+          "missing": 0,
+          "p25": 399,
+          "p50": 538,
+          "p75": 715,
+          "mean": 584.5882352941177
+        },
+        "spent": {
+          "n": 17,
+          "missing": 0,
+          "p25": 0,
+          "p50": 100,
+          "p75": 340,
+          "mean": 249.35294117647058
+        }
+      },
+      "hell": {
+        "earned": {
+          "n": 5,
+          "missing": 0,
+          "p25": 950,
+          "p50": 1050,
+          "p75": 1207,
+          "mean": 1076
+        },
+        "spent": {
+          "n": 5,
+          "missing": 0,
+          "p25": 0,
+          "p50": 628,
+          "p75": 875,
+          "mean": 510.6
+        }
+      },
+      "throne": {
+        "earned": {
+          "n": 3,
+          "missing": 0,
+          "p25": 0,
+          "p50": 0,
+          "p75": 0,
+          "mean": 0
+        },
+        "spent": {
+          "n": 3,
+          "missing": 0,
+          "p25": 0,
+          "p50": 0,
+          "p75": 0,
+          "mean": 0
+        }
+      }
+    }
+  },
+  "lateGame": {
+    "reached40": 16,
+    "floorsWithPayoffOfferShare": 0.25,
+    "takenPayoffMean": 0.5,
+    "knowledgeAt40Mean": 1.4375,
+    "liveThreadsAt40Mean": 1.8125,
+    "liveSecretsAt40Mean": 0.4375
+  },
+  "byGrowthRank": {
+    "C": {
+      "n": 343,
+      "pacing": {
+        "level6": {
+          "n": 86,
+          "missing": 257,
+          "p25": 10,
+          "p50": 10,
+          "p75": 11,
+          "mean": 10.383720930232558
+        },
+        "level10": {
+          "n": 15,
+          "missing": 328,
+          "p25": 20,
+          "p50": 20,
+          "p75": 22,
+          "mean": 20.8
+        },
+        "level13": {
+          "n": 5,
+          "missing": 338,
+          "p25": 30,
+          "p50": 30,
+          "p75": 31,
+          "mean": 30.8
+        },
+        "level16": {
+          "n": 1,
+          "missing": 342,
+          "p25": 46,
+          "p50": 46,
+          "p75": 46,
+          "mean": 46
+        },
+        "level20": {
+          "n": 0,
+          "missing": 343,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.18181818181818182,
+          "narrative": 0.33904027007475285,
+          "shop": 0.046780805401495054,
+          "rest": 0.0588377140101278,
+          "trial": 0.03858210754762479,
+          "boss": 0.031227393296358815,
+          "other": 0.3037135278514589
+        },
+        "takenRates": {
+          "combat": 0.16139716952725083,
+          "narrative": 0.26979825353809095,
+          "shop": 0.04095152062631737,
+          "rest": 0.10057211683227943,
+          "trial": 0.09635651912074676,
+          "boss": 0.07798855766335441,
+          "other": 0.2529358626919603
+        },
+        "offerTotal": 8294,
+        "takenTotal": 3321
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 343,
+          "missing": 0,
+          "p25": 7,
+          "p50": 8.333333333333334,
+          "p75": 10,
+          "mean": 8.693094253666873
+        },
+        "takenPer10": {
+          "n": 343,
+          "missing": 0,
+          "p25": 2,
+          "p50": 2.6666666666666665,
+          "p75": 3.75,
+          "mean": 2.7853820655346255
+        }
+      },
+      "secrets": {
+        "stormcaller": {
+          "n": 64,
+          "eligibleFloor": {
+            "n": 7,
+            "missing": 57,
+            "p25": 12,
+            "p50": 13,
+            "p75": 14.5,
+            "mean": 16.857142857142858
+          },
+          "offeredFloor": {
+            "n": 4,
+            "missing": 60,
+            "p25": 11.5,
+            "p50": 14.5,
+            "p75": 16.25,
+            "mean": 13.25
+          },
+          "offerDelay": {
+            "n": 4,
+            "missing": 60,
+            "p25": 1,
+            "p50": 1.5,
+            "p75": 2.25,
+            "mean": 1.75
+          },
+          "outcomes": {
+            "never-seen": 60,
+            "deferred": 2,
+            "accepted": 1,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 1,
+            "fallback": 6,
+            "unknown": 0
+          }
+        },
+        "heretic_saint": {
+          "n": 48,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 46,
+            "p25": 15,
+            "p50": 15,
+            "p75": 15,
+            "mean": 15
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 47,
+            "p25": 17,
+            "p50": 17,
+            "p75": 17,
+            "mean": 17
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 47,
+            "p25": 2,
+            "p50": 2,
+            "p75": 2,
+            "mean": 2
+          },
+          "outcomes": {
+            "never-seen": 47,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 1,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 59,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 59,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 59,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 59,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 59
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 56,
+          "eligibleFloor": {
+            "n": 13,
+            "missing": 43,
+            "p25": 2,
+            "p50": 3,
+            "p75": 4,
+            "mean": 3.230769230769231
+          },
+          "offeredFloor": {
+            "n": 4,
+            "missing": 52,
+            "p25": 6.75,
+            "p50": 7.5,
+            "p75": 8,
+            "mean": 7.25
+          },
+          "offerDelay": {
+            "n": 4,
+            "missing": 52,
+            "p25": 2.75,
+            "p50": 3,
+            "p75": 3.5,
+            "mean": 3.25
+          },
+          "outcomes": {
+            "never-seen": 52,
+            "offered-not-taken": 3,
+            "deferred": 1
+          },
+          "via": {
+            "route": 13,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 54,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 52,
+            "p25": 7.25,
+            "p50": 7.5,
+            "p75": 7.75,
+            "mean": 7.5
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 53,
+            "p25": 6,
+            "p50": 6,
+            "p75": 6,
+            "mean": 6
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 54,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 53,
+            "deferred": 1
+          },
+          "via": {
+            "route": 1,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "doomguard": {
+          "n": 62,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 61,
+            "p25": 25,
+            "p50": 25,
+            "p75": 25,
+            "mean": 25
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 61,
+            "p25": 36,
+            "p50": 36,
+            "p75": 36,
+            "mean": 36
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 61,
+            "p25": 11,
+            "p50": 11,
+            "p75": 11,
+            "mean": 11
+          },
+          "outcomes": {
+            "never-seen": 61,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "B": {
+      "n": 205,
+      "pacing": {
+        "level6": {
+          "n": 78,
+          "missing": 127,
+          "p25": 10,
+          "p50": 10,
+          "p75": 10,
+          "mean": 10.051282051282051
+        },
+        "level10": {
+          "n": 18,
+          "missing": 187,
+          "p25": 19,
+          "p50": 20,
+          "p75": 20,
+          "mean": 19.61111111111111
+        },
+        "level13": {
+          "n": 5,
+          "missing": 200,
+          "p25": 30,
+          "p50": 30,
+          "p75": 30,
+          "mean": 29.4
+        },
+        "level16": {
+          "n": 2,
+          "missing": 203,
+          "p25": 44.5,
+          "p50": 45,
+          "p75": 45.5,
+          "mean": 45
+        },
+        "level20": {
+          "n": 0,
+          "missing": 205,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.18765697883028346,
+          "narrative": 0.3290276282741299,
+          "shop": 0.04646573376390384,
+          "rest": 0.06853247219232149,
+          "trial": 0.03552206673842842,
+          "boss": 0.03713670613562971,
+          "other": 0.2956584140653032
+        },
+        "takenRates": {
+          "combat": 0.16211453744493393,
+          "narrative": 0.27444933920704845,
+          "shop": 0.03832599118942731,
+          "rest": 0.113215859030837,
+          "trial": 0.08722466960352424,
+          "boss": 0.09118942731277534,
+          "other": 0.23348017621145375
+        },
+        "offerTotal": 5574,
+        "takenTotal": 2270
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 205,
+          "missing": 0,
+          "p25": 6.666666666666666,
+          "p50": 8,
+          "p75": 10,
+          "mean": 8.513710198863965
+        },
+        "takenPer10": {
+          "n": 205,
+          "missing": 0,
+          "p25": 2,
+          "p50": 2.727272727272727,
+          "p75": 3.75,
+          "mean": 3.0017905216941476
+        }
+      },
+      "secrets": {
+        "void_scholar": {
+          "n": 38,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 37,
+            "p25": 16,
+            "p50": 16,
+            "p75": 16,
+            "mean": 16
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 37,
+            "p25": 18,
+            "p50": 18,
+            "p75": 18,
+            "mean": 18
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 37,
+            "p25": 2,
+            "p50": 2,
+            "p75": 2,
+            "mean": 2
+          },
+          "outcomes": {
+            "never-seen": 37,
+            "deferred": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 30,
+          "eligibleFloor": {
+            "n": 6,
+            "missing": 24,
+            "p25": 2.25,
+            "p50": 3,
+            "p75": 3,
+            "mean": 3.3333333333333335
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 30,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 30,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 30
+          },
+          "via": {
+            "route": 6,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "doomguard": {
+          "n": 38,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 37,
+            "p25": 30,
+            "p50": 30,
+            "p75": 30,
+            "mean": 30
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 37,
+            "p25": 34,
+            "p50": 34,
+            "p75": 34,
+            "mean": 34
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 37,
+            "p25": 4,
+            "p50": 4,
+            "p75": 4,
+            "mean": 4
+          },
+          "outcomes": {
+            "never-seen": 37,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 39,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 39,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 39,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 39,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 39
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "heretic_saint": {
+          "n": 31,
+          "eligibleFloor": {
+            "n": 4,
+            "missing": 27,
+            "p25": 18,
+            "p50": 20,
+            "p75": 22,
+            "mean": 20
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 30,
+            "p25": 36,
+            "p50": 36,
+            "p75": 36,
+            "mean": 36
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 30,
+            "p25": 16,
+            "p50": 16,
+            "p75": 16,
+            "mean": 16
+          },
+          "outcomes": {
+            "never-seen": 30,
+            "accepted": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 4,
+            "unknown": 0
+          }
+        },
+        "stormcaller": {
+          "n": 29,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 28,
+            "p25": 8,
+            "p50": 8,
+            "p75": 8,
+            "mean": 8
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 29,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 29,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 29
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "E": {
+      "n": 82,
+      "pacing": {
+        "level6": {
+          "n": 7,
+          "missing": 75,
+          "p25": 11,
+          "p50": 12,
+          "p75": 12.5,
+          "mean": 11.714285714285714
+        },
+        "level10": {
+          "n": 0,
+          "missing": 82,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level13": {
+          "n": 0,
+          "missing": 82,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level16": {
+          "n": 0,
+          "missing": 82,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 82,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.17229916897506925,
+          "narrative": 0.35290858725761776,
+          "shop": 0.042105263157894736,
+          "rest": 0.05152354570637119,
+          "trial": 0.039889196675900275,
+          "boss": 0.0260387811634349,
+          "other": 0.3152354570637119
+        },
+        "takenRates": {
+          "combat": 0.1568627450980392,
+          "narrative": 0.30532212885154064,
+          "shop": 0.03361344537815126,
+          "rest": 0.08403361344537816,
+          "trial": 0.10084033613445378,
+          "boss": 0.06582633053221289,
+          "other": 0.2535014005602241
+        },
+        "offerTotal": 1805,
+        "takenTotal": 714
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 82,
+          "missing": 0,
+          "p25": 7.5,
+          "p50": 8.666666666666668,
+          "p75": 10.75,
+          "mean": 9.220190378726965
+        },
+        "takenPer10": {
+          "n": 82,
+          "missing": 0,
+          "p25": 2,
+          "p50": 3,
+          "p75": 4,
+          "mean": 3.1672011931158273
+        }
+      },
+      "secrets": {
+        "doomguard": {
+          "n": 13,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 13,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 13,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 13,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 13
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 22,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 21,
+            "p25": 12,
+            "p50": 12,
+            "p75": 12,
+            "mean": 12
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 22,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 22,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 22
+          },
+          "via": {
+            "route": 1,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 11,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 9,
+            "p25": 5,
+            "p50": 6,
+            "p75": 7,
+            "mean": 6
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 10,
+            "p25": 8,
+            "p50": 8,
+            "p75": 8,
+            "mean": 8
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 10,
+            "p25": 4,
+            "p50": 4,
+            "p75": 4,
+            "mean": 4
+          },
+          "outcomes": {
+            "never-seen": 10,
+            "accepted": 1
+          },
+          "via": {
+            "route": 2,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 9,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 9,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 8,
+            "p25": 7,
+            "p50": 7,
+            "p75": 7,
+            "mean": 7
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 9,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 8,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "heretic_saint": {
+          "n": 18,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 18
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "stormcaller": {
+          "n": 9,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 9,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 9,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 9,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 9
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "S": {
+      "n": 45,
+      "pacing": {
+        "level6": {
+          "n": 17,
+          "missing": 28,
+          "p25": 10,
+          "p50": 10,
+          "p75": 10,
+          "mean": 9.529411764705882
+        },
+        "level10": {
+          "n": 6,
+          "missing": 39,
+          "p25": 15.25,
+          "p50": 16.5,
+          "p75": 17.75,
+          "mean": 16.666666666666668
+        },
+        "level13": {
+          "n": 3,
+          "missing": 42,
+          "p25": 26.5,
+          "p50": 27,
+          "p75": 28,
+          "mean": 27.333333333333332
+        },
+        "level16": {
+          "n": 0,
+          "missing": 45,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 45,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.20467365028203063,
+          "narrative": 0.32232070910556004,
+          "shop": 0.041901692183722805,
+          "rest": 0.06365834004834811,
+          "trial": 0.037066881547139406,
+          "boss": 0.03384367445608381,
+          "other": 0.29653505237711525
+        },
+        "takenRates": {
+          "combat": 0.15768463073852296,
+          "narrative": 0.2894211576846307,
+          "shop": 0.03792415169660679,
+          "rest": 0.10578842315369262,
+          "trial": 0.09181636726546906,
+          "boss": 0.08383233532934131,
+          "other": 0.23353293413173654
+        },
+        "offerTotal": 1241,
+        "takenTotal": 501
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 45,
+          "missing": 0,
+          "p25": 6.666666666666666,
+          "p50": 8,
+          "p75": 9.333333333333334,
+          "mean": 8.336851891753854
+        },
+        "takenPer10": {
+          "n": 45,
+          "missing": 0,
+          "p25": 2,
+          "p50": 3,
+          "p75": 3.8461538461538463,
+          "mean": 3.1721251273538846
+        }
+      },
+      "secrets": {
+        "stormcaller": {
+          "n": 9,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 8,
+            "p25": 6,
+            "p50": 6,
+            "p75": 6,
+            "mean": 6
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 8,
+            "p25": 16,
+            "p50": 16,
+            "p75": 16,
+            "mean": 16
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 8,
+            "p25": 10,
+            "p50": 10,
+            "p75": 10,
+            "mean": 10
+          },
+          "outcomes": {
+            "never-seen": 8,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 1,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "doomguard": {
+          "n": 3,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 3,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 3,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 3,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 3
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 10,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 9,
+            "p25": 2,
+            "p50": 2,
+            "p75": 2,
+            "mean": 2
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 9,
+            "p25": 7,
+            "p50": 7,
+            "p75": 7,
+            "mean": 7
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 9,
+            "p25": 5,
+            "p50": 5,
+            "p75": 5,
+            "mean": 5
+          },
+          "outcomes": {
+            "never-seen": 9,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 1,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "heretic_saint": {
+          "n": 8,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 8,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 8,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 8,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 8
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 4,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 4,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 4,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 4,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 4
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 11,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 11,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 11,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 11,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 11
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "D": {
+      "n": 166,
+      "pacing": {
+        "level6": {
+          "n": 41,
+          "missing": 125,
+          "p25": 10,
+          "p50": 11,
+          "p75": 12,
+          "mean": 11.073170731707316
+        },
+        "level10": {
+          "n": 7,
+          "missing": 159,
+          "p25": 20.5,
+          "p50": 22,
+          "p75": 25,
+          "mean": 22.428571428571427
+        },
+        "level13": {
+          "n": 3,
+          "missing": 163,
+          "p25": 32,
+          "p50": 35,
+          "p75": 36,
+          "mean": 33.666666666666664
+        },
+        "level16": {
+          "n": 0,
+          "missing": 166,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 166,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.18186157517899762,
+          "narrative": 0.3315035799522673,
+          "shop": 0.052028639618138424,
+          "rest": 0.06324582338902147,
+          "trial": 0.03699284009546539,
+          "boss": 0.034606205250596656,
+          "other": 0.2997613365155131
+        },
+        "takenRates": {
+          "combat": 0.15398230088495576,
+          "narrative": 0.26902654867256637,
+          "shop": 0.04542772861356932,
+          "rest": 0.1079646017699115,
+          "trial": 0.09144542772861357,
+          "boss": 0.0855457227138643,
+          "other": 0.24660766961651917
+        },
+        "offerTotal": 4190,
+        "takenTotal": 1695
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 166,
+          "missing": 0,
+          "p25": 6.666666666666666,
+          "p50": 8.333333333333334,
+          "p75": 10,
+          "mean": 8.646082707944862
+        },
+        "takenPer10": {
+          "n": 166,
+          "missing": 0,
+          "p25": 2,
+          "p50": 2.6666666666666665,
+          "p75": 4,
+          "mean": 2.925089287828481
+        }
+      },
+      "secrets": {
+        "doomguard": {
+          "n": 38,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 36,
+            "p25": 33.5,
+            "p50": 34,
+            "p75": 34.5,
+            "mean": 34
+          },
+          "offeredFloor": {
+            "n": 2,
+            "missing": 36,
+            "p25": 36.25,
+            "p50": 36.5,
+            "p75": 36.75,
+            "mean": 36.5
+          },
+          "offerDelay": {
+            "n": 2,
+            "missing": 36,
+            "p25": 2.25,
+            "p50": 2.5,
+            "p75": 2.75,
+            "mean": 2.5
+          },
+          "outcomes": {
+            "never-seen": 36,
+            "offered-not-taken": 2
+          },
+          "via": {
+            "route": 0,
+            "fallback": 2,
+            "unknown": 0
+          }
+        },
+        "heretic_saint": {
+          "n": 29,
+          "eligibleFloor": {
+            "n": 3,
+            "missing": 26,
+            "p25": 16.5,
+            "p50": 18,
+            "p75": 19,
+            "mean": 17.666666666666668
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 28,
+            "p25": 21,
+            "p50": 21,
+            "p75": 21,
+            "mean": 21
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 28,
+            "p25": 1,
+            "p50": 1,
+            "p75": 1,
+            "mean": 1
+          },
+          "outcomes": {
+            "never-seen": 28,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 1,
+            "fallback": 2,
+            "unknown": 0
+          }
+        },
+        "stormcaller": {
+          "n": 21,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 20,
+            "p25": 13,
+            "p50": 13,
+            "p75": 13,
+            "mean": 13
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 21,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 21,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 21
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 33,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 32,
+            "p25": 13,
+            "p50": 13,
+            "p75": 13,
+            "mean": 13
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 33,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 33,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 33
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 21,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 20,
+            "p25": 3,
+            "p50": 3,
+            "p75": 3,
+            "mean": 3
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 21,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 21,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 21
+          },
+          "via": {
+            "route": 1,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 24,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 24,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 24,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 24,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 24
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "WRLD": {
+      "n": 11,
+      "pacing": {
+        "level6": {
+          "n": 5,
+          "missing": 6,
+          "p25": 9,
+          "p50": 10,
+          "p75": 10,
+          "mean": 9.2
+        },
+        "level10": {
+          "n": 2,
+          "missing": 9,
+          "p25": 15.5,
+          "p50": 16,
+          "p75": 16.5,
+          "mean": 16
+        },
+        "level13": {
+          "n": 0,
+          "missing": 11,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level16": {
+          "n": 0,
+          "missing": 11,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 11,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.18098159509202455,
+          "narrative": 0.3128834355828221,
+          "shop": 0.05521472392638037,
+          "rest": 0.0736196319018405,
+          "trial": 0.027607361963190184,
+          "boss": 0.03680981595092025,
+          "other": 0.3128834355828221
+        },
+        "takenRates": {
+          "combat": 0.15625,
+          "narrative": 0.296875,
+          "shop": 0.0234375,
+          "rest": 0.109375,
+          "trial": 0.0703125,
+          "boss": 0.09375,
+          "other": 0.25
+        },
+        "offerTotal": 326,
+        "takenTotal": 128
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 11,
+          "missing": 0,
+          "p25": 5.555555555555555,
+          "p50": 7.5,
+          "p75": 9.875,
+          "mean": 7.902958152958153
+        },
+        "takenPer10": {
+          "n": 11,
+          "missing": 0,
+          "p25": 2.25,
+          "p50": 2.8571428571428568,
+          "p75": 3.5416666666666665,
+          "mean": 2.729437229437229
+        }
+      },
+      "secrets": {
+        "ashen_fist": {
+          "n": 2,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 2,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 2,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 2,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 2
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 3,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 3,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 3,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 3,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 3
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "heretic_saint": {
+          "n": 2,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 0,
+            "p25": 10,
+            "p50": 12,
+            "p75": 14,
+            "mean": 12
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 2,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 2,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 2
+          },
+          "via": {
+            "route": 1,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 2,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 2,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 2,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 2,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 2
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "doomguard": {
+          "n": 2,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 2,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 2,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 2,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 2
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "F": {
+      "n": 26,
+      "pacing": {
+        "level6": {
+          "n": 2,
+          "missing": 24,
+          "p25": 14.25,
+          "p50": 14.5,
+          "p75": 14.75,
+          "mean": 14.5
+        },
+        "level10": {
+          "n": 0,
+          "missing": 26,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level13": {
+          "n": 0,
+          "missing": 26,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level16": {
+          "n": 0,
+          "missing": 26,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 26,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.1658119658119658,
+          "narrative": 0.3111111111111111,
+          "shop": 0.044444444444444446,
+          "rest": 0.08034188034188035,
+          "trial": 0.042735042735042736,
+          "boss": 0.03247863247863248,
+          "other": 0.3230769230769231
+        },
+        "takenRates": {
+          "combat": 0.12605042016806722,
+          "narrative": 0.2647058823529412,
+          "shop": 0.04201680672268908,
+          "rest": 0.1092436974789916,
+          "trial": 0.10504201680672269,
+          "boss": 0.07983193277310924,
+          "other": 0.27310924369747897
+        },
+        "offerTotal": 585,
+        "takenTotal": 238
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 26,
+          "missing": 0,
+          "p25": 6,
+          "p50": 8,
+          "p75": 9.791666666666666,
+          "mean": 7.438785573400959
+        },
+        "takenPer10": {
+          "n": 26,
+          "missing": 0,
+          "p25": 1.6666666666666665,
+          "p50": 2.4871794871794872,
+          "p75": 3.458333333333333,
+          "mean": 2.4962665539588613
+        }
+      },
+      "secrets": {
+        "doomguard": {
+          "n": 7,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 7,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 7,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 7,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 7
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "stormcaller": {
+          "n": 5,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 4,
+            "p25": 4,
+            "p50": 4,
+            "p75": 4,
+            "mean": 4
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 4,
+            "p25": 16,
+            "p50": 16,
+            "p75": 16,
+            "mean": 16
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 4,
+            "p25": 12,
+            "p50": 12,
+            "p75": 12,
+            "mean": 12
+          },
+          "outcomes": {
+            "deferred": 1,
+            "never-seen": 4
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 4,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 4,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 4,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 4,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 4
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "heretic_saint": {
+          "n": 6,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 6,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 6,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 6,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 6
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 3,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 3,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 3,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 3,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 3
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 1,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 1,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 1,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 1,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "EX": {
+      "n": 21,
+      "pacing": {
+        "level6": {
+          "n": 13,
+          "missing": 8,
+          "p25": 9,
+          "p50": 10,
+          "p75": 10,
+          "mean": 9.615384615384615
+        },
+        "level10": {
+          "n": 4,
+          "missing": 17,
+          "p25": 15,
+          "p50": 15,
+          "p75": 15.5,
+          "mean": 15.5
+        },
+        "level13": {
+          "n": 0,
+          "missing": 21,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level16": {
+          "n": 0,
+          "missing": 21,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 21,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.17664670658682635,
+          "narrative": 0.36826347305389223,
+          "shop": 0.05688622754491018,
+          "rest": 0.0748502994011976,
+          "trial": 0.03143712574850299,
+          "boss": 0.04491017964071856,
+          "other": 0.2470059880239521
+        },
+        "takenRates": {
+          "combat": 0.15053763440860216,
+          "narrative": 0.31899641577060933,
+          "shop": 0.043010752688172046,
+          "rest": 0.12903225806451613,
+          "trial": 0.07526881720430108,
+          "boss": 0.10752688172043011,
+          "other": 0.17562724014336917
+        },
+        "offerTotal": 668,
+        "takenTotal": 279
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 21,
+          "missing": 0,
+          "p25": 7.5,
+          "p50": 9,
+          "p75": 10.909090909090908,
+          "mean": 8.872969350910529
+        },
+        "takenPer10": {
+          "n": 21,
+          "missing": 0,
+          "p25": 2.6666666666666665,
+          "p50": 3.333333333333333,
+          "p75": 3.6363636363636367,
+          "mean": 3.337788845141786
+        }
+      },
+      "secrets": {
+        "heretic_saint": {
+          "n": 6,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 4,
+            "p25": 15.25,
+            "p50": 15.5,
+            "p75": 15.75,
+            "mean": 15.5
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 6,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 6,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 6
+          },
+          "via": {
+            "route": 2,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "doomguard": {
+          "n": 4,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 4,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 4,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 4,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 4
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "stormcaller": {
+          "n": 3,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 2,
+            "p25": 7,
+            "p50": 7,
+            "p75": 7,
+            "mean": 7
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 2,
+            "p25": 11,
+            "p50": 11,
+            "p75": 11,
+            "mean": 11
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 2,
+            "p25": 4,
+            "p50": 4,
+            "p75": 4,
+            "mean": 4
+          },
+          "outcomes": {
+            "deferred": 1,
+            "never-seen": 2
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 1,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 0,
+            "p25": 2,
+            "p50": 2,
+            "p75": 2,
+            "mean": 2
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 0,
+            "p25": 11,
+            "p50": 11,
+            "p75": 11,
+            "mean": 11
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 0,
+            "p25": 9,
+            "p50": 9,
+            "p75": 9,
+            "mean": 9
+          },
+          "outcomes": {
+            "deferred": 1
+          },
+          "via": {
+            "route": 1,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 4,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 4,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 4,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 4,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 4
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 3,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 3,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 3,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 3,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 3
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "A": {
+      "n": 101,
+      "pacing": {
+        "level6": {
+          "n": 47,
+          "missing": 54,
+          "p25": 10,
+          "p50": 10,
+          "p75": 10,
+          "mean": 9.893617021276595
+        },
+        "level10": {
+          "n": 11,
+          "missing": 90,
+          "p25": 20,
+          "p50": 20,
+          "p75": 20,
+          "mean": 19.454545454545453
+        },
+        "level13": {
+          "n": 3,
+          "missing": 98,
+          "p25": 27.5,
+          "p50": 28,
+          "p75": 29,
+          "mean": 28.333333333333332
+        },
+        "level16": {
+          "n": 0,
+          "missing": 101,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 101,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.18374202216996977,
+          "narrative": 0.3463218004702721,
+          "shop": 0.040309035942223716,
+          "rest": 0.06751763520322472,
+          "trial": 0.034934497816593885,
+          "boss": 0.04064494457507558,
+          "other": 0.28653006382264024
+        },
+        "takenRates": {
+          "combat": 0.15359477124183007,
+          "narrative": 0.27205882352941174,
+          "shop": 0.03349673202614379,
+          "rest": 0.12173202614379085,
+          "trial": 0.08496732026143791,
+          "boss": 0.0988562091503268,
+          "other": 0.23529411764705882
+        },
+        "offerTotal": 2977,
+        "takenTotal": 1224
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 101,
+          "missing": 0,
+          "p25": 7,
+          "p50": 8.571428571428571,
+          "p75": 10,
+          "mean": 8.73356262553548
+        },
+        "takenPer10": {
+          "n": 101,
+          "missing": 0,
+          "p25": 2,
+          "p50": 2.6666666666666665,
+          "p75": 3.333333333333333,
+          "mean": 2.771514301032419
+        }
+      },
+      "secrets": {
+        "heretic_saint": {
+          "n": 20,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 20,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 20,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 20,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 20
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 14,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 12,
+            "p25": 1.5,
+            "p50": 2,
+            "p75": 2.5,
+            "mean": 2
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 13,
+            "p25": 8,
+            "p50": 8,
+            "p75": 8,
+            "mean": 8
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 13,
+            "p25": 7,
+            "p50": 7,
+            "p75": 7,
+            "mean": 7
+          },
+          "outcomes": {
+            "never-seen": 13,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 2,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "doomguard": {
+          "n": 20,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 19,
+            "p25": 25,
+            "p50": 25,
+            "p75": 25,
+            "mean": 25
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 19,
+            "p25": 31,
+            "p50": 31,
+            "p75": 31,
+            "mean": 31
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 19,
+            "p25": 6,
+            "p50": 6,
+            "p75": 6,
+            "mean": 6
+          },
+          "outcomes": {
+            "deferred": 1,
+            "never-seen": 19
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 14,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 14
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 19,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 19,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 18,
+            "p25": 7,
+            "p50": 7,
+            "p75": 7,
+            "mean": 7
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 19,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 18,
+            "accepted": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "stormcaller": {
+          "n": 14,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 14
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    }
+  },
+  "byClass": {
+    "archer": {
+      "n": 154,
+      "pacing": {
+        "level6": {
+          "n": 64,
+          "missing": 90,
+          "p25": 10,
+          "p50": 10,
+          "p75": 11,
+          "mean": 10.375
+        },
+        "level10": {
+          "n": 23,
+          "missing": 131,
+          "p25": 18.5,
+          "p50": 20,
+          "p75": 20,
+          "mean": 19.347826086956523
+        },
+        "level13": {
+          "n": 9,
+          "missing": 145,
+          "p25": 30,
+          "p50": 30,
+          "p75": 31,
+          "mean": 30.22222222222222
+        },
+        "level16": {
+          "n": 3,
+          "missing": 151,
+          "p25": 45,
+          "p50": 46,
+          "p75": 46,
+          "mean": 45.333333333333336
+        },
+        "level20": {
+          "n": 0,
+          "missing": 154,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.1875,
+          "narrative": 0.33695652173913043,
+          "shop": 0.050585284280936456,
+          "rest": 0.06500836120401338,
+          "trial": 0.03365384615384615,
+          "boss": 0.040342809364548496,
+          "other": 0.28595317725752506
+        },
+        "takenRates": {
+          "combat": 0.16206543967280163,
+          "narrative": 0.27505112474437626,
+          "shop": 0.04550102249488753,
+          "rest": 0.11451942740286299,
+          "trial": 0.08231083844580778,
+          "boss": 0.09867075664621677,
+          "other": 0.22188139059304704
+        },
+        "offerTotal": 4784,
+        "takenTotal": 1956
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 154,
+          "missing": 0,
+          "p25": 7.259358288770054,
+          "p50": 8.1875,
+          "p75": 10,
+          "mean": 8.58592275052774
+        },
+        "takenPer10": {
+          "n": 154,
+          "missing": 0,
+          "p25": 2,
+          "p50": 2.6666666666666665,
+          "p75": 3.6022727272727275,
+          "mean": 2.9146975488034053
+        }
+      },
+      "secrets": {
+        "stormcaller": {
+          "n": 154,
+          "eligibleFloor": {
+            "n": 12,
+            "missing": 142,
+            "p25": 6.75,
+            "p50": 12,
+            "p75": 13,
+            "mean": 13
+          },
+          "offeredFloor": {
+            "n": 7,
+            "missing": 147,
+            "p25": 12,
+            "p50": 16,
+            "p75": 16,
+            "mean": 13.714285714285714
+          },
+          "offerDelay": {
+            "n": 7,
+            "missing": 147,
+            "p25": 1.5,
+            "p50": 3,
+            "p75": 7,
+            "mean": 4.714285714285714
+          },
+          "outcomes": {
+            "never-seen": 147,
+            "deferred": 4,
+            "offered-not-taken": 2,
+            "accepted": 1
+          },
+          "via": {
+            "route": 2,
+            "fallback": 10,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "priest": {
+      "n": 168,
+      "pacing": {
+        "level6": {
+          "n": 53,
+          "missing": 115,
+          "p25": 10,
+          "p50": 10,
+          "p75": 10,
+          "mean": 10.056603773584905
+        },
+        "level10": {
+          "n": 15,
+          "missing": 153,
+          "p25": 17,
+          "p50": 20,
+          "p75": 20,
+          "mean": 19.4
+        },
+        "level13": {
+          "n": 3,
+          "missing": 165,
+          "p25": 26.5,
+          "p50": 28,
+          "p75": 29,
+          "mean": 27.666666666666668
+        },
+        "level16": {
+          "n": 0,
+          "missing": 168,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 168,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.18195991091314032,
+          "narrative": 0.34253897550111356,
+          "shop": 0.044543429844097995,
+          "rest": 0.06169265033407573,
+          "trial": 0.03697104677060133,
+          "boss": 0.03652561247216036,
+          "other": 0.29576837416481067
+        },
+        "takenRates": {
+          "combat": 0.1490988530857455,
+          "narrative": 0.2785363189513927,
+          "shop": 0.04478427089022392,
+          "rest": 0.1103222282905516,
+          "trial": 0.0906608410704533,
+          "boss": 0.08956854178044785,
+          "other": 0.23702894593118515
+        },
+        "offerTotal": 4490,
+        "takenTotal": 1831
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 168,
+          "missing": 0,
+          "p25": 7,
+          "p50": 8,
+          "p75": 10,
+          "mean": 8.536750622858815
+        },
+        "takenPer10": {
+          "n": 168,
+          "missing": 0,
+          "p25": 2,
+          "p50": 2.7333333333333334,
+          "p75": 3.534090909090909,
+          "mean": 2.7877361106615295
+        }
+      },
+      "secrets": {
+        "heretic_saint": {
+          "n": 168,
+          "eligibleFloor": {
+            "n": 13,
+            "missing": 155,
+            "p25": 15,
+            "p50": 16,
+            "p75": 20,
+            "mean": 16.76923076923077
+          },
+          "offeredFloor": {
+            "n": 3,
+            "missing": 165,
+            "p25": 19,
+            "p50": 21,
+            "p75": 28.5,
+            "mean": 24.666666666666668
+          },
+          "offerDelay": {
+            "n": 3,
+            "missing": 165,
+            "p25": 1.5,
+            "p50": 2,
+            "p75": 9,
+            "mean": 6.333333333333333
+          },
+          "outcomes": {
+            "never-seen": 165,
+            "offered-not-taken": 2,
+            "accepted": 1
+          },
+          "via": {
+            "route": 5,
+            "fallback": 8,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "monk": {
+      "n": 178,
+      "pacing": {
+        "level6": {
+          "n": 52,
+          "missing": 126,
+          "p25": 10,
+          "p50": 10,
+          "p75": 11,
+          "mean": 10.365384615384615
+        },
+        "level10": {
+          "n": 5,
+          "missing": 173,
+          "p25": 19,
+          "p50": 20,
+          "p75": 20,
+          "mean": 19.4
+        },
+        "level13": {
+          "n": 0,
+          "missing": 178,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level16": {
+          "n": 0,
+          "missing": 178,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 178,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.1854954523695548,
+          "narrative": 0.34011488750598373,
+          "shop": 0.04595500239348971,
+          "rest": 0.06414552417424606,
+          "trial": 0.037577788415509815,
+          "boss": 0.03326950694112015,
+          "other": 0.29344183820009573
+        },
+        "takenRates": {
+          "combat": 0.16092636579572447,
+          "narrative": 0.2672209026128266,
+          "shop": 0.045724465558194774,
+          "rest": 0.10451306413301663,
+          "trial": 0.09323040380047506,
+          "boss": 0.08254156769596199,
+          "other": 0.24584323040380046
+        },
+        "offerTotal": 4178,
+        "takenTotal": 1684
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 178,
+          "missing": 0,
+          "p25": 7,
+          "p50": 8.516483516483516,
+          "p75": 10,
+          "mean": 8.830739515735852
+        },
+        "takenPer10": {
+          "n": 178,
+          "missing": 0,
+          "p25": 1.8323863636363638,
+          "p50": 2.6666666666666665,
+          "p75": 4,
+          "mean": 2.942097848821101
+        }
+      },
+      "secrets": {
+        "ashen_fist": {
+          "n": 178,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 177,
+            "p25": 12,
+            "p50": 12,
+            "p75": 12,
+            "mean": 12
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 178,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 178,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 178
+          },
+          "via": {
+            "route": 1,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "mage": {
+      "n": 166,
+      "pacing": {
+        "level6": {
+          "n": 22,
+          "missing": 144,
+          "p25": 10,
+          "p50": 10,
+          "p75": 10,
+          "mean": 10
+        },
+        "level10": {
+          "n": 1,
+          "missing": 165,
+          "p25": 20,
+          "p50": 20,
+          "p75": 20,
+          "mean": 20
+        },
+        "level13": {
+          "n": 0,
+          "missing": 166,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level16": {
+          "n": 0,
+          "missing": 166,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 166,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.17201976528721433,
+          "narrative": 0.3350833848054355,
+          "shop": 0.044780728844966027,
+          "rest": 0.06053119209388511,
+          "trial": 0.042001235330450894,
+          "boss": 0.022544780728844967,
+          "other": 0.3230389129092032
+        },
+        "takenRates": {
+          "combat": 0.1610369206598586,
+          "narrative": 0.28515318146111546,
+          "shop": 0.03456402199528672,
+          "rest": 0.08955223880597014,
+          "trial": 0.10683424980361352,
+          "boss": 0.05734485467399843,
+          "other": 0.2655145326001571
+        },
+        "offerTotal": 3238,
+        "takenTotal": 1273
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 166,
+          "missing": 0,
+          "p25": 6.666666666666666,
+          "p50": 8.535714285714285,
+          "p75": 10,
+          "mean": 8.98103762034485
+        },
+        "takenPer10": {
+          "n": 166,
+          "missing": 0,
+          "p25": 2,
+          "p50": 2.8571428571428568,
+          "p75": 4,
+          "mean": 3.142224743128358
+        }
+      },
+      "secrets": {
+        "void_scholar": {
+          "n": 166,
+          "eligibleFloor": {
+            "n": 4,
+            "missing": 162,
+            "p25": 7.75,
+            "p50": 10.5,
+            "p75": 13.75,
+            "mean": 11
+          },
+          "offeredFloor": {
+            "n": 4,
+            "missing": 162,
+            "p25": 6.75,
+            "p50": 7,
+            "p75": 9.75,
+            "mean": 9.5
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 165,
+            "p25": 2,
+            "p50": 2,
+            "p75": 2,
+            "mean": 2
+          },
+          "outcomes": {
+            "never-seen": 162,
+            "accepted": 1,
+            "deferred": 2,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 1,
+            "fallback": 3,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "rogue": {
+      "n": 147,
+      "pacing": {
+        "level6": {
+          "n": 34,
+          "missing": 113,
+          "p25": 10,
+          "p50": 10,
+          "p75": 10,
+          "mean": 9.852941176470589
+        },
+        "level10": {
+          "n": 4,
+          "missing": 143,
+          "p25": 16.5,
+          "p50": 17,
+          "p75": 17.75,
+          "mean": 17.25
+        },
+        "level13": {
+          "n": 2,
+          "missing": 145,
+          "p25": 26.75,
+          "p50": 27.5,
+          "p75": 28.25,
+          "mean": 27.5
+        },
+        "level16": {
+          "n": 0,
+          "missing": 147,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 147,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.18311874105865522,
+          "narrative": 0.32160228898426324,
+          "shop": 0.04778254649499285,
+          "rest": 0.060371959942775395,
+          "trial": 0.03891273247496423,
+          "boss": 0.030042918454935622,
+          "other": 0.31816881258941343
+        },
+        "takenRates": {
+          "combat": 0.1507537688442211,
+          "narrative": 0.2756640344580043,
+          "shop": 0.03804737975592247,
+          "rest": 0.09691313711414214,
+          "trial": 0.09763101220387653,
+          "boss": 0.07537688442211055,
+          "other": 0.2656137832017229
+        },
+        "offerTotal": 3495,
+        "takenTotal": 1393
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 147,
+          "missing": 0,
+          "p25": 6.666666666666666,
+          "p50": 8,
+          "p75": 10,
+          "mean": 8.384102103489859
+        },
+        "takenPer10": {
+          "n": 147,
+          "missing": 0,
+          "p25": 1.6666666666666665,
+          "p50": 2.727272727272727,
+          "p75": 4,
+          "mean": 2.798256165603104
+        }
+      },
+      "secrets": {
+        "phantom": {
+          "n": 147,
+          "eligibleFloor": {
+            "n": 26,
+            "missing": 121,
+            "p25": 2,
+            "p50": 3,
+            "p75": 3.75,
+            "mean": 3.269230769230769
+          },
+          "offeredFloor": {
+            "n": 8,
+            "missing": 139,
+            "p25": 7,
+            "p50": 8,
+            "p75": 8,
+            "mean": 7.875
+          },
+          "offerDelay": {
+            "n": 8,
+            "missing": 139,
+            "p25": 3,
+            "p50": 4.5,
+            "p75": 5.5,
+            "mean": 4.75
+          },
+          "outcomes": {
+            "never-seen": 139,
+            "offered-not-taken": 5,
+            "deferred": 2,
+            "accepted": 1
+          },
+          "via": {
+            "route": 26,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "warrior": {
+      "n": 187,
+      "pacing": {
+        "level6": {
+          "n": 71,
+          "missing": 116,
+          "p25": 10,
+          "p50": 10,
+          "p75": 11,
+          "mean": 10.549295774647888
+        },
+        "level10": {
+          "n": 15,
+          "missing": 172,
+          "p25": 18,
+          "p50": 20,
+          "p75": 23.5,
+          "mean": 20.533333333333335
+        },
+        "level13": {
+          "n": 5,
+          "missing": 182,
+          "p25": 30,
+          "p50": 30,
+          "p75": 35,
+          "mean": 31.8
+        },
+        "level16": {
+          "n": 0,
+          "missing": 187,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 187,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.18557077625570775,
+          "narrative": 0.3384474885844749,
+          "shop": 0.04547945205479452,
+          "rest": 0.06684931506849315,
+          "trial": 0.0354337899543379,
+          "boss": 0.037990867579908674,
+          "other": 0.2902283105022831
+        },
+        "takenRates": {
+          "combat": 0.16121809225257502,
+          "narrative": 0.27586206896551724,
+          "shop": 0.028660994178235557,
+          "rest": 0.11688311688311688,
+          "trial": 0.08687863860277653,
+          "boss": 0.09314823107926556,
+          "other": 0.23734885803851322
+        },
+        "offerTotal": 5475,
+        "takenTotal": 2233
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 187,
+          "missing": 0,
+          "p25": 6.666666666666666,
+          "p50": 8.333333333333334,
+          "p75": 10,
+          "mean": 8.506286873821441
+        },
+        "takenPer10": {
+          "n": 187,
+          "missing": 0,
+          "p25": 2,
+          "p50": 2.727272727272727,
+          "p75": 3.6363636363636367,
+          "mean": 2.833517839308217
+        }
+      },
+      "secrets": {
+        "doomguard": {
+          "n": 187,
+          "eligibleFloor": {
+            "n": 5,
+            "missing": 182,
+            "p25": 25,
+            "p50": 30,
+            "p75": 33,
+            "mean": 29.6
+          },
+          "offeredFloor": {
+            "n": 5,
+            "missing": 182,
+            "p25": 34,
+            "p50": 36,
+            "p75": 36,
+            "mean": 34.8
+          },
+          "offerDelay": {
+            "n": 5,
+            "missing": 182,
+            "p25": 3,
+            "p50": 4,
+            "p75": 6,
+            "mean": 5.2
+          },
+          "outcomes": {
+            "never-seen": 182,
+            "deferred": 1,
+            "offered-not-taken": 4
+          },
+          "via": {
+            "route": 0,
+            "fallback": 5,
+            "unknown": 0
+          }
+        }
+      }
+    }
+  },
+  "byOrigin": {
+    "sword_academy": {
+      "n": 102,
+      "pacing": {
+        "level6": {
+          "n": 32,
+          "missing": 70,
+          "p25": 10,
+          "p50": 10,
+          "p75": 10.25,
+          "mean": 10.1875
+        },
+        "level10": {
+          "n": 7,
+          "missing": 95,
+          "p25": 17.5,
+          "p50": 19,
+          "p75": 21,
+          "mean": 19.571428571428573
+        },
+        "level13": {
+          "n": 2,
+          "missing": 100,
+          "p25": 27,
+          "p50": 28,
+          "p75": 29,
+          "mean": 28
+        },
+        "level16": {
+          "n": 0,
+          "missing": 102,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 102,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.18630882924931932,
+          "narrative": 0.3399455464799689,
+          "shop": 0.044340723453908985,
+          "rest": 0.06612213146635551,
+          "trial": 0.037728510307273436,
+          "boss": 0.034616880591209646,
+          "other": 0.2909373784519642
+        },
+        "takenRates": {
+          "combat": 0.1462715105162524,
+          "narrative": 0.25717017208413,
+          "shop": 0.040152963671128104,
+          "rest": 0.11567877629063097,
+          "trial": 0.09273422562141491,
+          "boss": 0.08508604206500955,
+          "other": 0.26290630975143403
+        },
+        "offerTotal": 2571,
+        "takenTotal": 1046
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 102,
+          "missing": 0,
+          "p25": 7,
+          "p50": 8.21590909090909,
+          "p75": 11.231617647058822,
+          "mean": 8.945181668581323
+        },
+        "takenPer10": {
+          "n": 102,
+          "missing": 0,
+          "p25": 1.8181818181818183,
+          "p50": 2.5,
+          "p75": 3.609625668449198,
+          "mean": 2.7414364278551124
+        }
+      },
+      "secrets": {
+        "stormcaller": {
+          "n": 14,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 13,
+            "p25": 8,
+            "p50": 8,
+            "p75": 8,
+            "mean": 8
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 14
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "doomguard": {
+          "n": 20,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 20,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 20,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 20,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 20
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 16,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 14,
+            "p25": 1.25,
+            "p50": 1.5,
+            "p75": 1.75,
+            "mean": 1.5
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 15,
+            "p25": 11,
+            "p50": 11,
+            "p75": 11,
+            "mean": 11
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 15,
+            "p25": 9,
+            "p50": 9,
+            "p75": 9,
+            "mean": 9
+          },
+          "outcomes": {
+            "never-seen": 15,
+            "deferred": 1
+          },
+          "via": {
+            "route": 2,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 15,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 14,
+            "p25": 13,
+            "p50": 13,
+            "p75": 13,
+            "mean": 13
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 15,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 15,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 15
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 18,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 18
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "heretic_saint": {
+          "n": 19,
+          "eligibleFloor": {
+            "n": 3,
+            "missing": 16,
+            "p25": 12,
+            "p50": 16,
+            "p75": 18,
+            "mean": 14.666666666666666
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 18,
+            "p25": 21,
+            "p50": 21,
+            "p75": 21,
+            "mean": 21
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 18,
+            "p25": 1,
+            "p50": 1,
+            "p75": 1,
+            "mean": 1
+          },
+          "outcomes": {
+            "never-seen": 18,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 2,
+            "fallback": 1,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "archive": {
+      "n": 102,
+      "pacing": {
+        "level6": {
+          "n": 34,
+          "missing": 68,
+          "p25": 10,
+          "p50": 10,
+          "p75": 10,
+          "mean": 10.088235294117647
+        },
+        "level10": {
+          "n": 10,
+          "missing": 92,
+          "p25": 17.5,
+          "p50": 20,
+          "p75": 20,
+          "mean": 19.1
+        },
+        "level13": {
+          "n": 3,
+          "missing": 99,
+          "p25": 30,
+          "p50": 30,
+          "p75": 30.5,
+          "mean": 30.333333333333332
+        },
+        "level16": {
+          "n": 1,
+          "missing": 101,
+          "p25": 46,
+          "p50": 46,
+          "p75": 46,
+          "mean": 46
+        },
+        "level20": {
+          "n": 0,
+          "missing": 102,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.18112421929215822,
+          "narrative": 0.3292852185981957,
+          "shop": 0.04823039555863983,
+          "rest": 0.0648854961832061,
+          "trial": 0.03608605135322693,
+          "boss": 0.03747397640527411,
+          "other": 0.3029146426092991
+        },
+        "takenRates": {
+          "combat": 0.1520068317677199,
+          "narrative": 0.27583262169086253,
+          "shop": 0.04269854824935952,
+          "rest": 0.11357813834329633,
+          "trial": 0.0888129803586678,
+          "boss": 0.09222886421861656,
+          "other": 0.23484201537147736
+        },
+        "offerTotal": 2882,
+        "takenTotal": 1171
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 102,
+          "missing": 0,
+          "p25": 6.666666666666666,
+          "p50": 8,
+          "p75": 10,
+          "mean": 8.155512639659621
+        },
+        "takenPer10": {
+          "n": 102,
+          "missing": 0,
+          "p25": 2,
+          "p50": 2.8571428571428568,
+          "p75": 3.458333333333333,
+          "mean": 2.804459577665534
+        }
+      },
+      "secrets": {
+        "heretic_saint": {
+          "n": 17,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 16,
+            "p25": 20,
+            "p50": 20,
+            "p75": 20,
+            "mean": 20
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 16,
+            "p25": 36,
+            "p50": 36,
+            "p75": 36,
+            "mean": 36
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 16,
+            "p25": 16,
+            "p50": 16,
+            "p75": 16,
+            "mean": 16
+          },
+          "outcomes": {
+            "never-seen": 16,
+            "accepted": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 15,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 13,
+            "p25": 1.25,
+            "p50": 1.5,
+            "p75": 1.75,
+            "mean": 1.5
+          },
+          "offeredFloor": {
+            "n": 2,
+            "missing": 13,
+            "p25": 7.25,
+            "p50": 7.5,
+            "p75": 7.75,
+            "mean": 7.5
+          },
+          "offerDelay": {
+            "n": 2,
+            "missing": 13,
+            "p25": 5.5,
+            "p50": 6,
+            "p75": 6.5,
+            "mean": 6
+          },
+          "outcomes": {
+            "never-seen": 13,
+            "offered-not-taken": 2
+          },
+          "via": {
+            "route": 2,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "doomguard": {
+          "n": 22,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 22,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 22,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 22,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 22
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 18,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 18
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 15,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 15,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 3,
+            "missing": 12,
+            "p25": 6.5,
+            "p50": 7,
+            "p75": 7,
+            "mean": 6.666666666666667
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 15,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 12,
+            "accepted": 1,
+            "deferred": 1,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "stormcaller": {
+          "n": 15,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 13,
+            "p25": 23.5,
+            "p50": 31,
+            "p75": 38.5,
+            "mean": 31
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 14,
+            "p25": 17,
+            "p50": 17,
+            "p75": 17,
+            "mean": 17
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 14,
+            "p25": 1,
+            "p50": 1,
+            "p75": 1,
+            "mean": 1
+          },
+          "outcomes": {
+            "never-seen": 14,
+            "deferred": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 2,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "mage_academy": {
+      "n": 91,
+      "pacing": {
+        "level6": {
+          "n": 28,
+          "missing": 63,
+          "p25": 10,
+          "p50": 10,
+          "p75": 11.25,
+          "mean": 10.464285714285714
+        },
+        "level10": {
+          "n": 3,
+          "missing": 88,
+          "p25": 20,
+          "p50": 20,
+          "p75": 23.5,
+          "mean": 22.333333333333332
+        },
+        "level13": {
+          "n": 1,
+          "missing": 90,
+          "p25": 37,
+          "p50": 37,
+          "p75": 37,
+          "mean": 37
+        },
+        "level16": {
+          "n": 0,
+          "missing": 91,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 91,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.175513698630137,
+          "narrative": 0.3326198630136986,
+          "shop": 0.04238013698630137,
+          "rest": 0.06506849315068493,
+          "trial": 0.03595890410958904,
+          "boss": 0.03553082191780822,
+          "other": 0.3129280821917808
+        },
+        "takenRates": {
+          "combat": 0.15254237288135594,
+          "narrative": 0.2923728813559322,
+          "shop": 0.029661016949152543,
+          "rest": 0.10699152542372882,
+          "trial": 0.08898305084745763,
+          "boss": 0.08792372881355932,
+          "other": 0.24152542372881355
+        },
+        "offerTotal": 2336,
+        "takenTotal": 944
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 91,
+          "missing": 0,
+          "p25": 7,
+          "p50": 8.333333333333334,
+          "p75": 10,
+          "mean": 8.497757553801504
+        },
+        "takenPer10": {
+          "n": 91,
+          "missing": 0,
+          "p25": 2,
+          "p50": 2.8571428571428568,
+          "p75": 4,
+          "mean": 3.1181324170335154
+        }
+      },
+      "secrets": {
+        "ashen_fist": {
+          "n": 21,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 20,
+            "p25": 12,
+            "p50": 12,
+            "p75": 12,
+            "mean": 12
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 21,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 21,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 21
+          },
+          "via": {
+            "route": 1,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 19,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 19,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 19,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 19,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 19
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "doomguard": {
+          "n": 18,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 17,
+            "p25": 35,
+            "p50": 35,
+            "p75": 35,
+            "mean": 35
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 17,
+            "p25": 37,
+            "p50": 37,
+            "p75": 37,
+            "mean": 37
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 17,
+            "p25": 2,
+            "p50": 2,
+            "p75": 2,
+            "mean": 2
+          },
+          "outcomes": {
+            "never-seen": 17,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "heretic_saint": {
+          "n": 13,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 11,
+            "p25": 16.5,
+            "p50": 17,
+            "p75": 17.5,
+            "mean": 17
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 13,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 13,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 13
+          },
+          "via": {
+            "route": 0,
+            "fallback": 2,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 12,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 10,
+            "p25": 1.75,
+            "p50": 2.5,
+            "p75": 3.25,
+            "mean": 2.5
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 11,
+            "p25": 8,
+            "p50": 8,
+            "p75": 8,
+            "mean": 8
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 11,
+            "p25": 4,
+            "p50": 4,
+            "p75": 4,
+            "mean": 4
+          },
+          "outcomes": {
+            "never-seen": 11,
+            "accepted": 1
+          },
+          "via": {
+            "route": 2,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "stormcaller": {
+          "n": 8,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 7,
+            "p25": 13,
+            "p50": 13,
+            "p75": 13,
+            "mean": 13
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 7,
+            "p25": 16,
+            "p50": 16,
+            "p75": 16,
+            "mean": 16
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 7,
+            "p25": 3,
+            "p50": 3,
+            "p75": 3,
+            "mean": 3
+          },
+          "outcomes": {
+            "never-seen": 7,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "forge": {
+      "n": 94,
+      "pacing": {
+        "level6": {
+          "n": 31,
+          "missing": 63,
+          "p25": 10,
+          "p50": 10,
+          "p75": 10,
+          "mean": 10.064516129032258
+        },
+        "level10": {
+          "n": 10,
+          "missing": 84,
+          "p25": 17.5,
+          "p50": 20,
+          "p75": 21,
+          "mean": 19.4
+        },
+        "level13": {
+          "n": 3,
+          "missing": 91,
+          "p25": 28.5,
+          "p50": 30,
+          "p75": 31.5,
+          "mean": 30
+        },
+        "level16": {
+          "n": 0,
+          "missing": 94,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 94,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.1924971580143994,
+          "narrative": 0.33383857521788557,
+          "shop": 0.04509283819628647,
+          "rest": 0.06555513452065176,
+          "trial": 0.035240621447518,
+          "boss": 0.03675634710117469,
+          "other": 0.29101932550208415
+        },
+        "takenRates": {
+          "combat": 0.16465116279069766,
+          "narrative": 0.26976744186046514,
+          "shop": 0.03162790697674418,
+          "rest": 0.11255813953488372,
+          "trial": 0.08651162790697674,
+          "boss": 0.09023255813953489,
+          "other": 0.24465116279069768
+        },
+        "offerTotal": 2639,
+        "takenTotal": 1075
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 94,
+          "missing": 0,
+          "p25": 7,
+          "p50": 8,
+          "p75": 10,
+          "mean": 8.355884695694648
+        },
+        "takenPer10": {
+          "n": 94,
+          "missing": 0,
+          "p25": 2,
+          "p50": 2.6666666666666665,
+          "p75": 3.5606060606060606,
+          "mean": 2.8549361976471945
+        }
+      },
+      "secrets": {
+        "heretic_saint": {
+          "n": 18,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 17,
+            "p25": 12,
+            "p50": 12,
+            "p75": 12,
+            "mean": 12
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 18
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 17,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 17,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 17,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 17,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 17
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 15,
+          "eligibleFloor": {
+            "n": 3,
+            "missing": 12,
+            "p25": 2.5,
+            "p50": 3,
+            "p75": 4.5,
+            "mean": 3.6666666666666665
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 14,
+            "p25": 8,
+            "p50": 8,
+            "p75": 8,
+            "mean": 8
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 14,
+            "p25": 2,
+            "p50": 2,
+            "p75": 2,
+            "mean": 2
+          },
+          "outcomes": {
+            "never-seen": 14,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 3,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "doomguard": {
+          "n": 19,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 17,
+            "p25": 26.25,
+            "p50": 27.5,
+            "p75": 28.75,
+            "mean": 27.5
+          },
+          "offeredFloor": {
+            "n": 2,
+            "missing": 17,
+            "p25": 31.75,
+            "p50": 32.5,
+            "p75": 33.25,
+            "mean": 32.5
+          },
+          "offerDelay": {
+            "n": 2,
+            "missing": 17,
+            "p25": 4.5,
+            "p50": 5,
+            "p75": 5.5,
+            "mean": 5
+          },
+          "outcomes": {
+            "deferred": 1,
+            "never-seen": 17,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 2,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 10,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 10,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 10,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 10,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 10
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "stormcaller": {
+          "n": 15,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 15,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 15,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 15,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 15
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "mercenary": {
+      "n": 92,
+      "pacing": {
+        "level6": {
+          "n": 26,
+          "missing": 66,
+          "p25": 10,
+          "p50": 10,
+          "p75": 10,
+          "mean": 9.923076923076923
+        },
+        "level10": {
+          "n": 8,
+          "missing": 84,
+          "p25": 17,
+          "p50": 20,
+          "p75": 20,
+          "mean": 18.875
+        },
+        "level13": {
+          "n": 1,
+          "missing": 91,
+          "p25": 30,
+          "p50": 30,
+          "p75": 30,
+          "mean": 30
+        },
+        "level16": {
+          "n": 1,
+          "missing": 91,
+          "p25": 44,
+          "p50": 44,
+          "p75": 44,
+          "mean": 44
+        },
+        "level20": {
+          "n": 0,
+          "missing": 92,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.1834271922767498,
+          "narrative": 0.34271922767497986,
+          "shop": 0.042638777152051485,
+          "rest": 0.06436041834271923,
+          "trial": 0.03781174577634755,
+          "boss": 0.036202735317779566,
+          "other": 0.2928399034593725
+        },
+        "takenRates": {
+          "combat": 0.15118577075098813,
+          "narrative": 0.2984189723320158,
+          "shop": 0.043478260869565216,
+          "rest": 0.10276679841897234,
+          "trial": 0.09288537549407115,
+          "boss": 0.08893280632411067,
+          "other": 0.22233201581027667
+        },
+        "offerTotal": 2486,
+        "takenTotal": 1012
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 92,
+          "missing": 0,
+          "p25": 6.666666666666666,
+          "p50": 8.019607843137255,
+          "p75": 10,
+          "mean": 8.565246401083998
+        },
+        "takenPer10": {
+          "n": 92,
+          "missing": 0,
+          "p25": 2,
+          "p50": 2.8571428571428568,
+          "p75": 3.7316176470588234,
+          "mean": 2.8036654309032816
+        }
+      },
+      "secrets": {
+        "phantom": {
+          "n": 14,
+          "eligibleFloor": {
+            "n": 5,
+            "missing": 9,
+            "p25": 3,
+            "p50": 3,
+            "p75": 3,
+            "mean": 3.8
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 14
+          },
+          "via": {
+            "route": 5,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 14,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 14
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "heretic_saint": {
+          "n": 14,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 12,
+            "p25": 16.25,
+            "p50": 17.5,
+            "p75": 18.75,
+            "mean": 17.5
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 14
+          },
+          "via": {
+            "route": 1,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 15,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 13,
+            "p25": 10,
+            "p50": 12,
+            "p75": 14,
+            "mean": 12
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 14,
+            "p25": 18,
+            "p50": 18,
+            "p75": 18,
+            "mean": 18
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 14,
+            "p25": 2,
+            "p50": 2,
+            "p75": 2,
+            "mean": 2
+          },
+          "outcomes": {
+            "never-seen": 14,
+            "deferred": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 2,
+            "unknown": 0
+          }
+        },
+        "doomguard": {
+          "n": 15,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 15,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 15,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 15,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 15
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "stormcaller": {
+          "n": 20,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 20,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 20,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 20,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 20
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "temple": {
+      "n": 132,
+      "pacing": {
+        "level6": {
+          "n": 35,
+          "missing": 97,
+          "p25": 10,
+          "p50": 10,
+          "p75": 12,
+          "mean": 10.657142857142857
+        },
+        "level10": {
+          "n": 5,
+          "missing": 127,
+          "p25": 20,
+          "p50": 23,
+          "p75": 25,
+          "mean": 22.6
+        },
+        "level13": {
+          "n": 2,
+          "missing": 130,
+          "p25": 32.75,
+          "p50": 33.5,
+          "p75": 34.25,
+          "mean": 33.5
+        },
+        "level16": {
+          "n": 1,
+          "missing": 131,
+          "p25": 46,
+          "p50": 46,
+          "p75": 46,
+          "mean": 46
+        },
+        "level20": {
+          "n": 0,
+          "missing": 132,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.18559295375904372,
+          "narrative": 0.328719723183391,
+          "shop": 0.05536332179930796,
+          "rest": 0.061654608367411136,
+          "trial": 0.038691412393834536,
+          "boss": 0.033658383139351995,
+          "other": 0.2963195973576596
+        },
+        "takenRates": {
+          "combat": 0.1541440743609605,
+          "narrative": 0.273431448489543,
+          "shop": 0.047250193648334625,
+          "rest": 0.10534469403563129,
+          "trial": 0.09527498063516654,
+          "boss": 0.08288148721920992,
+          "other": 0.24167312161115415
+        },
+        "offerTotal": 3179,
+        "takenTotal": 1291
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 132,
+          "missing": 0,
+          "p25": 6.666666666666666,
+          "p50": 8,
+          "p75": 10,
+          "mean": 8.478152890385509
+        },
+        "takenPer10": {
+          "n": 132,
+          "missing": 0,
+          "p25": 2,
+          "p50": 2.696969696969697,
+          "p75": 4,
+          "mean": 2.9733582841203168
+        }
+      },
+      "secrets": {
+        "stormcaller": {
+          "n": 24,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 23,
+            "p25": 13,
+            "p50": 13,
+            "p75": 13,
+            "mean": 13
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 24,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 24,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 24
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "doomguard": {
+          "n": 27,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 26,
+            "p25": 33,
+            "p50": 33,
+            "p75": 33,
+            "mean": 33
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 26,
+            "p25": 36,
+            "p50": 36,
+            "p75": 36,
+            "mean": 36
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 26,
+            "p25": 3,
+            "p50": 3,
+            "p75": 3,
+            "mean": 3
+          },
+          "outcomes": {
+            "never-seen": 26,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 20,
+          "eligibleFloor": {
+            "n": 3,
+            "missing": 17,
+            "p25": 2,
+            "p50": 2,
+            "p75": 3,
+            "mean": 2.6666666666666665
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 20,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 20,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 20
+          },
+          "via": {
+            "route": 3,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "heretic_saint": {
+          "n": 23,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 22,
+            "p25": 15,
+            "p50": 15,
+            "p75": 15,
+            "mean": 15
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 23,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 23,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 23
+          },
+          "via": {
+            "route": 1,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 19,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 19,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 19,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 19,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 19
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 19,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 19,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 19,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 19,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 19
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "ranger_lodge": {
+      "n": 100,
+      "pacing": {
+        "level6": {
+          "n": 20,
+          "missing": 80,
+          "p25": 10,
+          "p50": 10,
+          "p75": 11,
+          "mean": 10.6
+        },
+        "level10": {
+          "n": 2,
+          "missing": 98,
+          "p25": 16.5,
+          "p50": 18,
+          "p75": 19.5,
+          "mean": 18
+        },
+        "level13": {
+          "n": 0,
+          "missing": 100,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level16": {
+          "n": 0,
+          "missing": 100,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 100,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.1790065604498594,
+          "narrative": 0.3402061855670103,
+          "shop": 0.039831302717900655,
+          "rest": 0.056232427366447985,
+          "trial": 0.03936269915651359,
+          "boss": 0.02530459231490159,
+          "other": 0.32005623242736647
+        },
+        "takenRates": {
+          "combat": 0.16726403823178015,
+          "narrative": 0.2712066905615293,
+          "shop": 0.04062126642771804,
+          "rest": 0.0884109916367981,
+          "trial": 0.1003584229390681,
+          "boss": 0.06451612903225806,
+          "other": 0.26762246117084826
+        },
+        "offerTotal": 2134,
+        "takenTotal": 837
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 100,
+          "missing": 0,
+          "p25": 7.142857142857143,
+          "p50": 8.571428571428571,
+          "p75": 10,
+          "mean": 8.97023168661404
+        },
+        "takenPer10": {
+          "n": 100,
+          "missing": 0,
+          "p25": 1.4285714285714284,
+          "p50": 2.6666666666666665,
+          "p75": 3.75,
+          "mean": 2.776346829640947
+        }
+      },
+      "secrets": {
+        "doomguard": {
+          "n": 21,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 21,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 21,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 21,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 21
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 22,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 22,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 22,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 22,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 22
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 17,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 16,
+            "p25": 7,
+            "p50": 7,
+            "p75": 7,
+            "mean": 7
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 17,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 17,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 17
+          },
+          "via": {
+            "route": 1,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 15,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 14,
+            "p25": 3,
+            "p50": 3,
+            "p75": 3,
+            "mean": 3
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 15,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 15,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 15
+          },
+          "via": {
+            "route": 1,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "stormcaller": {
+          "n": 12,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 10,
+            "p25": 6.25,
+            "p50": 8.5,
+            "p75": 10.75,
+            "mean": 8.5
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 11,
+            "p25": 16,
+            "p50": 16,
+            "p75": 16,
+            "mean": 16
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 11,
+            "p25": 12,
+            "p50": 12,
+            "p75": 12,
+            "mean": 12
+          },
+          "outcomes": {
+            "deferred": 1,
+            "never-seen": 11
+          },
+          "via": {
+            "route": 0,
+            "fallback": 2,
+            "unknown": 0
+          }
+        },
+        "heretic_saint": {
+          "n": 13,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 13,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 13,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 13,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 13
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "streets": {
+      "n": 91,
+      "pacing": {
+        "level6": {
+          "n": 30,
+          "missing": 61,
+          "p25": 10,
+          "p50": 10,
+          "p75": 10,
+          "mean": 10.133333333333333
+        },
+        "level10": {
+          "n": 6,
+          "missing": 85,
+          "p25": 20,
+          "p50": 20,
+          "p75": 20,
+          "mean": 19.833333333333332
+        },
+        "level13": {
+          "n": 3,
+          "missing": 88,
+          "p25": 29.5,
+          "p50": 30,
+          "p75": 30,
+          "mean": 29.666666666666668
+        },
+        "level16": {
+          "n": 0,
+          "missing": 91,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 91,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.1773713313483624,
+          "narrative": 0.3381539770310506,
+          "shop": 0.05104210974053594,
+          "rest": 0.062101233517652066,
+          "trial": 0.03743088047639302,
+          "boss": 0.033602722245852826,
+          "other": 0.3002977456401531
+        },
+        "takenRates": {
+          "combat": 0.16350210970464135,
+          "narrative": 0.2626582278481013,
+          "shop": 0.04535864978902954,
+          "rest": 0.10232067510548523,
+          "trial": 0.09282700421940929,
+          "boss": 0.08333333333333333,
+          "other": 0.25
+        },
+        "offerTotal": 2351,
+        "takenTotal": 948
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 91,
+          "missing": 0,
+          "p25": 7,
+          "p50": 8.5,
+          "p75": 10,
+          "mean": 8.810899098746544
+        },
+        "takenPer10": {
+          "n": 91,
+          "missing": 0,
+          "p25": 1.9090909090909092,
+          "p50": 2.5,
+          "p75": 3.6931818181818183,
+          "mean": 2.7340278876477977
+        }
+      },
+      "secrets": {
+        "void_scholar": {
+          "n": 21,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 21,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 21,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 21,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 21
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 17,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 17,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 17,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 17,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 17
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "heretic_saint": {
+          "n": 14,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 14
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "stormcaller": {
+          "n": 16,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 14,
+            "p25": 6.25,
+            "p50": 6.5,
+            "p75": 6.75,
+            "mean": 6.5
+          },
+          "offeredFloor": {
+            "n": 2,
+            "missing": 14,
+            "p25": 12.25,
+            "p50": 13.5,
+            "p75": 14.75,
+            "mean": 13.5
+          },
+          "offerDelay": {
+            "n": 2,
+            "missing": 14,
+            "p25": 5.5,
+            "p50": 7,
+            "p75": 8.5,
+            "mean": 7
+          },
+          "outcomes": {
+            "deferred": 1,
+            "never-seen": 14,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 1,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "doomguard": {
+          "n": 12,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 11,
+            "p25": 25,
+            "p50": 25,
+            "p75": 25,
+            "mean": 25
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 11,
+            "p25": 36,
+            "p50": 36,
+            "p75": 36,
+            "mean": 36
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 11,
+            "p25": 11,
+            "p50": 11,
+            "p75": 11,
+            "mean": 11
+          },
+          "outcomes": {
+            "never-seen": 11,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 11,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 9,
+            "p25": 4,
+            "p50": 5,
+            "p75": 6,
+            "mean": 5
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 11,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 11,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 11
+          },
+          "via": {
+            "route": 2,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "circus": {
+      "n": 99,
+      "pacing": {
+        "level6": {
+          "n": 28,
+          "missing": 71,
+          "p25": 10,
+          "p50": 10,
+          "p75": 10.25,
+          "mean": 10.25
+        },
+        "level10": {
+          "n": 10,
+          "missing": 89,
+          "p25": 17,
+          "p50": 19,
+          "p75": 20,
+          "mean": 18.7
+        },
+        "level13": {
+          "n": 3,
+          "missing": 96,
+          "p25": 26,
+          "p50": 27,
+          "p75": 28,
+          "mean": 27
+        },
+        "level16": {
+          "n": 0,
+          "missing": 99,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 99,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.17936874518860663,
+          "narrative": 0.34141647421093146,
+          "shop": 0.04657428791377983,
+          "rest": 0.06081601231716705,
+          "trial": 0.037721324095458045,
+          "boss": 0.032717474980754425,
+          "other": 0.30138568129330257
+        },
+        "takenRates": {
+          "combat": 0.15678776290630975,
+          "narrative": 0.2954110898661568,
+          "shop": 0.029636711281070746,
+          "rest": 0.09847036328871893,
+          "trial": 0.09369024856596558,
+          "boss": 0.08126195028680688,
+          "other": 0.2447418738049713
+        },
+        "offerTotal": 2598,
+        "takenTotal": 1046
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 99,
+          "missing": 0,
+          "p25": 6.9523809523809526,
+          "p50": 8.571428571428571,
+          "p75": 10,
+          "mean": 8.797081959960748
+        },
+        "takenPer10": {
+          "n": 99,
+          "missing": 0,
+          "p25": 2,
+          "p50": 2.8571428571428568,
+          "p75": 4,
+          "mean": 3.243376483275472
+        }
+      },
+      "secrets": {
+        "ashen_fist": {
+          "n": 25,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 25,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 25,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 25,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 25
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "heretic_saint": {
+          "n": 16,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 15,
+            "p25": 28,
+            "p50": 28,
+            "p75": 28,
+            "mean": 28
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 16,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 16,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 16
+          },
+          "via": {
+            "route": 0,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "doomguard": {
+          "n": 18,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 18
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 10,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 10,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 10,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 10,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 10
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "phantom": {
+          "n": 15,
+          "eligibleFloor": {
+            "n": 3,
+            "missing": 12,
+            "p25": 2.5,
+            "p50": 3,
+            "p75": 3,
+            "mean": 2.6666666666666665
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 14,
+            "p25": 8,
+            "p50": 8,
+            "p75": 8,
+            "mean": 8
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 14,
+            "p25": 5,
+            "p50": 5,
+            "p75": 5,
+            "mean": 5
+          },
+          "outcomes": {
+            "offered-not-taken": 1,
+            "never-seen": 14
+          },
+          "via": {
+            "route": 3,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "stormcaller": {
+          "n": 15,
+          "eligibleFloor": {
+            "n": 1,
+            "missing": 14,
+            "p25": 11,
+            "p50": 11,
+            "p75": 11,
+            "mean": 11
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 14,
+            "p25": 13,
+            "p50": 13,
+            "p75": 13,
+            "mean": 13
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 14,
+            "p25": 2,
+            "p50": 2,
+            "p75": 2,
+            "mean": 2
+          },
+          "outcomes": {
+            "deferred": 1,
+            "never-seen": 14
+          },
+          "via": {
+            "route": 1,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    },
+    "guild": {
+      "n": 97,
+      "pacing": {
+        "level6": {
+          "n": 32,
+          "missing": 65,
+          "p25": 10,
+          "p50": 10,
+          "p75": 11,
+          "mean": 10.375
+        },
+        "level10": {
+          "n": 2,
+          "missing": 95,
+          "p25": 16.25,
+          "p50": 17.5,
+          "p75": 18.75,
+          "mean": 17.5
+        },
+        "level13": {
+          "n": 1,
+          "missing": 96,
+          "p25": 28,
+          "p50": 28,
+          "p75": 28,
+          "mean": 28
+        },
+        "level16": {
+          "n": 0,
+          "missing": 97,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        },
+        "level20": {
+          "n": 0,
+          "missing": 97,
+          "p25": null,
+          "p50": null,
+          "p75": null,
+          "mean": null
+        }
+      },
+      "cards": {
+        "offerRates": {
+          "combat": 0.19001610305958133,
+          "narrative": 0.34098228663446056,
+          "shop": 0.04669887278582931,
+          "rest": 0.06723027375201288,
+          "trial": 0.03421900161030596,
+          "boss": 0.036231884057971016,
+          "other": 0.28462157809983896
+        },
+        "takenRates": {
+          "combat": 0.173,
+          "narrative": 0.263,
+          "shop": 0.042,
+          "rest": 0.122,
+          "trial": 0.085,
+          "boss": 0.09,
+          "other": 0.225
+        },
+        "offerTotal": 2484,
+        "takenTotal": 1000
+      },
+      "narrative": {
+        "offerPer10": {
+          "n": 97,
+          "missing": 0,
+          "p25": 7.5,
+          "p50": 8.235294117647058,
+          "p75": 10,
+          "mean": 8.890761569809476
+        },
+        "takenPer10": {
+          "n": 97,
+          "missing": 0,
+          "p25": 2,
+          "p50": 2.5,
+          "p75": 3.333333333333333,
+          "mean": 2.968823247704387
+        }
+      },
+      "secrets": {
+        "phantom": {
+          "n": 14,
+          "eligibleFloor": {
+            "n": 3,
+            "missing": 11,
+            "p25": 3.5,
+            "p50": 4,
+            "p75": 6,
+            "mean": 5
+          },
+          "offeredFloor": {
+            "n": 2,
+            "missing": 12,
+            "p25": 6.25,
+            "p50": 6.5,
+            "p75": 6.75,
+            "mean": 6.5
+          },
+          "offerDelay": {
+            "n": 2,
+            "missing": 12,
+            "p25": 3,
+            "p50": 3,
+            "p75": 3,
+            "mean": 3
+          },
+          "outcomes": {
+            "never-seen": 12,
+            "offered-not-taken": 1,
+            "deferred": 1
+          },
+          "via": {
+            "route": 3,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "doomguard": {
+          "n": 15,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 15,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 15,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 15,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 15
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "heretic_saint": {
+          "n": 21,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 19,
+            "p25": 15,
+            "p50": 15,
+            "p75": 15,
+            "mean": 15
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 20,
+            "p25": 17,
+            "p50": 17,
+            "p75": 17,
+            "mean": 17
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 20,
+            "p25": 2,
+            "p50": 2,
+            "p75": 2,
+            "mean": 2
+          },
+          "outcomes": {
+            "never-seen": 20,
+            "offered-not-taken": 1
+          },
+          "via": {
+            "route": 1,
+            "fallback": 1,
+            "unknown": 0
+          }
+        },
+        "void_scholar": {
+          "n": 18,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 18,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 18
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        },
+        "stormcaller": {
+          "n": 15,
+          "eligibleFloor": {
+            "n": 2,
+            "missing": 13,
+            "p25": 7.75,
+            "p50": 9.5,
+            "p75": 11.25,
+            "mean": 9.5
+          },
+          "offeredFloor": {
+            "n": 1,
+            "missing": 14,
+            "p25": 7,
+            "p50": 7,
+            "p75": 7,
+            "mean": 7
+          },
+          "offerDelay": {
+            "n": 1,
+            "missing": 14,
+            "p25": 1,
+            "p50": 1,
+            "p75": 1,
+            "mean": 1
+          },
+          "outcomes": {
+            "never-seen": 14,
+            "accepted": 1
+          },
+          "via": {
+            "route": 0,
+            "fallback": 2,
+            "unknown": 0
+          }
+        },
+        "ashen_fist": {
+          "n": 14,
+          "eligibleFloor": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offeredFloor": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "offerDelay": {
+            "n": 0,
+            "missing": 14,
+            "p25": null,
+            "p50": null,
+            "p75": null,
+            "mean": null
+          },
+          "outcomes": {
+            "never-seen": 14
+          },
+          "via": {
+            "route": 0,
+            "fallback": 0,
+            "unknown": 0
+          }
+        }
+      }
+    }
+  }
+}

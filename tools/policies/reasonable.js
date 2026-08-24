@@ -24,10 +24,12 @@ function scoreEventChoice(run, choice) {
   const hp = hpRatio(run);
   let s = 10;
   if (/leave|move on|walk away|nothing/.test(t)) s -= hp < 0.45 ? 2 : 9;
-  if (/gold|relic|heal|rest|sleep|train|loot|reward|potion/.test(t)) s += 6;
+  const hardFight = /\b(hard fight|brutal fight|deadly|secret fight|boss-tier)\b/.test(t);
+  if (!hardFight && /gold|relic|\bheal\b|\brest\b|sleep|train|loot|reward|potion/.test(t)) s += 6;
+  if (hardFight) s -= 7;
   if (/sneak|bribe|meditate|pray|offer/.test(t)) s += 2;
   if (hp < 0.45) {
-    if (/heal|rest|sleep|mend|bandage|potion/.test(t)) s += 14;
+    if (/\bheal\b|\brest\b|sleep|mend|bandage|potion/.test(t)) s += 14;
     if (/fight|attack|challenge|ambush|blood|gamble|risk/.test(t)) s -= 12;
   }
   return s;

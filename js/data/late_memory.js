@@ -62,6 +62,7 @@ export const LATE_MEMORY_READS = {
   ],
   knowledge: [
     'heard_own_verse', 'unsung_verse', 'v_network', 'forest_minutes', 'mira_named',
+    'rooted_court', 'garden_heart', 'left_rose',
   ],
   threads: ['king', 'oathbound'],
   chars: ['mira'],
@@ -95,6 +96,9 @@ export function hellGateStain(run) {
 }
 
 function ruinsStain(run) {
+  if (hasKnowledge(run, 'rooted_court')) {
+    return 'You already saw the court-mark in the moss. The dust here is the rest of that sentence.';
+  }
   if (run.flags?.angered_forest) {
     return 'Hive-smoke followed you out of the trees. The dust here does not know what to do with it.';
   }
@@ -127,7 +131,7 @@ function frostStain(run) {
     return 'Mira\'s name does not melt. It just waits in a warmer biome.';
   }
   if (run.flags?.kings_bowed && !run.flags?.kings_mocked) {
-    return 'You already knelt for a ghost. Ice will ask you to do it again.';
+    return 'You already knelt for a ghost. This court froze people for less, and for more.';
   }
   if (run.flags?.lodge_mark || run.flags?.guard_trained) {
     return 'Someone drilled you to wait. The court ahead does not wait.';
@@ -138,6 +142,9 @@ function frostStain(run) {
 function swampStain(run) {
   if (run.flags?.stole_rose || run.flags?.ate_v_dinner) {
     return 'Frost still clings to your kit. The mire notices cold that does not belong to it.';
+  }
+  if (hasKnowledge(run, 'garden_heart') || hasKnowledge(run, 'left_rose') || run.flags?.freed_climber) {
+    return 'Meltwater runs downhill. Under the runoff, something like a bell is already wet.';
   }
   if (hasKnowledge(run, 'forest_minutes')) {
     return 'The bees already took minutes. The water will want a second draft.';

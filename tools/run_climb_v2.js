@@ -263,7 +263,7 @@ async function resolveTrial(run, policy) {
   };
 }
 
-async function resolveBoss(run, policy) {
+export async function resolveBoss(run, policy) {
   const rngPick = runRng(run);
   const boss = pickBossForFloor(run.floor, rngPick, run);
   rngPick.advance();

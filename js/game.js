@@ -47,7 +47,7 @@ import { mountCrystal } from './crystal.js';
 import { renderTravelMap, resetTravelTrail, pathNodeView } from './travelmap.js';
 import { app, el, toast, modal, modalCustom, bar, rarityClass } from './ui.js';
 import { makeRng, randomSeed } from './rng.js';
-import { defaultServerUrl, partyLinkRecovery } from './net.js';
+import { defaultServerUrl, isMixedContentBlocked, PUBLIC_GAME_URL } from './net.js';
 import { CoopSession, connectCoop } from './coop.js';
 import { Music } from './music.js';
 import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl, raceArtHtml, originArtHtml, raceIconUrl, originIconUrl, eventCatUrl, npcArtUrl, enemySpriteHtml } from './art.js';
@@ -1514,6 +1514,15 @@ function beginRun() {
    CO-OP: menu, lobby, session plumbing
    ============================================================ */
 function coopMenu() {
+  if (isMixedContentBlocked()) {
+    modal(`<h3>Multiplayer lives on the party server</h3>
+      <p class="modal-sub">This page is served over https, which blocks game connections to the relay.
+      Open the game from the party server instead — everything else is identical:</p>
+      <p style="text-align:center;margin:14px 0"><a href="${PUBLIC_GAME_URL}" style="color:var(--gold-bright);font-family:var(--font-display);font-size:18px">${PUBLIC_GAME_URL}</a></p>
+      <div class="pick-grid"><button class="pick-option" data-close="x" style="text-align:center"><span class="po-name">Got it</span></button></div>`, { dismissible: true });
+    return;
+  }
+
   app.innerHTML = '';
   const scr = el(`<div class="screen" style="max-width:560px">
     <div class="select-header">
@@ -1569,7 +1578,6 @@ function coopMenu() {
       net.join(code, name);
     }
     const roomMsg = await roomPromise;
-    watchPartyLink(net, { name, code: roomMsg.code, pub: !!roomMsg.pub });
     coopS = new CoopSession(net);
     if (mode === 'quick' && roomMsg.host) {
       toast('No open parties right now — you host a public one. Climbers can find you.', 'info');
@@ -2016,63 +2024,6 @@ function coopLobby(myName) {
 
 function teardownCoop() {
   if (coopS) { coopS.destroy(); coopS = null; }
-}
-
-function watchPartyLink(net, resume) {
-  let done = false;
-  net.sys('close', m => {
-    if (done || m.intentional) return;
-    done = true;
-    recoverPartyLink(resume);
-  });
-}
-
-async function recoverPartyLink(resume = {}) {
-  const name = resume.name || 'Climber';
-  const code = String(resume.code || coopS?.net?.code || '').toUpperCase();
-  const action = partyLinkRecovery({
-    climbing: !!(run && run.coopMode),
-    hasCode: code.length === 4,
-  });
-
-  if (action === 'rejoin') {
-    toast('Party link dropped — reconnecting…', 'info');
-    teardownCoop();
-    try {
-      const net = await connectCoop(defaultServerUrl());
-      const settled = new Promise((resolve, reject) => {
-        const offRoom = net.sys('room', m => { offRoom(); offErr(); resolve(m); });
-        const offErr = net.sys('err', m => { offRoom(); offErr(); reject(new Error(m.why || 'join failed')); });
-      });
-      net.join(code, name);
-      const room = await Promise.race([
-        settled,
-        sleep(5000).then(() => { throw new Error('timeout'); }),
-      ]);
-      watchPartyLink(net, { name, code: room.code, pub: !!room.pub });
-      coopS = new CoopSession(net);
-      coopLobby(name);
-      toast('Rejoined the party.', 'info');
-      return;
-    } catch {
-      teardownCoop();
-    }
-  } else {
-    teardownCoop();
-  }
-
-  const climbing = action === 'exit-run';
-  await modal(`<h3>${climbing ? 'The party link broke' : 'Could not rejoin the party'}</h3>
-    <p class="modal-sub">${climbing
-      ? 'The secure connection ended (the Vercel proxy session lasts about five minutes). The climb cannot resume on this link.'
-      : 'The party is gone, or the tower did not answer. Start a new party when you are ready.'}</p>
-    <div class="pick-grid"><button class="pick-option" data-close="ok" style="text-align:center"><span class="po-name">Return</span></button></div>`);
-  if (climbing) {
-    run = null;
-    titleScreen();
-  } else {
-    coopMenu();
-  }
 }
 
 function statusOf(run, act) {

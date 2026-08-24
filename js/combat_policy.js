@@ -1,14 +1,58 @@
 // Shared autoplay combat decision. Fight.autoPlayAct and V2 baseline both call this.
 // Returns an applyAction-shaped object. Does not mutate combat state.
+//
+// Targeting: live combat applies self effects iff `sk.target === 'self'`
+// (combat.js / combat_core applySelfSkill). `allyTarget` is a co-op overlay
+// that also allows aiming the same skill at a living companion. Autoplay
+// must not treat `allyTarget` as "cannot heal self".
 
 import { SKILLS } from './data/skills.js';
 import { CONSUMABLES } from './data/items.js';
 import { usableSkillIds } from './character.js';
 import { canAfford, skillEffectivePower, enemyTelegraph } from './systems.js';
 
+/** Canonical: can this skill legally apply its heal to the acting player? */
+export function skillCanHealSelf(sk) {
+  return !!(sk && sk.healPct && sk.target === 'self');
+}
+
+/** Canonical: can this skill legally apply its heal to a living companion? */
+export function skillCanHealAlly(sk) {
+  return !!(sk && sk.healPct && sk.allyTarget);
+}
+
+function hpRatioOf(hp, maxHp) {
+  return hp / Math.max(1, maxHp);
+}
+
+function livingAllyEntries(f) {
+  const allies = f?.allies;
+  if (!allies) return [];
+  const entries = typeof allies.entries === 'function'
+    ? [...allies.entries()]
+    : Object.entries(allies);
+  return entries.filter(([, a]) => a && !a.down && (a.hp ?? 0) > 0);
+}
+
+/** Lowest-HP legal living target. Tie-break is stable (self, then seat id). */
+export function pickAutoplayHealTo(f, sk) {
+  if (!skillCanHealAlly(sk) || !f?.shared) return 'self';
+  const selfRatio = hpRatioOf(f.run.hp, f.run.maxHp);
+  let best = { id: 'self', hpRatio: selfRatio, tie: '' };
+  for (const [id, a] of livingAllyEntries(f)) {
+    const hpRatio = hpRatioOf(a.hp, a.maxHp || a.hp);
+    const row = { id, hpRatio, tie: String(id) };
+    if (row.hpRatio < best.hpRatio
+      || (row.hpRatio === best.hpRatio && row.tie < best.tie)) {
+      best = row;
+    }
+  }
+  return best.id;
+}
+
 export function chooseAutoPlayAction(f) {
   const run = f.run;
-  const hpRatio = run.hp / Math.max(1, run.maxHp);
+  const hpRatio = hpRatioOf(run.hp, run.maxHp);
   if (hpRatio < 0.35) {
     const healId = (run.consumables || []).find(id => {
       const c = CONSUMABLES.find(x => x.id === id);
@@ -27,8 +71,10 @@ export function chooseAutoPlayAction(f) {
   if (hpRatio < 0.4) {
     const healSk = ['basic_attack', ...run.skills]
       .map(id => SKILLS[id])
-      .find(sk => sk && usable.includes(sk.id) && sk.healPct && !sk.allyTarget && afford(sk));
-    if (healSk) return { type: 'useSkill', skillId: healSk.id };
+      .find(sk => sk && usable.includes(sk.id) && skillCanHealSelf(sk) && afford(sk));
+    if (healSk) {
+      return { type: 'useSkill', skillId: healSk.id, healTo: pickAutoplayHealTo(f, healSk) };
+    }
   }
 
   const threatened = (f.aliveEnemies?.() || f.enemies.filter(e => e.hp > 0)).some(e => {

@@ -23,7 +23,7 @@ const PLACEHOLDER_IDS = new Set(ROSTER.placeholders || []);
 export const BIOMES = [
   {
     id: 'forest', name: 'Whispering Forest', floors: [1, 10], glow: '#3f7d4a',
-    flavor: 'Sunlight dies somewhere above the canopy. The trees remember when this was a kingdom.',
+    flavor: 'Sunlight dies somewhere above the canopy. The trees remember when this was a kingdom — and they have not agreed to forget.',
     particle: 'leaves',
   },
   {
@@ -379,6 +379,9 @@ Object.assign(GALLERY_BOSSES.gv_grotto_escape_2_boss_dragon, {
     { id: 'smoke', when: { flag: 'angered_forest' },
       intro: 'The oldest tree is not here. The dragon smells hive-smoke on you first — the hive you woke and never paid.\nThe hollow brightens like a held breath.',
       taunt: 'YOU BROUGHT THE SMOKE WITH YOU.' },
+    { id: 'court', when: { knowledge: 'rooted_court' },
+      intro: 'The oldest tree is not here. The road under the roots led to a hollow that never cooled.\nThe grove judged. The kiln remembered.',
+      taunt: 'THEY BURIED A COURT. THEY BURIED ME WORSE.' },
   ],
 });
 Object.assign(GALLERY_BOSSES.undead_executioner, {
@@ -390,6 +393,20 @@ Object.assign(GALLERY_BOSSES.undead_executioner, {
     { at: 3, name: 'Toll the Block', mult: 1.55, weaken: 0.4, desc: 'the axe finds the groove' },
     { at: 5, name: 'Procession Cut', mult: 1.85, aoe: true, frail: 0.4, desc: 'a line of ghosts kneel' },
     { at: 6, name: 'THE NEXT NAME', mult: 2.7, frailSure: true, desc: 'the hood comes down' },
+  ],
+  variants: [
+    { id: 'petition', when: { flag: 'kings_petition' },
+      intro: 'A hooded figure stands where a king should sit. He does not look at the petition. He looks at the groove.\n"A complaint is not a stay. Hold still."',
+      taunt: 'THE LINE MOVES. YOU ARE NEXT.' },
+    { id: 'split', when: { flags: ['revenant_oath', 'kings_mocked'] },
+      intro: 'A hooded figure stands where a king should sit. Uniform, then office, then a laugh.\n"Inconsistent names still go in the groove. Hold still."',
+      taunt: 'THE LEDGER DOES NOT KNEEL.' },
+    { id: 'oath', when: { flag: 'revenant_oath' },
+      intro: 'A hooded figure stands where a king should sit. He smells a watch on you that never closed.\n"He waited. I do not wait. Names do not keep."',
+      taunt: 'THE WATCH ENDED. THE BLOCK DID NOT.' },
+    { id: 'archive', when: { knowledge: 'tower_built' },
+      intro: 'A hooded figure stands where a king should sit. He has heard the confession before.\n"They invited a tower. I am what the invitation became. A groove. A list. Hold still."',
+      taunt: 'THE ARCHIVE FILED YOU. I FINISH THE FILE.' },
   ],
 });
 Object.assign(GALLERY_BOSSES.tr_mon_centaur, {
@@ -406,9 +423,24 @@ Object.assign(GALLERY_BOSSES.tr_mon_centaur, {
     { id: 'rose', when: { any: [{ flag: 'stole_rose' }, { item: 'ice_rose' }] },
       intro: 'Hooves strike the ice. He smells the heart on you the way a hound smells a door that should have stayed shut.\nThe queen still does not rise. He was sent instead.',
       taunt: 'THAT HEART HAD A RIDER.' },
+    { id: 'left', when: { knowledge: 'left_rose' },
+      intro: 'Hooves strike the ice. He smells a garden that did not exhale. The heart is still in the ice.\nThe queen still does not rise. He was sent for you anyway.',
+      taunt: 'SHE SITS. YOU LEFT IT. I FETCH.' },
+    { id: 'studied', when: { knowledge: 'garden_heart' },
+      intro: 'Hooves strike the ice. He looks at you like a hound looks at someone who already opened the door and shut it.\nShe sits. You read. He was never asked to sit with that knowledge.',
+      taunt: 'SHE SITS. YOU READ. I FETCH.' },
+    { id: 'writ', when: { knowledge: 'calvien_writ' },
+      intro: 'Hooves strike the ice. He was sent to fetch a filing that froze mid-name. Calvien\'s.\nThe queen still does not rise. That is why the writ still has a rider.',
+      taunt: 'SHE SITS. THE CLAIM RUNS.' },
     { id: 'freed', when: { flag: 'freed_climber' },
       intro: 'Hooves strike the ice. He remembers the last climber who almost made the stairs — and the warmth that interrupted him.\nHe will not be interrupted twice.',
       taunt: 'I FINISH THE ONES WHO ALMOST.' },
+    { id: 'unbowed', when: { knowledge: 'citadel_unbowed' },
+      intro: 'Hooves strike the ice. He heard you refuse a second kneel. He still does not sit. He still fetches.\nThe queen does not rise. Your knees are not his business. You are.',
+      taunt: 'I RIDE. YOU KEPT YOUR KNEES.' },
+    { id: 'bow', when: { flag: 'kings_bowed', notFlag: 'kings_mocked' },
+      intro: 'Hooves strike the ice. He does not kneel. He noticed you did, once, for a court that stayed sitting.\nThe queen does not rise. That is why he is here, and why your bow does not transfer.',
+      taunt: 'I RIDE. THEY SAT. YOU BOWED.' },
   ],
 });
 Object.assign(GALLERY_BOSSES.tr_live_ogre, {
@@ -599,12 +631,12 @@ export function rollKnightBand(rng, partySize = 1) {
 export const BOSSES = {
   10: {
     id: 'elderwood', name: 'Sylvanor, the Elderwood Guardian', glyph: '🌲', biome: 'forest',
-    // Scaled ~200 HP; DEF keeps solo HTK ~7–9 turns. Co-op pads via partyBossHpMult.
-    hp: 190, atk: 27, def: 4, spd: 3, gold: [60, 90], xp: 60, regen: 0.02, boss: true,
+    // Scaled ~200 HP before the F10 solo gate trim; DEF keeps chip honest.
+    hp: 190, atk: 27, def: 4, spd: 3, gold: [60, 90], xp: 60, regen: 0.01, boss: true,
     // Slow bruiser — banks for 4 then 6. No cheap at:3 dump.
     chargeGain: 1, bankChance: 0.72,
     specials: [
-      { at: 4, name: 'Limb Sweep', mult: 1.55, aoe: true, lazy: 0.35, desc: 'branches groan overhead' },
+      { at: 4, name: 'Limb Sweep', mult: 1.40, aoe: true, lazy: 0.35, desc: 'branches groan overhead' },
       { at: 6, name: 'FOREST\'S VERDICT', mult: 2.70, frail: 0.5, desc: 'ten thousand judged climbers watch through its rings' },
     ],
     intro: 'The oldest tree in the forest uproots itself. It has judged ten thousand climbers.\nIt has approved of none.',
@@ -619,6 +651,9 @@ export const BOSSES = {
       { id: 'mira', when: { flag: 'saved_climber' },
         intro: 'The oldest tree in the forest uproots itself. It has judged ten thousand climbers.\nIt noticed you stopped for one of them.',
         taunt: 'KINDNESS IS NOT A VERDICT.' },
+      { id: 'court', when: { knowledge: 'rooted_court' },
+        intro: 'The oldest tree in the forest uproots itself. The milestone in the moss was one of its court-marks.\nThe court went downstairs. Sylvanor stayed to hold the door.',
+        taunt: 'THE KINGDOM LEFT. THE VERDICT DID NOT.' },
     ],
   },
   // A midboss, not a gate: he sits mid-biome between the Guardian and the Lich,
@@ -639,9 +674,21 @@ export const BOSSES = {
     intro: 'A knight kneels in the dust, greatsword planted, crown fused to the helm.\nHe has knelt here for six hundred years, waiting for a king who never came.\nHe stands up for you.',
     taunt: 'I KEPT MY OATH. WHERE IS YOURS?',
     variants: [
+      { id: 'oath_petition', when: { flags: ['revenant_oath', 'kings_petition'] },
+        intro: 'A knight kneels in the dust, greatsword planted, crown fused to the helm.\nYou already swore. He sees the petition anyway. "He filed. I waited. You knelt. The paperwork can wait."',
+        taunt: 'I KEPT YOUR WORDS. HE KEPT A DESK.' },
       { id: 'oath', when: { flag: 'revenant_oath' },
         intro: 'A knight kneels in the dust, greatsword planted, crown fused to the helm.\nYou already swore. He stands up like a host, not a hunter.',
         taunt: 'I KEPT YOUR WORDS. KEEP MINE.' },
+      { id: 'petition', when: { flag: 'kings_petition' },
+        intro: 'A knight kneels in the dust, greatsword planted, crown fused to the helm.\nThe petition in your pack goes cold. "That handwriting. He filed. I remained. Where is your oath?"',
+        taunt: 'HE FILED. I WAITED. CHOOSE.' },
+      { id: 'mocked', when: { flag: 'kings_mocked' },
+        intro: 'A knight kneels in the dust, greatsword planted, crown fused to the helm.\n"You laughed at my king. He is still my king. Stand up or kneel. Do not joke."',
+        taunt: 'MY OATH IS NOT A JOKE.' },
+      { id: 'bowed', when: { flag: 'kings_bowed' },
+        intro: 'A knight kneels in the dust, greatsword planted, crown fused to the helm.\n"You bowed to the office that did not come back. I am what came back." He stands up for you.',
+        taunt: 'THE OFFICE LEFT. THE WATCH DID NOT.' },
       { id: 'rumor', when: { knowledge: 'revenant_rumor' },
         intro: 'A knight kneels in the dust, greatsword planted, crown fused to the helm.\nThe toll-road said this crown used to be a person. Some nights it still is.',
         taunt: 'DON\'T KNEEL UNLESS YOU MEAN IT.' },
@@ -659,9 +706,27 @@ export const BOSSES = {
     intro: 'A crown floats above a throne of dust. Beneath it, two cold lights ignite.\n"Kneel. My kingdom needs subjects."',
     taunt: 'DEATH IS A DOOR. I AM THE KEY.',
     variants: [
+      { id: 'petition_oath', when: { flags: ['kings_petition', 'revenant_oath'] },
+        intro: 'A crown floats above a throne of dust. He sees the petition, then the oath-dust on your knees.\n"My cousin files. My knight kept you. Kneel. My kingdom needs subjects."',
+        taunt: 'HE WAITED. I RULE.' },
+      { id: 'petition_archive', when: { flag: 'kings_petition', knowledge: 'tower_built' },
+        intro: 'A crown floats above a throne of dust. He sees the petition, then the silver on your tongue.\n"The books say we built it. My cousin says it grew through us. I am the crown either way. Kneel."',
+        taunt: 'HISTORY IS A SUBJECT. SO ARE YOU.' },
       { id: 'petition', when: { flag: 'kings_petition' },
         intro: 'A crown floats above a throne of dust. He sees the petition before he sees you.\n"My cousin still files. Kneel. My kingdom needs subjects."',
         taunt: 'MY COUSIN FILES. I RULE.' },
+      { id: 'split', when: { flags: ['revenant_oath', 'kings_mocked'] },
+        intro: 'A crown floats above a throne of dust. Two cold lights ignite.\n"So you respect the uniform, but not the office. Kneel anyway."',
+        taunt: 'THE KNIGHT IS NOT THE KING.' },
+      { id: 'loyal', when: { flags: ['revenant_oath', 'kings_bowed'] },
+        intro: 'A crown floats above a throne of dust. Two cold lights ignite.\n"You knelt for the ghost. You knelt for the watch. Do it for a living crown."',
+        taunt: 'TWICE FOR DUST. ONCE FOR ME.' },
+      { id: 'oath', when: { flag: 'revenant_oath' },
+        intro: 'A crown floats above a throne of dust. He smells the watch on you.\n"My knight kept an oath I did not return for. Now the crown itself asks. Kneel."',
+        taunt: 'HE WAITED. I AM WHAT HE WAITED FOR.' },
+      { id: 'archive', when: { knowledge: 'tower_built' },
+        intro: 'A crown floats above a throne of dust. The confession in your head is loud enough to hear.\n"They wrote that we built this. I am what the building became. Kneel."',
+        taunt: 'THE ARCHIVE IS NOT THE THRONE.' },
       { id: 'mock', when: { flag: 'kings_mocked' },
         intro: 'A crown floats above a throne of dust. Two cold lights ignite, already offended.\n"The court wrote you down. Rude. Kneel anyway."',
         taunt: 'SIX HUNDRED YEARS. AND YOU LAUGHED.' },
@@ -689,6 +754,24 @@ export const BOSSES = {
       { id: 'rose', when: { any: [{ flag: 'stole_rose' }, { item: 'ice_rose' }] },
         intro: 'The Frost Queen does not rise from her throne. She looks at the heart you took,\nand the temperature of your blood becomes personal.',
         taunt: 'THAT HEART WAS NOT YOURS TO CARRY.' },
+      { id: 'left', when: { knowledge: 'left_rose' },
+        intro: 'The Frost Queen does not rise from her throne. She looks at a garden you did not empty.\nThe court, frozen mid-theft, notices a thief who declined.',
+        taunt: 'RESTRAINT IS ALSO A CLAIM.' },
+      { id: 'studied', when: { knowledge: 'garden_heart' },
+        intro: 'The Frost Queen does not rise from her throne. She looks at you like a person who already knows where the heart is.\nThe argument downstairs got one version. She is the other.',
+        taunt: 'YOU READ THE HEART. I AM WHAT WAS LEFT.' },
+      { id: 'writ', when: { knowledge: 'calvien_writ' },
+        intro: 'The Frost Queen does not rise from her throne. Calvien\'s name is in the ice and not on it.\n"He filed. I finished the filing." The temperature of your blood becomes evidence.',
+        taunt: 'HE CLAIMED. I CLOSED THE COURT.' },
+      { id: 'freed', when: { flag: 'freed_climber' },
+        intro: 'The Frost Queen does not rise from her throne. She looks at the warmth you used on someone who almost.\n"I freeze the almosts. You keep melting them. That is not finishing it."',
+        taunt: 'ALMOST IS THE POINT.' },
+      { id: 'unbowed', when: { knowledge: 'citadel_unbowed' },
+        intro: 'The Frost Queen does not rise from her throne. You already told her weather you would not bow twice.\nShe notices. She does not thank you. The argument is still open.',
+        taunt: 'I DID NOT ASK FOR A SUBJECT.' },
+      { id: 'bow', when: { flag: 'kings_bowed', notFlag: 'kings_mocked' },
+        intro: 'The Frost Queen does not rise from her throne. She sees the dust-court\'s mark on you.\n"You knelt for a ghost. I do not want a subject. I want the argument closed."',
+        taunt: 'I DO NOT COLLECT USED COURTESY.' },
       { id: 'dinner', when: { flag: 'ate_v_dinner' },
         intro: 'The Frost Queen does not rise from her throne. She merely opens her eyes.\nSomeone already set you a plate in her weather. This room is not that kind.',
         taunt: 'WINTER DOES NOT SET A TABLE.' },
@@ -906,6 +989,10 @@ export const NPC_ENEMIES = {
   },
   ...GALLERY_NPCS,
 };
+
+export function isGalleryNpc(id) {
+  return !!(id && GALLERY_NPCS[id]);
+}
 
 export function findEnemySpec(id) {
   const authored = AUTHORED_SPECS.get(id);

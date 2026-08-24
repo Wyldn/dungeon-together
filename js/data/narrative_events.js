@@ -162,12 +162,14 @@ export const NARRATIVE_EVENTS = [
     tags: ['secret-flag', 'blessing', 'equipment'],
     when: { flag: 'kings_bowed', floorMin: 21 },
     title: 'A Knighthood With Jurisdiction',
-    text: 'A spectral banner-bearer blocks a frozen arch. "The King Who Stayed sends his compliments. You bowed. Almost no one bows. He would like you to have a thing that still thinks it is a court."',
+    text: 'A spectral banner-bearer blocks a frozen arch. "The King Who Stayed sends his compliments. You bowed. Almost no one bows. He would like you to have a thing that still thinks it is a court." Ice has already grown over the banner. This court, frozen mid-betrayal, has an opinion about courtesy paid to a different dead kingdom.',
     choices: [
       { label: 'Accept the ghost of a gift', hint: 'cold steel, warmer name',
-        outcome: { text: 'The gift is real enough to cut. The blessing is the part that remembers you knelt.', classGear: true, fame: 3, world: { char: { id: 'ghost_king', rel: 1, memory: 'sent_a_knight' } } } },
+        outcome: { text: 'The gift is real enough to cut. The blessing is the part that remembers you knelt. The ice files it under USED COURTESY, ACCEPTED.', classGear: true, fame: 3, world: { char: { id: 'ghost_king', rel: 1, memory: 'sent_a_knight' } } } },
+      { label: 'Tell the ice you will not bow twice', hint: 'this court is not that court',
+        outcome: { text: 'The bearer looks like someone who had a name. The ice looks like a court that does not collect used courtesy. You keep your knees and lose the gift.', xp: 18, fame: 1, world: { knowledge: 'citadel_unbowed' } } },
       { label: 'Ask the bearer to thank him', hint: 'courtesy, again',
-        outcome: { text: 'The bearer looks briefly like someone who had a name. Then they salute and thin into the weather.', fame: 2, xp: 20 } },
+        outcome: { text: 'The bearer looks briefly like someone who had a name. Then they salute and thin into the weather. The ice does not salute back.', fame: 2, xp: 20 } },
     ],
   },
   {
@@ -384,6 +386,12 @@ export const NARRATIVE_EVENTS = [
     when: { flag: 'revenant_oath', floorMin: 16, floorMax: 20 },
     title: 'The Crown, Remembering',
     text: 'A smear of royal frost on a ruin-wall shapes itself into a mouth. It does not speak so much as remind. You knelt. Something old accepted the words. Floor fifteen is still waiting, but it is waiting differently — like a host, not a hunter.',
+    variants: [
+      { id: 'petition', when: { flag: 'kings_petition' },
+        append: 'The frost-mouth tastes the petition in your pack and does not like it. He waited. The king filed. Both still want you to pick.' },
+      { id: 'mocked', when: { flag: 'kings_mocked' },
+        append: 'The frost-mouth tastes a laugh it did not authorize. The watch accepted your kneel anyway. That is not forgiveness.' },
+    ],
     choices: [
       { label: 'Repeat the oath under your breath', hint: 'you meant it, or you didn\'t',
         outcome: { text: 'The frost brightens, then fades. The tower files you under SWORN, provisionally.', fame: 2, xp: 16, world: { char: { id: 'revenant', memory: 'oath_renewed' } } } },

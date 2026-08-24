@@ -52,7 +52,7 @@ export function fixtureRun({
 }
 
 export function fixtureEnemy(idOrSpec, {
-  floor = 5, uid = 'e1', biomeStart = 1, boss, hp, statuses, charge, turnCount, ...over
+  floor = 5, uid = 'e1', biomeStart = 1, boss, hp, statuses, charge, turnCount, partySize, ...over
 } = {}, buildEnemy) {
   let spec;
   if (typeof idOrSpec === 'string') {
@@ -64,7 +64,10 @@ export function fixtureEnemy(idOrSpec, {
   }
   if (!spec.id) throw new Error(`unknown enemy ${JSON.stringify(idOrSpec)}`);
   spec.uid = uid || spec.uid || 'e1';
-  const e = buildEnemy(spec, floor, biomeStart, { boss: boss ?? !!spec.boss });
+  const e = buildEnemy(spec, floor, biomeStart, {
+    boss: boss ?? !!spec.boss,
+    partySize: partySize ?? 1,
+  });
   if (hp != null) e.hp = hp;
   if (charge != null) e.charge = charge;
   if (turnCount != null) e.turnCount = turnCount;
@@ -380,6 +383,7 @@ export const SCENARIOS = [
     run: { classId: 'warlock', skills: ['eldritch_bolt'] },
     enemies: [{
       id: 'orc', uid: 'boss1', floor: 20, boss: true,
+      hp: 59, maxHp: 59, atk: 7, def: 2, spd: 5,
       statuses: { poison: 3, burn: 2, tormented: 2, frail: 2 },
       turnCount: 3, charge: 0,
     }],
@@ -441,7 +445,9 @@ export const SCENARIOS = [
     method: 'bossPhaseChecksSolo',
     seed: 503,
     run: { classId: 'warrior', skills: ['slash'], floor: 40 },
-    enemies: [{ id: 'hydra', uid: 'hydra1', floor: 40, boss: true, hp: 1 }],
+    // partySize 2 keeps this a heads-mechanic oracle. Solo F40 duration
+    // lives in f40SoloHpMult / test_f40_probe.js, not this golden.
+    enemies: [{ id: 'hydra', uid: 'hydra1', floor: 40, boss: true, hp: 1, partySize: 2 }],
     steps: [{ op: 'bossPhaseChecksSolo' }],
   },
   {

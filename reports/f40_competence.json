@@ -1,0 +1,6274 @@
+{
+  "meta": {
+    "name": "F40_COMPETENCE",
+    "seed": 20260823,
+    "climbs": 1002,
+    "arrivals": 9,
+    "canonicalClimbs": 1002,
+    "canonicalArrivals": 9,
+    "extraRuns": 0,
+    "capturePolicy": "baseline",
+    "generatedAt": "2026-08-24T10:37:18.583Z"
+  },
+  "arrivals": {
+    "n": 9,
+    "avgHp": 118.44444444444444,
+    "avgMaxHp": 137.33333333333334,
+    "avgHpPct": 0.8683002567664772,
+    "medHpPct": 1,
+    "avgMpPct": 0.8952534829492323,
+    "avgGold": 831.5555555555555,
+    "avgPotions": 3.6666666666666665,
+    "avgRelics": 4.666666666666667,
+    "avgSkills": 5,
+    "avgEquipped": 6.333333333333333,
+    "avgLevel": 14.222222222222221,
+    "pctBelow50": 0,
+    "pctBelow35": 0,
+    "pctAtOrAbove80": 0.6666666666666666,
+    "byClass": {
+      "warrior": {
+        "n": 3,
+        "avgHp": 129,
+        "avgMaxHp": 149.33333333333334,
+        "avgHpPct": 0.8721174004192872,
+        "medHpPct": 1,
+        "avgMpPct": 0.7313390313390312,
+        "avgGold": 570,
+        "avgPotions": 2.6666666666666665,
+        "avgRelics": 4.666666666666667,
+        "avgSkills": 5,
+        "avgEquipped": 6.333333333333333,
+        "avgLevel": 14.333333333333334,
+        "pctBelow50": 0,
+        "pctBelow35": 0,
+        "pctAtOrAbove80": 0.6666666666666666,
+        "byClass": {}
+      },
+      "archer": {
+        "n": 5,
+        "avgHp": 113.4,
+        "avgMaxHp": 128,
+        "avgHpPct": 0.8883186705767351,
+        "medHpPct": 1,
+        "avgMpPct": 0.9780219780219781,
+        "avgGold": 927.4,
+        "avgPotions": 4,
+        "avgRelics": 4.8,
+        "avgSkills": 5,
+        "avgEquipped": 6.2,
+        "avgLevel": 13.8,
+        "pctBelow50": 0,
+        "pctBelow35": 0,
+        "pctAtOrAbove80": 0.8,
+        "byClass": {}
+      },
+      "priest": {
+        "n": 1,
+        "avgHp": 112,
+        "avgMaxHp": 148,
+        "avgHpPct": 0.7567567567567568,
+        "medHpPct": 0.7567567567567568,
+        "avgMpPct": 0.9731543624161074,
+        "avgGold": 1137,
+        "avgPotions": 5,
+        "avgRelics": 4,
+        "avgSkills": 5,
+        "avgEquipped": 7,
+        "avgLevel": 16,
+        "pctBelow50": 0,
+        "pctBelow35": 0,
+        "pctAtOrAbove80": 0,
+        "byClass": {}
+      }
+    },
+    "f39Choices": {
+      "Sleep": 9
+    },
+    "f30Wins": 9,
+    "liveBoss": {
+      "tr_live_ogre": 5,
+      "hydra": 4
+    },
+    "byLiveBoss": {
+      "hydra": {
+        "n": 4,
+        "avgHp": 121,
+        "avgMaxHp": 148,
+        "avgHpPct": 0.8210998201488159,
+        "medHpPct": 0.834023539668701,
+        "avgMpPct": 0.9071774794929157,
+        "avgGold": 865.75,
+        "avgPotions": 3.75,
+        "avgRelics": 4.75,
+        "avgSkills": 5,
+        "avgEquipped": 6.25,
+        "avgLevel": 15,
+        "pctBelow50": 0,
+        "pctBelow35": 0,
+        "pctAtOrAbove80": 0.5,
+        "byClass": {
+          "warrior": {
+            "n": 2,
+            "avgHp": 129.5,
+            "avgMaxHp": 160,
+            "avgHpPct": 0.8081761006289307,
+            "medHpPct": 0.8081761006289307,
+            "avgMpPct": 0.8277777777777777,
+            "avgGold": 727,
+            "avgPotions": 1.5,
+            "avgRelics": 5,
+            "avgSkills": 5,
+            "avgEquipped": 6,
+            "avgLevel": 15.5,
+            "pctBelow50": 0,
+            "pctBelow35": 0,
+            "pctAtOrAbove80": 0.5,
+            "byClass": {}
+          },
+          "archer": {
+            "n": 1,
+            "avgHp": 113,
+            "avgMaxHp": 124,
+            "avgHpPct": 0.9112903225806451,
+            "medHpPct": 0.9112903225806451,
+            "avgMpPct": 1,
+            "avgGold": 872,
+            "avgPotions": 7,
+            "avgRelics": 5,
+            "avgSkills": 5,
+            "avgEquipped": 6,
+            "avgLevel": 13,
+            "pctBelow50": 0,
+            "pctBelow35": 0,
+            "pctAtOrAbove80": 1,
+            "byClass": {}
+          },
+          "priest": {
+            "n": 1,
+            "avgHp": 112,
+            "avgMaxHp": 148,
+            "avgHpPct": 0.7567567567567568,
+            "medHpPct": 0.7567567567567568,
+            "avgMpPct": 0.9731543624161074,
+            "avgGold": 1137,
+            "avgPotions": 5,
+            "avgRelics": 4,
+            "avgSkills": 5,
+            "avgEquipped": 7,
+            "avgLevel": 16,
+            "pctBelow50": 0,
+            "pctBelow35": 0,
+            "pctAtOrAbove80": 0,
+            "byClass": {}
+          }
+        }
+      },
+      "tr_live_ogre": {
+        "n": 5,
+        "avgHp": 116.4,
+        "avgMaxHp": 128.8,
+        "avgHpPct": 0.906060606060606,
+        "medHpPct": 1,
+        "avgMpPct": 0.8857142857142858,
+        "avgGold": 804.2,
+        "avgPotions": 3.6,
+        "avgRelics": 4.6,
+        "avgSkills": 5,
+        "avgEquipped": 6.4,
+        "avgLevel": 13.6,
+        "pctBelow50": 0,
+        "pctBelow35": 0,
+        "pctAtOrAbove80": 0.8,
+        "byClass": {
+          "warrior": {
+            "n": 1,
+            "avgHp": 128,
+            "avgMaxHp": 128,
+            "avgHpPct": 1,
+            "medHpPct": 1,
+            "avgMpPct": 0.5384615384615384,
+            "avgGold": 256,
+            "avgPotions": 5,
+            "avgRelics": 4,
+            "avgSkills": 5,
+            "avgEquipped": 7,
+            "avgLevel": 12,
+            "pctBelow50": 0,
+            "pctBelow35": 0,
+            "pctAtOrAbove80": 1,
+            "byClass": {}
+          },
+          "archer": {
+            "n": 4,
+            "avgHp": 113.5,
+            "avgMaxHp": 129,
+            "avgHpPct": 0.8825757575757576,
+            "medHpPct": 1,
+            "avgMpPct": 0.9725274725274725,
+            "avgGold": 941.25,
+            "avgPotions": 3.25,
+            "avgRelics": 4.75,
+            "avgSkills": 5,
+            "avgEquipped": 6.25,
+            "avgLevel": 14,
+            "pctBelow50": 0,
+            "pctBelow35": 0,
+            "pctAtOrAbove80": 0.75,
+            "byClass": {}
+          }
+        }
+      }
+    }
+  },
+  "compareF30": {
+    "f30Winners": {
+      "n": 9,
+      "avgHp": 83,
+      "avgMaxHp": 128.22222222222223,
+      "avgHpPct": 0.6548318978090627,
+      "medHpPct": 0.6410256410256411,
+      "avgMpPct": 1,
+      "avgGold": 725.4444444444445,
+      "avgPotions": 1.6666666666666667,
+      "avgRelics": 4.111111111111111,
+      "avgSkills": 4.888888888888889,
+      "avgEquipped": 5.777777777777778,
+      "avgLevel": 12.777777777777779,
+      "pctBelow50": 0.2222222222222222,
+      "pctBelow35": 0.1111111111111111,
+      "pctAtOrAbove80": 0.3333333333333333,
+      "byClass": {
+        "warrior": {
+          "n": 3,
+          "avgHp": 103.66666666666667,
+          "avgMaxHp": 146.66666666666666,
+          "avgHpPct": 0.6925781672617116,
+          "medHpPct": 0.6410256410256411,
+          "avgMpPct": 1,
+          "avgGold": 581.6666666666666,
+          "avgPotions": 1.3333333333333333,
+          "avgRelics": 4.333333333333333,
+          "avgSkills": 5,
+          "avgEquipped": 5.666666666666667,
+          "avgLevel": 12.666666666666666,
+          "pctBelow50": 0,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0.3333333333333333,
+          "byClass": {}
+        },
+        "archer": {
+          "n": 5,
+          "avgHp": 77.8,
+          "avgMaxHp": 113.6,
+          "avgHpPct": 0.6987669540554502,
+          "medHpPct": 0.6635514018691588,
+          "avgMpPct": 1,
+          "avgGold": 756.4,
+          "avgPotions": 2.2,
+          "avgRelics": 4,
+          "avgSkills": 4.8,
+          "avgEquipped": 5.6,
+          "avgLevel": 12.4,
+          "pctBelow50": 0.2,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0.4,
+          "byClass": {}
+        },
+        "priest": {
+          "n": 1,
+          "avgHp": 47,
+          "avgMaxHp": 146,
+          "avgHpPct": 0.3219178082191781,
+          "medHpPct": 0.3219178082191781,
+          "avgMpPct": 1,
+          "avgGold": 1002,
+          "avgPotions": 0,
+          "avgRelics": 4,
+          "avgSkills": 5,
+          "avgEquipped": 7,
+          "avgLevel": 15,
+          "pctBelow50": 1,
+          "pctBelow35": 1,
+          "pctAtOrAbove80": 0,
+          "byClass": {}
+        }
+      }
+    },
+    "f40AtF30": {
+      "n": 9,
+      "avgHp": 83,
+      "avgMaxHp": 128.22222222222223,
+      "avgHpPct": 0.6548318978090627,
+      "medHpPct": 0.6410256410256411,
+      "avgMpPct": 1,
+      "avgGold": 725.4444444444445,
+      "avgPotions": 1.6666666666666667,
+      "avgRelics": 4.111111111111111,
+      "avgSkills": 4.888888888888889,
+      "avgEquipped": 5.777777777777778,
+      "avgLevel": 12.777777777777779,
+      "pctBelow50": 0.2222222222222222,
+      "pctBelow35": 0.1111111111111111,
+      "pctAtOrAbove80": 0.3333333333333333,
+      "byClass": {
+        "warrior": {
+          "n": 3,
+          "avgHp": 103.66666666666667,
+          "avgMaxHp": 146.66666666666666,
+          "avgHpPct": 0.6925781672617116,
+          "medHpPct": 0.6410256410256411,
+          "avgMpPct": 1,
+          "avgGold": 581.6666666666666,
+          "avgPotions": 1.3333333333333333,
+          "avgRelics": 4.333333333333333,
+          "avgSkills": 5,
+          "avgEquipped": 5.666666666666667,
+          "avgLevel": 12.666666666666666,
+          "pctBelow50": 0,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0.3333333333333333,
+          "byClass": {}
+        },
+        "archer": {
+          "n": 5,
+          "avgHp": 77.8,
+          "avgMaxHp": 113.6,
+          "avgHpPct": 0.6987669540554502,
+          "medHpPct": 0.6635514018691588,
+          "avgMpPct": 1,
+          "avgGold": 756.4,
+          "avgPotions": 2.2,
+          "avgRelics": 4,
+          "avgSkills": 4.8,
+          "avgEquipped": 5.6,
+          "avgLevel": 12.4,
+          "pctBelow50": 0.2,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0.4,
+          "byClass": {}
+        },
+        "priest": {
+          "n": 1,
+          "avgHp": 47,
+          "avgMaxHp": 146,
+          "avgHpPct": 0.3219178082191781,
+          "medHpPct": 0.3219178082191781,
+          "avgMpPct": 1,
+          "avgGold": 1002,
+          "avgPotions": 0,
+          "avgRelics": 4,
+          "avgSkills": 5,
+          "avgEquipped": 7,
+          "avgLevel": 15,
+          "pctBelow50": 1,
+          "pctBelow35": 1,
+          "pctAtOrAbove80": 0,
+          "byClass": {}
+        }
+      }
+    },
+    "f40": {
+      "n": 9,
+      "avgHp": 118.44444444444444,
+      "avgMaxHp": 137.33333333333334,
+      "avgHpPct": 0.8683002567664772,
+      "medHpPct": 1,
+      "avgMpPct": 0.8952534829492323,
+      "avgGold": 831.5555555555555,
+      "avgPotions": 3.6666666666666665,
+      "avgRelics": 4.666666666666667,
+      "avgSkills": 5,
+      "avgEquipped": 6.333333333333333,
+      "avgLevel": 14.222222222222221,
+      "pctBelow50": 0,
+      "pctBelow35": 0,
+      "pctAtOrAbove80": 0.6666666666666666,
+      "byClass": {
+        "warrior": {
+          "n": 3,
+          "avgHp": 129,
+          "avgMaxHp": 149.33333333333334,
+          "avgHpPct": 0.8721174004192872,
+          "medHpPct": 1,
+          "avgMpPct": 0.7313390313390312,
+          "avgGold": 570,
+          "avgPotions": 2.6666666666666665,
+          "avgRelics": 4.666666666666667,
+          "avgSkills": 5,
+          "avgEquipped": 6.333333333333333,
+          "avgLevel": 14.333333333333334,
+          "pctBelow50": 0,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0.6666666666666666,
+          "byClass": {}
+        },
+        "archer": {
+          "n": 5,
+          "avgHp": 113.4,
+          "avgMaxHp": 128,
+          "avgHpPct": 0.8883186705767351,
+          "medHpPct": 1,
+          "avgMpPct": 0.9780219780219781,
+          "avgGold": 927.4,
+          "avgPotions": 4,
+          "avgRelics": 4.8,
+          "avgSkills": 5,
+          "avgEquipped": 6.2,
+          "avgLevel": 13.8,
+          "pctBelow50": 0,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0.8,
+          "byClass": {}
+        },
+        "priest": {
+          "n": 1,
+          "avgHp": 112,
+          "avgMaxHp": 148,
+          "avgHpPct": 0.7567567567567568,
+          "medHpPct": 0.7567567567567568,
+          "avgMpPct": 0.9731543624161074,
+          "avgGold": 1137,
+          "avgPotions": 5,
+          "avgRelics": 4,
+          "avgSkills": 5,
+          "avgEquipped": 7,
+          "avgLevel": 16,
+          "pctBelow50": 0,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0,
+          "byClass": {}
+        }
+      },
+      "f39Choices": {
+        "Sleep": 9
+      },
+      "f30Wins": 9,
+      "liveBoss": {
+        "tr_live_ogre": 5,
+        "hydra": 4
+      },
+      "byLiveBoss": {
+        "hydra": {
+          "n": 4,
+          "avgHp": 121,
+          "avgMaxHp": 148,
+          "avgHpPct": 0.8210998201488159,
+          "medHpPct": 0.834023539668701,
+          "avgMpPct": 0.9071774794929157,
+          "avgGold": 865.75,
+          "avgPotions": 3.75,
+          "avgRelics": 4.75,
+          "avgSkills": 5,
+          "avgEquipped": 6.25,
+          "avgLevel": 15,
+          "pctBelow50": 0,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0.5,
+          "byClass": {
+            "warrior": {
+              "n": 2,
+              "avgHp": 129.5,
+              "avgMaxHp": 160,
+              "avgHpPct": 0.8081761006289307,
+              "medHpPct": 0.8081761006289307,
+              "avgMpPct": 0.8277777777777777,
+              "avgGold": 727,
+              "avgPotions": 1.5,
+              "avgRelics": 5,
+              "avgSkills": 5,
+              "avgEquipped": 6,
+              "avgLevel": 15.5,
+              "pctBelow50": 0,
+              "pctBelow35": 0,
+              "pctAtOrAbove80": 0.5,
+              "byClass": {}
+            },
+            "archer": {
+              "n": 1,
+              "avgHp": 113,
+              "avgMaxHp": 124,
+              "avgHpPct": 0.9112903225806451,
+              "medHpPct": 0.9112903225806451,
+              "avgMpPct": 1,
+              "avgGold": 872,
+              "avgPotions": 7,
+              "avgRelics": 5,
+              "avgSkills": 5,
+              "avgEquipped": 6,
+              "avgLevel": 13,
+              "pctBelow50": 0,
+              "pctBelow35": 0,
+              "pctAtOrAbove80": 1,
+              "byClass": {}
+            },
+            "priest": {
+              "n": 1,
+              "avgHp": 112,
+              "avgMaxHp": 148,
+              "avgHpPct": 0.7567567567567568,
+              "medHpPct": 0.7567567567567568,
+              "avgMpPct": 0.9731543624161074,
+              "avgGold": 1137,
+              "avgPotions": 5,
+              "avgRelics": 4,
+              "avgSkills": 5,
+              "avgEquipped": 7,
+              "avgLevel": 16,
+              "pctBelow50": 0,
+              "pctBelow35": 0,
+              "pctAtOrAbove80": 0,
+              "byClass": {}
+            }
+          }
+        },
+        "tr_live_ogre": {
+          "n": 5,
+          "avgHp": 116.4,
+          "avgMaxHp": 128.8,
+          "avgHpPct": 0.906060606060606,
+          "medHpPct": 1,
+          "avgMpPct": 0.8857142857142858,
+          "avgGold": 804.2,
+          "avgPotions": 3.6,
+          "avgRelics": 4.6,
+          "avgSkills": 5,
+          "avgEquipped": 6.4,
+          "avgLevel": 13.6,
+          "pctBelow50": 0,
+          "pctBelow35": 0,
+          "pctAtOrAbove80": 0.8,
+          "byClass": {
+            "warrior": {
+              "n": 1,
+              "avgHp": 128,
+              "avgMaxHp": 128,
+              "avgHpPct": 1,
+              "medHpPct": 1,
+              "avgMpPct": 0.5384615384615384,
+              "avgGold": 256,
+              "avgPotions": 5,
+              "avgRelics": 4,
+              "avgSkills": 5,
+              "avgEquipped": 7,
+              "avgLevel": 12,
+              "pctBelow50": 0,
+              "pctBelow35": 0,
+              "pctAtOrAbove80": 1,
+              "byClass": {}
+            },
+            "archer": {
+              "n": 4,
+              "avgHp": 113.5,
+              "avgMaxHp": 129,
+              "avgHpPct": 0.8825757575757576,
+              "medHpPct": 1,
+              "avgMpPct": 0.9725274725274725,
+              "avgGold": 941.25,
+              "avgPotions": 3.25,
+              "avgRelics": 4.75,
+              "avgSkills": 5,
+              "avgEquipped": 6.25,
+              "avgLevel": 14,
+              "pctBelow50": 0,
+              "pctBelow35": 0,
+              "pctAtOrAbove80": 0.75,
+              "byClass": {}
+            }
+          }
+        }
+      }
+    }
+  },
+  "byBoss": {
+    "hydra": {
+      "autoplay_observed": {
+        "n": 9,
+        "wins": 3,
+        "losses": 6,
+        "winRate": 0.3333333333333333,
+        "potionHeals": 14,
+        "skillHeals": 2,
+        "guards": 0,
+        "wards": 0,
+        "taunts": 0,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 650,
+        "regenTicks": 65,
+        "headRegrows": 12,
+        "enrages": 5,
+        "kills": {
+          "Threefold Snap": 3,
+          "poison": 1,
+          "basic": 1,
+          "SORROW UNENDING": 1
+        },
+        "dmgBasic": 658,
+        "dmgBurn": 0,
+        "dmgPoison": 271,
+        "dmgTorment": 15,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Threefold Snap": 847,
+          "SORROW UNENDING": 538
+        },
+        "byClass": {
+          "warrior": {
+            "n": 3,
+            "wins": 1,
+            "losses": 2,
+            "winRate": 0.3333333333333333,
+            "potionHeals": 8,
+            "skillHeals": 2,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 280,
+            "regenTicks": 28,
+            "headRegrows": 5,
+            "enrages": 3,
+            "kills": {
+              "basic": 1,
+              "Threefold Snap": 1
+            },
+            "dmgBasic": 325,
+            "dmgBurn": 0,
+            "dmgPoison": 161,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 430
+            },
+            "byClass": {},
+            "avgTurns": 9.666666666666666,
+            "avgHpEnter": 0.8721174004192872,
+            "avgHpEnterAbs": 129,
+            "avgHpLeftWin": 0.2265625,
+            "avgBossHpLeftLoss": 0.3240917782026769,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 492.3333333333333,
+            "avgIncoming": 305.3333333333333,
+            "avgPotionHeals": 2.6666666666666665,
+            "avgSkillHeals": 0.6666666666666666,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 93.33333333333333,
+            "avgRegenTicks": 9.333333333333334,
+            "avgHeadRegrows": 1.6666666666666667,
+            "avgEnrages": 1,
+            "avgHeadHeal": 87.16666666666667,
+            "avgPlayerDpt": 50.93103448275862,
+            "avgIncomingDpt": 31.586206896551722,
+            "practicalEhp": 703.5,
+            "expectedTtk": 10.268788083953961,
+            "expectedTtkPractical": 13.812796208530806,
+            "expectedTtl": 4.084061135371179,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "Threefold Snap",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.3548034934497817,
+              "burn": 0,
+              "poison": 0.17576419213973798,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Threefold Snap",
+                  "v": 430,
+                  "share": 0.46943231441048033
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 5,
+            "wins": 2,
+            "losses": 3,
+            "winRate": 0.4,
+            "potionHeals": 3,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 300,
+            "regenTicks": 30,
+            "headRegrows": 7,
+            "enrages": 1,
+            "kills": {
+              "Threefold Snap": 1,
+              "poison": 1,
+              "SORROW UNENDING": 1
+            },
+            "dmgBasic": 287,
+            "dmgBurn": 0,
+            "dmgPoison": 74,
+            "dmgTorment": 15,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 270,
+              "SORROW UNENDING": 538
+            },
+            "byClass": {},
+            "avgTurns": 6.4,
+            "avgHpEnter": 0.8883186705767351,
+            "avgHpEnterAbs": 113.4,
+            "avgHpLeftWin": 0.5557971014492753,
+            "avgBossHpLeftLoss": 0.38687061822817076,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 565.4,
+            "avgIncoming": 236.8,
+            "avgPotionHeals": 0.6,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 60,
+            "avgRegenTicks": 6,
+            "avgHeadRegrows": 1.4,
+            "avgEnrages": 0.2,
+            "avgHeadHeal": 73.22,
+            "avgPlayerDpt": 88.34374999999999,
+            "avgIncomingDpt": 37,
+            "practicalEhp": 656.22,
+            "expectedTtk": 5.9200565970994,
+            "expectedTtkPractical": 7.428029713477186,
+            "expectedTtl": 3.064864864864865,
+            "topKills": [
+              {
+                "name": "Threefold Snap",
+                "n": 1,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "poison",
+                "n": 1,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "SORROW UNENDING",
+                "n": 1,
+                "rate": 0.3333333333333333
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.24239864864864866,
+              "burn": 0,
+              "poison": 0.0625,
+              "torment": 0.01266891891891892,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.4543918918918919,
+              "specials": [
+                {
+                  "name": "SORROW UNENDING",
+                  "v": 538,
+                  "share": 0.4543918918918919
+                },
+                {
+                  "name": "Threefold Snap",
+                  "v": 270,
+                  "share": 0.22804054054054054
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 3,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 70,
+            "regenTicks": 7,
+            "headRegrows": 0,
+            "enrages": 1,
+            "kills": {
+              "Threefold Snap": 1
+            },
+            "dmgBasic": 46,
+            "dmgBurn": 0,
+            "dmgPoison": 36,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 147
+            },
+            "byClass": {},
+            "avgTurns": 7,
+            "avgHpEnter": 0.7567567567567568,
+            "avgHpEnterAbs": 112,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.6978967495219885,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 228,
+            "avgIncoming": 229,
+            "avgPotionHeals": 3,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 70,
+            "avgRegenTicks": 7,
+            "avgHeadRegrows": 0,
+            "avgEnrages": 1,
+            "avgHeadHeal": 0,
+            "avgPlayerDpt": 32.57142857142857,
+            "avgIncomingDpt": 32.714285714285715,
+            "practicalEhp": 593,
+            "expectedTtk": 16.05701754385965,
+            "expectedTtkPractical": 18.206140350877195,
+            "expectedTtl": 3.423580786026201,
+            "topKills": [
+              {
+                "name": "Threefold Snap",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.20087336244541484,
+              "burn": 0,
+              "poison": 0.1572052401746725,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Threefold Snap",
+                  "v": 147,
+                  "share": 0.6419213973799127
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 7.555555555555555,
+        "avgHpEnter": 0.8683002567664772,
+        "avgHpEnterAbs": 118.44444444444444,
+        "avgHpLeftWin": 0.44605223429951685,
+        "avgBossHpLeftLoss": 0.41778202676864246,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 503.55555555555554,
+        "avgIncoming": 258.77777777777777,
+        "avgPotionHeals": 1.5555555555555556,
+        "avgSkillHeals": 0.2222222222222222,
+        "avgGuards": 0,
+        "avgWards": 0,
+        "avgTaunts": 0,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 72.22222222222223,
+        "avgRegenTicks": 7.222222222222222,
+        "avgHeadRegrows": 1.3333333333333333,
+        "avgEnrages": 0.5555555555555556,
+        "avgHeadHeal": 69.73333333333333,
+        "avgPlayerDpt": 66.6470588235294,
+        "avgIncomingDpt": 34.25,
+        "practicalEhp": 664.9555555555555,
+        "expectedTtk": 7.847308031774052,
+        "expectedTtkPractical": 9.977267823869767,
+        "expectedTtl": 3.4582319545823195,
+        "topKills": [
+          {
+            "name": "Threefold Snap",
+            "n": 3,
+            "rate": 0.5
+          },
+          {
+            "name": "poison",
+            "n": 1,
+            "rate": 0.16666666666666666
+          },
+          {
+            "name": "basic",
+            "n": 1,
+            "rate": 0.16666666666666666
+          },
+          {
+            "name": "SORROW UNENDING",
+            "n": 1,
+            "rate": 0.16666666666666666
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.28252468870759984,
+          "burn": 0,
+          "poison": 0.1163589523400601,
+          "torment": 0.006440532417346501,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0.23100042936882784,
+          "specials": [
+            {
+              "name": "Threefold Snap",
+              "v": 847,
+              "share": 0.36367539716616576
+            },
+            {
+              "name": "SORROW UNENDING",
+              "v": 538,
+              "share": 0.23100042936882784
+            }
+          ]
+        }
+      },
+      "autoplay_full": {
+        "n": 9,
+        "wins": 3,
+        "losses": 6,
+        "winRate": 0.3333333333333333,
+        "potionHeals": 15,
+        "skillHeals": 2,
+        "guards": 2,
+        "wards": 0,
+        "taunts": 0,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 720,
+        "regenTicks": 72,
+        "headRegrows": 13,
+        "enrages": 6,
+        "kills": {
+          "Threefold Snap": 1,
+          "basic": 2,
+          "SORROW UNENDING": 1,
+          "poison": 2
+        },
+        "dmgBasic": 714,
+        "dmgBurn": 0,
+        "dmgPoison": 355,
+        "dmgTorment": 15,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Threefold Snap": 907,
+          "SORROW UNENDING": 538
+        },
+        "byClass": {
+          "warrior": {
+            "n": 3,
+            "wins": 1,
+            "losses": 2,
+            "winRate": 0.3333333333333333,
+            "potionHeals": 8,
+            "skillHeals": 2,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 300,
+            "regenTicks": 30,
+            "headRegrows": 5,
+            "enrages": 3,
+            "kills": {
+              "basic": 1,
+              "poison": 1
+            },
+            "dmgBasic": 314,
+            "dmgBurn": 0,
+            "dmgPoison": 200,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 443
+            },
+            "byClass": {},
+            "avgTurns": 10.333333333333334,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 149.33333333333334,
+            "avgHpLeftWin": 0.2265625,
+            "avgBossHpLeftLoss": 0.2715105162523901,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 517,
+            "avgIncoming": 319,
+            "avgPotionHeals": 2.6666666666666665,
+            "avgSkillHeals": 0.6666666666666666,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 100,
+            "avgRegenTicks": 10,
+            "avgHeadRegrows": 1.6666666666666667,
+            "avgEnrages": 1,
+            "avgHeadHeal": 87.16666666666667,
+            "avgPlayerDpt": 50.03225806451613,
+            "avgIncomingDpt": 30.87096774193548,
+            "practicalEhp": 710.1666666666666,
+            "expectedTtk": 10.453255963894263,
+            "expectedTtkPractical": 14.194175800558778,
+            "expectedTtl": 4.837338906304424,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "poison",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.3281086729362591,
+              "burn": 0,
+              "poison": 0.2089864158829676,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Threefold Snap",
+                  "v": 443,
+                  "share": 0.46290491118077326
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 5,
+            "wins": 2,
+            "losses": 3,
+            "winRate": 0.4,
+            "potionHeals": 4,
+            "skillHeals": 0,
+            "guards": 2,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 350,
+            "regenTicks": 35,
+            "headRegrows": 8,
+            "enrages": 2,
+            "kills": {
+              "Threefold Snap": 1,
+              "basic": 1,
+              "SORROW UNENDING": 1
+            },
+            "dmgBasic": 354,
+            "dmgBurn": 0,
+            "dmgPoison": 107,
+            "dmgTorment": 15,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 317,
+              "SORROW UNENDING": 538
+            },
+            "byClass": {},
+            "avgTurns": 7.4,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 128,
+            "avgHpLeftWin": 0.5557971014492753,
+            "avgBossHpLeftLoss": 0.2664117272147865,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 617.8,
+            "avgIncoming": 266.2,
+            "avgPotionHeals": 0.8,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.4,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 70,
+            "avgRegenTicks": 7,
+            "avgHeadRegrows": 1.6,
+            "avgEnrages": 0.4,
+            "avgHeadHeal": 83.68000000000002,
+            "avgPlayerDpt": 83.48648648648647,
+            "avgIncomingDpt": 35.97297297297297,
+            "practicalEhp": 676.6800000000001,
+            "expectedTtk": 6.26448688896083,
+            "expectedTtkPractical": 8.105263839430238,
+            "expectedTtl": 3.558226897069873,
+            "topKills": [
+              {
+                "name": "Threefold Snap",
+                "n": 1,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "SORROW UNENDING",
+                "n": 1,
+                "rate": 0.3333333333333333
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.2659654395191585,
+              "burn": 0,
+              "poison": 0.08039068369646882,
+              "torment": 0.011269722013523666,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.4042073628850488,
+              "specials": [
+                {
+                  "name": "SORROW UNENDING",
+                  "v": 538,
+                  "share": 0.4042073628850488
+                },
+                {
+                  "name": "Threefold Snap",
+                  "v": 317,
+                  "share": 0.23816679188580014
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 3,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 70,
+            "regenTicks": 7,
+            "headRegrows": 0,
+            "enrages": 1,
+            "kills": {
+              "poison": 1
+            },
+            "dmgBasic": 46,
+            "dmgBurn": 0,
+            "dmgPoison": 48,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 147
+            },
+            "byClass": {},
+            "avgTurns": 7,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 148,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.6978967495219885,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 228,
+            "avgIncoming": 241,
+            "avgPotionHeals": 3,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 70,
+            "avgRegenTicks": 7,
+            "avgHeadRegrows": 0,
+            "avgEnrages": 1,
+            "avgHeadHeal": 0,
+            "avgPlayerDpt": 32.57142857142857,
+            "avgIncomingDpt": 34.42857142857143,
+            "practicalEhp": 593,
+            "expectedTtk": 16.05701754385965,
+            "expectedTtkPractical": 18.206140350877195,
+            "expectedTtl": 4.2987551867219915,
+            "topKills": [
+              {
+                "name": "poison",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.1908713692946058,
+              "burn": 0,
+              "poison": 0.1991701244813278,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Threefold Snap",
+                  "v": 147,
+                  "share": 0.6099585062240664
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 8.333333333333334,
+        "avgHpEnter": 1,
+        "avgHpEnterAbs": 137.33333333333334,
+        "avgHpLeftWin": 0.44605223429951685,
+        "avgBossHpLeftLoss": 0.34002549394518805,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 540.8888888888889,
+        "avgIncoming": 281,
+        "avgPotionHeals": 1.6666666666666667,
+        "avgSkillHeals": 0.2222222222222222,
+        "avgGuards": 0.2222222222222222,
+        "avgWards": 0,
+        "avgTaunts": 0,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 80,
+        "avgRegenTicks": 8,
+        "avgHeadRegrows": 1.4444444444444444,
+        "avgEnrages": 0.6666666666666666,
+        "avgHeadHeal": 75.54444444444445,
+        "avgPlayerDpt": 64.90666666666667,
+        "avgIncomingDpt": 33.72,
+        "practicalEhp": 678.5444444444445,
+        "expectedTtk": 8.05772391125719,
+        "expectedTtkPractical": 10.45415639550808,
+        "expectedTtl": 4.072756030051404,
+        "topKills": [
+          {
+            "name": "basic",
+            "n": 2,
+            "rate": 0.3333333333333333
+          },
+          {
+            "name": "poison",
+            "n": 2,
+            "rate": 0.3333333333333333
+          },
+          {
+            "name": "Threefold Snap",
+            "n": 1,
+            "rate": 0.16666666666666666
+          },
+          {
+            "name": "SORROW UNENDING",
+            "n": 1,
+            "rate": 0.16666666666666666
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.2823250296559905,
+          "burn": 0,
+          "poison": 0.14037168841439304,
+          "torment": 0.005931198102016607,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0.21273230525899564,
+          "specials": [
+            {
+              "name": "Threefold Snap",
+              "v": 907,
+              "share": 0.3586397785686042
+            },
+            {
+              "name": "SORROW UNENDING",
+              "v": 538,
+              "share": 0.21273230525899564
+            }
+          ]
+        }
+      },
+      "bossaware_observed": {
+        "n": 9,
+        "wins": 2,
+        "losses": 7,
+        "winRate": 0.2222222222222222,
+        "potionHeals": 21,
+        "skillHeals": 11,
+        "guards": 6,
+        "wards": 13,
+        "taunts": 7,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 950,
+        "regenTicks": 95,
+        "headRegrows": 12,
+        "enrages": 8,
+        "kills": {
+          "torment": 2,
+          "Threefold Snap": 2,
+          "SORROW UNENDING": 1,
+          "poison": 2
+        },
+        "dmgBasic": 920,
+        "dmgBurn": 0,
+        "dmgPoison": 506,
+        "dmgTorment": 46,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Threefold Snap": 892,
+          "SORROW UNENDING": 501
+        },
+        "byClass": {
+          "warrior": {
+            "n": 3,
+            "wins": 0,
+            "losses": 3,
+            "winRate": 0,
+            "potionHeals": 8,
+            "skillHeals": 2,
+            "guards": 2,
+            "wards": 7,
+            "taunts": 7,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 400,
+            "regenTicks": 40,
+            "headRegrows": 5,
+            "enrages": 3,
+            "kills": {
+              "torment": 2,
+              "SORROW UNENDING": 1
+            },
+            "dmgBasic": 407,
+            "dmgBurn": 0,
+            "dmgPoison": 108,
+            "dmgTorment": 31,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 110,
+              "SORROW UNENDING": 353
+            },
+            "byClass": {},
+            "avgTurns": 13.333333333333334,
+            "avgHpEnter": 0.8721174004192872,
+            "avgHpEnterAbs": 129,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.27533460803059273,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 529.3333333333334,
+            "avgIncoming": 336.3333333333333,
+            "avgPotionHeals": 2.6666666666666665,
+            "avgSkillHeals": 0.6666666666666666,
+            "avgGuards": 0.6666666666666666,
+            "avgWards": 2.3333333333333335,
+            "avgTaunts": 2.3333333333333335,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 133.33333333333334,
+            "avgRegenTicks": 13.333333333333334,
+            "avgHeadRegrows": 1.6666666666666667,
+            "avgEnrages": 1,
+            "avgHeadHeal": 87.16666666666667,
+            "avgPlayerDpt": 39.7,
+            "avgIncomingDpt": 25.224999999999998,
+            "practicalEhp": 743.5,
+            "expectedTtk": 13.173803526448362,
+            "expectedTtkPractical": 18.727959697732995,
+            "expectedTtl": 5.113974231912786,
+            "topKills": [
+              {
+                "name": "torment",
+                "n": 2,
+                "rate": 0.6666666666666666
+              },
+              {
+                "name": "SORROW UNENDING",
+                "n": 1,
+                "rate": 0.3333333333333333
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.40336967294350845,
+              "burn": 0,
+              "poison": 0.10703666997026759,
+              "torment": 0.030723488602576808,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.34985133795837464,
+              "specials": [
+                {
+                  "name": "SORROW UNENDING",
+                  "v": 353,
+                  "share": 0.34985133795837464
+                },
+                {
+                  "name": "Threefold Snap",
+                  "v": 110,
+                  "share": 0.10901883052527254
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 5,
+            "wins": 2,
+            "losses": 3,
+            "winRate": 0.4,
+            "potionHeals": 9,
+            "skillHeals": 0,
+            "guards": 3,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 350,
+            "regenTicks": 35,
+            "headRegrows": 7,
+            "enrages": 4,
+            "kills": {
+              "Threefold Snap": 2,
+              "poison": 1
+            },
+            "dmgBasic": 325,
+            "dmgBurn": 0,
+            "dmgPoison": 158,
+            "dmgTorment": 15,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 501,
+              "SORROW UNENDING": 148
+            },
+            "byClass": {},
+            "avgTurns": 7.4,
+            "avgHpEnter": 0.8883186705767351,
+            "avgHpEnterAbs": 113.4,
+            "avgHpLeftWin": 0.6499999999999999,
+            "avgBossHpLeftLoss": 0.37348629700446145,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 545,
+            "avgIncoming": 229.4,
+            "avgPotionHeals": 1.8,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.6,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 70,
+            "avgRegenTicks": 7,
+            "avgHeadRegrows": 1.4,
+            "avgEnrages": 0.8,
+            "avgHeadHeal": 73.22,
+            "avgPlayerDpt": 73.64864864864865,
+            "avgIncomingDpt": 31,
+            "practicalEhp": 666.22,
+            "expectedTtk": 7.101284403669725,
+            "expectedTtkPractical": 9.045922935779817,
+            "expectedTtl": 3.6580645161290324,
+            "topKills": [
+              {
+                "name": "Threefold Snap",
+                "n": 2,
+                "rate": 0.6666666666666666
+              },
+              {
+                "name": "poison",
+                "n": 1,
+                "rate": 0.3333333333333333
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.2833478639930253,
+              "burn": 0,
+              "poison": 0.13775065387968613,
+              "torment": 0.013077593722755012,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.12903225806451613,
+              "specials": [
+                {
+                  "name": "Threefold Snap",
+                  "v": 501,
+                  "share": 0.43679163034001744
+                },
+                {
+                  "name": "SORROW UNENDING",
+                  "v": 148,
+                  "share": 0.12903225806451613
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 4,
+            "skillHeals": 9,
+            "guards": 1,
+            "wards": 6,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 200,
+            "regenTicks": 20,
+            "headRegrows": 0,
+            "enrages": 1,
+            "kills": {
+              "poison": 1
+            },
+            "dmgBasic": 188,
+            "dmgBurn": 0,
+            "dmgPoison": 240,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 281
+            },
+            "byClass": {},
+            "avgTurns": 24,
+            "avgHpEnter": 0.7567567567567568,
+            "avgHpEnterAbs": 112,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 1,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 186,
+            "avgIncoming": 709,
+            "avgPotionHeals": 4,
+            "avgSkillHeals": 9,
+            "avgGuards": 1,
+            "avgWards": 6,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 200,
+            "avgRegenTicks": 20,
+            "avgHeadRegrows": 0,
+            "avgEnrages": 1,
+            "avgHeadHeal": 0,
+            "avgPlayerDpt": 7.75,
+            "avgIncomingDpt": 29.541666666666668,
+            "practicalEhp": 723,
+            "expectedTtk": 67.48387096774194,
+            "expectedTtkPractical": 93.29032258064517,
+            "expectedTtl": 3.791255289139633,
+            "topKills": [
+              {
+                "name": "poison",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.2651622002820874,
+              "burn": 0,
+              "poison": 0.3385049365303244,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Threefold Snap",
+                  "v": 281,
+                  "share": 0.39633286318758815
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 11.222222222222221,
+        "avgHpEnter": 0.8683002567664772,
+        "avgHpEnterAbs": 118.44444444444444,
+        "avgHpLeftWin": 0.6499999999999999,
+        "avgBossHpLeftLoss": 0.4209232450150232,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 499.8888888888889,
+        "avgIncoming": 318.3333333333333,
+        "avgPotionHeals": 2.3333333333333335,
+        "avgSkillHeals": 1.2222222222222223,
+        "avgGuards": 0.6666666666666666,
+        "avgWards": 1.4444444444444444,
+        "avgTaunts": 0.7777777777777778,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 105.55555555555556,
+        "avgRegenTicks": 10.555555555555555,
+        "avgHeadRegrows": 1.3333333333333333,
+        "avgEnrages": 0.8888888888888888,
+        "avgHeadHeal": 69.73333333333333,
+        "avgPlayerDpt": 44.54455445544555,
+        "avgIncomingDpt": 28.366336633663366,
+        "practicalEhp": 698.2888888888889,
+        "expectedTtk": 11.741053567459435,
+        "expectedTtkPractical": 15.676189770566298,
+        "expectedTtl": 4.175528407989141,
+        "topKills": [
+          {
+            "name": "torment",
+            "n": 2,
+            "rate": 0.2857142857142857
+          },
+          {
+            "name": "Threefold Snap",
+            "n": 2,
+            "rate": 0.2857142857142857
+          },
+          {
+            "name": "poison",
+            "n": 2,
+            "rate": 0.2857142857142857
+          },
+          {
+            "name": "SORROW UNENDING",
+            "n": 1,
+            "rate": 0.14285714285714285
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.32111692844677137,
+          "burn": 0,
+          "poison": 0.17661431064572425,
+          "torment": 0.01605584642233857,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0.17486910994764399,
+          "specials": [
+            {
+              "name": "Threefold Snap",
+              "v": 892,
+              "share": 0.3113438045375218
+            },
+            {
+              "name": "SORROW UNENDING",
+              "v": 501,
+              "share": 0.17486910994764399
+            }
+          ]
+        }
+      },
+      "bossaware_full": {
+        "n": 9,
+        "wins": 3,
+        "losses": 6,
+        "winRate": 0.3333333333333333,
+        "potionHeals": 21,
+        "skillHeals": 7,
+        "guards": 7,
+        "wards": 9,
+        "taunts": 6,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 980,
+        "regenTicks": 98,
+        "headRegrows": 13,
+        "enrages": 8,
+        "kills": {
+          "torment": 1,
+          "Threefold Snap": 2,
+          "basic": 1,
+          "SORROW UNENDING": 2
+        },
+        "dmgBasic": 946,
+        "dmgBurn": 0,
+        "dmgPoison": 438,
+        "dmgTorment": 40,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Threefold Snap": 878,
+          "SORROW UNENDING": 615
+        },
+        "byClass": {
+          "warrior": {
+            "n": 3,
+            "wins": 1,
+            "losses": 2,
+            "winRate": 0.3333333333333333,
+            "potionHeals": 8,
+            "skillHeals": 2,
+            "guards": 2,
+            "wards": 6,
+            "taunts": 6,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 410,
+            "regenTicks": 41,
+            "headRegrows": 5,
+            "enrages": 3,
+            "kills": {
+              "torment": 1,
+              "SORROW UNENDING": 1
+            },
+            "dmgBasic": 434,
+            "dmgBurn": 0,
+            "dmgPoison": 147,
+            "dmgTorment": 25,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 164,
+              "SORROW UNENDING": 292
+            },
+            "byClass": {},
+            "avgTurns": 14,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 149.33333333333334,
+            "avgHpLeftWin": 0.018867924528301886,
+            "avgBossHpLeftLoss": 0.2323135755258126,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 559,
+            "avgIncoming": 354,
+            "avgPotionHeals": 2.6666666666666665,
+            "avgSkillHeals": 0.6666666666666666,
+            "avgGuards": 0.6666666666666666,
+            "avgWards": 2,
+            "avgTaunts": 2,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 136.66666666666666,
+            "avgRegenTicks": 13.666666666666666,
+            "avgHeadRegrows": 1.6666666666666667,
+            "avgEnrages": 1,
+            "avgHeadHeal": 87.16666666666667,
+            "avgPlayerDpt": 39.92857142857143,
+            "avgIncomingDpt": 25.285714285714285,
+            "practicalEhp": 746.8333333333333,
+            "expectedTtk": 13.09838998211091,
+            "expectedTtkPractical": 18.704233750745377,
+            "expectedTtl": 5.905838041431262,
+            "topKills": [
+              {
+                "name": "torment",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "SORROW UNENDING",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.4086629001883239,
+              "burn": 0,
+              "poison": 0.1384180790960452,
+              "torment": 0.023540489642184557,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.2749529190207156,
+              "specials": [
+                {
+                  "name": "SORROW UNENDING",
+                  "v": 292,
+                  "share": 0.2749529190207156
+                },
+                {
+                  "name": "Threefold Snap",
+                  "v": 164,
+                  "share": 0.1544256120527307
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 5,
+            "wins": 2,
+            "losses": 3,
+            "winRate": 0.4,
+            "potionHeals": 13,
+            "skillHeals": 0,
+            "guards": 5,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 440,
+            "regenTicks": 44,
+            "headRegrows": 7,
+            "enrages": 4,
+            "kills": {
+              "Threefold Snap": 2,
+              "basic": 1
+            },
+            "dmgBasic": 400,
+            "dmgBurn": 0,
+            "dmgPoison": 219,
+            "dmgTorment": 15,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 601,
+              "SORROW UNENDING": 218
+            },
+            "byClass": {},
+            "avgTurns": 9.2,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 128,
+            "avgHpLeftWin": 0.6499999999999999,
+            "avgBossHpLeftLoss": 0.3639260675589548,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 564.2,
+            "avgIncoming": 290.6,
+            "avgPotionHeals": 2.6,
+            "avgSkillHeals": 0,
+            "avgGuards": 1,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 88,
+            "avgRegenTicks": 8.8,
+            "avgHeadRegrows": 1.4,
+            "avgEnrages": 0.8,
+            "avgHeadHeal": 73.22,
+            "avgPlayerDpt": 61.32608695652175,
+            "avgIncomingDpt": 31.586956521739136,
+            "practicalEhp": 684.22,
+            "expectedTtk": 8.52818149592343,
+            "expectedTtkPractical": 11.157079049982274,
+            "expectedTtl": 4.052305574673089,
+            "topKills": [
+              {
+                "name": "Threefold Snap",
+                "n": 2,
+                "rate": 0.6666666666666666
+              },
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.3333333333333333
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.27529249827942187,
+              "burn": 0,
+              "poison": 0.15072264280798348,
+              "torment": 0.01032346868547832,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.15003441156228492,
+              "specials": [
+                {
+                  "name": "Threefold Snap",
+                  "v": 601,
+                  "share": 0.4136269786648314
+                },
+                {
+                  "name": "SORROW UNENDING",
+                  "v": 218,
+                  "share": 0.15003441156228492
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 0,
+            "skillHeals": 5,
+            "guards": 0,
+            "wards": 3,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 130,
+            "regenTicks": 13,
+            "headRegrows": 1,
+            "enrages": 1,
+            "kills": {
+              "SORROW UNENDING": 1
+            },
+            "dmgBasic": 112,
+            "dmgBurn": 0,
+            "dmgPoison": 72,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 113,
+              "SORROW UNENDING": 105
+            },
+            "byClass": {},
+            "avgTurns": 13,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 148,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.734225621414914,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 321,
+            "avgIncoming": 402,
+            "avgPotionHeals": 0,
+            "avgSkillHeals": 5,
+            "avgGuards": 0,
+            "avgWards": 3,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 130,
+            "avgRegenTicks": 13,
+            "avgHeadRegrows": 1,
+            "avgEnrages": 1,
+            "avgHeadHeal": 52.300000000000004,
+            "avgPlayerDpt": 24.692307692307693,
+            "avgIncomingDpt": 30.923076923076923,
+            "practicalEhp": 705.3,
+            "expectedTtk": 21.180685358255452,
+            "expectedTtkPractical": 28.563551401869155,
+            "expectedTtl": 4.786069651741293,
+            "topKills": [
+              {
+                "name": "SORROW UNENDING",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.27860696517412936,
+              "burn": 0,
+              "poison": 0.1791044776119403,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.26119402985074625,
+              "specials": [
+                {
+                  "name": "Threefold Snap",
+                  "v": 113,
+                  "share": 0.2810945273631841
+                },
+                {
+                  "name": "SORROW UNENDING",
+                  "v": 105,
+                  "share": 0.26119402985074625
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 11.222222222222221,
+        "avgHpEnter": 1,
+        "avgHpEnterAbs": 137.33333333333334,
+        "avgHpLeftWin": 0.4396226415094339,
+        "avgBossHpLeftLoss": 0.38177182919056724,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 535.4444444444445,
+        "avgIncoming": 324.1111111111111,
+        "avgPotionHeals": 2.3333333333333335,
+        "avgSkillHeals": 0.7777777777777778,
+        "avgGuards": 0.7777777777777778,
+        "avgWards": 1,
+        "avgTaunts": 0.6666666666666666,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 108.88888888888889,
+        "avgRegenTicks": 10.88888888888889,
+        "avgHeadRegrows": 1.4444444444444444,
+        "avgEnrages": 0.8888888888888888,
+        "avgHeadHeal": 75.54444444444445,
+        "avgPlayerDpt": 47.71287128712872,
+        "avgIncomingDpt": 28.88118811881188,
+        "practicalEhp": 707.4333333333334,
+        "expectedTtk": 10.961402780659887,
+        "expectedTtkPractical": 14.826886629314517,
+        "expectedTtl": 4.755113701291282,
+        "topKills": [
+          {
+            "name": "Threefold Snap",
+            "n": 2,
+            "rate": 0.3333333333333333
+          },
+          {
+            "name": "SORROW UNENDING",
+            "n": 2,
+            "rate": 0.3333333333333333
+          },
+          {
+            "name": "torment",
+            "n": 1,
+            "rate": 0.16666666666666666
+          },
+          {
+            "name": "basic",
+            "n": 1,
+            "rate": 0.16666666666666666
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.32430579362358586,
+          "burn": 0,
+          "poison": 0.1501542680836476,
+          "torment": 0.013712718546451834,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0.21083304765169694,
+          "specials": [
+            {
+              "name": "Threefold Snap",
+              "v": 878,
+              "share": 0.30099417209461776
+            },
+            {
+              "name": "SORROW UNENDING",
+              "v": 615,
+              "share": 0.21083304765169694
+            }
+          ]
+        }
+      }
+    },
+    "tr_live_ogre": {
+      "autoplay_observed": {
+        "n": 9,
+        "wins": 3,
+        "losses": 6,
+        "winRate": 0.3333333333333333,
+        "potionHeals": 14,
+        "skillHeals": 2,
+        "guards": 0,
+        "wards": 0,
+        "taunts": 0,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 650,
+        "regenTicks": 65,
+        "headRegrows": 12,
+        "enrages": 5,
+        "kills": {
+          "Twin Bite": 3,
+          "poison": 1,
+          "basic": 1,
+          "TWO SORROWS": 1
+        },
+        "dmgBasic": 658,
+        "dmgBurn": 0,
+        "dmgPoison": 271,
+        "dmgTorment": 15,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Twin Bite": 847,
+          "TWO SORROWS": 530
+        },
+        "byClass": {
+          "warrior": {
+            "n": 3,
+            "wins": 1,
+            "losses": 2,
+            "winRate": 0.3333333333333333,
+            "potionHeals": 8,
+            "skillHeals": 2,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 280,
+            "regenTicks": 28,
+            "headRegrows": 5,
+            "enrages": 3,
+            "kills": {
+              "basic": 1,
+              "Twin Bite": 1
+            },
+            "dmgBasic": 325,
+            "dmgBurn": 0,
+            "dmgPoison": 161,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 430
+            },
+            "byClass": {},
+            "avgTurns": 9.666666666666666,
+            "avgHpEnter": 0.8721174004192872,
+            "avgHpEnterAbs": 129,
+            "avgHpLeftWin": 0.2265625,
+            "avgBossHpLeftLoss": 0.3240917782026769,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 492.3333333333333,
+            "avgIncoming": 305.3333333333333,
+            "avgPotionHeals": 2.6666666666666665,
+            "avgSkillHeals": 0.6666666666666666,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 93.33333333333333,
+            "avgRegenTicks": 9.333333333333334,
+            "avgHeadRegrows": 1.6666666666666667,
+            "avgEnrages": 1,
+            "avgHeadHeal": 87.16666666666667,
+            "avgPlayerDpt": 50.93103448275862,
+            "avgIncomingDpt": 31.586206896551722,
+            "practicalEhp": 703.5,
+            "expectedTtk": 10.268788083953961,
+            "expectedTtkPractical": 13.812796208530806,
+            "expectedTtl": 4.084061135371179,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "Twin Bite",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.3548034934497817,
+              "burn": 0,
+              "poison": 0.17576419213973798,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Twin Bite",
+                  "v": 430,
+                  "share": 0.46943231441048033
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 5,
+            "wins": 2,
+            "losses": 3,
+            "winRate": 0.4,
+            "potionHeals": 3,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 300,
+            "regenTicks": 30,
+            "headRegrows": 7,
+            "enrages": 1,
+            "kills": {
+              "Twin Bite": 1,
+              "poison": 1,
+              "TWO SORROWS": 1
+            },
+            "dmgBasic": 287,
+            "dmgBurn": 0,
+            "dmgPoison": 74,
+            "dmgTorment": 15,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 270,
+              "TWO SORROWS": 530
+            },
+            "byClass": {},
+            "avgTurns": 6.4,
+            "avgHpEnter": 0.8883186705767351,
+            "avgHpEnterAbs": 113.4,
+            "avgHpLeftWin": 0.5557971014492753,
+            "avgBossHpLeftLoss": 0.38687061822817076,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 565.4,
+            "avgIncoming": 235.2,
+            "avgPotionHeals": 0.6,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 60,
+            "avgRegenTicks": 6,
+            "avgHeadRegrows": 1.4,
+            "avgEnrages": 0.2,
+            "avgHeadHeal": 73.22,
+            "avgPlayerDpt": 88.34374999999999,
+            "avgIncomingDpt": 36.74999999999999,
+            "practicalEhp": 656.22,
+            "expectedTtk": 5.9200565970994,
+            "expectedTtkPractical": 7.428029713477186,
+            "expectedTtl": 3.0857142857142863,
+            "topKills": [
+              {
+                "name": "Twin Bite",
+                "n": 1,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "poison",
+                "n": 1,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "TWO SORROWS",
+                "n": 1,
+                "rate": 0.3333333333333333
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.24404761904761904,
+              "burn": 0,
+              "poison": 0.06292517006802721,
+              "torment": 0.012755102040816327,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.45068027210884354,
+              "specials": [
+                {
+                  "name": "TWO SORROWS",
+                  "v": 530,
+                  "share": 0.45068027210884354
+                },
+                {
+                  "name": "Twin Bite",
+                  "v": 270,
+                  "share": 0.22959183673469388
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 3,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 70,
+            "regenTicks": 7,
+            "headRegrows": 0,
+            "enrages": 1,
+            "kills": {
+              "Twin Bite": 1
+            },
+            "dmgBasic": 46,
+            "dmgBurn": 0,
+            "dmgPoison": 36,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 147
+            },
+            "byClass": {},
+            "avgTurns": 7,
+            "avgHpEnter": 0.7567567567567568,
+            "avgHpEnterAbs": 112,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.6978967495219885,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 228,
+            "avgIncoming": 229,
+            "avgPotionHeals": 3,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 70,
+            "avgRegenTicks": 7,
+            "avgHeadRegrows": 0,
+            "avgEnrages": 1,
+            "avgHeadHeal": 0,
+            "avgPlayerDpt": 32.57142857142857,
+            "avgIncomingDpt": 32.714285714285715,
+            "practicalEhp": 593,
+            "expectedTtk": 16.05701754385965,
+            "expectedTtkPractical": 18.206140350877195,
+            "expectedTtl": 3.423580786026201,
+            "topKills": [
+              {
+                "name": "Twin Bite",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.20087336244541484,
+              "burn": 0,
+              "poison": 0.1572052401746725,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Twin Bite",
+                  "v": 147,
+                  "share": 0.6419213973799127
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 7.555555555555555,
+        "avgHpEnter": 0.8683002567664772,
+        "avgHpEnterAbs": 118.44444444444444,
+        "avgHpLeftWin": 0.44605223429951685,
+        "avgBossHpLeftLoss": 0.41778202676864246,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 503.55555555555554,
+        "avgIncoming": 257.8888888888889,
+        "avgPotionHeals": 1.5555555555555556,
+        "avgSkillHeals": 0.2222222222222222,
+        "avgGuards": 0,
+        "avgWards": 0,
+        "avgTaunts": 0,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 72.22222222222223,
+        "avgRegenTicks": 7.222222222222222,
+        "avgHeadRegrows": 1.3333333333333333,
+        "avgEnrages": 0.5555555555555556,
+        "avgHeadHeal": 69.73333333333333,
+        "avgPlayerDpt": 66.6470588235294,
+        "avgIncomingDpt": 34.13235294117648,
+        "practicalEhp": 664.9555555555555,
+        "expectedTtk": 7.847308031774052,
+        "expectedTtkPractical": 9.977267823869767,
+        "expectedTtl": 3.470151754511943,
+        "topKills": [
+          {
+            "name": "Twin Bite",
+            "n": 3,
+            "rate": 0.5
+          },
+          {
+            "name": "poison",
+            "n": 1,
+            "rate": 0.16666666666666666
+          },
+          {
+            "name": "basic",
+            "n": 1,
+            "rate": 0.16666666666666666
+          },
+          {
+            "name": "TWO SORROWS",
+            "n": 1,
+            "rate": 0.16666666666666666
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.2834984920292977,
+          "burn": 0,
+          "poison": 0.11676001723395088,
+          "torment": 0.006462731581214994,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0.22834984920292978,
+          "specials": [
+            {
+              "name": "Twin Bite",
+              "v": 847,
+              "share": 0.36492890995260663
+            },
+            {
+              "name": "TWO SORROWS",
+              "v": 530,
+              "share": 0.22834984920292978
+            }
+          ]
+        }
+      },
+      "autoplay_full": {
+        "n": 9,
+        "wins": 3,
+        "losses": 6,
+        "winRate": 0.3333333333333333,
+        "potionHeals": 15,
+        "skillHeals": 2,
+        "guards": 2,
+        "wards": 0,
+        "taunts": 0,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 720,
+        "regenTicks": 72,
+        "headRegrows": 13,
+        "enrages": 6,
+        "kills": {
+          "Twin Bite": 1,
+          "basic": 2,
+          "TWO SORROWS": 1,
+          "poison": 2
+        },
+        "dmgBasic": 714,
+        "dmgBurn": 0,
+        "dmgPoison": 355,
+        "dmgTorment": 15,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Twin Bite": 907,
+          "TWO SORROWS": 530
+        },
+        "byClass": {
+          "warrior": {
+            "n": 3,
+            "wins": 1,
+            "losses": 2,
+            "winRate": 0.3333333333333333,
+            "potionHeals": 8,
+            "skillHeals": 2,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 300,
+            "regenTicks": 30,
+            "headRegrows": 5,
+            "enrages": 3,
+            "kills": {
+              "basic": 1,
+              "poison": 1
+            },
+            "dmgBasic": 314,
+            "dmgBurn": 0,
+            "dmgPoison": 200,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 443
+            },
+            "byClass": {},
+            "avgTurns": 10.333333333333334,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 149.33333333333334,
+            "avgHpLeftWin": 0.2265625,
+            "avgBossHpLeftLoss": 0.2715105162523901,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 517,
+            "avgIncoming": 319,
+            "avgPotionHeals": 2.6666666666666665,
+            "avgSkillHeals": 0.6666666666666666,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 100,
+            "avgRegenTicks": 10,
+            "avgHeadRegrows": 1.6666666666666667,
+            "avgEnrages": 1,
+            "avgHeadHeal": 87.16666666666667,
+            "avgPlayerDpt": 50.03225806451613,
+            "avgIncomingDpt": 30.87096774193548,
+            "practicalEhp": 710.1666666666666,
+            "expectedTtk": 10.453255963894263,
+            "expectedTtkPractical": 14.194175800558778,
+            "expectedTtl": 4.837338906304424,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "poison",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.3281086729362591,
+              "burn": 0,
+              "poison": 0.2089864158829676,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Twin Bite",
+                  "v": 443,
+                  "share": 0.46290491118077326
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 5,
+            "wins": 2,
+            "losses": 3,
+            "winRate": 0.4,
+            "potionHeals": 4,
+            "skillHeals": 0,
+            "guards": 2,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 350,
+            "regenTicks": 35,
+            "headRegrows": 8,
+            "enrages": 2,
+            "kills": {
+              "Twin Bite": 1,
+              "basic": 1,
+              "TWO SORROWS": 1
+            },
+            "dmgBasic": 354,
+            "dmgBurn": 0,
+            "dmgPoison": 107,
+            "dmgTorment": 15,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 317,
+              "TWO SORROWS": 530
+            },
+            "byClass": {},
+            "avgTurns": 7.4,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 128,
+            "avgHpLeftWin": 0.5557971014492753,
+            "avgBossHpLeftLoss": 0.2664117272147865,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 617.8,
+            "avgIncoming": 264.6,
+            "avgPotionHeals": 0.8,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.4,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 70,
+            "avgRegenTicks": 7,
+            "avgHeadRegrows": 1.6,
+            "avgEnrages": 0.4,
+            "avgHeadHeal": 83.68000000000002,
+            "avgPlayerDpt": 83.48648648648647,
+            "avgIncomingDpt": 35.75675675675676,
+            "practicalEhp": 676.6800000000001,
+            "expectedTtk": 6.26448688896083,
+            "expectedTtkPractical": 8.105263839430238,
+            "expectedTtl": 3.579743008314437,
+            "topKills": [
+              {
+                "name": "Twin Bite",
+                "n": 1,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.3333333333333333
+              },
+              {
+                "name": "TWO SORROWS",
+                "n": 1,
+                "rate": 0.3333333333333333
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.2675736961451247,
+              "burn": 0,
+              "poison": 0.08087679516250945,
+              "torment": 0.011337868480725623,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.40060468631897206,
+              "specials": [
+                {
+                  "name": "TWO SORROWS",
+                  "v": 530,
+                  "share": 0.40060468631897206
+                },
+                {
+                  "name": "Twin Bite",
+                  "v": 317,
+                  "share": 0.23960695389266817
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 3,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 70,
+            "regenTicks": 7,
+            "headRegrows": 0,
+            "enrages": 1,
+            "kills": {
+              "poison": 1
+            },
+            "dmgBasic": 46,
+            "dmgBurn": 0,
+            "dmgPoison": 48,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 147
+            },
+            "byClass": {},
+            "avgTurns": 7,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 148,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.6978967495219885,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 228,
+            "avgIncoming": 241,
+            "avgPotionHeals": 3,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 70,
+            "avgRegenTicks": 7,
+            "avgHeadRegrows": 0,
+            "avgEnrages": 1,
+            "avgHeadHeal": 0,
+            "avgPlayerDpt": 32.57142857142857,
+            "avgIncomingDpt": 34.42857142857143,
+            "practicalEhp": 593,
+            "expectedTtk": 16.05701754385965,
+            "expectedTtkPractical": 18.206140350877195,
+            "expectedTtl": 4.2987551867219915,
+            "topKills": [
+              {
+                "name": "poison",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.1908713692946058,
+              "burn": 0,
+              "poison": 0.1991701244813278,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Twin Bite",
+                  "v": 147,
+                  "share": 0.6099585062240664
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 8.333333333333334,
+        "avgHpEnter": 1,
+        "avgHpEnterAbs": 137.33333333333334,
+        "avgHpLeftWin": 0.44605223429951685,
+        "avgBossHpLeftLoss": 0.34002549394518805,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 540.8888888888889,
+        "avgIncoming": 280.1111111111111,
+        "avgPotionHeals": 1.6666666666666667,
+        "avgSkillHeals": 0.2222222222222222,
+        "avgGuards": 0.2222222222222222,
+        "avgWards": 0,
+        "avgTaunts": 0,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 80,
+        "avgRegenTicks": 8,
+        "avgHeadRegrows": 1.4444444444444444,
+        "avgEnrages": 0.6666666666666666,
+        "avgHeadHeal": 75.54444444444445,
+        "avgPlayerDpt": 64.90666666666667,
+        "avgIncomingDpt": 33.61333333333333,
+        "practicalEhp": 678.5444444444445,
+        "expectedTtk": 8.05772391125719,
+        "expectedTtkPractical": 10.45415639550808,
+        "expectedTtl": 4.085680285600953,
+        "topKills": [
+          {
+            "name": "basic",
+            "n": 2,
+            "rate": 0.3333333333333333
+          },
+          {
+            "name": "poison",
+            "n": 2,
+            "rate": 0.3333333333333333
+          },
+          {
+            "name": "Twin Bite",
+            "n": 1,
+            "rate": 0.16666666666666666
+          },
+          {
+            "name": "TWO SORROWS",
+            "n": 1,
+            "rate": 0.16666666666666666
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.2832209440698136,
+          "burn": 0,
+          "poison": 0.14081713605712018,
+          "torment": 0.005950019833399445,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0.21023403411344704,
+          "specials": [
+            {
+              "name": "Twin Bite",
+              "v": 907,
+              "share": 0.35977786592621974
+            },
+            {
+              "name": "TWO SORROWS",
+              "v": 530,
+              "share": 0.21023403411344704
+            }
+          ]
+        }
+      },
+      "bossaware_observed": {
+        "n": 9,
+        "wins": 3,
+        "losses": 6,
+        "winRate": 0.3333333333333333,
+        "potionHeals": 21,
+        "skillHeals": 11,
+        "guards": 6,
+        "wards": 13,
+        "taunts": 7,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 950,
+        "regenTicks": 95,
+        "headRegrows": 12,
+        "enrages": 8,
+        "kills": {
+          "Twin Bite": 2,
+          "TWO SORROWS": 1,
+          "poison": 2,
+          "torment": 1
+        },
+        "dmgBasic": 920,
+        "dmgBurn": 0,
+        "dmgPoison": 506,
+        "dmgTorment": 46,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Twin Bite": 892,
+          "TWO SORROWS": 493
+        },
+        "byClass": {
+          "warrior": {
+            "n": 3,
+            "wins": 1,
+            "losses": 2,
+            "winRate": 0.3333333333333333,
+            "potionHeals": 8,
+            "skillHeals": 2,
+            "guards": 2,
+            "wards": 7,
+            "taunts": 7,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 400,
+            "regenTicks": 40,
+            "headRegrows": 5,
+            "enrages": 3,
+            "kills": {
+              "TWO SORROWS": 1,
+              "torment": 1
+            },
+            "dmgBasic": 407,
+            "dmgBurn": 0,
+            "dmgPoison": 108,
+            "dmgTorment": 31,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 110,
+              "TWO SORROWS": 348
+            },
+            "byClass": {},
+            "avgTurns": 13.666666666666666,
+            "avgHpEnter": 0.8721174004192872,
+            "avgHpEnterAbs": 129,
+            "avgHpLeftWin": 0.0078125,
+            "avgBossHpLeftLoss": 0.36233269598470363,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 549.6666666666666,
+            "avgIncoming": 334.6666666666667,
+            "avgPotionHeals": 2.6666666666666665,
+            "avgSkillHeals": 0.6666666666666666,
+            "avgGuards": 0.6666666666666666,
+            "avgWards": 2.3333333333333335,
+            "avgTaunts": 2.3333333333333335,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 133.33333333333334,
+            "avgRegenTicks": 13.333333333333334,
+            "avgHeadRegrows": 1.6666666666666667,
+            "avgEnrages": 1,
+            "avgHeadHeal": 87.16666666666667,
+            "avgPlayerDpt": 40.21951219512195,
+            "avgIncomingDpt": 24.487804878048784,
+            "practicalEhp": 743.5,
+            "expectedTtk": 13.003638568829594,
+            "expectedTtkPractical": 18.48605215281989,
+            "expectedTtl": 5.267928286852589,
+            "topKills": [
+              {
+                "name": "TWO SORROWS",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "torment",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.40537848605577687,
+              "burn": 0,
+              "poison": 0.10756972111553785,
+              "torment": 0.030876494023904383,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.3466135458167331,
+              "specials": [
+                {
+                  "name": "TWO SORROWS",
+                  "v": 348,
+                  "share": 0.3466135458167331
+                },
+                {
+                  "name": "Twin Bite",
+                  "v": 110,
+                  "share": 0.10956175298804781
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 5,
+            "wins": 2,
+            "losses": 3,
+            "winRate": 0.4,
+            "potionHeals": 9,
+            "skillHeals": 0,
+            "guards": 3,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 350,
+            "regenTicks": 35,
+            "headRegrows": 7,
+            "enrages": 4,
+            "kills": {
+              "Twin Bite": 2,
+              "poison": 1
+            },
+            "dmgBasic": 325,
+            "dmgBurn": 0,
+            "dmgPoison": 158,
+            "dmgTorment": 15,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 501,
+              "TWO SORROWS": 145
+            },
+            "byClass": {},
+            "avgTurns": 7.4,
+            "avgHpEnter": 0.8883186705767351,
+            "avgHpEnterAbs": 113.4,
+            "avgHpLeftWin": 0.6499999999999999,
+            "avgBossHpLeftLoss": 0.37348629700446145,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 545,
+            "avgIncoming": 228.8,
+            "avgPotionHeals": 1.8,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.6,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 70,
+            "avgRegenTicks": 7,
+            "avgHeadRegrows": 1.4,
+            "avgEnrages": 0.8,
+            "avgHeadHeal": 73.22,
+            "avgPlayerDpt": 73.64864864864865,
+            "avgIncomingDpt": 30.91891891891892,
+            "practicalEhp": 666.22,
+            "expectedTtk": 7.101284403669725,
+            "expectedTtkPractical": 9.045922935779817,
+            "expectedTtl": 3.6676573426573427,
+            "topKills": [
+              {
+                "name": "Twin Bite",
+                "n": 2,
+                "rate": 0.6666666666666666
+              },
+              {
+                "name": "poison",
+                "n": 1,
+                "rate": 0.3333333333333333
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.2840909090909091,
+              "burn": 0,
+              "poison": 0.1381118881118881,
+              "torment": 0.013111888111888112,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.12674825174825174,
+              "specials": [
+                {
+                  "name": "Twin Bite",
+                  "v": 501,
+                  "share": 0.4379370629370629
+                },
+                {
+                  "name": "TWO SORROWS",
+                  "v": 145,
+                  "share": 0.12674825174825174
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 4,
+            "skillHeals": 9,
+            "guards": 1,
+            "wards": 6,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 200,
+            "regenTicks": 20,
+            "headRegrows": 0,
+            "enrages": 1,
+            "kills": {
+              "poison": 1
+            },
+            "dmgBasic": 188,
+            "dmgBurn": 0,
+            "dmgPoison": 240,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 281
+            },
+            "byClass": {},
+            "avgTurns": 24,
+            "avgHpEnter": 0.7567567567567568,
+            "avgHpEnterAbs": 112,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 1,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 186,
+            "avgIncoming": 709,
+            "avgPotionHeals": 4,
+            "avgSkillHeals": 9,
+            "avgGuards": 1,
+            "avgWards": 6,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 200,
+            "avgRegenTicks": 20,
+            "avgHeadRegrows": 0,
+            "avgEnrages": 1,
+            "avgHeadHeal": 0,
+            "avgPlayerDpt": 7.75,
+            "avgIncomingDpt": 29.541666666666668,
+            "practicalEhp": 723,
+            "expectedTtk": 67.48387096774194,
+            "expectedTtkPractical": 93.29032258064517,
+            "expectedTtl": 3.791255289139633,
+            "topKills": [
+              {
+                "name": "poison",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.2651622002820874,
+              "burn": 0,
+              "poison": 0.3385049365303244,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Twin Bite",
+                  "v": 281,
+                  "share": 0.39633286318758815
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 11.333333333333334,
+        "avgHpEnter": 0.8683002567664772,
+        "avgHpEnterAbs": 118.44444444444444,
+        "avgHpLeftWin": 0.4359374999999999,
+        "avgBossHpLeftLoss": 0.47418738049713194,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 506.6666666666667,
+        "avgIncoming": 317.44444444444446,
+        "avgPotionHeals": 2.3333333333333335,
+        "avgSkillHeals": 1.2222222222222223,
+        "avgGuards": 0.6666666666666666,
+        "avgWards": 1.4444444444444444,
+        "avgTaunts": 0.7777777777777778,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 105.55555555555556,
+        "avgRegenTicks": 10.555555555555555,
+        "avgHeadRegrows": 1.3333333333333333,
+        "avgEnrages": 0.8888888888888888,
+        "avgHeadHeal": 69.73333333333333,
+        "avgPlayerDpt": 44.705882352941174,
+        "avgIncomingDpt": 28.009803921568626,
+        "practicalEhp": 698.2888888888889,
+        "expectedTtk": 11.698684210526316,
+        "expectedTtkPractical": 15.619619883040937,
+        "expectedTtl": 4.228678100571695,
+        "topKills": [
+          {
+            "name": "Twin Bite",
+            "n": 2,
+            "rate": 0.3333333333333333
+          },
+          {
+            "name": "poison",
+            "n": 2,
+            "rate": 0.3333333333333333
+          },
+          {
+            "name": "TWO SORROWS",
+            "n": 1,
+            "rate": 0.16666666666666666
+          },
+          {
+            "name": "torment",
+            "n": 1,
+            "rate": 0.16666666666666666
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.32201610080504023,
+          "burn": 0,
+          "poison": 0.17710885544277213,
+          "torment": 0.016100805040252013,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0.17255862793139656,
+          "specials": [
+            {
+              "name": "Twin Bite",
+              "v": 892,
+              "share": 0.31221561078053905
+            },
+            {
+              "name": "TWO SORROWS",
+              "v": 493,
+              "share": 0.17255862793139656
+            }
+          ]
+        }
+      },
+      "bossaware_full": {
+        "n": 9,
+        "wins": 4,
+        "losses": 5,
+        "winRate": 0.4444444444444444,
+        "potionHeals": 21,
+        "skillHeals": 7,
+        "guards": 7,
+        "wards": 9,
+        "taunts": 6,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 980,
+        "regenTicks": 98,
+        "headRegrows": 13,
+        "enrages": 8,
+        "kills": {
+          "Twin Bite": 2,
+          "basic": 1,
+          "TWO SORROWS": 2
+        },
+        "dmgBasic": 946,
+        "dmgBurn": 0,
+        "dmgPoison": 438,
+        "dmgTorment": 40,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Twin Bite": 878,
+          "TWO SORROWS": 606
+        },
+        "byClass": {
+          "warrior": {
+            "n": 3,
+            "wins": 2,
+            "losses": 1,
+            "winRate": 0.6666666666666666,
+            "potionHeals": 8,
+            "skillHeals": 2,
+            "guards": 2,
+            "wards": 6,
+            "taunts": 6,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 410,
+            "regenTicks": 41,
+            "headRegrows": 5,
+            "enrages": 3,
+            "kills": {
+              "TWO SORROWS": 1
+            },
+            "dmgBasic": 434,
+            "dmgBurn": 0,
+            "dmgPoison": 147,
+            "dmgTorment": 25,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 164,
+              "TWO SORROWS": 288
+            },
+            "byClass": {},
+            "avgTurns": 14.333333333333334,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 149.33333333333334,
+            "avgHpLeftWin": 0.013340212264150943,
+            "avgBossHpLeftLoss": 0.3632887189292543,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 579.3333333333334,
+            "avgIncoming": 352.6666666666667,
+            "avgPotionHeals": 2.6666666666666665,
+            "avgSkillHeals": 0.6666666666666666,
+            "avgGuards": 0.6666666666666666,
+            "avgWards": 2,
+            "avgTaunts": 2,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 136.66666666666666,
+            "avgRegenTicks": 13.666666666666666,
+            "avgHeadRegrows": 1.6666666666666667,
+            "avgEnrages": 1,
+            "avgHeadHeal": 87.16666666666667,
+            "avgPlayerDpt": 40.418604651162795,
+            "avgIncomingDpt": 24.6046511627907,
+            "practicalEhp": 746.8333333333333,
+            "expectedTtk": 12.93958573072497,
+            "expectedTtkPractical": 18.477464518603757,
+            "expectedTtl": 6.069313169502205,
+            "topKills": [
+              {
+                "name": "TWO SORROWS",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.4102079395085066,
+              "burn": 0,
+              "poison": 0.1389413988657845,
+              "torment": 0.023629489603024575,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.2722117202268431,
+              "specials": [
+                {
+                  "name": "TWO SORROWS",
+                  "v": 288,
+                  "share": 0.2722117202268431
+                },
+                {
+                  "name": "Twin Bite",
+                  "v": 164,
+                  "share": 0.15500945179584122
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 5,
+            "wins": 2,
+            "losses": 3,
+            "winRate": 0.4,
+            "potionHeals": 13,
+            "skillHeals": 0,
+            "guards": 5,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 440,
+            "regenTicks": 44,
+            "headRegrows": 7,
+            "enrages": 4,
+            "kills": {
+              "Twin Bite": 2,
+              "basic": 1
+            },
+            "dmgBasic": 400,
+            "dmgBurn": 0,
+            "dmgPoison": 219,
+            "dmgTorment": 15,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 601,
+              "TWO SORROWS": 215
+            },
+            "byClass": {},
+            "avgTurns": 9.2,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 128,
+            "avgHpLeftWin": 0.6499999999999999,
+            "avgBossHpLeftLoss": 0.3639260675589548,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 564.2,
+            "avgIncoming": 290,
+            "avgPotionHeals": 2.6,
+            "avgSkillHeals": 0,
+            "avgGuards": 1,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 88,
+            "avgRegenTicks": 8.8,
+            "avgHeadRegrows": 1.4,
+            "avgEnrages": 0.8,
+            "avgHeadHeal": 73.22,
+            "avgPlayerDpt": 61.32608695652175,
+            "avgIncomingDpt": 31.521739130434785,
+            "practicalEhp": 684.22,
+            "expectedTtk": 8.52818149592343,
+            "expectedTtkPractical": 11.157079049982274,
+            "expectedTtl": 4.060689655172413,
+            "topKills": [
+              {
+                "name": "Twin Bite",
+                "n": 2,
+                "rate": 0.6666666666666666
+              },
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.3333333333333333
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.27586206896551724,
+              "burn": 0,
+              "poison": 0.1510344827586207,
+              "torment": 0.010344827586206896,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.1482758620689655,
+              "specials": [
+                {
+                  "name": "Twin Bite",
+                  "v": 601,
+                  "share": 0.4144827586206897
+                },
+                {
+                  "name": "TWO SORROWS",
+                  "v": 215,
+                  "share": 0.1482758620689655
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 0,
+            "skillHeals": 5,
+            "guards": 0,
+            "wards": 3,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 130,
+            "regenTicks": 13,
+            "headRegrows": 1,
+            "enrages": 1,
+            "kills": {
+              "TWO SORROWS": 1
+            },
+            "dmgBasic": 112,
+            "dmgBurn": 0,
+            "dmgPoison": 72,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 113,
+              "TWO SORROWS": 103
+            },
+            "byClass": {},
+            "avgTurns": 13,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 148,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.734225621414914,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 321,
+            "avgIncoming": 400,
+            "avgPotionHeals": 0,
+            "avgSkillHeals": 5,
+            "avgGuards": 0,
+            "avgWards": 3,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 130,
+            "avgRegenTicks": 13,
+            "avgHeadRegrows": 1,
+            "avgEnrages": 1,
+            "avgHeadHeal": 52.300000000000004,
+            "avgPlayerDpt": 24.692307692307693,
+            "avgIncomingDpt": 30.76923076923077,
+            "practicalEhp": 705.3,
+            "expectedTtk": 21.180685358255452,
+            "expectedTtkPractical": 28.563551401869155,
+            "expectedTtl": 4.81,
+            "topKills": [
+              {
+                "name": "TWO SORROWS",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.28,
+              "burn": 0,
+              "poison": 0.18,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.2575,
+              "specials": [
+                {
+                  "name": "Twin Bite",
+                  "v": 113,
+                  "share": 0.2825
+                },
+                {
+                  "name": "TWO SORROWS",
+                  "v": 103,
+                  "share": 0.2575
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 11.333333333333334,
+        "avgHpEnter": 1,
+        "avgHpEnterAbs": 137.33333333333334,
+        "avgHpLeftWin": 0.3316701061320754,
+        "avgBossHpLeftLoss": 0.4378585086042065,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 542.2222222222222,
+        "avgIncoming": 323.1111111111111,
+        "avgPotionHeals": 2.3333333333333335,
+        "avgSkillHeals": 0.7777777777777778,
+        "avgGuards": 0.7777777777777778,
+        "avgWards": 1,
+        "avgTaunts": 0.6666666666666666,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 108.88888888888889,
+        "avgRegenTicks": 10.88888888888889,
+        "avgHeadRegrows": 1.4444444444444444,
+        "avgEnrages": 0.8888888888888888,
+        "avgHeadHeal": 75.54444444444445,
+        "avgPlayerDpt": 47.843137254901954,
+        "avgIncomingDpt": 28.509803921568622,
+        "practicalEhp": 707.4333333333334,
+        "expectedTtk": 10.931557377049181,
+        "expectedTtkPractical": 14.786516393442627,
+        "expectedTtl": 4.817056396148557,
+        "topKills": [
+          {
+            "name": "Twin Bite",
+            "n": 2,
+            "rate": 0.4
+          },
+          {
+            "name": "TWO SORROWS",
+            "n": 2,
+            "rate": 0.4
+          },
+          {
+            "name": "basic",
+            "n": 1,
+            "rate": 0.2
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.3253094910591472,
+          "burn": 0,
+          "poison": 0.15061898211829436,
+          "torment": 0.013755158184319119,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0.20839064649243466,
+          "specials": [
+            {
+              "name": "Twin Bite",
+              "v": 878,
+              "share": 0.30192572214580465
+            },
+            {
+              "name": "TWO SORROWS",
+              "v": 606,
+              "share": 0.20839064649243466
+            }
+          ]
+        }
+      }
+    }
+  },
+  "liveByBoss": {
+    "tr_live_ogre": {
+      "autoplay_observed": {
+        "n": 5,
+        "wins": 3,
+        "losses": 2,
+        "winRate": 0.6,
+        "potionHeals": 6,
+        "skillHeals": 1,
+        "guards": 0,
+        "wards": 0,
+        "taunts": 0,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 290,
+        "regenTicks": 29,
+        "headRegrows": 7,
+        "enrages": 1,
+        "kills": {
+          "Twin Bite": 1,
+          "poison": 1
+        },
+        "dmgBasic": 248,
+        "dmgBurn": 0,
+        "dmgPoison": 144,
+        "dmgTorment": 0,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Twin Bite": 445
+        },
+        "byClass": {
+          "warrior": {
+            "n": 1,
+            "wins": 1,
+            "losses": 0,
+            "winRate": 1,
+            "potionHeals": 5,
+            "skillHeals": 1,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 120,
+            "regenTicks": 12,
+            "headRegrows": 2,
+            "enrages": 1,
+            "kills": {},
+            "dmgBasic": 117,
+            "dmgBurn": 0,
+            "dmgPoison": 70,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 175
+            },
+            "byClass": {},
+            "avgTurns": 13,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 128,
+            "avgHpLeftWin": 0.2265625,
+            "avgBossHpLeftLoss": null,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 633,
+            "avgIncoming": 362,
+            "avgPotionHeals": 5,
+            "avgSkillHeals": 1,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 120,
+            "avgRegenTicks": 12,
+            "avgHeadRegrows": 2,
+            "avgEnrages": 1,
+            "avgHeadHeal": 104.60000000000001,
+            "avgPlayerDpt": 48.69230769230769,
+            "avgIncomingDpt": 27.846153846153847,
+            "practicalEhp": 747.6,
+            "expectedTtk": 10.740916271721959,
+            "expectedTtkPractical": 15.353554502369668,
+            "expectedTtl": 4.596685082872928,
+            "topKills": [],
+            "dmgShare": {
+              "basic": 0.32320441988950277,
+              "burn": 0,
+              "poison": 0.19337016574585636,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Twin Bite",
+                  "v": 175,
+                  "share": 0.48342541436464087
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 4,
+            "wins": 2,
+            "losses": 2,
+            "winRate": 0.5,
+            "potionHeals": 1,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 170,
+            "regenTicks": 17,
+            "headRegrows": 5,
+            "enrages": 0,
+            "kills": {
+              "Twin Bite": 1,
+              "poison": 1
+            },
+            "dmgBasic": 131,
+            "dmgBurn": 0,
+            "dmgPoison": 74,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 270
+            },
+            "byClass": {},
+            "avgTurns": 4.75,
+            "avgHpEnter": 0.8825757575757576,
+            "avgHpEnterAbs": 113.5,
+            "avgHpLeftWin": 0.5557971014492753,
+            "avgBossHpLeftLoss": 0.4407265774378585,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 554,
+            "avgIncoming": 118.75,
+            "avgPotionHeals": 0.25,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 42.5,
+            "avgRegenTicks": 4.25,
+            "avgHeadRegrows": 1.25,
+            "avgEnrages": 0,
+            "avgHeadHeal": 65.375,
+            "avgPlayerDpt": 116.63157894736842,
+            "avgIncomingDpt": 25,
+            "practicalEhp": 630.875,
+            "expectedTtk": 4.484205776173285,
+            "expectedTtkPractical": 5.409126805054152,
+            "expectedTtl": 4.54,
+            "topKills": [
+              {
+                "name": "Twin Bite",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "poison",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.27578947368421053,
+              "burn": 0,
+              "poison": 0.15578947368421053,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Twin Bite",
+                  "v": 270,
+                  "share": 0.5684210526315789
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 6.4,
+        "avgHpEnter": 0.906060606060606,
+        "avgHpEnterAbs": 116.4,
+        "avgHpLeftWin": 0.44605223429951685,
+        "avgBossHpLeftLoss": 0.4407265774378585,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 569.8,
+        "avgIncoming": 167.4,
+        "avgPotionHeals": 1.2,
+        "avgSkillHeals": 0.2,
+        "avgGuards": 0,
+        "avgWards": 0,
+        "avgTaunts": 0,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 58,
+        "avgRegenTicks": 5.8,
+        "avgHeadRegrows": 1.4,
+        "avgEnrages": 0.2,
+        "avgHeadHeal": 73.22,
+        "avgPlayerDpt": 89.03124999999999,
+        "avgIncomingDpt": 26.15625,
+        "practicalEhp": 654.22,
+        "expectedTtk": 5.874341874341876,
+        "expectedTtkPractical": 7.34820638820639,
+        "expectedTtl": 4.450179211469535,
+        "topKills": [
+          {
+            "name": "Twin Bite",
+            "n": 1,
+            "rate": 0.5
+          },
+          {
+            "name": "poison",
+            "n": 1,
+            "rate": 0.5
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.2962962962962963,
+          "burn": 0,
+          "poison": 0.17204301075268819,
+          "torment": 0,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0,
+          "specials": [
+            {
+              "name": "Twin Bite",
+              "v": 445,
+              "share": 0.5316606929510155
+            }
+          ]
+        }
+      },
+      "autoplay_full": {
+        "n": 5,
+        "wins": 3,
+        "losses": 2,
+        "winRate": 0.6,
+        "potionHeals": 7,
+        "skillHeals": 1,
+        "guards": 2,
+        "wards": 0,
+        "taunts": 0,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 340,
+        "regenTicks": 34,
+        "headRegrows": 8,
+        "enrages": 2,
+        "kills": {
+          "Twin Bite": 1,
+          "basic": 1
+        },
+        "dmgBasic": 315,
+        "dmgBurn": 0,
+        "dmgPoison": 177,
+        "dmgTorment": 0,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Twin Bite": 492
+        },
+        "byClass": {
+          "warrior": {
+            "n": 1,
+            "wins": 1,
+            "losses": 0,
+            "winRate": 1,
+            "potionHeals": 5,
+            "skillHeals": 1,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 120,
+            "regenTicks": 12,
+            "headRegrows": 2,
+            "enrages": 1,
+            "kills": {},
+            "dmgBasic": 117,
+            "dmgBurn": 0,
+            "dmgPoison": 70,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 175
+            },
+            "byClass": {},
+            "avgTurns": 13,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 128,
+            "avgHpLeftWin": 0.2265625,
+            "avgBossHpLeftLoss": null,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 633,
+            "avgIncoming": 362,
+            "avgPotionHeals": 5,
+            "avgSkillHeals": 1,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 120,
+            "avgRegenTicks": 12,
+            "avgHeadRegrows": 2,
+            "avgEnrages": 1,
+            "avgHeadHeal": 104.60000000000001,
+            "avgPlayerDpt": 48.69230769230769,
+            "avgIncomingDpt": 27.846153846153847,
+            "practicalEhp": 747.6,
+            "expectedTtk": 10.740916271721959,
+            "expectedTtkPractical": 15.353554502369668,
+            "expectedTtl": 4.596685082872928,
+            "topKills": [],
+            "dmgShare": {
+              "basic": 0.32320441988950277,
+              "burn": 0,
+              "poison": 0.19337016574585636,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Twin Bite",
+                  "v": 175,
+                  "share": 0.48342541436464087
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 4,
+            "wins": 2,
+            "losses": 2,
+            "winRate": 0.5,
+            "potionHeals": 2,
+            "skillHeals": 0,
+            "guards": 2,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 220,
+            "regenTicks": 22,
+            "headRegrows": 6,
+            "enrages": 1,
+            "kills": {
+              "Twin Bite": 1,
+              "basic": 1
+            },
+            "dmgBasic": 198,
+            "dmgBurn": 0,
+            "dmgPoison": 107,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 317
+            },
+            "byClass": {},
+            "avgTurns": 6,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 129,
+            "avgHpLeftWin": 0.5557971014492753,
+            "avgBossHpLeftLoss": 0.26003824091778205,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 619.5,
+            "avgIncoming": 155.5,
+            "avgPotionHeals": 0.5,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.5,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 55,
+            "avgRegenTicks": 5.5,
+            "avgHeadRegrows": 1.5,
+            "avgEnrages": 0.25,
+            "avgHeadHeal": 78.45000000000002,
+            "avgPlayerDpt": 103.25,
+            "avgIncomingDpt": 25.916666666666668,
+            "practicalEhp": 656.45,
+            "expectedTtk": 5.065375302663438,
+            "expectedTtkPractical": 6.357869249394674,
+            "expectedTtl": 4.977491961414791,
+            "topKills": [
+              {
+                "name": "Twin Bite",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.3183279742765273,
+              "burn": 0,
+              "poison": 0.1720257234726688,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Twin Bite",
+                  "v": 317,
+                  "share": 0.5096463022508039
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 7.4,
+        "avgHpEnter": 1,
+        "avgHpEnterAbs": 128.8,
+        "avgHpLeftWin": 0.44605223429951685,
+        "avgBossHpLeftLoss": 0.26003824091778205,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 622.2,
+        "avgIncoming": 196.8,
+        "avgPotionHeals": 1.4,
+        "avgSkillHeals": 0.2,
+        "avgGuards": 0.4,
+        "avgWards": 0,
+        "avgTaunts": 0,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 68,
+        "avgRegenTicks": 6.8,
+        "avgHeadRegrows": 1.6,
+        "avgEnrages": 0.4,
+        "avgHeadHeal": 83.68000000000002,
+        "avgPlayerDpt": 84.08108108108108,
+        "avgIncomingDpt": 26.594594594594597,
+        "practicalEhp": 674.6800000000001,
+        "expectedTtk": 6.22018643522983,
+        "expectedTtkPractical": 8.02415943426551,
+        "expectedTtl": 4.843089430894309,
+        "topKills": [
+          {
+            "name": "Twin Bite",
+            "n": 1,
+            "rate": 0.5
+          },
+          {
+            "name": "basic",
+            "n": 1,
+            "rate": 0.5
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.3201219512195122,
+          "burn": 0,
+          "poison": 0.1798780487804878,
+          "torment": 0,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0,
+          "specials": [
+            {
+              "name": "Twin Bite",
+              "v": 492,
+              "share": 0.5
+            }
+          ]
+        }
+      },
+      "bossaware_observed": {
+        "n": 5,
+        "wins": 3,
+        "losses": 2,
+        "winRate": 0.6,
+        "potionHeals": 11,
+        "skillHeals": 1,
+        "guards": 3,
+        "wards": 4,
+        "taunts": 4,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 450,
+        "regenTicks": 45,
+        "headRegrows": 8,
+        "enrages": 4,
+        "kills": {
+          "Twin Bite": 2
+        },
+        "dmgBasic": 395,
+        "dmgBurn": 0,
+        "dmgPoison": 178,
+        "dmgTorment": 25,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Twin Bite": 436,
+          "TWO SORROWS": 102
+        },
+        "byClass": {
+          "warrior": {
+            "n": 1,
+            "wins": 1,
+            "losses": 0,
+            "winRate": 1,
+            "potionHeals": 5,
+            "skillHeals": 1,
+            "guards": 1,
+            "wards": 4,
+            "taunts": 4,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 190,
+            "regenTicks": 19,
+            "headRegrows": 2,
+            "enrages": 1,
+            "kills": {},
+            "dmgBasic": 161,
+            "dmgBurn": 0,
+            "dmgPoison": 30,
+            "dmgTorment": 25,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 23,
+              "TWO SORROWS": 102
+            },
+            "byClass": {},
+            "avgTurns": 20,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 128,
+            "avgHpLeftWin": 0.0078125,
+            "avgBossHpLeftLoss": null,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 709,
+            "avgIncoming": 341,
+            "avgPotionHeals": 5,
+            "avgSkillHeals": 1,
+            "avgGuards": 1,
+            "avgWards": 4,
+            "avgTaunts": 4,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 190,
+            "avgRegenTicks": 19,
+            "avgHeadRegrows": 2,
+            "avgEnrages": 1,
+            "avgHeadHeal": 104.60000000000001,
+            "avgPlayerDpt": 35.45,
+            "avgIncomingDpt": 17.05,
+            "practicalEhp": 817.6,
+            "expectedTtk": 14.753173483779971,
+            "expectedTtkPractical": 23.063469675599436,
+            "expectedTtl": 7.50733137829912,
+            "topKills": [],
+            "dmgShare": {
+              "basic": 0.47214076246334313,
+              "burn": 0,
+              "poison": 0.08797653958944282,
+              "torment": 0.07331378299120235,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.2991202346041056,
+              "specials": [
+                {
+                  "name": "TWO SORROWS",
+                  "v": 102,
+                  "share": 0.2991202346041056
+                },
+                {
+                  "name": "Twin Bite",
+                  "v": 23,
+                  "share": 0.06744868035190615
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 4,
+            "wins": 2,
+            "losses": 2,
+            "winRate": 0.5,
+            "potionHeals": 6,
+            "skillHeals": 0,
+            "guards": 2,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 260,
+            "regenTicks": 26,
+            "headRegrows": 6,
+            "enrages": 3,
+            "kills": {
+              "Twin Bite": 2
+            },
+            "dmgBasic": 234,
+            "dmgBurn": 0,
+            "dmgPoison": 148,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 413
+            },
+            "byClass": {},
+            "avgTurns": 7,
+            "avgHpEnter": 0.8825757575757576,
+            "avgHpEnterAbs": 113.5,
+            "avgHpLeftWin": 0.6499999999999999,
+            "avgBossHpLeftLoss": 0.2112810707456979,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 606.25,
+            "avgIncoming": 198.75,
+            "avgPotionHeals": 1.5,
+            "avgSkillHeals": 0,
+            "avgGuards": 0.5,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 65,
+            "avgRegenTicks": 6.5,
+            "avgHeadRegrows": 1.5,
+            "avgEnrages": 0.75,
+            "avgHeadHeal": 78.45000000000002,
+            "avgPlayerDpt": 86.60714285714286,
+            "avgIncomingDpt": 28.392857142857142,
+            "practicalEhp": 666.45,
+            "expectedTtk": 6.0387628865979375,
+            "expectedTtkPractical": 7.695092783505155,
+            "expectedTtl": 3.9974842767295597,
+            "topKills": [
+              {
+                "name": "Twin Bite",
+                "n": 2,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.2943396226415094,
+              "burn": 0,
+              "poison": 0.1861635220125786,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Twin Bite",
+                  "v": 413,
+                  "share": 0.519496855345912
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 9.6,
+        "avgHpEnter": 0.906060606060606,
+        "avgHpEnterAbs": 116.4,
+        "avgHpLeftWin": 0.4359374999999999,
+        "avgBossHpLeftLoss": 0.2112810707456979,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 626.8,
+        "avgIncoming": 227.2,
+        "avgPotionHeals": 2.2,
+        "avgSkillHeals": 0.2,
+        "avgGuards": 0.6,
+        "avgWards": 0.8,
+        "avgTaunts": 0.8,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 90,
+        "avgRegenTicks": 9,
+        "avgHeadRegrows": 1.6,
+        "avgEnrages": 0.8,
+        "avgHeadHeal": 83.68000000000002,
+        "avgPlayerDpt": 65.29166666666667,
+        "avgIncomingDpt": 23.666666666666668,
+        "practicalEhp": 696.6800000000001,
+        "expectedTtk": 8.010210593490745,
+        "expectedTtkPractical": 10.670274409700063,
+        "expectedTtl": 4.918309859154929,
+        "topKills": [
+          {
+            "name": "Twin Bite",
+            "n": 2,
+            "rate": 1
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.3477112676056338,
+          "burn": 0,
+          "poison": 0.15669014084507044,
+          "torment": 0.022007042253521125,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0.0897887323943662,
+          "specials": [
+            {
+              "name": "Twin Bite",
+              "v": 436,
+              "share": 0.38380281690140844
+            },
+            {
+              "name": "TWO SORROWS",
+              "v": 102,
+              "share": 0.0897887323943662
+            }
+          ]
+        }
+      },
+      "bossaware_full": {
+        "n": 5,
+        "wins": 3,
+        "losses": 2,
+        "winRate": 0.6,
+        "potionHeals": 11,
+        "skillHeals": 1,
+        "guards": 5,
+        "wards": 4,
+        "taunts": 4,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 460,
+        "regenTicks": 46,
+        "headRegrows": 8,
+        "enrages": 4,
+        "kills": {
+          "Twin Bite": 1,
+          "basic": 1
+        },
+        "dmgBasic": 436,
+        "dmgBurn": 0,
+        "dmgPoison": 189,
+        "dmgTorment": 25,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Twin Bite": 432,
+          "TWO SORROWS": 102
+        },
+        "byClass": {
+          "warrior": {
+            "n": 1,
+            "wins": 1,
+            "losses": 0,
+            "winRate": 1,
+            "potionHeals": 5,
+            "skillHeals": 1,
+            "guards": 1,
+            "wards": 4,
+            "taunts": 4,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 190,
+            "regenTicks": 19,
+            "headRegrows": 2,
+            "enrages": 1,
+            "kills": {},
+            "dmgBasic": 161,
+            "dmgBurn": 0,
+            "dmgPoison": 30,
+            "dmgTorment": 25,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 23,
+              "TWO SORROWS": 102
+            },
+            "byClass": {},
+            "avgTurns": 20,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 128,
+            "avgHpLeftWin": 0.0078125,
+            "avgBossHpLeftLoss": null,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 709,
+            "avgIncoming": 341,
+            "avgPotionHeals": 5,
+            "avgSkillHeals": 1,
+            "avgGuards": 1,
+            "avgWards": 4,
+            "avgTaunts": 4,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 190,
+            "avgRegenTicks": 19,
+            "avgHeadRegrows": 2,
+            "avgEnrages": 1,
+            "avgHeadHeal": 104.60000000000001,
+            "avgPlayerDpt": 35.45,
+            "avgIncomingDpt": 17.05,
+            "practicalEhp": 817.6,
+            "expectedTtk": 14.753173483779971,
+            "expectedTtkPractical": 23.063469675599436,
+            "expectedTtl": 7.50733137829912,
+            "topKills": [],
+            "dmgShare": {
+              "basic": 0.47214076246334313,
+              "burn": 0,
+              "poison": 0.08797653958944282,
+              "torment": 0.07331378299120235,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.2991202346041056,
+              "specials": [
+                {
+                  "name": "TWO SORROWS",
+                  "v": 102,
+                  "share": 0.2991202346041056
+                },
+                {
+                  "name": "Twin Bite",
+                  "v": 23,
+                  "share": 0.06744868035190615
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 4,
+            "wins": 2,
+            "losses": 2,
+            "winRate": 0.5,
+            "potionHeals": 6,
+            "skillHeals": 0,
+            "guards": 4,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 270,
+            "regenTicks": 27,
+            "headRegrows": 6,
+            "enrages": 3,
+            "kills": {
+              "Twin Bite": 1,
+              "basic": 1
+            },
+            "dmgBasic": 275,
+            "dmgBurn": 0,
+            "dmgPoison": 159,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Twin Bite": 409
+            },
+            "byClass": {},
+            "avgTurns": 7.25,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 129,
+            "avgHpLeftWin": 0.6499999999999999,
+            "avgBossHpLeftLoss": 0.29541108986615683,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 584.5,
+            "avgIncoming": 210.75,
+            "avgPotionHeals": 1.5,
+            "avgSkillHeals": 0,
+            "avgGuards": 1,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 67.5,
+            "avgRegenTicks": 6.75,
+            "avgHeadRegrows": 1.5,
+            "avgEnrages": 0.75,
+            "avgHeadHeal": 78.45000000000002,
+            "avgPlayerDpt": 80.62068965517241,
+            "avgIncomingDpt": 29.06896551724138,
+            "practicalEhp": 668.95,
+            "expectedTtk": 6.487168520102652,
+            "expectedTtkPractical": 8.297497861420018,
+            "expectedTtl": 4.437722419928825,
+            "topKills": [
+              {
+                "name": "Twin Bite",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.3262158956109134,
+              "burn": 0,
+              "poison": 0.18861209964412812,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Twin Bite",
+                  "v": 409,
+                  "share": 0.4851720047449585
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 9.8,
+        "avgHpEnter": 1,
+        "avgHpEnterAbs": 128.8,
+        "avgHpLeftWin": 0.4359374999999999,
+        "avgBossHpLeftLoss": 0.29541108986615683,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 609.4,
+        "avgIncoming": 236.8,
+        "avgPotionHeals": 2.2,
+        "avgSkillHeals": 0.2,
+        "avgGuards": 1,
+        "avgWards": 0.8,
+        "avgTaunts": 0.8,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 92,
+        "avgRegenTicks": 9.2,
+        "avgHeadRegrows": 1.6,
+        "avgEnrages": 0.8,
+        "avgHeadHeal": 83.68000000000002,
+        "avgPlayerDpt": 62.18367346938775,
+        "avgIncomingDpt": 24.163265306122447,
+        "practicalEhp": 698.6800000000001,
+        "expectedTtk": 8.410567771578602,
+        "expectedTtkPractical": 11.235746636035447,
+        "expectedTtl": 5.330405405405406,
+        "topKills": [
+          {
+            "name": "Twin Bite",
+            "n": 1,
+            "rate": 0.5
+          },
+          {
+            "name": "basic",
+            "n": 1,
+            "rate": 0.5
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.36824324324324326,
+          "burn": 0,
+          "poison": 0.15962837837837837,
+          "torment": 0.021114864864864864,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0.08614864864864864,
+          "specials": [
+            {
+              "name": "Twin Bite",
+              "v": 432,
+              "share": 0.36486486486486486
+            },
+            {
+              "name": "TWO SORROWS",
+              "v": 102,
+              "share": 0.08614864864864864
+            }
+          ]
+        }
+      }
+    },
+    "hydra": {
+      "autoplay_observed": {
+        "n": 4,
+        "wins": 0,
+        "losses": 4,
+        "winRate": 0,
+        "potionHeals": 8,
+        "skillHeals": 1,
+        "guards": 0,
+        "wards": 0,
+        "taunts": 0,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 360,
+        "regenTicks": 36,
+        "headRegrows": 5,
+        "enrages": 4,
+        "kills": {
+          "basic": 1,
+          "SORROW UNENDING": 1,
+          "Threefold Snap": 2
+        },
+        "dmgBasic": 410,
+        "dmgBurn": 0,
+        "dmgPoison": 127,
+        "dmgTorment": 15,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Threefold Snap": 402,
+          "SORROW UNENDING": 538
+        },
+        "byClass": {
+          "warrior": {
+            "n": 2,
+            "wins": 0,
+            "losses": 2,
+            "winRate": 0,
+            "potionHeals": 3,
+            "skillHeals": 1,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 160,
+            "regenTicks": 16,
+            "headRegrows": 3,
+            "enrages": 2,
+            "kills": {
+              "basic": 1,
+              "Threefold Snap": 1
+            },
+            "dmgBasic": 208,
+            "dmgBurn": 0,
+            "dmgPoison": 91,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 255
+            },
+            "byClass": {},
+            "avgTurns": 8,
+            "avgHpEnter": 0.8081761006289307,
+            "avgHpEnterAbs": 129.5,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.3240917782026769,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 422,
+            "avgIncoming": 277,
+            "avgPotionHeals": 1.5,
+            "avgSkillHeals": 0.5,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 80,
+            "avgRegenTicks": 8,
+            "avgHeadRegrows": 1.5,
+            "avgEnrages": 1,
+            "avgHeadHeal": 78.45000000000002,
+            "avgPlayerDpt": 52.75,
+            "avgIncomingDpt": 34.625,
+            "practicalEhp": 681.45,
+            "expectedTtk": 9.914691943127963,
+            "expectedTtkPractical": 12.918483412322276,
+            "expectedTtl": 3.740072202166065,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "Threefold Snap",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.37545126353790614,
+              "burn": 0,
+              "poison": 0.16425992779783394,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Threefold Snap",
+                  "v": 255,
+                  "share": 0.4602888086642599
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 2,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 130,
+            "regenTicks": 13,
+            "headRegrows": 2,
+            "enrages": 1,
+            "kills": {
+              "SORROW UNENDING": 1
+            },
+            "dmgBasic": 156,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 15,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "SORROW UNENDING": 538
+            },
+            "byClass": {},
+            "avgTurns": 13,
+            "avgHpEnter": 0.9112903225806451,
+            "avgHpEnterAbs": 113,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.27915869980879543,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 611,
+            "avgIncoming": 709,
+            "avgPotionHeals": 2,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 130,
+            "avgRegenTicks": 13,
+            "avgHeadRegrows": 2,
+            "avgEnrages": 1,
+            "avgHeadHeal": 104.60000000000001,
+            "avgPlayerDpt": 47,
+            "avgIncomingDpt": 54.53846153846154,
+            "practicalEhp": 757.6,
+            "expectedTtk": 11.127659574468085,
+            "expectedTtkPractical": 16.119148936170212,
+            "expectedTtl": 2.071932299012694,
+            "topKills": [
+              {
+                "name": "SORROW UNENDING",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.22002820874471085,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.021156558533145273,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.7588152327221439,
+              "specials": [
+                {
+                  "name": "SORROW UNENDING",
+                  "v": 538,
+                  "share": 0.7588152327221439
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 3,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 70,
+            "regenTicks": 7,
+            "headRegrows": 0,
+            "enrages": 1,
+            "kills": {
+              "Threefold Snap": 1
+            },
+            "dmgBasic": 46,
+            "dmgBurn": 0,
+            "dmgPoison": 36,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 147
+            },
+            "byClass": {},
+            "avgTurns": 7,
+            "avgHpEnter": 0.7567567567567568,
+            "avgHpEnterAbs": 112,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.6978967495219885,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 228,
+            "avgIncoming": 229,
+            "avgPotionHeals": 3,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 70,
+            "avgRegenTicks": 7,
+            "avgHeadRegrows": 0,
+            "avgEnrages": 1,
+            "avgHeadHeal": 0,
+            "avgPlayerDpt": 32.57142857142857,
+            "avgIncomingDpt": 32.714285714285715,
+            "practicalEhp": 593,
+            "expectedTtk": 16.05701754385965,
+            "expectedTtkPractical": 18.206140350877195,
+            "expectedTtl": 3.423580786026201,
+            "topKills": [
+              {
+                "name": "Threefold Snap",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.20087336244541484,
+              "burn": 0,
+              "poison": 0.1572052401746725,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Threefold Snap",
+                  "v": 147,
+                  "share": 0.6419213973799127
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 9,
+        "avgHpEnter": 0.8210998201488159,
+        "avgHpEnterAbs": 121,
+        "avgHpLeftWin": null,
+        "avgBossHpLeftLoss": 0.40630975143403447,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 420.75,
+        "avgIncoming": 373,
+        "avgPotionHeals": 2,
+        "avgSkillHeals": 0.25,
+        "avgGuards": 0,
+        "avgWards": 0,
+        "avgTaunts": 0,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 90,
+        "avgRegenTicks": 9,
+        "avgHeadRegrows": 1.25,
+        "avgEnrages": 1,
+        "avgHeadHeal": 65.375,
+        "avgPlayerDpt": 46.75,
+        "avgIncomingDpt": 41.44444444444444,
+        "practicalEhp": 678.375,
+        "expectedTtk": 11.18716577540107,
+        "expectedTtkPractical": 14.510695187165775,
+        "expectedTtl": 2.9195710455764075,
+        "topKills": [
+          {
+            "name": "Threefold Snap",
+            "n": 2,
+            "rate": 0.5
+          },
+          {
+            "name": "basic",
+            "n": 1,
+            "rate": 0.25
+          },
+          {
+            "name": "SORROW UNENDING",
+            "n": 1,
+            "rate": 0.25
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.27479892761394104,
+          "burn": 0,
+          "poison": 0.08512064343163539,
+          "torment": 0.010053619302949061,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0.3605898123324397,
+          "specials": [
+            {
+              "name": "SORROW UNENDING",
+              "v": 538,
+              "share": 0.3605898123324397
+            },
+            {
+              "name": "Threefold Snap",
+              "v": 402,
+              "share": 0.26943699731903487
+            }
+          ]
+        }
+      },
+      "autoplay_full": {
+        "n": 4,
+        "wins": 0,
+        "losses": 4,
+        "winRate": 0,
+        "potionHeals": 8,
+        "skillHeals": 1,
+        "guards": 0,
+        "wards": 0,
+        "taunts": 0,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 380,
+        "regenTicks": 38,
+        "headRegrows": 5,
+        "enrages": 4,
+        "kills": {
+          "basic": 1,
+          "SORROW UNENDING": 1,
+          "poison": 2
+        },
+        "dmgBasic": 399,
+        "dmgBurn": 0,
+        "dmgPoison": 178,
+        "dmgTorment": 15,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Threefold Snap": 415,
+          "SORROW UNENDING": 538
+        },
+        "byClass": {
+          "warrior": {
+            "n": 2,
+            "wins": 0,
+            "losses": 2,
+            "winRate": 0,
+            "potionHeals": 3,
+            "skillHeals": 1,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 180,
+            "regenTicks": 18,
+            "headRegrows": 3,
+            "enrages": 2,
+            "kills": {
+              "basic": 1,
+              "poison": 1
+            },
+            "dmgBasic": 197,
+            "dmgBurn": 0,
+            "dmgPoison": 130,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 268
+            },
+            "byClass": {},
+            "avgTurns": 9,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 160,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.2715105162523901,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 459,
+            "avgIncoming": 297.5,
+            "avgPotionHeals": 1.5,
+            "avgSkillHeals": 0.5,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 90,
+            "avgRegenTicks": 9,
+            "avgHeadRegrows": 1.5,
+            "avgEnrages": 1,
+            "avgHeadHeal": 78.45000000000002,
+            "avgPlayerDpt": 51,
+            "avgIncomingDpt": 33.05555555555556,
+            "practicalEhp": 691.45,
+            "expectedTtk": 10.254901960784315,
+            "expectedTtkPractical": 13.557843137254903,
+            "expectedTtl": 4.840336134453781,
+            "topKills": [
+              {
+                "name": "basic",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "poison",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.3310924369747899,
+              "burn": 0,
+              "poison": 0.2184873949579832,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Threefold Snap",
+                  "v": 268,
+                  "share": 0.4504201680672269
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 2,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 130,
+            "regenTicks": 13,
+            "headRegrows": 2,
+            "enrages": 1,
+            "kills": {
+              "SORROW UNENDING": 1
+            },
+            "dmgBasic": 156,
+            "dmgBurn": 0,
+            "dmgPoison": 0,
+            "dmgTorment": 15,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "SORROW UNENDING": 538
+            },
+            "byClass": {},
+            "avgTurns": 13,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 124,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.27915869980879543,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 611,
+            "avgIncoming": 709,
+            "avgPotionHeals": 2,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 130,
+            "avgRegenTicks": 13,
+            "avgHeadRegrows": 2,
+            "avgEnrages": 1,
+            "avgHeadHeal": 104.60000000000001,
+            "avgPlayerDpt": 47,
+            "avgIncomingDpt": 54.53846153846154,
+            "practicalEhp": 757.6,
+            "expectedTtk": 11.127659574468085,
+            "expectedTtkPractical": 16.119148936170212,
+            "expectedTtl": 2.2736248236953456,
+            "topKills": [
+              {
+                "name": "SORROW UNENDING",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.22002820874471085,
+              "burn": 0,
+              "poison": 0,
+              "torment": 0.021156558533145273,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.7588152327221439,
+              "specials": [
+                {
+                  "name": "SORROW UNENDING",
+                  "v": 538,
+                  "share": 0.7588152327221439
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 3,
+            "skillHeals": 0,
+            "guards": 0,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 70,
+            "regenTicks": 7,
+            "headRegrows": 0,
+            "enrages": 1,
+            "kills": {
+              "poison": 1
+            },
+            "dmgBasic": 46,
+            "dmgBurn": 0,
+            "dmgPoison": 48,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 147
+            },
+            "byClass": {},
+            "avgTurns": 7,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 148,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.6978967495219885,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 228,
+            "avgIncoming": 241,
+            "avgPotionHeals": 3,
+            "avgSkillHeals": 0,
+            "avgGuards": 0,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 70,
+            "avgRegenTicks": 7,
+            "avgHeadRegrows": 0,
+            "avgEnrages": 1,
+            "avgHeadHeal": 0,
+            "avgPlayerDpt": 32.57142857142857,
+            "avgIncomingDpt": 34.42857142857143,
+            "practicalEhp": 593,
+            "expectedTtk": 16.05701754385965,
+            "expectedTtkPractical": 18.206140350877195,
+            "expectedTtl": 4.2987551867219915,
+            "topKills": [
+              {
+                "name": "poison",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.1908713692946058,
+              "burn": 0,
+              "poison": 0.1991701244813278,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Threefold Snap",
+                  "v": 147,
+                  "share": 0.6099585062240664
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 9.5,
+        "avgHpEnter": 1,
+        "avgHpEnterAbs": 148,
+        "avgHpLeftWin": null,
+        "avgBossHpLeftLoss": 0.3800191204588911,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 439.25,
+        "avgIncoming": 386.25,
+        "avgPotionHeals": 2,
+        "avgSkillHeals": 0.25,
+        "avgGuards": 0,
+        "avgWards": 0,
+        "avgTaunts": 0,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 95,
+        "avgRegenTicks": 9.5,
+        "avgHeadRegrows": 1.25,
+        "avgEnrages": 1,
+        "avgHeadHeal": 65.375,
+        "avgPlayerDpt": 46.23684210526316,
+        "avgIncomingDpt": 40.6578947368421,
+        "practicalEhp": 683.375,
+        "expectedTtk": 11.311326124075128,
+        "expectedTtkPractical": 14.77988047808765,
+        "expectedTtl": 3.640129449838188,
+        "topKills": [
+          {
+            "name": "poison",
+            "n": 2,
+            "rate": 0.5
+          },
+          {
+            "name": "basic",
+            "n": 1,
+            "rate": 0.25
+          },
+          {
+            "name": "SORROW UNENDING",
+            "n": 1,
+            "rate": 0.25
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.258252427184466,
+          "burn": 0,
+          "poison": 0.11521035598705502,
+          "torment": 0.009708737864077669,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0.3482200647249191,
+          "specials": [
+            {
+              "name": "SORROW UNENDING",
+              "v": 538,
+              "share": 0.3482200647249191
+            },
+            {
+              "name": "Threefold Snap",
+              "v": 415,
+              "share": 0.2686084142394822
+            }
+          ]
+        }
+      },
+      "bossaware_observed": {
+        "n": 4,
+        "wins": 0,
+        "losses": 4,
+        "winRate": 0,
+        "potionHeals": 10,
+        "skillHeals": 10,
+        "guards": 3,
+        "wards": 9,
+        "taunts": 3,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 500,
+        "regenTicks": 50,
+        "headRegrows": 4,
+        "enrages": 4,
+        "kills": {
+          "SORROW UNENDING": 1,
+          "poison": 2,
+          "torment": 1
+        },
+        "dmgBasic": 525,
+        "dmgBurn": 0,
+        "dmgPoison": 328,
+        "dmgTorment": 21,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Threefold Snap": 456,
+          "SORROW UNENDING": 398
+        },
+        "byClass": {
+          "warrior": {
+            "n": 2,
+            "wins": 0,
+            "losses": 2,
+            "winRate": 0,
+            "potionHeals": 3,
+            "skillHeals": 1,
+            "guards": 1,
+            "wards": 3,
+            "taunts": 3,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 210,
+            "regenTicks": 21,
+            "headRegrows": 3,
+            "enrages": 2,
+            "kills": {
+              "SORROW UNENDING": 1,
+              "torment": 1
+            },
+            "dmgBasic": 246,
+            "dmgBurn": 0,
+            "dmgPoison": 78,
+            "dmgTorment": 6,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 87,
+              "SORROW UNENDING": 250
+            },
+            "byClass": {},
+            "avgTurns": 10.5,
+            "avgHpEnter": 0.8081761006289307,
+            "avgHpEnterAbs": 129.5,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.36233269598470363,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 470,
+            "avgIncoming": 333.5,
+            "avgPotionHeals": 1.5,
+            "avgSkillHeals": 0.5,
+            "avgGuards": 0.5,
+            "avgWards": 1.5,
+            "avgTaunts": 1.5,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 105,
+            "avgRegenTicks": 10.5,
+            "avgHeadRegrows": 1.5,
+            "avgEnrages": 1,
+            "avgHeadHeal": 78.45000000000002,
+            "avgPlayerDpt": 44.76190476190476,
+            "avgIncomingDpt": 31.761904761904763,
+            "practicalEhp": 706.45,
+            "expectedTtk": 11.68404255319149,
+            "expectedTtkPractical": 15.78239361702128,
+            "expectedTtl": 4.077211394302848,
+            "topKills": [
+              {
+                "name": "SORROW UNENDING",
+                "n": 1,
+                "rate": 0.5
+              },
+              {
+                "name": "torment",
+                "n": 1,
+                "rate": 0.5
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.36881559220389803,
+              "burn": 0,
+              "poison": 0.11694152923538231,
+              "torment": 0.008995502248875561,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.3748125937031484,
+              "specials": [
+                {
+                  "name": "SORROW UNENDING",
+                  "v": 250,
+                  "share": 0.3748125937031484
+                },
+                {
+                  "name": "Threefold Snap",
+                  "v": 87,
+                  "share": 0.13043478260869565
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 3,
+            "skillHeals": 0,
+            "guards": 1,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 90,
+            "regenTicks": 9,
+            "headRegrows": 1,
+            "enrages": 1,
+            "kills": {
+              "poison": 1
+            },
+            "dmgBasic": 91,
+            "dmgBurn": 0,
+            "dmgPoison": 10,
+            "dmgTorment": 15,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "SORROW UNENDING": 148,
+              "Threefold Snap": 88
+            },
+            "byClass": {},
+            "avgTurns": 9,
+            "avgHpEnter": 0.9112903225806451,
+            "avgHpEnterAbs": 113,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.6978967495219885,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 300,
+            "avgIncoming": 352,
+            "avgPotionHeals": 3,
+            "avgSkillHeals": 0,
+            "avgGuards": 1,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 90,
+            "avgRegenTicks": 9,
+            "avgHeadRegrows": 1,
+            "avgEnrages": 1,
+            "avgHeadHeal": 52.300000000000004,
+            "avgPlayerDpt": 33.333333333333336,
+            "avgIncomingDpt": 39.111111111111114,
+            "practicalEhp": 665.3,
+            "expectedTtk": 15.69,
+            "expectedTtkPractical": 19.958999999999996,
+            "expectedTtl": 2.8892045454545454,
+            "topKills": [
+              {
+                "name": "poison",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.2585227272727273,
+              "burn": 0,
+              "poison": 0.028409090909090908,
+              "torment": 0.04261363636363636,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.42045454545454547,
+              "specials": [
+                {
+                  "name": "SORROW UNENDING",
+                  "v": 148,
+                  "share": 0.42045454545454547
+                },
+                {
+                  "name": "Threefold Snap",
+                  "v": 88,
+                  "share": 0.25
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 4,
+            "skillHeals": 9,
+            "guards": 1,
+            "wards": 6,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 200,
+            "regenTicks": 20,
+            "headRegrows": 0,
+            "enrages": 1,
+            "kills": {
+              "poison": 1
+            },
+            "dmgBasic": 188,
+            "dmgBurn": 0,
+            "dmgPoison": 240,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 281
+            },
+            "byClass": {},
+            "avgTurns": 24,
+            "avgHpEnter": 0.7567567567567568,
+            "avgHpEnterAbs": 112,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 1,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 186,
+            "avgIncoming": 709,
+            "avgPotionHeals": 4,
+            "avgSkillHeals": 9,
+            "avgGuards": 1,
+            "avgWards": 6,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 200,
+            "avgRegenTicks": 20,
+            "avgHeadRegrows": 0,
+            "avgEnrages": 1,
+            "avgHeadHeal": 0,
+            "avgPlayerDpt": 7.75,
+            "avgIncomingDpt": 29.541666666666668,
+            "practicalEhp": 723,
+            "expectedTtk": 67.48387096774194,
+            "expectedTtkPractical": 93.29032258064517,
+            "expectedTtl": 3.791255289139633,
+            "topKills": [
+              {
+                "name": "poison",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.2651622002820874,
+              "burn": 0,
+              "poison": 0.3385049365303244,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0,
+              "specials": [
+                {
+                  "name": "Threefold Snap",
+                  "v": 281,
+                  "share": 0.39633286318758815
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 13.5,
+        "avgHpEnter": 0.8210998201488159,
+        "avgHpEnterAbs": 121,
+        "avgHpLeftWin": null,
+        "avgBossHpLeftLoss": 0.6056405353728489,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 356.5,
+        "avgIncoming": 432,
+        "avgPotionHeals": 2.5,
+        "avgSkillHeals": 2.5,
+        "avgGuards": 0.75,
+        "avgWards": 2.25,
+        "avgTaunts": 0.75,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 125,
+        "avgRegenTicks": 12.5,
+        "avgHeadRegrows": 1,
+        "avgEnrages": 1,
+        "avgHeadHeal": 52.300000000000004,
+        "avgPlayerDpt": 26.40740740740741,
+        "avgIncomingDpt": 32,
+        "practicalEhp": 700.3,
+        "expectedTtk": 19.805049088359045,
+        "expectedTtkPractical": 26.519074333800837,
+        "expectedTtl": 3.78125,
+        "topKills": [
+          {
+            "name": "poison",
+            "n": 2,
+            "rate": 0.5
+          },
+          {
+            "name": "SORROW UNENDING",
+            "n": 1,
+            "rate": 0.25
+          },
+          {
+            "name": "torment",
+            "n": 1,
+            "rate": 0.25
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.3038194444444444,
+          "burn": 0,
+          "poison": 0.18981481481481483,
+          "torment": 0.012152777777777778,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0.23032407407407407,
+          "specials": [
+            {
+              "name": "Threefold Snap",
+              "v": 456,
+              "share": 0.2638888888888889
+            },
+            {
+              "name": "SORROW UNENDING",
+              "v": 398,
+              "share": 0.23032407407407407
+            }
+          ]
+        }
+      },
+      "bossaware_full": {
+        "n": 4,
+        "wins": 1,
+        "losses": 3,
+        "winRate": 0.25,
+        "potionHeals": 10,
+        "skillHeals": 6,
+        "guards": 2,
+        "wards": 5,
+        "taunts": 2,
+        "freezeApplies": 0,
+        "freezeSkips": 0,
+        "regenHealed": 520,
+        "regenTicks": 52,
+        "headRegrows": 5,
+        "enrages": 4,
+        "kills": {
+          "SORROW UNENDING": 2,
+          "Threefold Snap": 1
+        },
+        "dmgBasic": 510,
+        "dmgBurn": 0,
+        "dmgPoison": 249,
+        "dmgTorment": 15,
+        "dmgSummon": 0,
+        "dmgEscort": 0,
+        "dmgSpecial": {
+          "Threefold Snap": 446,
+          "SORROW UNENDING": 512
+        },
+        "byClass": {
+          "warrior": {
+            "n": 2,
+            "wins": 1,
+            "losses": 1,
+            "winRate": 0.5,
+            "potionHeals": 3,
+            "skillHeals": 1,
+            "guards": 1,
+            "wards": 2,
+            "taunts": 2,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 220,
+            "regenTicks": 22,
+            "headRegrows": 3,
+            "enrages": 2,
+            "kills": {
+              "SORROW UNENDING": 1
+            },
+            "dmgBasic": 273,
+            "dmgBurn": 0,
+            "dmgPoison": 117,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 141,
+              "SORROW UNENDING": 189
+            },
+            "byClass": {},
+            "avgTurns": 11.5,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 160,
+            "avgHpLeftWin": 0.018867924528301886,
+            "avgBossHpLeftLoss": 0.3632887189292543,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 514.5,
+            "avgIncoming": 360,
+            "avgPotionHeals": 1.5,
+            "avgSkillHeals": 0.5,
+            "avgGuards": 0.5,
+            "avgWards": 1,
+            "avgTaunts": 1,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 110,
+            "avgRegenTicks": 11,
+            "avgHeadRegrows": 1.5,
+            "avgEnrages": 1,
+            "avgHeadHeal": 78.45000000000002,
+            "avgPlayerDpt": 44.73913043478261,
+            "avgIncomingDpt": 31.304347826086957,
+            "practicalEhp": 711.45,
+            "expectedTtk": 11.689990281827017,
+            "expectedTtkPractical": 15.902186588921284,
+            "expectedTtl": 5.111111111111111,
+            "topKills": [
+              {
+                "name": "SORROW UNENDING",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.37916666666666665,
+              "burn": 0,
+              "poison": 0.1625,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.2625,
+              "specials": [
+                {
+                  "name": "SORROW UNENDING",
+                  "v": 189,
+                  "share": 0.2625
+                },
+                {
+                  "name": "Threefold Snap",
+                  "v": 141,
+                  "share": 0.19583333333333333
+                }
+              ]
+            }
+          },
+          "archer": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 7,
+            "skillHeals": 0,
+            "guards": 1,
+            "wards": 0,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 170,
+            "regenTicks": 17,
+            "headRegrows": 1,
+            "enrages": 1,
+            "kills": {
+              "Threefold Snap": 1
+            },
+            "dmgBasic": 125,
+            "dmgBurn": 0,
+            "dmgPoison": 60,
+            "dmgTorment": 15,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "SORROW UNENDING": 218,
+              "Threefold Snap": 192
+            },
+            "byClass": {},
+            "avgTurns": 17,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 124,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.5009560229445507,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 483,
+            "avgIncoming": 610,
+            "avgPotionHeals": 7,
+            "avgSkillHeals": 0,
+            "avgGuards": 1,
+            "avgWards": 0,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 170,
+            "avgRegenTicks": 17,
+            "avgHeadRegrows": 1,
+            "avgEnrages": 1,
+            "avgHeadHeal": 52.300000000000004,
+            "avgPlayerDpt": 28.41176470588235,
+            "avgIncomingDpt": 35.88235294117647,
+            "practicalEhp": 745.3,
+            "expectedTtk": 18.407867494824018,
+            "expectedTtkPractical": 26.232091097308487,
+            "expectedTtl": 3.455737704918033,
+            "topKills": [
+              {
+                "name": "Threefold Snap",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.20491803278688525,
+              "burn": 0,
+              "poison": 0.09836065573770492,
+              "torment": 0.02459016393442623,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.35737704918032787,
+              "specials": [
+                {
+                  "name": "SORROW UNENDING",
+                  "v": 218,
+                  "share": 0.35737704918032787
+                },
+                {
+                  "name": "Threefold Snap",
+                  "v": 192,
+                  "share": 0.31475409836065577
+                }
+              ]
+            }
+          },
+          "priest": {
+            "n": 1,
+            "wins": 0,
+            "losses": 1,
+            "winRate": 0,
+            "potionHeals": 0,
+            "skillHeals": 5,
+            "guards": 0,
+            "wards": 3,
+            "taunts": 0,
+            "freezeApplies": 0,
+            "freezeSkips": 0,
+            "regenHealed": 130,
+            "regenTicks": 13,
+            "headRegrows": 1,
+            "enrages": 1,
+            "kills": {
+              "SORROW UNENDING": 1
+            },
+            "dmgBasic": 112,
+            "dmgBurn": 0,
+            "dmgPoison": 72,
+            "dmgTorment": 0,
+            "dmgSummon": 0,
+            "dmgEscort": 0,
+            "dmgSpecial": {
+              "Threefold Snap": 113,
+              "SORROW UNENDING": 105
+            },
+            "byClass": {},
+            "avgTurns": 13,
+            "avgHpEnter": 1,
+            "avgHpEnterAbs": 148,
+            "avgHpLeftWin": null,
+            "avgBossHpLeftLoss": 0.734225621414914,
+            "avgBossMaxHp": 523,
+            "avgPlayerDmg": 321,
+            "avgIncoming": 402,
+            "avgPotionHeals": 0,
+            "avgSkillHeals": 5,
+            "avgGuards": 0,
+            "avgWards": 3,
+            "avgTaunts": 0,
+            "avgFreezeApplies": 0,
+            "avgFreezeSkips": 0,
+            "avgRegenHealed": 130,
+            "avgRegenTicks": 13,
+            "avgHeadRegrows": 1,
+            "avgEnrages": 1,
+            "avgHeadHeal": 52.300000000000004,
+            "avgPlayerDpt": 24.692307692307693,
+            "avgIncomingDpt": 30.923076923076923,
+            "practicalEhp": 705.3,
+            "expectedTtk": 21.180685358255452,
+            "expectedTtkPractical": 28.563551401869155,
+            "expectedTtl": 4.786069651741293,
+            "topKills": [
+              {
+                "name": "SORROW UNENDING",
+                "n": 1,
+                "rate": 1
+              }
+            ],
+            "dmgShare": {
+              "basic": 0.27860696517412936,
+              "burn": 0,
+              "poison": 0.1791044776119403,
+              "torment": 0,
+              "summon": 0,
+              "escort": 0,
+              "finisher": 0.26119402985074625,
+              "specials": [
+                {
+                  "name": "Threefold Snap",
+                  "v": 113,
+                  "share": 0.2810945273631841
+                },
+                {
+                  "name": "SORROW UNENDING",
+                  "v": 105,
+                  "share": 0.26119402985074625
+                }
+              ]
+            }
+          }
+        },
+        "avgTurns": 13.25,
+        "avgHpEnter": 1,
+        "avgHpEnterAbs": 148,
+        "avgHpLeftWin": 0.018867924528301886,
+        "avgBossHpLeftLoss": 0.532823454429573,
+        "avgBossMaxHp": 523,
+        "avgPlayerDmg": 458.25,
+        "avgIncoming": 433,
+        "avgPotionHeals": 2.5,
+        "avgSkillHeals": 1.5,
+        "avgGuards": 0.5,
+        "avgWards": 1.25,
+        "avgTaunts": 0.5,
+        "avgFreezeApplies": 0,
+        "avgFreezeSkips": 0,
+        "avgRegenHealed": 130,
+        "avgRegenTicks": 13,
+        "avgHeadRegrows": 1.25,
+        "avgEnrages": 1,
+        "avgHeadHeal": 65.375,
+        "avgPlayerDpt": 34.58490566037736,
+        "avgIncomingDpt": 32.679245283018865,
+        "practicalEhp": 718.375,
+        "expectedTtk": 15.122204037097655,
+        "expectedTtkPractical": 20.771344789961812,
+        "expectedTtl": 4.528868360277136,
+        "topKills": [
+          {
+            "name": "SORROW UNENDING",
+            "n": 2,
+            "rate": 0.6666666666666666
+          },
+          {
+            "name": "Threefold Snap",
+            "n": 1,
+            "rate": 0.3333333333333333
+          }
+        ],
+        "dmgShare": {
+          "basic": 0.29445727482678985,
+          "burn": 0,
+          "poison": 0.14376443418013857,
+          "torment": 0.008660508083140877,
+          "summon": 0,
+          "escort": 0,
+          "finisher": 0.2956120092378753,
+          "specials": [
+            {
+              "name": "SORROW UNENDING",
+              "v": 512,
+              "share": 0.2956120092378753
+            },
+            {
+              "name": "Threefold Snap",
+              "v": 446,
+              "share": 0.2575057736720554
+            }
+          ]
+        }
+      }
+    }
+  },
+  "pressure": {
+    "hydra": {
+      "bossId": "hydra",
+      "name": "The Grieving Hydra",
+      "authoredHp": 550,
+      "authoredAtk": 38,
+      "authoredSpd": 4,
+      "authoredRegen": 0.02,
+      "heads": true,
+      "headTriggers": [
+        0.6,
+        0.3
+      ],
+      "headHealEach": 52,
+      "headAtkMultEach": 1.2,
+      "regenTick": 10,
+      "scaleHp": 1.4624987097,
+      "scaleAtk": 0.8814783069,
+      "liveHpMult": 0.950624161305,
+      "ehp": 523,
+      "eatk": 33,
+      "practicalEhpIfBothHeads": 627,
+      "specials": [
+        {
+          "at": 3,
+          "name": "Threefold Snap",
+          "mult": 1.55,
+          "poisonSure": true,
+          "tormentedSure": false,
+          "frail": null,
+          "aoe": false
+        },
+        {
+          "at": 6,
+          "name": "SORROW UNENDING",
+          "mult": 3.05,
+          "poisonSure": false,
+          "tormentedSure": true,
+          "frail": 0.5,
+          "aoe": true
+        }
+      ],
+      "basicRaw": 45,
+      "midSpecial": {
+        "name": "Threefold Snap",
+        "at": 3,
+        "mult": 1.55
+      },
+      "finisher": {
+        "name": "SORROW UNENDING",
+        "at": 6,
+        "mult": 3.05,
+        "tormentedSure": true,
+        "frail": 0.5
+      },
+      "sampleHit": {
+        "basic": 12,
+        "mid": 37,
+        "finisher": 107
+      }
+    },
+    "tr_live_ogre": {
+      "bossId": "tr_live_ogre",
+      "name": "Bograth, the Twin-Headed Ogre",
+      "authoredHp": 550,
+      "authoredAtk": 38,
+      "authoredSpd": 4,
+      "authoredRegen": 0.02,
+      "heads": true,
+      "headTriggers": [
+        0.6,
+        0.3
+      ],
+      "headHealEach": 52,
+      "headAtkMultEach": 1.2,
+      "regenTick": 10,
+      "scaleHp": 1.4624987097,
+      "scaleAtk": 0.8814783069,
+      "liveHpMult": 0.950624161305,
+      "ehp": 523,
+      "eatk": 33,
+      "practicalEhpIfBothHeads": 627,
+      "specials": [
+        {
+          "at": 3,
+          "name": "Twin Bite",
+          "mult": 1.55,
+          "poisonSure": true,
+          "tormentedSure": false,
+          "frail": null,
+          "aoe": false
+        },
+        {
+          "at": 6,
+          "name": "TWO SORROWS",
+          "mult": 3,
+          "poisonSure": false,
+          "tormentedSure": true,
+          "frail": 0.4,
+          "aoe": true
+        }
+      ],
+      "basicRaw": 45,
+      "midSpecial": {
+        "name": "Twin Bite",
+        "at": 3,
+        "mult": 1.55
+      },
+      "finisher": {
+        "name": "TWO SORROWS",
+        "at": 6,
+        "mult": 3,
+        "tormentedSure": true,
+        "frail": 0.4
+      },
+      "sampleHit": {
+        "basic": 12,
+        "mid": 37,
+        "finisher": 106
+      }
+    }
+  },
+  "attrition": {
+    "reachedF30": 33,
+    "f30Deaths": 24,
+    "f30Winners": 9,
+    "reachedF40": 9,
+    "deathFloors": {},
+    "floors": {
+      "31": {
+        "n": 9,
+        "deaths": 0,
+        "deathRate": 0,
+        "combat": 4,
+        "event": 5,
+        "shop": 0,
+        "trial": 0,
+        "campfire": 0,
+        "sneakBribe": 1,
+        "avgEnterHp": 0.6642410132046404,
+        "avgLeaveHp": 0.6560990382311279,
+        "avgHpDelta": -0.008141974973512187,
+        "avgEnterPots": 1.6666666666666667,
+        "avgLeavePots": 1.7777777777777777,
+        "avgEnterRelics": 4.111111111111111,
+        "avgLeaveRelics": 4.222222222222222,
+        "avgEnterSkills": 4.888888888888889,
+        "avgLeaveSkills": 4.888888888888889,
+        "avgEnterEquip": 5.777777777777778,
+        "avgLeaveEquip": 5.888888888888889
+      },
+      "32": {
+        "n": 9,
+        "deaths": 0,
+        "deathRate": 0,
+        "combat": 3,
+        "event": 7,
+        "shop": 0,
+        "trial": 0,
+        "campfire": 0,
+        "sneakBribe": 0,
+        "avgEnterHp": 0.6643647517638259,
+        "avgLeaveHp": 0.6474908925285481,
+        "avgHpDelta": -0.01687385923527783,
+        "avgEnterPots": 1.7777777777777777,
+        "avgLeavePots": 2.111111111111111,
+        "avgEnterRelics": 4.222222222222222,
+        "avgLeaveRelics": 4.222222222222222,
+        "avgEnterSkills": 4.888888888888889,
+        "avgLeaveSkills": 4.888888888888889,
+        "avgEnterEquip": 5.888888888888889,
+        "avgLeaveEquip": 6
+      },
+      "33": {
+        "n": 9,
+        "deaths": 0,
+        "deathRate": 0,
+        "combat": 4,
+        "event": 5,
+        "shop": 0,
+        "trial": 0,
+        "campfire": 0,
+        "sneakBribe": 2,
+        "avgEnterHp": 0.6557320996332519,
+        "avgLeaveHp": 0.6837594737927499,
+        "avgHpDelta": 0.02802737415949821,
+        "avgEnterPots": 2.111111111111111,
+        "avgLeavePots": 2.2222222222222223,
+        "avgEnterRelics": 4.222222222222222,
+        "avgLeaveRelics": 4.222222222222222,
+        "avgEnterSkills": 4.888888888888889,
+        "avgLeaveSkills": 4.888888888888889,
+        "avgEnterEquip": 6,
+        "avgLeaveEquip": 6
+      },
+      "34": {
+        "n": 9,
+        "deaths": 0,
+        "deathRate": 0,
+        "combat": 4,
+        "event": 6,
+        "shop": 0,
+        "trial": 0,
+        "campfire": 0,
+        "sneakBribe": 0,
+        "avgEnterHp": 0.6919831000254423,
+        "avgLeaveHp": 0.6847136276216481,
+        "avgHpDelta": -0.007269472403794201,
+        "avgEnterPots": 2.2222222222222223,
+        "avgLeavePots": 2.5555555555555554,
+        "avgEnterRelics": 4.222222222222222,
+        "avgLeaveRelics": 4.222222222222222,
+        "avgEnterSkills": 4.888888888888889,
+        "avgLeaveSkills": 5,
+        "avgEnterEquip": 6,
+        "avgLeaveEquip": 6
+      },
+      "35": {
+        "n": 9,
+        "deaths": 0,
+        "deathRate": 0,
+        "combat": 9,
+        "event": 0,
+        "shop": 0,
+        "trial": 9,
+        "campfire": 0,
+        "sneakBribe": 0,
+        "avgEnterHp": 0.692514548540331,
+        "avgLeaveHp": 0.637482315096278,
+        "avgHpDelta": -0.05503223344405288,
+        "avgEnterPots": 2.5555555555555554,
+        "avgLeavePots": 2.3333333333333335,
+        "avgEnterRelics": 4.222222222222222,
+        "avgLeaveRelics": 4.222222222222222,
+        "avgEnterSkills": 5,
+        "avgLeaveSkills": 5,
+        "avgEnterEquip": 6,
+        "avgLeaveEquip": 6
+      },
+      "36": {
+        "n": 9,
+        "deaths": 0,
+        "deathRate": 0,
+        "combat": 3,
+        "event": 7,
+        "shop": 0,
+        "trial": 0,
+        "campfire": 0,
+        "sneakBribe": 1,
+        "avgEnterHp": 0.6456343198083964,
+        "avgLeaveHp": 0.650824364534516,
+        "avgHpDelta": 0.005190044726119737,
+        "avgEnterPots": 2.3333333333333335,
+        "avgLeavePots": 2.3333333333333335,
+        "avgEnterRelics": 4.222222222222222,
+        "avgLeaveRelics": 4.222222222222222,
+        "avgEnterSkills": 5,
+        "avgLeaveSkills": 5,
+        "avgEnterEquip": 6,
+        "avgLeaveEquip": 6.222222222222222
+      },
+      "37": {
+        "n": 9,
+        "deaths": 0,
+        "deathRate": 0,
+        "combat": 1,
+        "event": 8,
+        "shop": 1,
+        "trial": 0,
+        "campfire": 0,
+        "sneakBribe": 0,
+        "avgEnterHp": 0.6586208213580272,
+        "avgLeaveHp": 0.7213246257058532,
+        "avgHpDelta": 0.06270380434782609,
+        "avgEnterPots": 2.3333333333333335,
+        "avgLeavePots": 2.6666666666666665,
+        "avgEnterRelics": 4.222222222222222,
+        "avgLeaveRelics": 4.333333333333333,
+        "avgEnterSkills": 5,
+        "avgLeaveSkills": 5,
+        "avgEnterEquip": 6.222222222222222,
+        "avgLeaveEquip": 6.333333333333333
+      },
+      "38": {
+        "n": 9,
+        "deaths": 0,
+        "deathRate": 0,
+        "combat": 3,
+        "event": 6,
+        "shop": 0,
+        "trial": 0,
+        "campfire": 0,
+        "sneakBribe": 2,
+        "avgEnterHp": 0.7282444003347478,
+        "avgLeaveHp": 0.7282444003347478,
+        "avgHpDelta": 0,
+        "avgEnterPots": 2.6666666666666665,
+        "avgLeavePots": 2.6666666666666665,
+        "avgEnterRelics": 4.333333333333333,
+        "avgLeaveRelics": 4.666666666666667,
+        "avgEnterSkills": 5,
+        "avgLeaveSkills": 5,
+        "avgEnterEquip": 6.333333333333333,
+        "avgLeaveEquip": 6.333333333333333
+      },
+      "39": {
+        "n": 9,
+        "deaths": 0,
+        "deathRate": 0,
+        "combat": 0,
+        "event": 9,
+        "shop": 0,
+        "trial": 0,
+        "campfire": 0,
+        "sneakBribe": 0,
+        "avgEnterHp": 0.7351641749636421,
+        "avgLeaveHp": 0.8644140737871717,
+        "avgHpDelta": 0.12924989882352975,
+        "avgEnterPots": 2.6666666666666665,
+        "avgLeavePots": 3.6666666666666665,
+        "avgEnterRelics": 4.666666666666667,
+        "avgLeaveRelics": 4.666666666666667,
+        "avgEnterSkills": 5,
+        "avgLeaveSkills": 5,
+        "avgEnterEquip": 6.333333333333333,
+        "avgLeaveEquip": 6.333333333333333
+      }
+    },
+    "f39Choices": {
+      "Sleep": 9
+    },
+    "f30Survival": 0.2727272727272727
+  },
+  "representatives": [
+    {
+      "seed": 20340607,
+      "classId": "archer",
+      "bossId": "tr_live_ogre",
+      "hp": 131,
+      "maxHp": 131,
+      "hpPct": 1,
+      "potions": 2,
+      "relics": 5,
+      "skills": 5,
+      "f30Boss": "tr_mon_centaur",
+      "canonical": true
+    },
+    {
+      "seed": 21796665,
+      "classId": "priest",
+      "bossId": "hydra",
+      "hp": 112,
+      "maxHp": 148,
+      "hpPct": 0.7567567567567568,
+      "potions": 5,
+      "relics": 4,
+      "skills": 5,
+      "f30Boss": "frost_queen",
+      "canonical": true
+    },
+    {
+      "seed": 20290742,
+      "classId": "warrior",
+      "bossId": "tr_live_ogre",
+      "hp": 128,
+      "maxHp": 128,
+      "hpPct": 1,
+      "potions": 5,
+      "relics": 4,
+      "skills": 5,
+      "f30Boss": "frost_queen",
+      "canonical": true
+    }
+  ],
+  "classification": {
+    "labels": [
+      "BOSS BALANCE"
+    ],
+    "notes": [
+      "Only 9 F40 arrivals — class/boss slices are noisy",
+      "F30 winners → F40 conversion 100.0% (9/9)",
+      "The Grieving Hydra: practical TTK 14.8 vs TTL 4.8 at full HP + boss-aware",
+      "The Grieving Hydra: poison is 15.0% of incoming",
+      "The Grieving Hydra: regen restores 108.9 HP/fight (10.9 ticks)",
+      "The Grieving Hydra: head-regrow 1.4/fight (~75.5 extra HP)",
+      "Bograth, the Twin-Headed Ogre: poison is 15.1% of incoming",
+      "Bograth, the Twin-Headed Ogre: finisher share 20.8% / kill rate 40.0%",
+      "Bograth, the Twin-Headed Ogre: regen restores 108.9 HP/fight (10.9 ticks)",
+      "Bograth, the Twin-Headed Ogre: head-regrow 1.4/fight (~75.5 extra HP)",
+      "F40 balance pass is not clearly justified from this matrix (sample, attrition, policy, or a viable boss remains)."
+    ],
+    "evidence": [
+      "INSUFFICIENT SAMPLE",
+      "BOSS BALANCE"
+    ],
+    "balancePassJustified": false
+  }
+}

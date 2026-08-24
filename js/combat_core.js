@@ -7,6 +7,7 @@ import { CONSUMABLES, consumableCombatValue } from './data/items.js';
 import { CONFIG } from './data/config.js';
 import {
   enemyScale, softLevelDamage, partyOutgoingDmgMult, soloBossChargeForScale,
+  soloBossSpecialDmgMult, f30SoloGateMults, f40SoloGateMults,
   TDC, resourceRegen,
 } from './data/tdc.js';
 import { derived, gearHas, heal, restoreMana, changeFame } from './character.js';
@@ -114,15 +115,26 @@ export function buildEnemy(spec, floor, biomeStart, {
     boss: isBoss, elite: !!spec.elite, partySize,
     eliteAtkRole: !!spec.eliteAtkRole,
   });
+  let hpScale = sc.hp * (hpMult || 1);
+  let atkScale = sc.atk * (atkMult || 1);
+  if (isBoss && floor === 20 && (partySize || 1) <= 1 && spec.id === 'lich') {
+    hpScale *= TDC.enemy.f20LichSoloHpMult ?? 1;
+    atkScale *= TDC.enemy.f20LichSoloAtkMult ?? 1;
+  }
+  const f30Gate = f30SoloGateMults(floor, partySize, spec);
+  hpScale *= f30Gate.hp;
+  atkScale *= f30Gate.atk;
+  const f40Gate = f40SoloGateMults(floor, partySize, spec);
+  hpScale *= f40Gate.hp;
+  atkScale *= f40Gate.atk;
   const spd = Math.max(1, Math.round((spec.spd || 5) * sc.spd));
-  const atkScale = sc.atk * (atkMult || 1);
   const liveAtk = Math.round(spec.atk * atkScale);
   return {
     ...spec,
     boss: isBoss,
     elite: !!spec.elite,
-    maxHp: Math.round(spec.hp * sc.hp * hpMult),
-    hp: Math.round(spec.hp * sc.hp * hpMult),
+    maxHp: Math.round(spec.hp * hpScale),
+    hp: Math.round(spec.hp * hpScale),
     atk: liveAtk,
     baseAtk: liveAtk,
     def: Math.round(spec.def * sc.def),
@@ -132,7 +144,7 @@ export function buildEnemy(spec, floor, biomeStart, {
     statuses: {},
     phaseTriggers: [],
     turnCount: 0,
-    _m: { hp: sc.hp * hpMult, atk: atkScale, def: sc.def, spd: sc.spd },
+    _m: { hp: hpScale, atk: atkScale, def: sc.def, spd: sc.spd },
     uid: spec.uid || uid || `${spec.id || 'foe'}-${floor}-${spawnIndex}`,
   };
 }
@@ -773,6 +785,7 @@ export function resolveEnemyTurnStart(f, e, ops = null) {
         ? (e.charge || 0)
         : soloBossChargeForScale(f.run.floor, e.charge || 0);
       chargeScale = 1 + CONFIG.boss.chargeDamageScale * banked;
+      if (!f.shared) chargeScale *= soloBossSpecialDmgMult(f.run.floor, special);
     }
     e.charge = 0;
     const scream = !f.shared && e.boss && chargeScale > 1.2 ? ' The air screams with pent-up force.' : '';

@@ -1,0 +1,2953 @@
+{
+  "meta": {
+    "name": "F48_ATTRITION",
+    "seed": 20260823,
+    "runs": 1002,
+    "nSeeds": 167,
+    "policies": [
+      "duelist"
+    ],
+    "stopAfter": 9,
+    "generatedAt": "2026-08-24T09:19:43.124Z",
+    "honesty": [
+      "LIVE climb v2: dealLiveFloorCards, live events, live shop, headless combat_core.",
+      "Climbs stop after F9 (Forest campfire). F10 is out of scope.",
+      "Policy path RNG is seed^floor^0xA11CE and does not consume climb rngState.",
+      "Trace/measurement code does not call runRng or rng.advance.",
+      "Baseline shop never buys equipment — compare reasonable before treating gold/HP collapse as balance.",
+      "Climb v2 trial floors pass the modifier into combat but do not spawn extraEnemy bodies the way live fightGroup does. Horde/Swarm F5 lethality here is a lower bound vs live.",
+      "TDC.clearRate is a survival-CDF target for tools/run_sim.js, not live encounter frequency."
+    ]
+  },
+  "byPolicy": {
+    "duelist": {
+      "meta": {
+        "name": "F48_duelist",
+        "seed": 20260823,
+        "policy": "duelist",
+        "n": 1002,
+        "nSeeds": 167,
+        "stopAfter": 9,
+        "generatedAt": "2026-08-24T09:19:43.105Z",
+        "honesty": [
+          "LIVE climb v2: dealLiveFloorCards, live events, live shop, headless combat_core.",
+          "Climbs stop after F9 (Forest campfire). F10 is out of scope.",
+          "Policy path RNG is seed^floor^0xA11CE and does not consume climb rngState.",
+          "Trace/measurement code does not call runRng or rng.advance.",
+          "Baseline shop never buys equipment — compare reasonable before treating gold/HP collapse as balance.",
+          "Climb v2 trial floors pass the modifier into combat but do not spawn extraEnemy bodies the way live fightGroup does. Horde/Swarm F5 lethality here is a lower bound vs live.",
+          "TDC.clearRate is a survival-CDF target for tools/run_sim.js, not live encounter frequency."
+        ]
+      },
+      "overall": {
+        "n": 1002,
+        "deaths": 414,
+        "medianDeathFloor": 5.5,
+        "earlyBrickRate": 0.20658682634730538,
+        "reachF6": 0.7934131736526946,
+        "reachF8": 0.6586826347305389,
+        "reachF9": 0.5868263473053892,
+        "diedByF8": 414,
+        "f48Causes": {
+          "event_combat": 50,
+          "special_encounter": 121,
+          "elite": 16,
+          "trial": 152,
+          "normal_encounter": 27,
+          "event_attrition": 32
+        }
+      },
+      "curve": [
+        {
+          "floor": 1,
+          "entered": 1002,
+          "died": 0,
+          "rate": 0,
+          "byKind": {
+            "trial": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "normal_encounter": {
+              "entered": 156,
+              "died": 0,
+              "rate": 0
+            },
+            "elite": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "event_combat": {
+              "entered": 128,
+              "died": 0,
+              "rate": 0
+            },
+            "special_encounter": {
+              "entered": 15,
+              "died": 0,
+              "rate": 0
+            },
+            "event_attrition": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "other": {
+              "entered": 703,
+              "died": 0,
+              "rate": 0
+            }
+          },
+          "byClass": {
+            "warrior": {
+              "entered": 167,
+              "died": 0,
+              "rate": 0
+            },
+            "mage": {
+              "entered": 167,
+              "died": 0,
+              "rate": 0
+            },
+            "archer": {
+              "entered": 167,
+              "died": 0,
+              "rate": 0
+            },
+            "rogue": {
+              "entered": 167,
+              "died": 0,
+              "rate": 0
+            },
+            "priest": {
+              "entered": 167,
+              "died": 0,
+              "rate": 0
+            },
+            "monk": {
+              "entered": 167,
+              "died": 0,
+              "rate": 0
+            }
+          }
+        },
+        {
+          "floor": 2,
+          "entered": 1002,
+          "died": 5,
+          "rate": 0.00499001996007984,
+          "byKind": {
+            "trial": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "normal_encounter": {
+              "entered": 120,
+              "died": 0,
+              "rate": 0
+            },
+            "elite": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "event_combat": {
+              "entered": 103,
+              "died": 4,
+              "rate": 0.038834951456310676
+            },
+            "special_encounter": {
+              "entered": 18,
+              "died": 0,
+              "rate": 0
+            },
+            "event_attrition": {
+              "entered": 1,
+              "died": 1,
+              "rate": 1
+            },
+            "other": {
+              "entered": 760,
+              "died": 0,
+              "rate": 0
+            }
+          },
+          "byClass": {
+            "warrior": {
+              "entered": 167,
+              "died": 0,
+              "rate": 0
+            },
+            "mage": {
+              "entered": 167,
+              "died": 3,
+              "rate": 0.017964071856287425
+            },
+            "archer": {
+              "entered": 167,
+              "died": 0,
+              "rate": 0
+            },
+            "rogue": {
+              "entered": 167,
+              "died": 0,
+              "rate": 0
+            },
+            "priest": {
+              "entered": 167,
+              "died": 2,
+              "rate": 0.011976047904191617
+            },
+            "monk": {
+              "entered": 167,
+              "died": 0,
+              "rate": 0
+            }
+          }
+        },
+        {
+          "floor": 3,
+          "entered": 997,
+          "died": 11,
+          "rate": 0.011033099297893681,
+          "byKind": {
+            "trial": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "normal_encounter": {
+              "entered": 101,
+              "died": 0,
+              "rate": 0
+            },
+            "elite": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "event_combat": {
+              "entered": 106,
+              "died": 7,
+              "rate": 0.0660377358490566
+            },
+            "special_encounter": {
+              "entered": 10,
+              "died": 0,
+              "rate": 0
+            },
+            "event_attrition": {
+              "entered": 4,
+              "died": 4,
+              "rate": 1
+            },
+            "other": {
+              "entered": 776,
+              "died": 0,
+              "rate": 0
+            }
+          },
+          "byClass": {
+            "warrior": {
+              "entered": 167,
+              "died": 1,
+              "rate": 0.005988023952095809
+            },
+            "mage": {
+              "entered": 164,
+              "died": 4,
+              "rate": 0.024390243902439025
+            },
+            "archer": {
+              "entered": 167,
+              "died": 0,
+              "rate": 0
+            },
+            "rogue": {
+              "entered": 167,
+              "died": 1,
+              "rate": 0.005988023952095809
+            },
+            "priest": {
+              "entered": 165,
+              "died": 4,
+              "rate": 0.024242424242424242
+            },
+            "monk": {
+              "entered": 167,
+              "died": 1,
+              "rate": 0.005988023952095809
+            }
+          }
+        },
+        {
+          "floor": 4,
+          "entered": 986,
+          "died": 39,
+          "rate": 0.03955375253549696,
+          "byKind": {
+            "trial": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "normal_encounter": {
+              "entered": 207,
+              "died": 3,
+              "rate": 0.014492753623188406
+            },
+            "elite": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "event_combat": {
+              "entered": 54,
+              "died": 12,
+              "rate": 0.2222222222222222
+            },
+            "special_encounter": {
+              "entered": 65,
+              "died": 14,
+              "rate": 0.2153846153846154
+            },
+            "event_attrition": {
+              "entered": 10,
+              "died": 10,
+              "rate": 1
+            },
+            "other": {
+              "entered": 650,
+              "died": 0,
+              "rate": 0
+            }
+          },
+          "byClass": {
+            "warrior": {
+              "entered": 166,
+              "died": 6,
+              "rate": 0.03614457831325301
+            },
+            "mage": {
+              "entered": 160,
+              "died": 12,
+              "rate": 0.075
+            },
+            "archer": {
+              "entered": 167,
+              "died": 1,
+              "rate": 0.005988023952095809
+            },
+            "rogue": {
+              "entered": 166,
+              "died": 4,
+              "rate": 0.024096385542168676
+            },
+            "priest": {
+              "entered": 161,
+              "died": 8,
+              "rate": 0.049689440993788817
+            },
+            "monk": {
+              "entered": 166,
+              "died": 8,
+              "rate": 0.04819277108433735
+            }
+          }
+        },
+        {
+          "floor": 5,
+          "entered": 947,
+          "died": 152,
+          "rate": 0.16050686378035903,
+          "byKind": {
+            "trial": {
+              "entered": 947,
+              "died": 152,
+              "rate": 0.16050686378035903
+            },
+            "normal_encounter": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "elite": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "event_combat": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "special_encounter": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "event_attrition": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "other": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            }
+          },
+          "byClass": {
+            "warrior": {
+              "entered": 160,
+              "died": 23,
+              "rate": 0.14375
+            },
+            "mage": {
+              "entered": 148,
+              "died": 26,
+              "rate": 0.17567567567567569
+            },
+            "archer": {
+              "entered": 166,
+              "died": 20,
+              "rate": 0.12048192771084337
+            },
+            "rogue": {
+              "entered": 162,
+              "died": 19,
+              "rate": 0.11728395061728394
+            },
+            "priest": {
+              "entered": 153,
+              "died": 38,
+              "rate": 0.24836601307189543
+            },
+            "monk": {
+              "entered": 158,
+              "died": 26,
+              "rate": 0.16455696202531644
+            }
+          }
+        },
+        {
+          "floor": 6,
+          "entered": 795,
+          "died": 75,
+          "rate": 0.09433962264150944,
+          "byKind": {
+            "trial": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "normal_encounter": {
+              "entered": 142,
+              "died": 8,
+              "rate": 0.056338028169014086
+            },
+            "elite": {
+              "entered": 13,
+              "died": 5,
+              "rate": 0.38461538461538464
+            },
+            "event_combat": {
+              "entered": 29,
+              "died": 9,
+              "rate": 0.3103448275862069
+            },
+            "special_encounter": {
+              "entered": 80,
+              "died": 44,
+              "rate": 0.55
+            },
+            "event_attrition": {
+              "entered": 9,
+              "died": 9,
+              "rate": 1
+            },
+            "other": {
+              "entered": 522,
+              "died": 0,
+              "rate": 0
+            }
+          },
+          "byClass": {
+            "warrior": {
+              "entered": 137,
+              "died": 14,
+              "rate": 0.10218978102189781
+            },
+            "mage": {
+              "entered": 122,
+              "died": 12,
+              "rate": 0.09836065573770492
+            },
+            "archer": {
+              "entered": 146,
+              "died": 10,
+              "rate": 0.0684931506849315
+            },
+            "rogue": {
+              "entered": 143,
+              "died": 15,
+              "rate": 0.1048951048951049
+            },
+            "priest": {
+              "entered": 115,
+              "died": 19,
+              "rate": 0.16521739130434782
+            },
+            "monk": {
+              "entered": 132,
+              "died": 5,
+              "rate": 0.03787878787878788
+            }
+          }
+        },
+        {
+          "floor": 7,
+          "entered": 720,
+          "died": 60,
+          "rate": 0.08333333333333333,
+          "byKind": {
+            "trial": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "normal_encounter": {
+              "entered": 176,
+              "died": 8,
+              "rate": 0.045454545454545456
+            },
+            "elite": {
+              "entered": 13,
+              "died": 5,
+              "rate": 0.38461538461538464
+            },
+            "event_combat": {
+              "entered": 25,
+              "died": 11,
+              "rate": 0.44
+            },
+            "special_encounter": {
+              "entered": 50,
+              "died": 31,
+              "rate": 0.62
+            },
+            "event_attrition": {
+              "entered": 5,
+              "died": 5,
+              "rate": 1
+            },
+            "other": {
+              "entered": 451,
+              "died": 0,
+              "rate": 0
+            }
+          },
+          "byClass": {
+            "warrior": {
+              "entered": 123,
+              "died": 6,
+              "rate": 0.04878048780487805
+            },
+            "mage": {
+              "entered": 110,
+              "died": 14,
+              "rate": 0.12727272727272726
+            },
+            "archer": {
+              "entered": 136,
+              "died": 9,
+              "rate": 0.0661764705882353
+            },
+            "rogue": {
+              "entered": 128,
+              "died": 9,
+              "rate": 0.0703125
+            },
+            "priest": {
+              "entered": 96,
+              "died": 13,
+              "rate": 0.13541666666666666
+            },
+            "monk": {
+              "entered": 127,
+              "died": 9,
+              "rate": 0.07086614173228346
+            }
+          }
+        },
+        {
+          "floor": 8,
+          "entered": 660,
+          "died": 72,
+          "rate": 0.10909090909090909,
+          "byKind": {
+            "trial": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "normal_encounter": {
+              "entered": 148,
+              "died": 8,
+              "rate": 0.05405405405405406
+            },
+            "elite": {
+              "entered": 14,
+              "died": 6,
+              "rate": 0.42857142857142855
+            },
+            "event_combat": {
+              "entered": 31,
+              "died": 18,
+              "rate": 0.5806451612903226
+            },
+            "special_encounter": {
+              "entered": 40,
+              "died": 32,
+              "rate": 0.8
+            },
+            "event_attrition": {
+              "entered": 8,
+              "died": 8,
+              "rate": 1
+            },
+            "other": {
+              "entered": 419,
+              "died": 0,
+              "rate": 0
+            }
+          },
+          "byClass": {
+            "warrior": {
+              "entered": 117,
+              "died": 13,
+              "rate": 0.1111111111111111
+            },
+            "mage": {
+              "entered": 96,
+              "died": 12,
+              "rate": 0.125
+            },
+            "archer": {
+              "entered": 127,
+              "died": 8,
+              "rate": 0.06299212598425197
+            },
+            "rogue": {
+              "entered": 119,
+              "died": 17,
+              "rate": 0.14285714285714285
+            },
+            "priest": {
+              "entered": 83,
+              "died": 12,
+              "rate": 0.14457831325301204
+            },
+            "monk": {
+              "entered": 118,
+              "died": 10,
+              "rate": 0.0847457627118644
+            }
+          }
+        },
+        {
+          "floor": 9,
+          "entered": 588,
+          "died": 0,
+          "rate": 0,
+          "byKind": {
+            "trial": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "normal_encounter": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "elite": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "event_combat": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "special_encounter": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            },
+            "event_attrition": {
+              "entered": 588,
+              "died": 0,
+              "rate": 0
+            },
+            "other": {
+              "entered": 0,
+              "died": 0,
+              "rate": 0
+            }
+          },
+          "byClass": {
+            "warrior": {
+              "entered": 104,
+              "died": 0,
+              "rate": 0
+            },
+            "mage": {
+              "entered": 84,
+              "died": 0,
+              "rate": 0
+            },
+            "archer": {
+              "entered": 119,
+              "died": 0,
+              "rate": 0
+            },
+            "rogue": {
+              "entered": 102,
+              "died": 0,
+              "rate": 0
+            },
+            "priest": {
+              "entered": 71,
+              "died": 0,
+              "rate": 0
+            },
+            "monk": {
+              "entered": 108,
+              "died": 0,
+              "rate": 0
+            }
+          }
+        }
+      ],
+      "f5": {
+        "arrived": 947,
+        "died": 152,
+        "clearRate": 0.839493136219641,
+        "avgHpEnter": 0.6329166216221229,
+        "avgHpEnterAbs": 32.71066525871172,
+        "avgHpLeaveWin": 0.5055674178724237,
+        "avgPotionsEnter": 1.2946145723336853,
+        "byMod": [
+          {
+            "id": "mana_void",
+            "n": 104,
+            "deaths": 22,
+            "deathRate": 0.21153846153846154,
+            "avgHpEnter": 0.6672900985271917,
+            "avgHpLeaveWin": 0.4970732241608132
+          },
+          {
+            "id": "surging",
+            "n": 130,
+            "deaths": 22,
+            "deathRate": 0.16923076923076924,
+            "avgHpEnter": 0.6644114563224934,
+            "avgHpLeaveWin": 0.503369277663568
+          },
+          {
+            "id": "ambush",
+            "n": 121,
+            "deaths": 21,
+            "deathRate": 0.17355371900826447,
+            "avgHpEnter": 0.6339040027427224,
+            "avgHpLeaveWin": 0.5090326854451752
+          },
+          {
+            "id": "gilded",
+            "n": 123,
+            "deaths": 21,
+            "deathRate": 0.17073170731707318,
+            "avgHpEnter": 0.5950840462550683,
+            "avgHpLeaveWin": 0.4947542150685194
+          },
+          {
+            "id": "thirsting_ground",
+            "n": 100,
+            "deaths": 19,
+            "deathRate": 0.19,
+            "avgHpEnter": 0.6061972795534953,
+            "avgHpLeaveWin": 0.4821727063894724
+          },
+          {
+            "id": "blood_moon",
+            "n": 119,
+            "deaths": 19,
+            "deathRate": 0.15966386554621848,
+            "avgHpEnter": 0.6650703862360012,
+            "avgHpLeaveWin": 0.5227311408153578
+          },
+          {
+            "id": "swarm",
+            "n": 129,
+            "deaths": 15,
+            "deathRate": 0.11627906976744186,
+            "avgHpEnter": 0.5983285323988844,
+            "avgHpLeaveWin": 0.4908742829751755
+          },
+          {
+            "id": "horde",
+            "n": 121,
+            "deaths": 13,
+            "deathRate": 0.10743801652892562,
+            "avgHpEnter": 0.6343402850352572,
+            "avgHpLeaveWin": 0.5383818592589396
+          }
+        ],
+        "byClass": [
+          {
+            "id": "priest",
+            "n": 153,
+            "deaths": 38,
+            "deathRate": 0.24836601307189543,
+            "avgHpEnter": 0.6404491576017367,
+            "avgHpLeaveWin": 0.49006735278509933
+          },
+          {
+            "id": "mage",
+            "n": 148,
+            "deaths": 26,
+            "deathRate": 0.17567567567567569,
+            "avgHpEnter": 0.5871253903683982,
+            "avgHpLeaveWin": 0.5096117185482238
+          },
+          {
+            "id": "monk",
+            "n": 158,
+            "deaths": 26,
+            "deathRate": 0.16455696202531644,
+            "avgHpEnter": 0.6491264341481341,
+            "avgHpLeaveWin": 0.4879016590258856
+          },
+          {
+            "id": "warrior",
+            "n": 160,
+            "deaths": 23,
+            "deathRate": 0.14375,
+            "avgHpEnter": 0.5831900858290403,
+            "avgHpLeaveWin": 0.4755147094817153
+          },
+          {
+            "id": "archer",
+            "n": 166,
+            "deaths": 20,
+            "deathRate": 0.12048192771084337,
+            "avgHpEnter": 0.669670488477988,
+            "avgHpLeaveWin": 0.5324744920866404
+          },
+          {
+            "id": "rogue",
+            "n": 162,
+            "deaths": 19,
+            "deathRate": 0.11728395061728394,
+            "avgHpEnter": 0.6632782121800277,
+            "avgHpLeaveWin": 0.5322091744080134
+          }
+        ],
+        "byEnemy": [
+          {
+            "id": "tr_live_slime+tr_live_slime",
+            "n": 16,
+            "deaths": 16,
+            "deathRate": 1,
+            "avgHpEnter": 0.7039308447778849,
+            "avgHpLeaveWin": null
+          },
+          {
+            "id": "tr_mon_witch",
+            "n": 29,
+            "deaths": 15,
+            "deathRate": 0.5172413793103449,
+            "avgHpEnter": 0.6495582065807324,
+            "avgHpLeaveWin": null
+          },
+          {
+            "id": "tr_mon_vampire",
+            "n": 38,
+            "deaths": 15,
+            "deathRate": 0.39473684210526316,
+            "avgHpEnter": 0.7338390578792502,
+            "avgHpLeaveWin": null
+          },
+          {
+            "id": "fire_worm",
+            "n": 41,
+            "deaths": 14,
+            "deathRate": 0.34146341463414637,
+            "avgHpEnter": 0.6657659612855407,
+            "avgHpLeaveWin": null
+          },
+          {
+            "id": "wolf+wolf",
+            "n": 46,
+            "deaths": 10,
+            "deathRate": 0.21739130434782608,
+            "avgHpEnter": 0.5485053295363127,
+            "avgHpLeaveWin": null
+          },
+          {
+            "id": "mcf1_goblin+mcf1_goblin",
+            "n": 59,
+            "deaths": 10,
+            "deathRate": 0.1694915254237288,
+            "avgHpEnter": 0.57597359525095,
+            "avgHpLeaveWin": null
+          },
+          {
+            "id": "orc+orc",
+            "n": 68,
+            "deaths": 10,
+            "deathRate": 0.14705882352941177,
+            "avgHpEnter": 0.6032912048584591,
+            "avgHpLeaveWin": null
+          },
+          {
+            "id": "slime+slime",
+            "n": 55,
+            "deaths": 5,
+            "deathRate": 0.09090909090909091,
+            "avgHpEnter": 0.687640852601154,
+            "avgHpLeaveWin": null
+          },
+          {
+            "id": "gv_ghost_files+wolf",
+            "n": 8,
+            "deaths": 4,
+            "deathRate": 0.5,
+            "avgHpEnter": 0.5772896870612652,
+            "avgHpLeaveWin": null
+          },
+          {
+            "id": "treant",
+            "n": 35,
+            "deaths": 4,
+            "deathRate": 0.11428571428571428,
+            "avgHpEnter": 0.642543192365022,
+            "avgHpLeaveWin": null
+          },
+          {
+            "id": "rat+spider",
+            "n": 15,
+            "deaths": 3,
+            "deathRate": 0.2,
+            "avgHpEnter": 0.5216176508744597,
+            "avgHpLeaveWin": null
+          },
+          {
+            "id": "myconid+rat",
+            "n": 20,
+            "deaths": 3,
+            "deathRate": 0.15,
+            "avgHpEnter": 0.6592386423411013,
+            "avgHpLeaveWin": null
+          }
+        ],
+        "verdict": {
+          "labels": [
+            "spicy but acceptable"
+          ],
+          "arrived": 947,
+          "died": 152,
+          "clearRate": 0.839493136219641,
+          "f4Rate": 0.03955375253549696,
+          "f6Rate": 0.09433962264150944,
+          "classSpread": 0.1310820624546115,
+          "worstMod": {
+            "id": "mana_void",
+            "deathRate": 0.21153846153846154,
+            "n": 104
+          }
+        }
+      },
+      "duels": [
+        {
+          "eventId": "martial_hero_meet",
+          "offered": 124,
+          "takenCard": 41,
+          "fightTaken": 35,
+          "deaths": 18,
+          "takeRateGivenOffer": 0.33064516129032256,
+          "fightRateGivenTaken": 0.8536585365853658,
+          "deathRateWhenFought": 0.5142857142857142,
+          "avgHpEnterFight": 0.6743785012221207,
+          "avgHpLeaveWin": 0.3916704440518453,
+          "avgFloor": 5.975609756097561,
+          "choices": {
+            "Accept the duel": 35,
+            "Trade words": 6
+          }
+        },
+        {
+          "eventId": "farmstead_meet",
+          "offered": 413,
+          "takenCard": 134,
+          "fightTaken": 134,
+          "deaths": 14,
+          "takeRateGivenOffer": 0.324455205811138,
+          "fightRateGivenTaken": 1,
+          "deathRateWhenFought": 0.1044776119402985,
+          "avgHpEnterFight": 0.7288124296976805,
+          "avgHpLeaveWin": 0.6072932188292902,
+          "avgFloor": 3.4477611940298507,
+          "choices": {
+            "Pick a fight": 134
+          }
+        },
+        {
+          "eventId": "martial_hero_2_meet",
+          "offered": 64,
+          "takenCard": 19,
+          "fightTaken": 16,
+          "deaths": 12,
+          "takeRateGivenOffer": 0.296875,
+          "fightRateGivenTaken": 0.8421052631578947,
+          "deathRateWhenFought": 0.75,
+          "avgHpEnterFight": 0.6028824204697475,
+          "avgHpLeaveWin": 0.43963078665737243,
+          "avgFloor": 6.7368421052631575,
+          "choices": {
+            "Accept the duel": 16,
+            "Trade words": 3
+          }
+        },
+        {
+          "eventId": "evil_wizard_meet",
+          "offered": 90,
+          "takenCard": 31,
+          "fightTaken": 22,
+          "deaths": 11,
+          "takeRateGivenOffer": 0.34444444444444444,
+          "fightRateGivenTaken": 0.7096774193548387,
+          "deathRateWhenFought": 0.5,
+          "avgHpEnterFight": 0.6747314083793644,
+          "avgHpLeaveWin": 0.382427976456966,
+          "avgFloor": 5.548387096774194,
+          "choices": {
+            "Accept the duel": 22,
+            "Trade words": 9
+          }
+        },
+        {
+          "eventId": "rogue_hero_meet",
+          "offered": 70,
+          "takenCard": 24,
+          "fightTaken": 15,
+          "deaths": 11,
+          "takeRateGivenOffer": 0.34285714285714286,
+          "fightRateGivenTaken": 0.625,
+          "deathRateWhenFought": 0.7333333333333333,
+          "avgHpEnterFight": 0.6174920798665983,
+          "avgHpLeaveWin": 0.37393885184582853,
+          "avgFloor": 6.916666666666667,
+          "choices": {
+            "Accept the duel": 15,
+            "Trade words": 9
+          }
+        },
+        {
+          "eventId": "samurai_meet",
+          "offered": 104,
+          "takenCard": 32,
+          "fightTaken": 24,
+          "deaths": 10,
+          "takeRateGivenOffer": 0.3076923076923077,
+          "fightRateGivenTaken": 0.75,
+          "deathRateWhenFought": 0.4166666666666667,
+          "avgHpEnterFight": 0.7757528108908426,
+          "avgHpLeaveWin": 0.49654802724092145,
+          "avgFloor": 5.65625,
+          "choices": {
+            "Trade words": 8,
+            "Accept the duel": 24
+          }
+        },
+        {
+          "eventId": "martial_hero_3_meet",
+          "offered": 61,
+          "takenCard": 23,
+          "fightTaken": 15,
+          "deaths": 10,
+          "takeRateGivenOffer": 0.3770491803278688,
+          "fightRateGivenTaken": 0.6521739130434783,
+          "deathRateWhenFought": 0.6666666666666666,
+          "avgHpEnterFight": 0.639918731816868,
+          "avgHpLeaveWin": 0.533001498915678,
+          "avgFloor": 6.6521739130434785,
+          "choices": {
+            "Accept the duel": 15,
+            "Trade words": 8
+          }
+        },
+        {
+          "eventId": "tr_live_wizard_meet",
+          "offered": 55,
+          "takenCard": 18,
+          "fightTaken": 13,
+          "deaths": 8,
+          "takeRateGivenOffer": 0.32727272727272727,
+          "fightRateGivenTaken": 0.7222222222222222,
+          "deathRateWhenFought": 0.6153846153846154,
+          "avgHpEnterFight": 0.6654692768432094,
+          "avgHpLeaveWin": 0.15003419378377336,
+          "avgFloor": 6.777777777777778,
+          "choices": {
+            "Accept the duel": 13,
+            "Trade words": 5
+          }
+        },
+        {
+          "eventId": "archer_hero_meet",
+          "offered": 58,
+          "takenCard": 17,
+          "fightTaken": 13,
+          "deaths": 6,
+          "takeRateGivenOffer": 0.29310344827586204,
+          "fightRateGivenTaken": 0.7647058823529411,
+          "deathRateWhenFought": 0.46153846153846156,
+          "avgHpEnterFight": 0.6412427495389745,
+          "avgHpLeaveWin": 0.3069072865404502,
+          "avgFloor": 6.647058823529412,
+          "choices": {
+            "Accept the duel": 13,
+            "Trade words": 4
+          }
+        },
+        {
+          "eventId": "huntress_2_meet",
+          "offered": 54,
+          "takenCard": 16,
+          "fightTaken": 11,
+          "deaths": 6,
+          "takeRateGivenOffer": 0.2962962962962963,
+          "fightRateGivenTaken": 0.6875,
+          "deathRateWhenFought": 0.5454545454545454,
+          "avgHpEnterFight": 0.6359303747728222,
+          "avgHpLeaveWin": 0.4363964585673782,
+          "avgFloor": 6.875,
+          "choices": {
+            "Accept the duel": 11,
+            "Trade words": 5
+          }
+        },
+        {
+          "eventId": "huntress_meet",
+          "offered": 53,
+          "takenCard": 12,
+          "fightTaken": 10,
+          "deaths": 6,
+          "takeRateGivenOffer": 0.22641509433962265,
+          "fightRateGivenTaken": 0.8333333333333334,
+          "deathRateWhenFought": 0.6,
+          "avgHpEnterFight": 0.5974640278488449,
+          "avgHpLeaveWin": 0.3422167358695246,
+          "avgFloor": 6.75,
+          "choices": {
+            "Accept the duel": 10,
+            "Trade words": 2
+          }
+        },
+        {
+          "eventId": "fantasy_warrior_meet",
+          "offered": 104,
+          "takenCard": 27,
+          "fightTaken": 22,
+          "deaths": 5,
+          "takeRateGivenOffer": 0.25961538461538464,
+          "fightRateGivenTaken": 0.8148148148148148,
+          "deathRateWhenFought": 0.22727272727272727,
+          "avgHpEnterFight": 0.7334467061646343,
+          "avgHpLeaveWin": 0.35012901801290913,
+          "avgFloor": 5.777777777777778,
+          "choices": {
+            "Accept the duel": 22,
+            "Trade words": 5
+          }
+        },
+        {
+          "eventId": "evil_wizard_3_meet",
+          "offered": 61,
+          "takenCard": 16,
+          "fightTaken": 9,
+          "deaths": 5,
+          "takeRateGivenOffer": 0.26229508196721313,
+          "fightRateGivenTaken": 0.5625,
+          "deathRateWhenFought": 0.5555555555555556,
+          "avgHpEnterFight": 0.5213748120429734,
+          "avgHpLeaveWin": 0.37964440364908747,
+          "avgFloor": 6.5,
+          "choices": {
+            "Trade words": 7,
+            "Accept the duel": 9
+          }
+        },
+        {
+          "eventId": "crimson_stranger",
+          "offered": 129,
+          "takenCard": 47,
+          "fightTaken": 0,
+          "deaths": 0,
+          "takeRateGivenOffer": 0.3643410852713178,
+          "fightRateGivenTaken": 0,
+          "deathRateWhenFought": 0,
+          "avgHpEnterFight": null,
+          "avgHpLeaveWin": null,
+          "avgFloor": 5.702127659574468,
+          "choices": {
+            "Offer a vial of your blood freely": 31,
+            "Refuse and keep walking": 16
+          }
+        },
+        {
+          "eventId": "blade_hero_meet",
+          "offered": 162,
+          "takenCard": 51,
+          "fightTaken": 0,
+          "deaths": 0,
+          "takeRateGivenOffer": 0.3148148148148148,
+          "fightRateGivenTaken": 0,
+          "deathRateWhenFought": 0,
+          "avgHpEnterFight": null,
+          "avgHpLeaveWin": null,
+          "avgFloor": 4.764705882352941,
+          "choices": {
+            "Ask for counsel": 51
+          }
+        },
+        {
+          "eventId": "dark_mage_meet",
+          "offered": 71,
+          "takenCard": 21,
+          "fightTaken": 0,
+          "deaths": 0,
+          "takeRateGivenOffer": 0.29577464788732394,
+          "fightRateGivenTaken": 0,
+          "deathRateWhenFought": 0,
+          "avgHpEnterFight": null,
+          "avgHpLeaveWin": null,
+          "avgFloor": 6.9523809523809526,
+          "choices": {
+            "Ask what she learned": 21
+          }
+        },
+        {
+          "eventId": "pathfinder_meet",
+          "offered": 113,
+          "takenCard": 33,
+          "fightTaken": 0,
+          "deaths": 0,
+          "takeRateGivenOffer": 0.2920353982300885,
+          "fightRateGivenTaken": 0,
+          "deathRateWhenFought": 0,
+          "avgHpEnterFight": null,
+          "avgHpLeaveWin": null,
+          "avgFloor": 6.2727272727272725,
+          "choices": {
+            "Trade trail lore": 33
+          }
+        },
+        {
+          "eventId": "axe_northman_meet",
+          "offered": 56,
+          "takenCard": 18,
+          "fightTaken": 0,
+          "deaths": 0,
+          "takeRateGivenOffer": 0.32142857142857145,
+          "fightRateGivenTaken": 0,
+          "deathRateWhenFought": 0,
+          "avgHpEnterFight": null,
+          "avgHpLeaveWin": null,
+          "avgFloor": 6.944444444444445,
+          "choices": {
+            "Talk raids": 18
+          }
+        },
+        {
+          "eventId": "roadside_climbers",
+          "offered": 476,
+          "takenCard": 167,
+          "fightTaken": 0,
+          "deaths": 0,
+          "takeRateGivenOffer": 0.35084033613445376,
+          "fightRateGivenTaken": 0,
+          "deathRateWhenFought": 0,
+          "avgHpEnterFight": null,
+          "avgHpLeaveWin": null,
+          "avgFloor": 3.622754491017964,
+          "choices": {
+            "Share the meal": 167
+          }
+        },
+        {
+          "eventId": "oldman_trials",
+          "offered": 20,
+          "takenCard": 6,
+          "fightTaken": 0,
+          "deaths": 0,
+          "takeRateGivenOffer": 0.3,
+          "fightRateGivenTaken": 0,
+          "deathRateWhenFought": 0,
+          "avgHpEnterFight": null,
+          "avgHpLeaveWin": null,
+          "avgFloor": 8,
+          "choices": {
+            "Ask how strong you seem": 6
+          }
+        }
+      ],
+      "eventCombat": [
+        {
+          "eventId": "martial_hero_2_meet",
+          "n": 16,
+          "deaths": 12,
+          "special": 16,
+          "deathRate": 0.75,
+          "avgHpEnter": 0.6028824204697475
+        },
+        {
+          "eventId": "rogue_hero_meet",
+          "n": 15,
+          "deaths": 11,
+          "special": 15,
+          "deathRate": 0.7333333333333333,
+          "avgHpEnter": 0.6174920798665983
+        },
+        {
+          "eventId": "martial_hero_3_meet",
+          "n": 15,
+          "deaths": 10,
+          "special": 15,
+          "deathRate": 0.6666666666666666,
+          "avgHpEnter": 0.639918731816868
+        },
+        {
+          "eventId": "tr_live_wizard_meet",
+          "n": 13,
+          "deaths": 8,
+          "special": 13,
+          "deathRate": 0.6153846153846154,
+          "avgHpEnter": 0.6654692768432094
+        },
+        {
+          "eventId": "huntress_meet",
+          "n": 10,
+          "deaths": 6,
+          "special": 10,
+          "deathRate": 0.6,
+          "avgHpEnter": 0.5974640278488449
+        },
+        {
+          "eventId": "evil_wizard_3_meet",
+          "n": 9,
+          "deaths": 5,
+          "special": 9,
+          "deathRate": 0.5555555555555556,
+          "avgHpEnter": 0.5213748120429734
+        },
+        {
+          "eventId": "huntress_2_meet",
+          "n": 11,
+          "deaths": 6,
+          "special": 11,
+          "deathRate": 0.5454545454545454,
+          "avgHpEnter": 0.6359303747728222
+        },
+        {
+          "eventId": "martial_hero_meet",
+          "n": 35,
+          "deaths": 18,
+          "special": 35,
+          "deathRate": 0.5142857142857142,
+          "avgHpEnter": 0.6743785012221207
+        },
+        {
+          "eventId": "evil_wizard_meet",
+          "n": 22,
+          "deaths": 11,
+          "special": 22,
+          "deathRate": 0.5,
+          "avgHpEnter": 0.6747314083793644
+        },
+        {
+          "eventId": "archer_hero_meet",
+          "n": 13,
+          "deaths": 6,
+          "special": 13,
+          "deathRate": 0.46153846153846156,
+          "avgHpEnter": 0.6412427495389745
+        },
+        {
+          "eventId": "samurai_meet",
+          "n": 24,
+          "deaths": 10,
+          "special": 24,
+          "deathRate": 0.4166666666666667,
+          "avgHpEnter": 0.7757528108908426
+        },
+        {
+          "eventId": "fantasy_warrior_meet",
+          "n": 22,
+          "deaths": 5,
+          "special": 22,
+          "deathRate": 0.22727272727272727,
+          "avgHpEnter": 0.7334467061646343
+        },
+        {
+          "eventId": "orc_logging_camp",
+          "n": 88,
+          "deaths": 16,
+          "special": 0,
+          "deathRate": 0.18181818181818182,
+          "avgHpEnter": 0.8492929884623867
+        },
+        {
+          "eventId": "chest_generic",
+          "n": 73,
+          "deaths": 13,
+          "special": 73,
+          "deathRate": 0.1780821917808219,
+          "avgHpEnter": 0.8018507228525416
+        },
+        {
+          "eventId": "slime_crown",
+          "n": 197,
+          "deaths": 28,
+          "special": 0,
+          "deathRate": 0.14213197969543148,
+          "avgHpEnter": 0.8472347625684852
+        },
+        {
+          "eventId": "farmstead_meet",
+          "n": 134,
+          "deaths": 14,
+          "special": 0,
+          "deathRate": 0.1044776119402985,
+          "avgHpEnter": 0.7288124296976805
+        },
+        {
+          "eventId": "wheel_of_the_tower",
+          "n": 33,
+          "deaths": 3,
+          "special": 0,
+          "deathRate": 0.09090909090909091,
+          "avgHpEnter": 0.6281847187237842
+        },
+        {
+          "eventId": "bandit_toll",
+          "n": 24,
+          "deaths": 0,
+          "special": 0,
+          "deathRate": 0,
+          "avgHpEnter": 0.8563114202231703
+        }
+      ],
+      "attrition": [
+        {
+          "eventId": "wounded_adventurer",
+          "n": 166,
+          "deaths": 22,
+          "deathRate": 0.13253012048192772,
+          "avgHpDelta": -24.289156626506024,
+          "choices": {
+            "Spend your vitality to heal her": 166
+          }
+        },
+        {
+          "eventId": "blood_altar",
+          "n": 115,
+          "deaths": 6,
+          "deathRate": 0.05217391304347826,
+          "avgHpDelta": -9.904347826086957,
+          "choices": {
+            "Offer blood": 115
+          }
+        },
+        {
+          "eventId": "trial_stones",
+          "n": 115,
+          "deaths": 4,
+          "deathRate": 0.034782608695652174,
+          "avgHpDelta": -5.939130434782609,
+          "choices": {
+            "FORCE — lift the fallen lintel": 115
+          }
+        },
+        {
+          "eventId": "beehive",
+          "n": 112,
+          "deaths": 2,
+          "deathRate": 0.017857142857142856,
+          "avgHpDelta": 0.32142857142857145,
+          "choices": {
+            "Harvest carefully": 112
+          }
+        },
+        {
+          "eventId": "soul_broker",
+          "n": 84,
+          "deaths": 1,
+          "deathRate": 0.011904761904761904,
+          "avgHpDelta": -12.297619047619047,
+          "choices": {
+            "Sell vitality": 84
+          }
+        },
+        {
+          "eventId": "old_shrine",
+          "n": 163,
+          "deaths": 1,
+          "deathRate": 0.006134969325153374,
+          "avgHpDelta": -0.4171779141104294,
+          "choices": {
+            "Offer 30 gold": 152,
+            "Deface the shrine": 11
+          }
+        },
+        {
+          "eventId": "gilded_fountain",
+          "n": 43,
+          "deaths": 1,
+          "deathRate": 0.023255813953488372,
+          "avgHpDelta": 6.441860465116279,
+          "choices": {
+            "Throw in a fortune (100g)": 22,
+            "Toss a modest coin (30g)": 17,
+            "Take coins OUT instead": 4
+          }
+        }
+      ],
+      "normalEncounters": [
+        {
+          "pack": "tr_live_slime+tr_live_slime",
+          "n": 5,
+          "deaths": 5,
+          "deathRate": 1,
+          "avgHpEnter": 0.7171230637946883,
+          "floors": {
+            "6": 2,
+            "7": 1,
+            "8": 2
+          }
+        },
+        {
+          "pack": "slime+slime",
+          "n": 35,
+          "deaths": 3,
+          "deathRate": 0.08571428571428572,
+          "avgHpEnter": 0.8498923196611141,
+          "floors": {
+            "1": 5,
+            "2": 1,
+            "3": 10,
+            "4": 5,
+            "6": 5,
+            "7": 1,
+            "8": 8
+          }
+        },
+        {
+          "pack": "tr_mon_treant",
+          "n": 7,
+          "deaths": 2,
+          "deathRate": 0.2857142857142857,
+          "avgHpEnter": 0.6649473443223444,
+          "floors": {
+            "6": 2,
+            "7": 1,
+            "8": 4
+          }
+        },
+        {
+          "pack": "tr_mon_witch",
+          "n": 8,
+          "deaths": 2,
+          "deathRate": 0.25,
+          "avgHpEnter": 0.7730410344975702,
+          "floors": {
+            "6": 4,
+            "7": 2,
+            "8": 2
+          }
+        },
+        {
+          "pack": "orc+orc",
+          "n": 54,
+          "deaths": 2,
+          "deathRate": 0.037037037037037035,
+          "avgHpEnter": 0.8913006545808672,
+          "floors": {
+            "1": 12,
+            "2": 7,
+            "3": 12,
+            "4": 12,
+            "6": 3,
+            "7": 7,
+            "8": 1
+          }
+        },
+        {
+          "pack": "mcf1_goblin+tr_live_slime",
+          "n": 1,
+          "deaths": 1,
+          "deathRate": 1,
+          "avgHpEnter": 0.6326530612244898,
+          "floors": {
+            "8": 1
+          }
+        },
+        {
+          "pack": "mcf2_bat+sprite",
+          "n": 1,
+          "deaths": 1,
+          "deathRate": 1,
+          "avgHpEnter": 0.6590909090909091,
+          "floors": {
+            "7": 1
+          }
+        },
+        {
+          "pack": "mcf1_flying_eye+mcf1_goblin",
+          "n": 1,
+          "deaths": 1,
+          "deathRate": 1,
+          "avgHpEnter": 0.5689655172413793,
+          "floors": {
+            "6": 1
+          }
+        },
+        {
+          "pack": "bandit+tr_live_slime",
+          "n": 1,
+          "deaths": 1,
+          "deathRate": 1,
+          "avgHpEnter": 0.7222222222222222,
+          "floors": {
+            "8": 1
+          }
+        },
+        {
+          "pack": "spider+spider",
+          "n": 2,
+          "deaths": 1,
+          "deathRate": 0.5,
+          "avgHpEnter": 0.7008574150523976,
+          "floors": {
+            "6": 1,
+            "8": 1
+          }
+        },
+        {
+          "pack": "mcf1_mushroom+myconid",
+          "n": 3,
+          "deaths": 1,
+          "deathRate": 0.3333333333333333,
+          "avgHpEnter": 0.8630555555555555,
+          "floors": {
+            "4": 2,
+            "7": 1
+          }
+        },
+        {
+          "pack": "mcf2_slime+wolf",
+          "n": 4,
+          "deaths": 1,
+          "deathRate": 0.25,
+          "avgHpEnter": 0.792437304075235,
+          "floors": {
+            "2": 1,
+            "6": 2,
+            "8": 1
+          }
+        },
+        {
+          "pack": "gv_enemy_ghost+rat",
+          "n": 4,
+          "deaths": 1,
+          "deathRate": 0.25,
+          "avgHpEnter": 0.8238463873709776,
+          "floors": {
+            "2": 2,
+            "6": 1,
+            "8": 1
+          }
+        },
+        {
+          "pack": "tr_mon_vampire",
+          "n": 5,
+          "deaths": 1,
+          "deathRate": 0.2,
+          "avgHpEnter": 0.6852638845035353,
+          "floors": {
+            "6": 1,
+            "7": 4
+          }
+        },
+        {
+          "pack": "spider+wolf",
+          "n": 5,
+          "deaths": 1,
+          "deathRate": 0.2,
+          "avgHpEnter": 0.6417787632421779,
+          "floors": {
+            "2": 1,
+            "4": 1,
+            "6": 2,
+            "7": 1
+          }
+        },
+        {
+          "pack": "bandit+slime",
+          "n": 5,
+          "deaths": 1,
+          "deathRate": 0.2,
+          "avgHpEnter": 0.7808854382332643,
+          "floors": {
+            "4": 4,
+            "6": 1
+          }
+        },
+        {
+          "pack": "gv_ghost_files+rat",
+          "n": 12,
+          "deaths": 1,
+          "deathRate": 0.08333333333333333,
+          "avgHpEnter": 0.8877252101376647,
+          "floors": {
+            "2": 7,
+            "4": 3,
+            "7": 2
+          }
+        },
+        {
+          "pack": "myconid+rat",
+          "n": 21,
+          "deaths": 1,
+          "deathRate": 0.047619047619047616,
+          "avgHpEnter": 0.923783602116862,
+          "floors": {
+            "1": 12,
+            "2": 1,
+            "3": 1,
+            "4": 4,
+            "7": 1,
+            "8": 2
+          }
+        },
+        {
+          "pack": "bandit+rat",
+          "n": 18,
+          "deaths": 0,
+          "deathRate": 0,
+          "avgHpEnter": 0.9679859822716964,
+          "floors": {
+            "1": 12,
+            "2": 4,
+            "7": 1,
+            "8": 1
+          }
+        },
+        {
+          "pack": "boar+wolf",
+          "n": 9,
+          "deaths": 0,
+          "deathRate": 0,
+          "avgHpEnter": 0.7247863120855159,
+          "floors": {
+            "2": 2,
+            "3": 1,
+            "4": 2,
+            "6": 1,
+            "8": 3
+          }
+        }
+      ],
+      "recovery": {
+        "start": {
+          "n": 1002,
+          "hp": 46.703592814371255,
+          "maxHp": 46.703592814371255,
+          "hpPct": 1,
+          "gold": 30,
+          "potions": 1,
+          "consumables": 1
+        },
+        "beforeF4": {
+          "n": 986,
+          "hp": 34.74645030425963,
+          "maxHp": 50.621703853955374,
+          "hpPct": 0.6936601219230909,
+          "gold": 76.75050709939148,
+          "potions": 1.308316430020284,
+          "consumables": 1.308316430020284
+        },
+        "beforeF5": {
+          "n": 947,
+          "hp": 32.71066525871172,
+          "maxHp": 52.5480464625132,
+          "hpPct": 0.6329166216221229,
+          "gold": 85.87117212249208,
+          "potions": 1.2946145723336853,
+          "consumables": 1.2956705385427667
+        },
+        "afterF5": {
+          "n": 795,
+          "hp": 28.11320754716981,
+          "maxHp": 56.19119496855346,
+          "hpPct": 0.5055674178724237,
+          "gold": 119.96477987421383,
+          "potions": 0.7383647798742138,
+          "consumables": 0.7396226415094339
+        },
+        "beforeF7": {
+          "n": 720,
+          "hp": 28.523611111111112,
+          "maxHp": 58.147222222222226,
+          "hpPct": 0.49573100201321496,
+          "gold": 124.00555555555556,
+          "potions": 0.8138888888888889,
+          "consumables": 0.8152777777777778
+        },
+        "beforeF9": {
+          "n": 588,
+          "hp": 27.92687074829932,
+          "maxHp": 62.57142857142857,
+          "hpPct": 0.4476475194260483,
+          "gold": 126.67517006802721,
+          "potions": 0.8571428571428571,
+          "consumables": 0.858843537414966
+        },
+        "f5LowHpSurvivors": 228,
+        "f5LowDiedByF8": 51,
+        "f5LowReachedF9": 177,
+        "f5LowRecovered": 25,
+        "spiralRate": 0.2236842105263158,
+        "shops": 572,
+        "shopHeals": 62,
+        "potionsBought": 304,
+        "healChoices": 912,
+        "campfires": 588,
+        "potionsUsedApprox": 1214
+      },
+      "byClass": {
+        "warrior": {
+          "n": 167,
+          "f5Arrived": 160,
+          "f5Survival": 0.85625,
+          "f6Reach": 0.8203592814371258,
+          "f8Reach": 0.7005988023952096,
+          "f9Reach": 0.6227544910179641,
+          "earlyBrick": 0.17964071856287425,
+          "medianDeathFloor": 6,
+          "deathCauses": [
+            {
+              "cause": "trial",
+              "n": 23
+            },
+            {
+              "cause": "special_encounter",
+              "n": 19
+            },
+            {
+              "cause": "event_combat",
+              "n": 10
+            },
+            {
+              "cause": "event_attrition",
+              "n": 5
+            },
+            {
+              "cause": "elite",
+              "n": 3
+            },
+            {
+              "cause": "normal_encounter",
+              "n": 3
+            }
+          ],
+          "deathEvents": [
+            {
+              "eventId": "slime_crown",
+              "n": 5
+            },
+            {
+              "eventId": "orc_logging_camp",
+              "n": 4
+            },
+            {
+              "eventId": "rogue_hero_meet",
+              "n": 4
+            },
+            {
+              "eventId": "huntress_meet",
+              "n": 2
+            },
+            {
+              "eventId": "wounded_adventurer",
+              "n": 2
+            },
+            {
+              "eventId": "martial_hero_meet",
+              "n": 2
+            }
+          ],
+          "f5HpEnter": 0.5831900858290403,
+          "f5HpLeaveWin": 0.4755147094817153
+        },
+        "mage": {
+          "n": 167,
+          "f5Arrived": 148,
+          "f5Survival": 0.8243243243243243,
+          "f6Reach": 0.7305389221556886,
+          "f8Reach": 0.5748502994011976,
+          "f9Reach": 0.5029940119760479,
+          "earlyBrick": 0.2694610778443114,
+          "medianDeathFloor": 5,
+          "deathCauses": [
+            {
+              "cause": "trial",
+              "n": 26
+            },
+            {
+              "cause": "special_encounter",
+              "n": 21
+            },
+            {
+              "cause": "event_combat",
+              "n": 18
+            },
+            {
+              "cause": "normal_encounter",
+              "n": 9
+            },
+            {
+              "cause": "event_attrition",
+              "n": 8
+            },
+            {
+              "cause": "elite",
+              "n": 1
+            }
+          ],
+          "deathEvents": [
+            {
+              "eventId": "farmstead_meet",
+              "n": 6
+            },
+            {
+              "eventId": "slime_crown",
+              "n": 6
+            },
+            {
+              "eventId": "wounded_adventurer",
+              "n": 6
+            },
+            {
+              "eventId": "orc_logging_camp",
+              "n": 5
+            },
+            {
+              "eventId": "evil_wizard_meet",
+              "n": 4
+            },
+            {
+              "eventId": "chest_generic",
+              "n": 4
+            }
+          ],
+          "f5HpEnter": 0.5871253903683982,
+          "f5HpLeaveWin": 0.5096117185482238
+        },
+        "archer": {
+          "n": 167,
+          "f5Arrived": 166,
+          "f5Survival": 0.8795180722891566,
+          "f6Reach": 0.874251497005988,
+          "f8Reach": 0.7604790419161677,
+          "f9Reach": 0.7125748502994012,
+          "earlyBrick": 0.12574850299401197,
+          "medianDeathFloor": 6,
+          "deathCauses": [
+            {
+              "cause": "trial",
+              "n": 20
+            },
+            {
+              "cause": "special_encounter",
+              "n": 19
+            },
+            {
+              "cause": "event_combat",
+              "n": 4
+            },
+            {
+              "cause": "event_attrition",
+              "n": 2
+            },
+            {
+              "cause": "normal_encounter",
+              "n": 2
+            },
+            {
+              "cause": "elite",
+              "n": 1
+            }
+          ],
+          "deathEvents": [
+            {
+              "eventId": "martial_hero_3_meet",
+              "n": 4
+            },
+            {
+              "eventId": "martial_hero_meet",
+              "n": 4
+            },
+            {
+              "eventId": "martial_hero_2_meet",
+              "n": 3
+            },
+            {
+              "eventId": "evil_wizard_meet",
+              "n": 2
+            },
+            {
+              "eventId": "huntress_2_meet",
+              "n": 2
+            },
+            {
+              "eventId": "slime_crown",
+              "n": 2
+            }
+          ],
+          "f5HpEnter": 0.669670488477988,
+          "f5HpLeaveWin": 0.5324744920866404
+        },
+        "rogue": {
+          "n": 167,
+          "f5Arrived": 162,
+          "f5Survival": 0.8827160493827161,
+          "f6Reach": 0.8562874251497006,
+          "f8Reach": 0.7125748502994012,
+          "f9Reach": 0.6107784431137725,
+          "earlyBrick": 0.1437125748502994,
+          "medianDeathFloor": 6,
+          "deathCauses": [
+            {
+              "cause": "special_encounter",
+              "n": 21
+            },
+            {
+              "cause": "trial",
+              "n": 19
+            },
+            {
+              "cause": "event_attrition",
+              "n": 9
+            },
+            {
+              "cause": "event_combat",
+              "n": 8
+            },
+            {
+              "cause": "elite",
+              "n": 5
+            },
+            {
+              "cause": "normal_encounter",
+              "n": 3
+            }
+          ],
+          "deathEvents": [
+            {
+              "eventId": "wounded_adventurer",
+              "n": 6
+            },
+            {
+              "eventId": "slime_crown",
+              "n": 5
+            },
+            {
+              "eventId": "tr_live_wizard_meet",
+              "n": 3
+            },
+            {
+              "eventId": "martial_hero_2_meet",
+              "n": 3
+            },
+            {
+              "eventId": "farmstead_meet",
+              "n": 3
+            },
+            {
+              "eventId": "martial_hero_meet",
+              "n": 3
+            }
+          ],
+          "f5HpEnter": 0.6632782121800277,
+          "f5HpLeaveWin": 0.5322091744080134
+        },
+        "priest": {
+          "n": 167,
+          "f5Arrived": 153,
+          "f5Survival": 0.7516339869281046,
+          "f6Reach": 0.688622754491018,
+          "f8Reach": 0.49700598802395207,
+          "f9Reach": 0.4251497005988024,
+          "earlyBrick": 0.31137724550898205,
+          "medianDeathFloor": 5,
+          "deathCauses": [
+            {
+              "cause": "trial",
+              "n": 38
+            },
+            {
+              "cause": "special_encounter",
+              "n": 21
+            },
+            {
+              "cause": "event_combat",
+              "n": 14
+            },
+            {
+              "cause": "normal_encounter",
+              "n": 9
+            },
+            {
+              "cause": "event_attrition",
+              "n": 8
+            },
+            {
+              "cause": "elite",
+              "n": 6
+            }
+          ],
+          "deathEvents": [
+            {
+              "eventId": "orc_logging_camp",
+              "n": 7
+            },
+            {
+              "eventId": "wounded_adventurer",
+              "n": 5
+            },
+            {
+              "eventId": "martial_hero_2_meet",
+              "n": 4
+            },
+            {
+              "eventId": "samurai_meet",
+              "n": 4
+            },
+            {
+              "eventId": "slime_crown",
+              "n": 4
+            },
+            {
+              "eventId": "martial_hero_meet",
+              "n": 3
+            }
+          ],
+          "f5HpEnter": 0.6404491576017367,
+          "f5HpLeaveWin": 0.49006735278509933
+        },
+        "monk": {
+          "n": 167,
+          "f5Arrived": 158,
+          "f5Survival": 0.8354430379746836,
+          "f6Reach": 0.7904191616766467,
+          "f8Reach": 0.7065868263473054,
+          "f9Reach": 0.6467065868263473,
+          "earlyBrick": 0.20958083832335328,
+          "medianDeathFloor": 5,
+          "deathCauses": [
+            {
+              "cause": "trial",
+              "n": 26
+            },
+            {
+              "cause": "special_encounter",
+              "n": 20
+            },
+            {
+              "cause": "event_combat",
+              "n": 7
+            },
+            {
+              "cause": "event_attrition",
+              "n": 5
+            },
+            {
+              "cause": "normal_encounter",
+              "n": 1
+            }
+          ],
+          "deathEvents": [
+            {
+              "eventId": "slime_crown",
+              "n": 6
+            },
+            {
+              "eventId": "rogue_hero_meet",
+              "n": 3
+            },
+            {
+              "eventId": "archer_hero_meet",
+              "n": 3
+            },
+            {
+              "eventId": "chest_generic",
+              "n": 3
+            },
+            {
+              "eventId": "martial_hero_meet",
+              "n": 3
+            },
+            {
+              "eventId": "wounded_adventurer",
+              "n": 3
+            }
+          ],
+          "f5HpEnter": 0.6491264341481341,
+          "f5HpLeaveWin": 0.4879016590258856
+        }
+      },
+      "policyNotes": {
+        "ignoredRecoveryCard": 31,
+        "refusedShopHeal": 0,
+        "refusedAffordableGear": 62,
+        "boughtGear": 0,
+        "boughtConsumable": 304,
+        "shopHeals": 62,
+        "shopDecisions": 632,
+        "foughtWhileCritical": 0
+      }
+    }
+  },
+  "communication": [
+    {
+      "eventId": "crimson_stranger",
+      "title": "The Crimson Stranger",
+      "floorGate": "s => s.floor >= 4",
+      "fights": [
+        {
+          "eventId": "crimson_stranger",
+          "title": "The Crimson Stranger",
+          "label": "Accept the duel",
+          "hint": "a hard fight — rare, exclusive spoils",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "vampire_cloak/vampire_bite",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Offer a vial of your blood freely",
+        "Refuse and keep walking"
+      ]
+    },
+    {
+      "eventId": "frost_revenant",
+      "title": "The Challenger in the Cold",
+      "floorGate": "s => s.floor >= 18",
+      "fights": [
+        {
+          "eventId": "frost_revenant",
+          "title": "The Challenger in the Cold",
+          "label": "Prove it",
+          "hint": "a brutal fight — an exclusive technique",
+          "labelWarns": true,
+          "bodyWarns": false,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "frost_nova/frostwalkers",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Decline the challenge"
+      ]
+    },
+    {
+      "eventId": "memory_of_a_king",
+      "title": "Memory of a King",
+      "floorGate": "s => s.floor >= 20",
+      "fights": [
+        {
+          "eventId": "memory_of_a_king",
+          "title": "Memory of a King",
+          "label": "Challenge the memory",
+          "hint": "a brutal fight — UNIQUE spoil",
+          "labelWarns": true,
+          "bodyWarns": false,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "UNIQUE",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": true,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Kneel and leave"
+      ]
+    },
+    {
+      "eventId": "world_witness",
+      "title": "The World's Witness",
+      "floorGate": "s => s.floor >= 42",
+      "fights": [
+        {
+          "eventId": "world_witness",
+          "title": "The World's Witness",
+          "label": "Accept the trial",
+          "hint": "brutal fight — WRLD spoil",
+          "labelWarns": false,
+          "bodyWarns": false,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "HINT_ONLY",
+          "reward": "WRLD",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Refuse the role"
+      ]
+    },
+    {
+      "eventId": "ghost_king",
+      "title": "The King Who Stayed",
+      "floorGate": "none",
+      "fights": [],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "\"Who do you complain TO?\"",
+        "Bow to him",
+        "\"Get over it, it's been 600 years.\""
+      ]
+    },
+    {
+      "eventId": "blade_hero_meet",
+      "title": "The Oathbound Champion",
+      "floorGate": "s => s.floor >= 3",
+      "fights": [
+        {
+          "eventId": "blade_hero_meet",
+          "title": "The Oathbound Champion",
+          "label": "Spar him",
+          "hint": "hard fight — better spoils + XP",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "xp 35, veteran_cuirass/veteran_guard/war_badge",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Ask for counsel",
+        "Leave him be"
+      ]
+    },
+    {
+      "eventId": "dark_mage_meet",
+      "title": "The Apostate Channeler",
+      "floorGate": "s => s.floor >= 5",
+      "fights": [
+        {
+          "eventId": "dark_mage_meet",
+          "title": "The Apostate Channeler",
+          "label": "Challenge the hex",
+          "hint": "hard fight — better spoils + XP",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "xp 40, scholar_robe/scholar_hex/spellthread",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Ask what she learned",
+        "Back away carefully"
+      ]
+    },
+    {
+      "eventId": "pathfinder_meet",
+      "title": "The Pathfinder Veteran",
+      "floorGate": "s => s.floor >= 4",
+      "fights": [
+        {
+          "eventId": "pathfinder_meet",
+          "title": "The Pathfinder Veteran",
+          "label": "Duel to test your aim",
+          "hint": "hard fight — better spoils + XP",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "xp 36, pathfinder_hood/pathfinder_mark/trailbow",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Trade trail lore",
+        "Keep to the path"
+      ]
+    },
+    {
+      "eventId": "axe_northman_meet",
+      "title": "The Axe-Pack Veteran",
+      "floorGate": "s => s.floor >= 5",
+      "fights": [
+        {
+          "eventId": "axe_northman_meet",
+          "title": "The Axe-Pack Veteran",
+          "label": "Answer the axe",
+          "hint": "hard fight — better spoils + XP",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "xp 40, axe_pack_mail/axe_pack_cleave/sea_token",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Talk raids",
+        "Keep climbing"
+      ]
+    },
+    {
+      "eventId": "evil_wizard_meet",
+      "title": "Malachar the Apostate",
+      "floorGate": "s => s.floor >= 4 + (i % 3)",
+      "fights": [
+        {
+          "eventId": "evil_wizard_meet",
+          "title": "Malachar the Apostate",
+          "label": "Accept the duel",
+          "hint": "hard fight — epic+ class loot",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "epic+ class loot",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Trade words",
+        "Pass on by"
+      ]
+    },
+    {
+      "eventId": "evil_wizard_3_meet",
+      "title": "Vexil the Hexwright",
+      "floorGate": "s => s.floor >= 4 + (i % 3)",
+      "fights": [
+        {
+          "eventId": "evil_wizard_3_meet",
+          "title": "Vexil the Hexwright",
+          "label": "Accept the duel",
+          "hint": "hard fight — epic+ class loot",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "epic+ class loot",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Trade words",
+        "Pass on by"
+      ]
+    },
+    {
+      "eventId": "archer_hero_meet",
+      "title": "Lyra of the Green Quiver",
+      "floorGate": "s => s.floor >= 4 + (i % 3)",
+      "fights": [
+        {
+          "eventId": "archer_hero_meet",
+          "title": "Lyra of the Green Quiver",
+          "label": "Accept the duel",
+          "hint": "hard fight — epic+ class loot",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "epic+ class loot",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Trade words",
+        "Pass on by"
+      ]
+    },
+    {
+      "eventId": "samurai_meet",
+      "title": "Takeshi of the Quiet Edge",
+      "floorGate": "s => s.floor >= 4 + (i % 3)",
+      "fights": [
+        {
+          "eventId": "samurai_meet",
+          "title": "Takeshi of the Quiet Edge",
+          "label": "Accept the duel",
+          "hint": "hard fight — epic+ class loot",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "epic+ class loot",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Trade words",
+        "Pass on by"
+      ]
+    },
+    {
+      "eventId": "rogue_hero_meet",
+      "title": "Shade of the Twelfth Stair",
+      "floorGate": "s => s.floor >= 4 + (i % 3)",
+      "fights": [
+        {
+          "eventId": "rogue_hero_meet",
+          "title": "Shade of the Twelfth Stair",
+          "label": "Accept the duel",
+          "hint": "hard fight — epic+ class loot",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "epic+ class loot",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Trade words",
+        "Pass on by"
+      ]
+    },
+    {
+      "eventId": "tr_live_wizard_meet",
+      "title": "Orlan the Wandering Scholar",
+      "floorGate": "s => s.floor >= 4 + (i % 3)",
+      "fights": [
+        {
+          "eventId": "tr_live_wizard_meet",
+          "title": "Orlan the Wandering Scholar",
+          "label": "Accept the duel",
+          "hint": "hard fight — epic+ class loot",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "epic+ class loot",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Trade words",
+        "Pass on by"
+      ]
+    },
+    {
+      "eventId": "fantasy_warrior_meet",
+      "title": "Brenna Ironvow",
+      "floorGate": "s => s.floor >= 4 + (i % 3)",
+      "fights": [
+        {
+          "eventId": "fantasy_warrior_meet",
+          "title": "Brenna Ironvow",
+          "label": "Accept the duel",
+          "hint": "hard fight — epic+ class loot",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "epic+ class loot",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Trade words",
+        "Pass on by"
+      ]
+    },
+    {
+      "eventId": "huntress_meet",
+      "title": "Sera of the High Canopy",
+      "floorGate": "s => s.floor >= 4 + (i % 3)",
+      "fights": [
+        {
+          "eventId": "huntress_meet",
+          "title": "Sera of the High Canopy",
+          "label": "Accept the duel",
+          "hint": "hard fight — epic+ class loot",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "epic+ class loot",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Trade words",
+        "Pass on by"
+      ]
+    },
+    {
+      "eventId": "huntress_2_meet",
+      "title": "Nessa Quickfletch",
+      "floorGate": "s => s.floor >= 4 + (i % 3)",
+      "fights": [
+        {
+          "eventId": "huntress_2_meet",
+          "title": "Nessa Quickfletch",
+          "label": "Accept the duel",
+          "hint": "hard fight — epic+ class loot",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "epic+ class loot",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Trade words",
+        "Pass on by"
+      ]
+    },
+    {
+      "eventId": "martial_hero_meet",
+      "title": "Joren of the Open Palm",
+      "floorGate": "s => s.floor >= 4 + (i % 3)",
+      "fights": [
+        {
+          "eventId": "martial_hero_meet",
+          "title": "Joren of the Open Palm",
+          "label": "Accept the duel",
+          "hint": "hard fight — epic+ class loot",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "epic+ class loot",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Trade words",
+        "Pass on by"
+      ]
+    },
+    {
+      "eventId": "martial_hero_2_meet",
+      "title": "Kade of the Falling Leaf",
+      "floorGate": "s => s.floor >= 4 + (i % 3)",
+      "fights": [
+        {
+          "eventId": "martial_hero_2_meet",
+          "title": "Kade of the Falling Leaf",
+          "label": "Accept the duel",
+          "hint": "hard fight — epic+ class loot",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "epic+ class loot",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Trade words",
+        "Pass on by"
+      ]
+    },
+    {
+      "eventId": "martial_hero_3_meet",
+      "title": "Rurik Stormfist",
+      "floorGate": "s => s.floor >= 4 + (i % 3)",
+      "fights": [
+        {
+          "eventId": "martial_hero_3_meet",
+          "title": "Rurik Stormfist",
+          "label": "Accept the duel",
+          "hint": "hard fight — epic+ class loot",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "epic+ class loot",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Trade words",
+        "Pass on by"
+      ]
+    },
+    {
+      "eventId": "cursed_knight_vigil",
+      "title": "The Cursed Vigil",
+      "floorGate": "s => s.floor >= 11",
+      "fights": [
+        {
+          "eventId": "cursed_knight_vigil",
+          "title": "The Cursed Vigil",
+          "label": "Challenge the vigil",
+          "hint": "hard fight — elite spoils",
+          "labelWarns": true,
+          "bodyWarns": false,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "xp 48, veteran_cuirass/veteran_guard/war_badge",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Offer a prayer for the oath",
+        "Leave the dead to their watch"
+      ]
+    },
+    {
+      "eventId": "crowned_shadow",
+      "title": "A Crown in the Dust",
+      "floorGate": "s => s.floor >= 12 && s.floor < 15",
+      "fights": [
+        {
+          "eventId": "crowned_shadow",
+          "title": "A Crown in the Dust",
+          "label": "Wake him now",
+          "hint": "DEADLY — face the Crowned Revenant early",
+          "labelWarns": true,
+          "bodyWarns": false,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "xp 85, war_badge/veteran_helm/axe_pack_cleave",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Kneel and swear a temporary oath",
+        "Circle wide and leave him kneeling"
+      ]
+    },
+    {
+      "eventId": "roadside_climbers",
+      "title": "Roadside Climbers",
+      "floorGate": "none",
+      "fights": [
+        {
+          "eventId": "roadside_climbers",
+          "title": "Roadside Climbers",
+          "label": "Spar for sport",
+          "hint": "hard fight — better spoils + XP",
+          "labelWarns": true,
+          "bodyWarns": true,
+          "hintHard": true,
+          "hintSoft": true,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "xp 38, militia_press/steel_blade/hawk_charm",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Share the meal",
+        "Wish them luck"
+      ]
+    },
+    {
+      "eventId": "farmstead_meet",
+      "title": "A Stubborn Farmstead",
+      "floorGate": "none",
+      "fights": [
+        {
+          "eventId": "farmstead_meet",
+          "title": "A Stubborn Farmstead",
+          "label": "Pick a fight",
+          "hint": "easy scrap — little gold, fame loss, farm loot",
+          "labelWarns": true,
+          "bodyWarns": false,
+          "hintHard": false,
+          "hintSoft": true,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "farm loot",
+          "baselineScore": 16
+        }
+      ],
+      "baselinePrefersFight": true,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Accept their hospitality",
+        "Tip your hat and leave"
+      ]
+    },
+    {
+      "eventId": "oldman_trials",
+      "title": "The Old Man on the Stair",
+      "floorGate": "s => s.floor >= 8",
+      "fights": [
+        {
+          "eventId": "oldman_trials",
+          "title": "The Old Man on the Stair",
+          "label": "Test your skills in a fight",
+          "hint": "secret fight — easy OR boss-tier",
+          "labelWarns": true,
+          "bodyWarns": false,
+          "hintHard": true,
+          "hintSoft": false,
+          "hintHiddenWhenOff": true,
+          "kind": "LABEL_WARNS",
+          "reward": "xp 40, elder_cane/hedge_cantrip/focus_ring",
+          "baselineScore": 3
+        }
+      ],
+      "baselinePrefersFight": false,
+      "baselineTiePicksFirstFight": false,
+      "safeLabels": [
+        "Ask how strong you seem",
+        "Ask for teachings"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "source": "F5 trial",
+      "label": "LIKELY HEALTHY DIFFICULTY",
+      "note": "clear 83.9% of 947 arrivals; F4 4.0% → F5 16.1% → F6 9.4%. spicy but acceptable."
+    },
+    {
+      "source": "gallery NPC duels (F4–8)",
+      "label": "LIKELY BALANCE ISSUE",
+      "note": "10 hero/wizard meets, 93/159 deaths when fought (58.5%). Labels say \"duel\"; default policies no longer take them for hidden loot."
+    },
+    {
+      "source": "normal encounters",
+      "label": "LIKELY HEALTHY DIFFICULTY",
+      "note": "among n≥20 packs, highest slime+slime 3/35 (8.6%); most F4–8 deaths are not ordinary trash."
+    }
+  ],
+  "issues": [
+    {
+      "source": "gallery NPC duels (F4–8)",
+      "label": "LIKELY BALANCE ISSUE",
+      "note": "10 hero/wizard meets, 93/159 deaths when fought (58.5%). Labels say \"duel\"; default policies no longer take them for hidden loot."
+    }
+  ],
+  "verdict": {
+    "label": "UNCLEAR",
+    "note": "no baseline sample"
+  }
+}
