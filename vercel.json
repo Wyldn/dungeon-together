@@ -3,7 +3,7 @@
   "fluid": true,
   "functions": {
     "api/party.js": {
-      "maxDuration": 800
+      "maxDuration": 300
     }
   }
 }

@@ -23,6 +23,14 @@ export function isMixedContentBlocked() {
   return false;
 }
 
+/** What to do when the wss proxy (or relay) drops. Hobby Fluid caps a
+ *  Vercel function at ~300s, so this is the normal end of a secure session. */
+export function partyLinkRecovery({ climbing = false, hasCode = false } = {}) {
+  if (climbing) return 'exit-run';
+  if (hasCode) return 'rejoin';
+  return 'exit-lobby';
+}
+
 export class Net {
   constructor() {
     this.ws = null;

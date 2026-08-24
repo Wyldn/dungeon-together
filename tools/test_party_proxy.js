@@ -5,7 +5,7 @@
 import { createServer } from 'http';
 import { createRequire } from 'module';
 import { WebSocket, WebSocketServer } from 'ws';
-import { defaultServerUrl, PUBLIC_RELAY, SECURE_RELAY_PATH, Net } from '../js/net.js';
+import { defaultServerUrl, partyLinkRecovery, PUBLIC_RELAY, SECURE_RELAY_PATH, Net } from '../js/net.js';
 
 const require = createRequire(import.meta.url);
 const { attachPartyProxy } = require('../api/party-proxy.js');
@@ -124,6 +124,9 @@ export async function runPartyProxyTests(t) {
     defaultServerUrl({ protocol: 'http:', host: '127.0.0.1:8000', hostname: '127.0.0.1' })
       === PUBLIC_RELAY);
   t('missing location keeps direct public relay', defaultServerUrl(null) === PUBLIC_RELAY);
+  t('proxy timeout mid-climb exits the run', partyLinkRecovery({ climbing: true, hasCode: true }) === 'exit-run');
+  t('proxy timeout in lobby tries rejoin', partyLinkRecovery({ climbing: false, hasCode: true }) === 'rejoin');
+  t('proxy timeout without a room returns to menu', partyLinkRecovery({ climbing: false, hasCode: false }) === 'exit-lobby');
 
   // Protocol passthrough + reconnect after a clean client drop.
   {

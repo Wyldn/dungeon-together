@@ -44,7 +44,7 @@ pm2 logs dungeon-together                # watch
 
 Port 3117/tcp is open in firewalld + the OCI security list. `server/test-bot.js` is a scripted partner for protocol testing: `node test-bot.js <CODE> ws://host:3117`.
 
-HTTPS frontends (Vercel) do **not** change that server. They connect through `api/party.js`, a Fluid-compute WebSocket proxy (`wss` in, `ws://132.226.66.6:3117` out). Local `python -m http.server` still uses the public relay directly.
+HTTPS frontends (Vercel) do **not** change that server. They connect through `api/party.js`, a Fluid-compute WebSocket proxy (`wss` in, `ws://132.226.66.6:3117` out). Hobby plans cap that function at **300 seconds**, so a secure party link ends after about five minutes; the client then tries to rejoin a still-open lobby or leaves a climb cleanly. Local `python -m http.server` still uses the public relay directly.
 
 ## 🎮 How to play
 
@@ -104,7 +104,7 @@ node tools/sim.js    # seeded balance simulations (10k trials)
 
 ## 📦 Deploy
 
-Vercel: import the repo (no build command; output is the repo root). Fluid compute must stay on so `/api/party` can keep the WebSocket open. The function forwards to `PARTY_UPSTREAM` or `ws://132.226.66.6:3117`.
+Vercel: import the repo (no build command; output is the repo root). Fluid compute must stay on so `/api/party` can keep the WebSocket open. Keep `maxDuration` at `300` on Hobby. The function forwards to `PARTY_UPSTREAM` or `ws://132.226.66.6:3117`.
 
 GitHub Pages still works as a static host: Settings → Pages → deploy from `main` branch root. No build needed.
 
