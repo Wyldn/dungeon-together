@@ -4,10 +4,12 @@
    ============================================================ */
 
 :root {
-  /* 8-bit type: Press Start 2P for display/labels, VT323 for body/flavor */
+  /* 8-bit type: Press Start 2P for HUD/titles, VT323 for short flavor.
+     Alegreya (SIL OFL) is long-form lore/dialogue only — never the page default. */
   --font-display: 'Press Start 2P', monospace;
   --font-body: 'VT323', monospace;
   --font-mono: 'Press Start 2P', monospace;
+  --font-prose: 'Alegreya', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman', serif;
 
   --ink: #ece0c4;
   --ink-dim: #b3a683;
@@ -473,7 +475,21 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 }
 .card-body { padding: 22px 26px 26px; }
 .card-body h3 { font-size: 26px; color: var(--gold-bright); margin-bottom: 8px; }
-.card-body .card-text { color: var(--ink); font-size: 17.5px; line-height: 1.55; margin-bottom: 20px; white-space: pre-line; }
+.card-body .card-text {
+  color: var(--ink);
+  font-family: var(--font-prose);
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.62;
+  letter-spacing: .01em;
+  margin-bottom: 20px;
+  white-space: pre-line;
+  max-width: 62ch;
+  text-transform: none;
+  font-synthesis: none;
+  font-size-adjust: 0.5;
+  image-rendering: auto;
+}
 .card-choices { display: grid; gap: 10px; }
 .choice-btn {
   display: flex; justify-content: space-between; align-items: center; gap: 14px; text-align: left;
@@ -487,6 +503,18 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
 .choice-btn:disabled { opacity: .42; cursor: not-allowed; }
 .choice-btn .choice-label { font-weight: 600; }
 .choice-btn .choice-hint { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-dim); white-space: nowrap; }
+.choice-btn.choice-prose {
+  font-family: var(--font-prose);
+  font-size: 16.5px;
+  line-height: 1.5;
+  letter-spacing: .01em;
+  text-transform: none;
+  font-synthesis: none;
+  font-size-adjust: 0.5;
+  image-rendering: auto;
+  align-items: flex-start;
+}
+.choice-btn.choice-prose .choice-label { font-weight: 500; white-space: normal; }
 .choice-btn .choice-req { color: var(--crit); }
 .choice-btn.locked .choice-req { color: var(--blood); }
 html.hide-choice-hints .choice-hint:not(.choice-hint-keep) { display: none; }
@@ -937,9 +965,14 @@ html.hide-choice-hints .choice-hint:not(.choice-hint-keep) { display: none; }
 .cs-tip-desc {
   display: block;
   margin-top: 7px;
-  font-size: 13px;
-  line-height: 1.35;
+  font-family: var(--font-prose);
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: .01em;
   color: var(--ink-dim);
+  text-transform: none;
+  font-synthesis: none;
+  font-size-adjust: 0.5;
 }
 .climb-summary .relic-chip.cs-tip { cursor: help; }
 .climb-summary .relic-row { position: relative; z-index: 6; overflow: visible; }
@@ -1081,7 +1114,12 @@ html.hide-choice-hints .choice-hint:not(.choice-hint-keep) { display: none; }
 .modal { width: min(680px, 94%); padding: 24px 28px; max-height: 90%; overflow-y: auto; scrollbar-width: thin;
   border: 2px solid var(--gold); box-shadow: 0 0 40px rgba(232,182,74,.35); }
 .modal h3 { font-size: 15px; line-height: 1.5; color: var(--gold-bright); margin-bottom: 10px; }
-.modal .modal-sub { color: var(--ink-dim); font-style: italic; margin-bottom: 16px; font-size: 18px; }
+.modal .modal-sub {
+  color: var(--ink-dim); font-style: italic; margin-bottom: 16px;
+  font-family: var(--font-prose); font-size: 18px; line-height: 1.62;
+  letter-spacing: .01em; text-transform: none; font-synthesis: none; font-size-adjust: 0.5;
+  max-width: 62ch;
+}
 
 .levelup-burst { text-align: center; font-size: 46px; animation: glyph-idle 2s ease-in-out infinite; }
 .statgain-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 12px 0; }
@@ -1377,7 +1415,11 @@ html.hide-choice-hints .choice-hint:not(.choice-hint-keep) { display: none; }
 .end-title { font-size: clamp(38px, 6vw, 62px); font-weight: 900; }
 .end-title.defeat { color: var(--blood); text-shadow: 0 0 40px rgba(184,53,47,.4); }
 .end-title.victory { background: linear-gradient(180deg, #ffe9b0, var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.end-epitaph { color: var(--ink-dim); font-style: italic; font-size: 19px; max-width: 560px; margin: 10px 0 24px; line-height: 1.5; }
+.end-epitaph {
+  color: var(--ink-dim); font-style: italic; font-size: 18px; max-width: 62ch;
+  margin: 10px 0 24px; line-height: 1.62; letter-spacing: .01em;
+  font-family: var(--font-prose); text-transform: none; font-synthesis: none; font-size-adjust: 0.5;
+}
 .end-stats { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; margin-bottom: 14px; font-family: var(--font-mono); font-size: 14px; color: var(--ink-dim); }
 .end-stats b { display: block; font-size: 24px; color: var(--ink); font-family: var(--font-display); }
 .shard-award { font-family: var(--font-display); font-size: 20px; color: var(--xp); margin-bottom: 26px; }
@@ -1414,7 +1456,11 @@ html.hide-choice-hints .choice-hint:not(.choice-hint-keep) { display: none; }
 .fdot.done { background: var(--biome-glow); }
 .start-feel { padding: 18px 22px; text-align: center; }
 .start-feel .sf-word { font-family: var(--font-display); font-size: 30px; font-weight: 800; color: var(--gold-bright); letter-spacing: .05em; }
-.start-feel .sf-flavor { font-style: italic; color: var(--ink-dim); margin: 8px 0 10px; }
+.start-feel .sf-flavor {
+  font-family: var(--font-prose); font-style: italic; color: var(--ink-dim);
+  margin: 8px 0 10px; font-size: 17px; line-height: 1.55; letter-spacing: .01em;
+  text-transform: none; font-synthesis: none; font-size-adjust: 0.5;
+}
 .start-feel .sf-note { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); letter-spacing: .04em; }
 
 /* gate entry now shares the walk-overlay transition (see .walk-overlay) */
@@ -1762,8 +1808,9 @@ html.hide-choice-hints .choice-hint:not(.choice-hint-keep) { display: none; }
 .partner-chip .pc-act { font-size: 8px; }
 .floor-strip .biome-label { font-size: 8px; }
 .card-body h3 { font-size: 13px; line-height: 1.5; }
-.card-body .card-text { font-size: 18px; line-height: 1.4; }
+.card-body .card-text { font-size: 18px; line-height: 1.62; }
 .choice-btn { font-size: 17px; }
+.choice-btn.choice-prose { font-size: 16.5px; line-height: 1.5; }
 .choice-btn .choice-hint { font-size: 8px; }
 .outcome-line { font-size: 15px; }
 .fighter-name { font-size: 9px; }
@@ -1796,7 +1843,7 @@ html.hide-choice-hints .choice-hint:not(.choice-hint-keep) { display: none; }
 .end-title { font-size: 30px; line-height: 1.2; }
 .end-stats { font-size: 9px; }
 .end-stats b { font-size: 14px; }
-.end-epitaph { font-size: 19px; }
+.end-epitaph { font-size: 18px; line-height: 1.62; }
 .pick-card .pc-cat { font-size: 11px; line-height: 1.4; }
 .pick-card .pc-blurb { font-size: 15px; }
 .vote-chip { font-size: 8px; }
@@ -1962,7 +2009,11 @@ html.hide-choice-hints .choice-hint:not(.choice-hint-keep) { display: none; }
 .tm-cur-body { border: 2px solid var(--teal); border-top: none; background: linear-gradient(160deg, rgba(34,24,58,.97), rgba(16,10,30,.98)); padding: 10px 12px 12px; text-align: center; }
 .tm-cur-tag { font-family: var(--font-display); font-size: 8px; color: var(--teal); letter-spacing: 1px; }
 .tm-cur-name { font-size: 24px; color: #f7ecce; margin-top: 6px; line-height: 1; }
-.tm-cur-flavor { font-size: 15px; color: var(--ink-dim); line-height: 1.22; margin-top: 8px; }
+.tm-cur-flavor {
+  font-family: var(--font-prose); font-size: 15px; color: var(--ink-dim);
+  line-height: 1.45; margin-top: 8px; letter-spacing: .01em;
+  text-transform: none; font-synthesis: none; font-size-adjust: 0.5;
+}
 .tm-choice-layer { position: absolute; inset: 0; z-index: 30; pointer-events: none; }
 .tm-choice-layer:hover { z-index: 60; }
 .tm-choice-layer .tm-node { z-index: 31; }
@@ -1995,7 +2046,11 @@ html.hide-choice-hints .choice-hint:not(.choice-hint-keep) { display: none; }
 .tm-risk-label { font-family: var(--font-display); font-size: 7px; letter-spacing: 1px; }
 .tm-pips { display: flex; gap: 3px; }
 .tm-pips span { display: inline-block; }
-.tm-flavor { font-size: 15px; color: var(--ink-dim); line-height: 1.24; margin-top: 10px; padding: 0 4px; }
+.tm-flavor {
+  font-family: var(--font-prose); font-size: 15px; color: var(--ink-dim);
+  line-height: 1.45; margin-top: 10px; padding: 0 4px; letter-spacing: .01em;
+  text-transform: none; font-synthesis: none; font-size-adjust: 0.5;
+}
 .tm-cta { margin-top: 12px; font-family: var(--font-display); font-size: 9px; color: var(--on-gold); padding: 9px; background: linear-gradient(180deg, #ffe6a8, #e8b64a); box-shadow: 0 0 14px rgba(232,182,74,.45); }
 .tm-votes { display: none; gap: 4px; justify-content: center; flex-wrap: wrap; margin-top: 8px; min-height: 0; }
 .tm-votes:not(:empty) { display: flex; min-height: 22px; }
@@ -2154,6 +2209,11 @@ html.hide-choice-hints .choice-hint:not(.choice-hint-keep) { display: none; }
   .hud-meta { font-size: 11.5px; gap: 10px; }
   .card-art { height: 140px; }
   .card-art .card-glyph { font-size: 64px; }
+  .card-body .card-text,
+  .modal .modal-sub,
+  .end-epitaph { font-size: 16.5px; line-height: 1.58; }
+  .choice-btn.choice-prose { font-size: 16px; }
+  .cs-tip-desc { font-size: 14.5px; }
   .fighter-sprite { width: 74px; height: 74px; font-size: 40px; }
   .combatant.boss .fighter-sprite { width: 130px; height: 130px; font-size: 72px; }
   .battlefield { flex-direction: column; justify-content: space-between; }

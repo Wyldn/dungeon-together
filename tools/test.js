@@ -2786,6 +2786,67 @@ console.log('— narrative event pacing —');
 }
 
 {
+  const { runMpPersistTests } = await import('./test_mp_persist.js');
+  await runMpPersistTests(t);
+}
+
+console.log('— narrative typography —');
+{
+  const { isLongChoiceLabel, choiceBtnClass, CHOICE_PROSE_MIN_CHARS } = await import('../js/typography.js');
+  const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'css', 'main.css'), 'utf8');
+  const html = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'index.html'), 'utf8');
+  const gameSrc = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'js', 'game.js'), 'utf8');
+
+  t('prose face is Alegreya with serif fallbacks',
+    /--font-prose:\s*'Alegreya'/.test(css) && /Palatino/.test(css) && /Georgia/.test(css) && /serif/.test(css));
+  t('pixel display font is unchanged', /--font-display:\s*'Press Start 2P'/.test(css));
+  t('pixel body font is unchanged', /--font-body:\s*'VT323'/.test(css));
+  t('page default still uses pixel body, not prose',
+    /html, body \{[^}]*font-family:\s*var\(--font-body\)/.test(css)
+    && !/html, body \{[^}]*font-family:\s*var\(--font-prose\)/.test(css));
+  t('headings stay on the display face', /h1, h2, h3 \{ font-family: var\(--font-display\)/.test(css));
+  t('HUD name stays on the display face', /\.hud-name \{ font-family: var\(--font-display\)/.test(css));
+  t('event body uses the prose face', /\.card-body \.card-text \{[\s\S]*?font-family:\s*var\(--font-prose\)/.test(css));
+  t('event body is not forced uppercase',
+    /\.card-body \.card-text \{[\s\S]*?text-transform:\s*none/.test(css));
+  t('event body has a readable measure', /\.card-body \.card-text \{[\s\S]*?max-width:\s*62ch/.test(css));
+  t('event body line-height is in the 1.55–1.7 band',
+    /\.card-body \.card-text \{[\s\S]*?line-height:\s*1\.62/.test(css)
+    && !/\.card-body \.card-text \{ font-size: 18px; line-height: 1\.4; \}/.test(css));
+  t('short choices keep the pixel body face',
+    /\.choice-btn \{[\s\S]*?font-family:\s*var\(--font-body\)/.test(css));
+  t('long choices opt into the prose face',
+    /\.choice-btn\.choice-prose \{[\s\S]*?font-family:\s*var\(--font-prose\)/.test(css));
+  t('combat log stays on the pixel mono face',
+    /\.combat-log \{[\s\S]*?font-family:\s*var\(--font-mono\)/.test(css));
+  t('tooltips use prose for descriptions',
+    /\.cs-tip-desc \{[\s\S]*?font-family:\s*var\(--font-prose\)/.test(css));
+  t('dialogue modals use prose',
+    /\.modal \.modal-sub \{[\s\S]*?font-family:\s*var\(--font-prose\)/.test(css));
+  t('Alegreya is requested with font-display swap',
+    /family=Alegreya:ital,wght@0,400;0,500;1,400/.test(html) && /display=swap/.test(html));
+  t('Press Start 2P and VT323 still load',
+    /family=Press\+Start\+2P/.test(html) && /family=VT323/.test(html));
+  t('choice buttons are classed through the length helper',
+    /choiceBtnClass\(choice\.label/.test(gameSrc) && !/class="choice-btn"/.test(gameSrc));
+  t('short action labels stay pixel',
+    !isLongChoiceLabel('⚔ Fight')
+    && !isLongChoiceLabel('Step through the gate')
+    && !isLongChoiceLabel('Take your leave')
+    && choiceBtnClass('Skip') === 'choice-btn');
+  t('sentence-length choices get the prose class',
+    isLongChoiceLabel("✦ Present the three Sigils — speak the tower's truth")
+    && isLongChoiceLabel('🗣 Answer honestly: "I don\'t know yet."')
+    && choiceBtnClass('Leave it for the next desperate soul').includes('choice-prose'));
+  t('choice prose threshold is a length rule, not a whitelist',
+    CHOICE_PROSE_MIN_CHARS === 36
+    && isLongChoiceLabel('x'.repeat(CHOICE_PROSE_MIN_CHARS))
+    && !isLongChoiceLabel('x'.repeat(CHOICE_PROSE_MIN_CHARS - 1)));
+  t('wheel-of-fortune copy is untouched',
+    /A brass wheel of fortune, person-high/.test(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'js', 'data', 'events.js'), 'utf8')));
+}
+
+{
   const { runDifficultyTests } = await import('./test_run_difficulty.js');
   await runDifficultyTests(t);
 }

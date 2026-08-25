@@ -1,5 +1,13 @@
 # Credits
 
+## Fonts
+**Press Start 2P** (Cody "CodeMan38" Boisclair) and **VT323** (Peter Hull) —
+pixel display / compact UI. Licensed under the [SIL Open Font License 1.1](https://scripts.sil.org/OFL);
+served from [Google Fonts](https://fonts.google.com/).
+**Alegreya** (Juan Pablo del Peral, Huerta Tipográfica) — long-form lore,
+dialogue, and narrative body. Same OFL 1.1 license, Google Fonts. Fallback stack:
+Palatino Linotype, Palatino, Book Antiqua, Georgia, Times New Roman, serif.
+
 ## Music
 **Marllon Silva (xDeviruchi)** — *8-Bit Fantasy & Adventure Music (2021)*
 Licensed under [CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).

@@ -46,6 +46,7 @@ import { setParticles, setBiomeGlow, flash, walkTransition } from './fx.js';
 import { mountCrystal } from './crystal.js';
 import { renderTravelMap, resetTravelTrail, pathNodeView } from './travelmap.js';
 import { app, el, toast, modal, modalCustom, bar, rarityClass } from './ui.js';
+import { choiceBtnClass } from './typography.js';
 import { makeRng, randomSeed } from './rng.js';
 import { defaultServerUrl, partyLinkRecovery } from './net.js';
 import { CoopSession, connectCoop } from './coop.js';
@@ -1886,7 +1887,7 @@ function coopLobby(myName) {
     return `
       <div style="font-family:var(--font-display);font-size:13px;letter-spacing:.08em;color:var(--ink-dim);margin-bottom:6px">STARTING POTENTIAL</div>
       <div style="font-size:18px;color:var(--gold-bright);font-family:var(--font-display)">${desc.word}</div>
-      <div style="font-size:14px;color:var(--ink-dim);margin:6px 0 10px;line-height:1.4">${desc.flavor}</div>
+      <div style="font-family:var(--font-prose);font-size:16px;color:var(--ink-dim);margin:6px 0 10px;line-height:1.55;letter-spacing:.01em">${desc.flavor}</div>
       ${fateNote}
       <div style="font-size:13px;color:var(--ink-dim);margin:0 0 10px;line-height:1.35">Tempt fate to reroll. The Monolith awakens your gifts when the climb begins.</div>
       <button class="btn small" id="btn-reroll" ${myReady || rerolls >= maxRerolls() ? 'disabled' : ''}>🎲 Tempt fate (${Math.max(0, maxRerolls() - rerolls)} left)</button>`;
@@ -2372,7 +2373,7 @@ async function nextFloor() {
         <div class="card-body">
           <h3>${biome.name}</h3>
           <div class="card-text">${biomeIntroText(biome, run)}</div>
-          <div class="card-choices"><button class="choice-btn" id="go"><span class="choice-label">Step through the gate</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
+          <div class="card-choices"><button class="${choiceBtnClass('Step through the gate')}" id="go"><span class="choice-label">Step through the gate</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
         </div>
       </div></div>`;
     applyCardBg(stage);
@@ -2653,11 +2654,11 @@ async function encounterFloor(stage, prebuiltGroup = null, hpMult = 1) {
         <h3>Hostiles Ahead</h3>
         <div class="card-text">The floor narrows, and the dark produces: ${names}${group.length > 1 ? ` — ${group.length} of them` : ''}. They have already noticed you. The only question is what happens next.</div>
         <div class="card-choices">
-          <button class="choice-btn" data-act="fight"><span class="choice-label">⚔ Fight</span>${choiceHintSpan('XP + gold')}</button>
-          <button class="choice-btn" data-act="sneak"><span class="choice-label">🕶 Sneak past</span>${choiceHintSpan('a test of agility')}</button>
+          <button class="${choiceBtnClass('⚔ Fight')}" data-act="fight"><span class="choice-label">⚔ Fight</span>${choiceHintSpan('XP + gold')}</button>
+          <button class="${choiceBtnClass('🕶 Sneak past')}" data-act="sneak"><span class="choice-label">🕶 Sneak past</span>${choiceHintSpan('a test of agility')}</button>
           ${bribable
-            ? `<button class="choice-btn" data-act="bribe" ${run.gold < bribe ? 'disabled' : ''}><span class="choice-label">🪙 Bribe them</span>${choiceHintSpan(`-${bribe}g${fameDiscount > 0 ? ' (your name precedes you)' : ''}`, { req: run.gold < bribe, keep: true })}</button>`
-            : `<button class="choice-btn locked" disabled><span class="choice-label">🪙 Bribe them</span>${choiceHintSpan("🔒 they can't be reasoned with", { req: true, keep: true })}</button>`}
+            ? `<button class="${choiceBtnClass('🪙 Bribe them')}" data-act="bribe" ${run.gold < bribe ? 'disabled' : ''}><span class="choice-label">🪙 Bribe them</span>${choiceHintSpan(`-${bribe}g${fameDiscount > 0 ? ' (your name precedes you)' : ''}`, { req: run.gold < bribe, keep: true })}</button>`
+            : `<button class="${choiceBtnClass('🪙 Bribe them', 'locked')}" disabled><span class="choice-label">🪙 Bribe them</span>${choiceHintSpan("🔒 they can't be reasoned with", { req: true, keep: true })}</button>`}
         </div>
       </div>
     </div></div>`;
@@ -2938,7 +2939,7 @@ async function modifierFloor(stage) {
         <h3>Trial Floor: ${mod.name}</h3>
         <div class="card-text">The tower posts terms for this floor, burned into the wall in letters that smoke slightly:\n\n"${mod.desc}"\n\nThere is no way around a trial floor. There is only through.</div>
         <div class="card-choices">
-          <button class="choice-btn" id="go"><span class="choice-label">⚔ Accept the trial</span>${choiceHintSpan('bonus loot')}</button>
+          <button class="${choiceBtnClass('⚔ Accept the trial')}" id="go"><span class="choice-label">⚔ Accept the trial</span>${choiceHintSpan('bonus loot')}</button>
         </div>
       </div>
     </div></div>`;
@@ -2980,7 +2981,7 @@ async function bossFloor(stage, { resume = null } = {}) {
         <h3>${boss.name}</h3>
         <div class="card-text">${shown.intro}</div>
         <div class="card-choices">
-          <button class="choice-btn" id="go"><span class="choice-label">⚔ Face it</span>${choiceHintSpan('no retreat')}</button>
+          <button class="${choiceBtnClass('⚔ Face it')}" id="go"><span class="choice-label">⚔ Face it</span>${choiceHintSpan('no retreat')}</button>
         </div>
       </div>
     </div></div>`;
@@ -3308,7 +3309,7 @@ async function sharedFightCard(stage, content) {
         <h3>${title}</h3>
         <div class="card-text">${text}</div>
         <div class="card-choices">
-          <button class="choice-btn" id="go"><span class="choice-label">⚔ Stand together</span>${choiceHintSpan('waiting for the party…', { keep: true, id: 'gate-hint' })}</button>
+          <button class="${choiceBtnClass('⚔ Stand together')}" id="go"><span class="choice-label">⚔ Stand together</span>${choiceHintSpan('waiting for the party…', { keep: true, id: 'gate-hint' })}</button>
         </div>
       </div>
     </div></div>`;
@@ -3483,7 +3484,7 @@ function renderEventCard(stage, ev, { originIntro = false } = {}) {
   const choices = eventChoicesForRender(ev);
   choices.forEach(choice => {
     const r = reqMet(choice.req);
-    const btn = el(`<button class="choice-btn ${r.ok ? '' : 'locked'}" ${r.ok ? '' : 'disabled'}>
+    const btn = el(`<button class="${choiceBtnClass(choice.label, r.ok ? '' : 'locked')}" ${r.ok ? '' : 'disabled'}>
       <span class="choice-label">${choice.label}</span>
       ${choiceHintSpan(r.ok ? (choice.hint || '') : `🔒 ${r.why}`, { req: !!choice.req, keep: !r.ok })}
     </button>`);
@@ -3630,7 +3631,7 @@ function coopEventChoice(stage, ev) {
 
   choices.forEach((choice, idx) => {
     const r = reqMet(choice.req);
-    const btn = el(`<button class="choice-btn ${r.ok ? '' : 'locked'}" data-ev-idx="${idx}" ${r.ok ? '' : 'disabled'}>
+    const btn = el(`<button class="${choiceBtnClass(choice.label, r.ok ? '' : 'locked')}" data-ev-idx="${idx}" ${r.ok ? '' : 'disabled'}>
       <span class="choice-label">${choice.label}</span>
       ${choiceHintSpan(r.ok ? (choice.hint || '') : `🔒 ${r.why}`, { req: !!choice.req, keep: !r.ok })}
     </button>`);
@@ -4348,11 +4349,11 @@ async function runCoopTrade() {
             </div>
             <div class="pick-grid" style="max-height:220px;overflow:auto">${list || '<div style="color:var(--ink-faint);padding:12px">No matching-rarity gear to offer.</div>'}</div>
             <div class="card-choices" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-              <button class="choice-btn" id="trade-confirm" ${(!myOffer || myReady || mySkip) ? 'disabled' : ''}>
+              <button class="${choiceBtnClass('Confirm trade')}" id="trade-confirm" ${(!myOffer || myReady || mySkip) ? 'disabled' : ''}>
                 <span class="choice-label">Confirm trade</span>
                 ${choiceHintSpan(theirOffer && myOffer && theirOffer.rarity !== myOffer.rarity ? 'rarities must match' : 'both must agree', { keep: true })}
               </button>
-              <button class="choice-btn" id="trade-skip"><span class="choice-label">Skip</span>${choiceHintSpan('walk away')}</button>
+              <button class="${choiceBtnClass('Skip')}" id="trade-skip"><span class="choice-label">Skip</span>${choiceHintSpan('walk away')}</button>
             </div>
           </div>
         </div></div>`;
@@ -4829,7 +4830,7 @@ async function showOutcomePanel(stage, lines, ups = [], {
     <div class="card-stage"><div class="panel event-card card-outcome">
       <div class="card-body">
         <div class="outcome-lines">${lines.map(l => `<div class="outcome-line ${l.cls}">${l.text}</div>`).join('')}</div>
-        <div class="card-choices"><button class="choice-btn" id="continue"><span class="choice-label">${continueLabel}</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
+        <div class="card-choices"><button class="${choiceBtnClass(continueLabel)}" id="continue"><span class="choice-label">${continueLabel}</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
       </div>
     </div></div>`);
   stage.innerHTML = '';
@@ -4870,7 +4871,7 @@ function nextFloorButton(stage) {
   const panel = el(`
     <div class="card-stage"><div class="panel event-card card-outcome">
       <div class="card-body">
-        <div class="card-choices"><button class="choice-btn" id="continue"><span class="choice-label">Ascend to the next floor</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
+        <div class="card-choices"><button class="${choiceBtnClass('Ascend to the next floor')}" id="continue"><span class="choice-label">Ascend to the next floor</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
       </div>
     </div></div>`);
   stage.innerHTML = '';
@@ -5175,7 +5176,7 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
               <button class="btn small" id="buy-heal" ${run.gold < healCost || run.hp >= run.maxHp ? 'disabled' : ''}>Buy</button>
             </div>
           </div>
-          <div class="card-choices"><button class="choice-btn" id="leave"><span class="choice-label">Take your leave</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
+          <div class="card-choices"><button class="${choiceBtnClass('Take your leave')}" id="leave"><span class="choice-label">Take your leave</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
         </div>
       </div></div>`;
 
@@ -5520,7 +5521,7 @@ async function throneRoom(stage) {
   };
 
   if (hasSigils) {
-    addChoice(`<button class="choice-btn" style="border-color:var(--gold)">
+    addChoice(`<button class="${choiceBtnClass("✦ Present the three Sigils — speak the tower's truth")}" style="border-color:var(--gold)">
       <span class="choice-label">✦ Present the three Sigils — speak the tower's truth</span>
       ${choiceHintSpan('SECRET', { req: true, keep: true })}</button>`, () => {
         climbTrace?.throne('sigils');
@@ -5529,7 +5530,7 @@ async function throneRoom(stage) {
       });
   }
   if (run.flags.kings_petition) {
-    addChoice(`<button class="choice-btn"><span class="choice-label">📜 Deliver the Ghost King's petition</span>${choiceHintSpan('six hundred years overdue')}</button>`, async () => {
+    addChoice(`<button class="${choiceBtnClass("📜 Deliver the Ghost King's petition")}"><span class="choice-label">📜 Deliver the Ghost King's petition</span>${choiceHintSpan('six hundred years overdue')}</button>`, async () => {
       climbTrace?.throne('petition');
       const resolved = resolveThroneChoice(run, 'petition', boss);
       saveRun(run);
@@ -5538,11 +5539,11 @@ async function throneRoom(stage) {
       throneFight(resolved.spec, resolved.hpMult);
     });
   }
-  addChoice(`<button class="choice-btn"><span class="choice-label">⚔ "I'm the interesting kind." — Fight</span>${choiceHintSpan('the classic ending')}</button>`, () => {
+  addChoice(`<button class="${choiceBtnClass(`⚔ "I'm the interesting kind." — Fight`)}"><span class="choice-label">⚔ "I'm the interesting kind." — Fight</span>${choiceHintSpan('the classic ending')}</button>`, () => {
     climbTrace?.throne('fight');
     throneFight(boss, 1);
   });
-  addChoice(`<button class="choice-btn"><span class="choice-label">🗣 Answer honestly: "I don't know yet."</span>${choiceHintSpan(run.flags.angel_lore || run.flags.tree_lore || run.flags.seen_throne ? 'the crown slips' : 'risky honesty')}</button>`, async () => {
+  addChoice(`<button class="${choiceBtnClass('🗣 Answer honestly: "I don\'t know yet."')}"><span class="choice-label">🗣 Answer honestly: "I don't know yet."</span>${choiceHintSpan(run.flags.angel_lore || run.flags.tree_lore || run.flags.seen_throne ? 'the crown slips' : 'risky honesty')}</button>`, async () => {
     await modal(`<h3>The Question</h3><p class="modal-sub">"Would you take this throne," ${boss.name} asks, "if it were offered?"<br/><br/>"I don't know yet," you say.<br/><br/>The figure on the throne <i>changes</i> — horns melt into a crooked crown, molten flesh into royal plate. Aldric, the Corrupt King, steps forward smiling wrong.<br/><br/>"Honest. Good. The Demon King was always a story we sold climbers. I am the kingdom. Let us settle the paperwork in blood."</p>
       <div class="pick-grid"><button class="pick-option" data-close="x"><span class="po-name">Face the true king</span></button></div>`);
     climbTrace?.throne('honesty');
