@@ -9,7 +9,9 @@ import { RACES } from '../js/data/races.js';
 import { ORIGINS, defaultOriginId } from '../js/data/origins.js';
 import { SKILLS } from '../js/data/skills.js';
 import { EVENTS, CATEGORY_META } from '../js/data/events.js';
-import { ENEMIES, BOSSES, ALT_BOSSES, SECRET_BOSS, MODIFIERS, pickTrialModifier, biomeForFloor, findEnemySpec, WANDERING_ENEMIES, isGalleryNpc, NPC_ENEMIES } from '../js/data/enemies.js';
+import { ENEMIES, BOSSES, ALT_BOSSES, SECRET_BOSS, MODIFIERS, pickTrialModifier, biomeForFloor, findEnemySpec, WANDERING_ENEMIES, isGalleryNpc, NPC_ENEMIES, mimicSpec } from '../js/data/enemies.js';
+import { ROSTER } from '../js/data/roster_worlds.js';
+import { summonSpecFor } from '../js/combat_core.js';
 import {
   applyGalleryKit, inferArchetype, specialHasRider, specialRiderKeys,
   SUPPORTED_SPECIAL_KEYS, biomePaletteKeys, kitFor,
@@ -441,6 +443,112 @@ console.log('— enemy charge profiles (handoff §12) —');
   t('knight-band tank actually shields', wall?.specials?.some(s => s.selfShield));
 }
 
+console.log('— creature display names (no asset leakage) —');
+{
+  // Narrow allowlist for names that trip a leakage pattern on purpose.
+  // Add an entry only when the player-facing name is an established character
+  // or authored hyphenation — not to silence a leftover pack filename.
+  const DISPLAY_NAME_ALLOWLIST = {
+    'Axe-Pack Veteran': 'established northman NPC; "Pack" is diegetic, not viking_axe_pack',
+  };
+
+  const LEAK_CHECKS = [
+    { id: 'extension', re: /\.(png|gif|jpe?g|webp|json|aseprite)\b/i, why: 'file extension' },
+    { id: 'underscore', re: /_/, why: 'underscore (filename)' },
+    { id: 'packPrefix', re: /^(?:Mcf\d+|Gv|Tr(?: Live| Mon)?)\b/i, why: 'asset-pack prefix' },
+    { id: 'packToken', re: /\b(?:Mcf\d+|Tr Live|Tr Mon)\b/i, why: 'asset-pack code' },
+    { id: 'gvToken', re: /\bGv [A-Z]/, why: 'Gothicvania pack initials' },
+    { id: 'sheet', re: /\b(?:Files|Sheet|Alt Heads?)\b/i, why: 'sprite-sheet leftover' },
+    { id: 'placeholder', re: /\b(?:Enemy|Variant|Placeholder|TODO|FIXME|Test)\b/, why: 'placeholder / test name' },
+    { id: 'numericSuffix', re: /\s+\d+$/, why: 'numeric variant suffix' },
+    { id: 'letterVariant', re: /\s+[A-Z]$/, why: 'letter variant suffix' },
+    { id: 'artistTag', re: /\b(?:Nyx\d+|Zughy\d+)\b/i, why: 'artist / pack tag' },
+    { id: 'packWord', re: /\bPack\b/, why: 'imported pack naming' },
+  ];
+
+  function leakReasons(name) {
+    if (!name || DISPLAY_NAME_ALLOWLIST[name]) return [];
+    return LEAK_CHECKS.filter(c => c.re.test(name)).map(c => c.why);
+  }
+
+  t('detector catches Mcf1 Goblin', leakReasons('Mcf1 Goblin').length > 0);
+  t('detector catches Gv Ogre', leakReasons('Gv Ogre').length > 0);
+  t('detector catches Tr Live Mummy', leakReasons('Tr Live Mummy').length > 0);
+  t('detector catches Skeleton Enemy', leakReasons('Skeleton Enemy').length > 0);
+  t('detector catches goblin.png', leakReasons('goblin.png').length > 0);
+  t('detector catches Huntress 2', leakReasons('Huntress 2').length > 0);
+  t('detector allows Dire Wolf', leakReasons('Dire Wolf').length === 0);
+  t('detector allows Gleam-Eye', leakReasons('Gleam-Eye').length === 0);
+  t('detector allows Will-o\'-Wisp', leakReasons("Will-o'-Wisp").length === 0);
+  t('allowlist keeps Axe-Pack Veteran', leakReasons('Axe-Pack Veteran').length === 0);
+
+  const expected = {
+    mcf1_goblin: 'Grove Goblin',
+    mcf1_mushroom: 'Sporecap',
+    mcf1_flying_eye: 'Gleam-Eye',
+    gv_ogre: 'Woods Ogre',
+    mcf1_skeleton: 'Bone Guard',
+    skeleton_enemy: 'Flail Skeleton',
+    tr_live_mummy: 'Tomb Mummy',
+    gv_terrible_knight: 'Gilded Knight',
+    tr_live_frog: 'Bog Spearman',
+    gv_mutant_toad: 'Mossback Toad',
+    gv_hell_hound_files: 'Ash Hound',
+    gv_fire_skull_files: 'Brimstone Skull',
+    gv_flying_eye_demon: 'Scorch Eye',
+    mcf2_rat: 'Cellar Rat',
+    mcf2_bat: 'Gloom Bat',
+    mcf2_slime: 'Puddle Slime',
+    gv_enemy_ghost: 'Hooded Wraith',
+    tr_live_slime: 'Tendril Slime',
+    kryos_demon_general: 'Kryos, the Demon General',
+  };
+  for (const [id, name] of Object.entries(expected)) {
+    t(`${id} display name is ${name}`, findEnemySpec(id)?.name === name);
+    t(`${id} keeps stable id`, findEnemySpec(id)?.id === id);
+  }
+
+  const seen = [];
+  const pushName = (id, name, where) => {
+    if (name) seen.push({ id, name, where });
+  };
+  for (const [biome, pool] of Object.entries(ENEMIES)) {
+    for (const e of pool) pushName(e.id, e.name, `ENEMIES.${biome}`);
+  }
+  for (const e of WANDERING_ENEMIES) pushName(e.id, e.name, 'WANDERING');
+  for (const b of Object.values(BOSSES)) {
+    pushName(b.id, b.name, 'BOSSES');
+    if (b.phase2?.name) pushName(b.id, b.phase2.name, 'BOSSES.phase2');
+    if (b.phaseName) pushName(b.id, b.phaseName, 'BOSSES.phaseName');
+  }
+  for (const b of Object.values(ALT_BOSSES)) {
+    pushName(b.id, b.name, 'ALT_BOSSES');
+    if (b.phase2?.name) pushName(b.id, b.phase2.name, 'ALT_BOSSES.phase2');
+  }
+  pushName(SECRET_BOSS.id, SECRET_BOSS.name, 'SECRET_BOSS');
+  if (SECRET_BOSS.phase2?.name) pushName(SECRET_BOSS.id, SECRET_BOSS.phase2.name, 'SECRET_BOSS.phase2');
+  for (const n of Object.values(NPC_ENEMIES)) pushName(n.id, n.name, 'NPC_ENEMIES');
+  pushName('mimic', mimicSpec(1).name, 'mimicSpec');
+  for (const sid of ['skeleton', 'leech', 'imp', 'slime', 'rat']) {
+    const spec = summonSpecFor(sid);
+    pushName(spec.id, spec.name, `summon:${sid}`);
+  }
+  for (const [id, name] of Object.entries(ROSTER.renames || {})) {
+    pushName(id, name, 'ROSTER.renames');
+  }
+
+  let leaks = 0;
+  for (const row of seen) {
+    const reasons = leakReasons(row.name);
+    if (reasons.length) {
+      leaks++;
+      console.error(`  ✗ leak ${row.where} ${row.id}: "${row.name}" (${reasons.join(', ')})`);
+    }
+  }
+  t('no player-facing creature name leaks asset identifiers', leaks === 0);
+  t('every live creature has a display name', seen.every(r => typeof r.name === 'string' && r.name.trim().length > 0));
+}
+
 console.log('— initiative (handoff §14) —');
 {
   const rng = makeRng(777);
@@ -515,6 +623,12 @@ console.log('— events (handoff §4) —');
     });
     t('combat node shows enemy name', combat.title === 'Dire Wolf');
     t('combat node risk is risky', combat.risk >= 2);
+    const galleryCombat = pathNodeView({
+      kind: 'encounter', category: 'combat',
+      enemies: [{ id: 'mcf1_goblin' }],
+    });
+    t('gallery combat node uses display name', galleryCombat.title === 'Grove Goblin');
+    t('gallery combat node does not leak pack prefix', !/Mcf1/i.test(galleryCombat.title + galleryCombat.flavor));
   }
   // referenced item/consumable ids resolve
   for (const e of EVENTS) {

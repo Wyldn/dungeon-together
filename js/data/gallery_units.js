@@ -3,7 +3,7 @@ export const GALLERY_ENEMIES = {
   "forest": [
     {
       "id": "mcf1_goblin",
-      "name": "Mcf1 Goblin",
+      "name": "Grove Goblin",
       "glyph": "\u25c6",
       "hp": 34,
       "atk": 8,
@@ -25,7 +25,7 @@ export const GALLERY_ENEMIES = {
     },
     {
       "id": "mcf1_mushroom",
-      "name": "Mcf1 Mushroom",
+      "name": "Sporecap",
       "glyph": "\u25c6",
       "hp": 34,
       "atk": 8,
@@ -47,7 +47,7 @@ export const GALLERY_ENEMIES = {
     },
     {
       "id": "mcf1_flying_eye",
-      "name": "Mcf1 Flying Eye",
+      "name": "Gleam-Eye",
       "glyph": "\u25c6",
       "hp": 34,
       "atk": 8,
@@ -69,7 +69,7 @@ export const GALLERY_ENEMIES = {
     },
     {
       "id": "gv_ogre",
-      "name": "Gv Ogre",
+      "name": "Woods Ogre",
       "glyph": "\u25c6",
       "hp": 34,
       "atk": 8,
@@ -160,7 +160,7 @@ export const GALLERY_ENEMIES = {
     },
     {
       "id": "tr_live_slime",
-      "name": "Mutated Slime",
+      "name": "Tendril Slime",
       "glyph": "\u25c6",
       "hp": 52,
       "atk": 11,
@@ -208,7 +208,7 @@ export const GALLERY_ENEMIES = {
   "ruins": [
     {
       "id": "mcf1_skeleton",
-      "name": "Mcf1 Skeleton",
+      "name": "Bone Guard",
       "glyph": "\u25c6",
       "hp": 39,
       "atk": 9,
@@ -230,7 +230,7 @@ export const GALLERY_ENEMIES = {
     },
     {
       "id": "skeleton_enemy",
-      "name": "Skeleton Enemy",
+      "name": "Flail Skeleton",
       "glyph": "\u25c6",
       "hp": 39,
       "atk": 9,
@@ -252,7 +252,7 @@ export const GALLERY_ENEMIES = {
     },
     {
       "id": "tr_live_mummy",
-      "name": "Tr Live Mummy",
+      "name": "Tomb Mummy",
       "glyph": "\u25c6",
       "hp": 39,
       "atk": 9,
@@ -274,7 +274,7 @@ export const GALLERY_ENEMIES = {
     },
     {
       "id": "gv_terrible_knight",
-      "name": "Gv Terrible Knight",
+      "name": "Gilded Knight",
       "glyph": "\u25c6",
       "hp": 39,
       "atk": 9,
@@ -413,7 +413,7 @@ export const GALLERY_ENEMIES = {
   "swamp": [
     {
       "id": "tr_live_frog",
-      "name": "Tr Live Frog",
+      "name": "Bog Spearman",
       "glyph": "\u25c6",
       "hp": 53,
       "atk": 12,
@@ -435,7 +435,7 @@ export const GALLERY_ENEMIES = {
     },
     {
       "id": "gv_mutant_toad",
-      "name": "Mutant Toad",
+      "name": "Mossback Toad",
       "glyph": "\u25c6",
       "hp": 53,
       "atk": 12,
@@ -459,7 +459,7 @@ export const GALLERY_ENEMIES = {
   "hell": [
     {
       "id": "gv_hell_hound_files",
-      "name": "Hell Hound",
+      "name": "Ash Hound",
       "glyph": "\u25c6",
       "hp": 61,
       "atk": 14,
@@ -481,7 +481,7 @@ export const GALLERY_ENEMIES = {
     },
     {
       "id": "gv_fire_skull_files",
-      "name": "Fire Skull",
+      "name": "Brimstone Skull",
       "glyph": "\u25c6",
       "hp": 61,
       "atk": 14,
@@ -525,7 +525,7 @@ export const GALLERY_ENEMIES = {
     },
     {
       "id": "gv_flying_eye_demon",
-      "name": "Eye Demon",
+      "name": "Scorch Eye",
       "glyph": "\u25c6",
       "hp": 61,
       "atk": 14,
@@ -596,7 +596,7 @@ export const GALLERY_ENEMIES = {
 export const GALLERY_WANDERING = [
   {
     "id": "mcf2_rat",
-    "name": "Mcf2 Rat",
+    "name": "Cellar Rat",
     "glyph": "\u25c6",
     "hp": 34,
     "atk": 8,
@@ -618,7 +618,7 @@ export const GALLERY_WANDERING = [
   },
   {
     "id": "mcf2_bat",
-    "name": "Mcf2 Bat",
+    "name": "Gloom Bat",
     "glyph": "\u25c6",
     "hp": 34,
     "atk": 8,
@@ -640,7 +640,7 @@ export const GALLERY_WANDERING = [
   },
   {
     "id": "mcf2_slime",
-    "name": "Mcf2 Slime",
+    "name": "Puddle Slime",
     "glyph": "\u25c6",
     "hp": 34,
     "atk": 8,
@@ -662,7 +662,7 @@ export const GALLERY_WANDERING = [
   },
   {
     "id": "gv_enemy_ghost",
-    "name": "Ghost",
+    "name": "Hooded Wraith",
     "glyph": "\u25c6",
     "hp": 34,
     "atk": 8,
@@ -849,7 +849,7 @@ export const GALLERY_BOSSES = {
   },
   "kryos_demon_general": {
     "id": "kryos_demon_general",
-    "name": "Kryos Demon General",
+    "name": "Kryos, the Demon General",
     "glyph": "\u25c6",
     "hp": 655,
     "atk": 40,
