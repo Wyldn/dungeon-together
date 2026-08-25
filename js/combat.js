@@ -70,6 +70,19 @@ export function setCombatSleep(fn) {
   _sleepImpl = fn || (ms => new Promise(r => setTimeout(r, ms)));
 }
 
+/** Paint the biome on #combat-bleed (outside the scaled frame) so letterbox wings fill. */
+function setCombatBleed(bg) {
+  const bleed = typeof document === 'undefined' ? null : document.getElementById('combat-bleed');
+  if (!bleed) return;
+  if (bg) {
+    bleed.style.backgroundImage = `url('${bg}')`;
+    bleed.classList.add('has-bg');
+  } else {
+    bleed.style.backgroundImage = '';
+    bleed.classList.remove('has-bg');
+  }
+}
+
 /** Live solo fight — used to persist mid-battle on Save. */
 let activeFight = null;
 
@@ -597,6 +610,7 @@ class Fight {
     const bf = this.el.querySelector('.battlefield');
     const bg = biomeBgUrl(this.run.biomeId);
     if (bf && bg) { bf.classList.add('has-bg'); bf.style.backgroundImage = `url('${bg}')`; }
+    setCombatBleed(bg);
     const charBtn = this.el.querySelector('#cx-character');
     if (charBtn) charBtn.onclick = () => this.onCharacter?.();
     this.el.querySelector('#cx-settings')?.addEventListener('click', () => this.onSettings?.());

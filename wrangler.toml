@@ -1,0 +1,15 @@
+# Source of truth for the Cloudflare HTTPS deploy.
+# Static game files are served as Worker assets; /party is a WebSocket
+# proxy to the existing Oracle relay. No Durable Objects, no maxDuration.
+
+name = "dungeontogether"
+main = "workers/party.js"
+compatibility_date = "2026-08-24"
+
+[assets]
+directory = "."
+binding = "ASSETS"
+run_worker_first = ["/party", "/party/"]
+
+[vars]
+PARTY_UPSTREAM = "http://132.226.66.6:3117"

@@ -1,0 +1,20 @@
+# Do not publish tooling, the Worker source, or deploy leftovers as game assets.
+.git/
+**/.git/**
+.claude/
+node_modules/
+**/node_modules/**
+.wrangler/
+.wrangler-dry-run/
+reports/
+tools/
+server/
+api/
+workers/
+Web Browser Game Interface Design/
+test-out.txt
+wrangler.toml
+package.json
+package-lock.json
+.assetsignore
+*.md

@@ -93,6 +93,39 @@ button { font-family: inherit; color: inherit; }
 }
 #viewport:has(.title-screen) #vignette { opacity: 0; }
 #viewport:has(.title-screen) .title-veil { opacity: 0; }
+/* Combat biome art lives outside #frame so it can fill the letterbox
+   wings. HUD stays in the scaled 1280×720 stage and does not move. */
+#combat-bleed {
+  display: none;
+  position: absolute; inset: 0; z-index: 0;
+  pointer-events: none;
+  image-rendering: pixelated;
+  background-color: var(--bg-0);
+  background-size: cover;
+  background-position: center 42%;
+  background-repeat: no-repeat;
+  /* Zoom past the art's black tree pillars so the lit grove reaches
+     the monitor edges. Clipped by #viewport overflow. */
+  transform: scale(1.32);
+  transform-origin: center 42%;
+}
+#viewport:has(.combat-screen) #combat-bleed.has-bg { display: block; }
+#combat-bleed.has-bg::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(10,8,14,.52);
+}
+#viewport:has(.combat-screen) #frame {
+  background: transparent;
+  box-shadow: none;
+}
+#viewport:has(.combat-screen) #vignette { opacity: 0; }
+#viewport:has(.combat-screen) .battlefield.cx-bg,
+#viewport:has(.combat-screen) .battlefield.has-bg {
+  background-image: none !important;
+  background-color: transparent;
+}
+#viewport:has(.combat-screen) .battlefield.has-bg::before { display: none; }
 #frame {
   position: relative; width: 1280px; height: 720px; flex: 0 0 auto; z-index: 1;
   overflow: hidden; background: var(--bg-0);

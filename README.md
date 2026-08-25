@@ -8,8 +8,9 @@ Gameplay inspiration: **An Average Campaign** (Roblox), **Reigns**, and **Baldur
 
 ## ▶️ Play
 
-- **Multiplayer + solo:** http://132.226.66.6:3117/ (the party server — hosts the game *and* the relay)
-- **Solo only:** https://wyldn.github.io/dungeon-together/ (GitHub Pages is https, which blocks the ws relay — play co-op from the party server URL)
+- **Cloudflare (HTTPS):** the game talks `wss://<host>/party`, a same-origin Worker proxy that forwards to the party server. Stay on the Cloudflare URL for co-op.
+- **Multiplayer + solo (direct):** http://132.226.66.6:3117/ (the party server — hosts the game *and* the relay)
+- **Solo only:** https://wyldn.github.io/dungeon-together/
 
 ### 🎭 Playing together
 
@@ -42,6 +43,8 @@ pm2 logs dungeon-together                # watch
 ```
 
 Port 3117/tcp is open in firewalld + the OCI security list. `server/test-bot.js` is a scripted partner for protocol testing: `node test-bot.js <CODE> ws://host:3117`.
+
+HTTPS frontends (Cloudflare Workers) do **not** change that server. They connect through `workers/party.js`, a WebSocket proxy (`wss` in, `ws://132.226.66.6:3117` out). There is no fixed session duration cap. Local `python -m http.server` still uses the public relay directly.
 
 ## 🎮 How to play
 
@@ -101,7 +104,9 @@ node tools/sim.js    # seeded balance simulations (10k trials)
 
 ## 📦 Deploy
 
-The repo is GitHub Pages-ready: Settings → Pages → deploy from `main` branch root. No build needed.
+Cloudflare Workers: `wrangler.toml` is the source of truth (`wrangler deploy`). Static assets come from the repo root; `/party` is handled by the Worker. Set `PARTY_UPSTREAM` only if the Oracle relay address changes.
+
+GitHub Pages still works as a static host: Settings → Pages → deploy from `main` branch root. No build needed.
 
 ---
 
