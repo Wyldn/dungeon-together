@@ -41,6 +41,7 @@ function fakeFight({
     mod: {},
     enemies,
     player: { statuses: {}, buffs: [], partyBuffs: [] },
+    skillCDs: {},
     aliveEnemies() { return this.enemies.filter(e => e.hp > 0); },
   };
 }
@@ -148,5 +149,15 @@ export function runCombatPolicyTests(t) {
     });
     const a = chooseAutoPlayAction(f);
     t('Radiant Ward is not a targeting bug — offense still wins when healthy', a.skillId === 'smite');
+  }
+
+  {
+    const f = fakeFight({
+      hp: 50, maxHp: 60, mp: 36, charge: 6, consumables: [],
+      skills: ['smite', 'judgement'],
+    });
+    f.skillCDs = { judgement: 2 };
+    const a = chooseAutoPlayAction(f);
+    t('autoplay will not pick a cooling charged skill', a.skillId !== 'judgement');
   }
 }

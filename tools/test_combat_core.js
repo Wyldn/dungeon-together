@@ -6,7 +6,7 @@ globalThis.localStorage = globalThis.localStorage || {
   getItem: () => null, setItem: () => {}, removeItem: () => {},
 };
 
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync, readdirSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { makeRng } from '../js/rng.js';
@@ -90,6 +90,13 @@ export async function runCombatCoreTests(t) {
       snapshot: snapshotFightState,
     });
     const fightExtra = extrasFor(scenario, fightSnap);
+    if (process.env.WRITE_COMBAT_GOLDENS === '1') {
+      writeFileSync(join(fixtureDir, `${scenario.id}.json`), `${JSON.stringify({
+        ...golden,
+        expected: fightSnap,
+        extra: fightExtra,
+      }, null, 2)}\n`);
+    }
     t(`${scenario.id} silent Fight matches golden`, same(golden.expected, fightSnap)
       && same(golden.extra || {}, fightExtra));
     if (!same(golden.expected, fightSnap)) {
@@ -122,4 +129,16 @@ export async function runCombatCoreTests(t) {
     t('headless context is node-safe', ctx.headless === true && !ctx.el);
     t('s5 golden still the oracle for the sequence', !!golden.expected.player);
   }
+}
+
+const standalone = process.argv[1] && /test_combat_core\.js/.test(process.argv[1].replace(/\\/g, '/'));
+if (standalone) {
+  let pass = 0, fail = 0;
+  function t(name, cond) {
+    if (cond) pass++;
+    else { fail++; console.error('  ✗ FAIL:', name); }
+  }
+  await runCombatCoreTests(t);
+  console.log(`combat core: ${pass} passed, ${fail} failed`);
+  if (fail) process.exit(1);
 }

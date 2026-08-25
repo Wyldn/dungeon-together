@@ -7,6 +7,7 @@ import { CONSUMABLES, consumableCombatValue } from '../../js/data/items.js';
 import { usableSkillIds, derived } from '../../js/character.js';
 import {
   canAfford, skillEffectivePower, enemyTelegraph, applyDefense,
+  cooldownRemaining,
 } from '../../js/systems.js';
 import { CONFIG } from '../../js/data/config.js';
 import { soloBossChargeForScale } from '../../js/data/tdc.js';
@@ -17,6 +18,7 @@ function hpRatio(run) {
 
 function afford(f, sk) {
   const costMult = f.mod?.costMult || 1;
+  if (cooldownRemaining(f.skillCDs, sk.id) > 0) return false;
   return canAfford(
     { cost: Math.ceil((sk.cost || 0) * costMult), charge: sk.charge || 0 },
     f.run.mp, f.charge,

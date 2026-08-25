@@ -7,7 +7,6 @@ import { CONSUMABLES } from '../js/data/items.js';
 import { findEnemySpec } from '../js/data/enemies.js';
 import { newRun } from '../js/state.js';
 import { makeRng } from '../js/rng.js';
-import { CONFIG } from '../js/data/config.js';
 
 export const META = { upgrades: {}, achievements: [] };
 
@@ -78,6 +77,8 @@ export function fixtureEnemy(idOrSpec, {
 
 function applyInit(fight, init = {}) {
   if (init.charge != null) fight.charge = init.charge;
+  if (init.skillCDs) fight.skillCDs = { ...init.skillCDs };
+  if (init.turnPrepared != null) fight._turnPrepared = !!init.turnPrepared;
   if (init.corpses != null) fight.corpses = init.corpses;
   if (init.round != null) fight.round = init.round;
   if (init.playerStatuses) fight.player.statuses = { ...init.playerStatuses };
@@ -161,16 +162,7 @@ export async function applyStep(fight, step) {
       await fight.rollRoundInitiative();
       return;
     case 'beginPlayerTurn':
-      fight.player.guarding = false;
-      {
-        const st = fight.player.statuses;
-        if (st.frozen || st.stunned || st.lazy) {
-          delete st.frozen; delete st.stunned; delete st.lazy;
-          fight.gainCharge(CONFIG.charge.gainPerTurn);
-          fight.classResourceTick();
-        }
-      }
-      return;
+      return fight.beginPlayerTurn();
     case 'endPlayerAction':
       fight.endPlayerAction();
       return;

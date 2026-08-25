@@ -15,6 +15,7 @@ import {
   initiativeOrder, addCharge, tickEnemyCharge, skillEffectivePower, pickEnemySpecial,
   specialChargeCost, spendEnemySpecialCharge, bossChargeDamageScale,
   applyGuard, applyDefense, enemySpecialPayoff, enemyPayoffLine,
+  skillCooldownTurns, cooldownRemaining,
 } from './systems.js';
 import { biomeForFloor, ENEMIES } from './data/enemies.js';
 
@@ -195,6 +196,47 @@ export function gainCharge(f, n) {
   const before = f.charge;
   f.charge = addCharge(f.charge, n, f.mod.chargeMult || 1);
   if (f.charge > before) f.renderCharge?.();
+}
+
+export function startSkillCooldown(f, sk) {
+  const turns = skillCooldownTurns(sk);
+  if (turns <= 0 || !sk?.id) return;
+  f.skillCDs = f.skillCDs || {};
+  f.skillCDs[sk.id] = turns;
+  f._cdUsedThisTurn = f._cdUsedThisTurn || {};
+  f._cdUsedThisTurn[sk.id] = true;
+}
+
+export function tickPlayerCooldowns(f) {
+  const cds = f.skillCDs || {};
+  const used = f._cdUsedThisTurn || {};
+  for (const id of Object.keys(cds)) {
+    if (used[id]) continue;
+    const n = (cds[id] | 0) - 1;
+    if (n <= 0) delete cds[id];
+    else cds[id] = n;
+  }
+  f._cdUsedThisTurn = {};
+}
+
+/** Grant start-of-turn Battle Charge once per player turn (reconnect-safe). */
+export function preparePlayerTurnStart(f) {
+  if (f._turnPrepared) return false;
+  f._turnPrepared = true;
+  f._cdUsedThisTurn = f._cdUsedThisTurn || {};
+  gainCharge(f, CONFIG.charge.gainPerTurn);
+  return true;
+}
+
+export function completePlayerTurn(f) {
+  tickPlayerCooldowns(f);
+  f._turnPrepared = false;
+}
+
+export function resetPlayerCooldowns(f) {
+  f.skillCDs = {};
+  f._cdUsedThisTurn = {};
+  f._turnPrepared = false;
 }
 
 export function gainFury(f, amount) {
@@ -623,17 +665,28 @@ export function applySelfSkill(f, sk, d) {
 }
 
 export function endPlayerAction(f) {
-  gainCharge(f, CONFIG.charge.gainPerTurn);
   classResourceTick(f);
+  completePlayerTurn(f);
   f.onHud?.();
   if (f.shared) f._sharedTurnDone?.();
   else f._turnDone?.();
 }
 
 export async function resolveUseSkill(f, sk, cost) {
+  if (skillCooldownTurns(sk) > 0 && cooldownRemaining(f.skillCDs, sk.id) > 0) {
+    f.locked = false;
+    return { kind: 'blocked', reason: 'cooldown' };
+  }
   f.locked = true;
   f.run.mp -= cost;
-  if (sk.charge) { f.charge = Math.max(0, f.charge - sk.charge); f.renderCharge?.(); if (sk.charge >= 6) f.usedUltimate = true; }
+  if (sk.charge) {
+    f.charge = Math.max(0, f.charge - sk.charge);
+    f.renderCharge?.();
+    if (sk.charge >= 6) f.usedUltimate = true;
+  }
+  startSkillCooldown(f, sk);
+  f._skillUseLog = f._skillUseLog || [];
+  f._skillUseLog.push(sk.id);
   if (sk.selfHpCost) {
     const paid = Math.round(f.run.maxHp * sk.selfHpCost);
     f.run.hp = Math.max(1, f.run.hp - paid);
@@ -964,13 +1017,14 @@ export function upkeep(f) {
 
 export function beginPlayerTurn(f) {
   f.player.guarding = false;
+  preparePlayerTurnStart(f);
   const st = f.player.statuses;
   if (st.frozen || st.stunned || st.lazy) {
     const why = st.frozen ? 'frozen solid' : st.stunned ? 'stunned' : 'too lazy to act';
     f.log(`You are ${why} — turn lost!`, 'log-foe');
     delete st.frozen; delete st.stunned; delete st.lazy;
-    gainCharge(f, CONFIG.charge.gainPerTurn);
     classResourceTick(f);
+    completePlayerTurn(f);
     f.renderPlayers?.();
     return { skipped: true, why };
   }
@@ -985,6 +1039,8 @@ export function snapshotCombat(f) {
     ended: !!f.ended,
     outcome: f._outcome || null,
     charge: f.charge,
+    skillCDs: { ...(f.skillCDs || {}) },
+    turnPrepared: !!f._turnPrepared,
     corpses: f.corpses || 0,
     usedDeathward: !!f.usedDeathward,
     usedUltimate: !!f.usedUltimate,
@@ -1024,6 +1080,50 @@ export function snapshotCombat(f) {
   };
 }
 
+export function applyCombatSnapshot(f, snap) {
+  if (!f || !snap) return f;
+  if (snap.charge != null) f.charge = snap.charge;
+  if (snap.skillCDs && typeof snap.skillCDs === 'object') f.skillCDs = { ...snap.skillCDs };
+  if (snap.turnPrepared != null) f._turnPrepared = !!snap.turnPrepared;
+  if (snap.corpses != null) f.corpses = snap.corpses;
+  if (snap.round != null) f.round = snap.round;
+  if (snap.usedDeathward != null) f.usedDeathward = !!snap.usedDeathward;
+  if (snap.usedUltimate != null) f.usedUltimate = !!snap.usedUltimate;
+  if (snap.damageTaken != null) f.damageTaken = snap.damageTaken;
+  if (snap.target != null) f.target = snap.target;
+  if (snap.actingKey != null) f._actingKey = snap.actingKey;
+  if (snap.player) {
+    const p = snap.player;
+    if (p.hp != null) f.run.hp = p.hp;
+    if (p.mp != null) f.run.mp = p.mp;
+    if (p.down != null) f.run.down = !!p.down;
+    if (p.combatTaunt != null) f.run.combatTaunt = p.combatTaunt;
+    if (p.usedRevive != null) f.run.usedRevive = !!p.usedRevive;
+    if (p.guardCount != null) f.run.guardCount = p.guardCount;
+    if (p.statuses) f.player.statuses = { ...p.statuses };
+    if (p.buffs) f.player.buffs = p.buffs.map(b => ({ ...b }));
+    if (p.partyBuffs) f.player.partyBuffs = p.partyBuffs.map(b => ({ ...b }));
+    if (p.guarding != null) f.player.guarding = !!p.guarding;
+    if (p.ironStance) f.player.ironStance = { ...p.ironStance };
+    else if (p.ironStance === null) delete f.player.ironStance;
+    if (p.scriptedEdge != null) f.player.scriptedEdge = !!p.scriptedEdge;
+  }
+  if (Array.isArray(snap.enemies)) {
+    for (const s of snap.enemies) {
+      const e = f.enemies.find(x => x.uid === s.uid);
+      if (!e) continue;
+      if (s.hp != null) e.hp = s.hp;
+      if (s.charge != null) e.charge = s.charge;
+      if (s.turnCount != null) e.turnCount = s.turnCount;
+      if (s.statuses) e.statuses = { ...s.statuses };
+      if (s.phaseTriggers) e.phaseTriggers = [...s.phaseTriggers];
+      if (s.phase != null) e.phase = s.phase;
+      if (s._enraged != null) e._enraged = !!s._enraged;
+    }
+  }
+  return f;
+}
+
 export function bindCoreMethods(f) {
   f.d = f.d || (() => derived(f.run));
   f.partySize = f.partySize || (() => 1);
@@ -1056,6 +1156,11 @@ export function bindCoreMethods(f) {
   f.applyEnrage = () => applyEnrage(f);
   f.rollRoundInitiative = async () => rollRoundInitiativeSolo(f);
   f.endPlayerAction = () => endPlayerAction(f);
+  f.beginPlayerTurn = () => beginPlayerTurn(f);
+  f.preparePlayerTurnStart = () => preparePlayerTurnStart(f);
+  f.completePlayerTurn = () => completePlayerTurn(f);
+  f.startSkillCooldown = (sk) => startSkillCooldown(f, sk);
+  f.resetPlayerCooldowns = () => resetPlayerCooldowns(f);
   f.checkEndSolo = () => {
     if (f.run.hp <= 0) { f.ended = true; f._outcome = 'dead'; return true; }
     if (f.aliveEnemies().length === 0) {
@@ -1078,6 +1183,7 @@ export function finishHeadlessSolo(f, result, extra = {}) {
   f._outcome = result;
   delete f.run.combatTaunt;
   if (CONFIG.charge.resetAfterCombat) f.charge = 0;
+  resetPlayerCooldowns(f);
   f.rng.advance?.();
   return {
     result,
@@ -1090,7 +1196,7 @@ export function finishHeadlessSolo(f, result, extra = {}) {
 export function createCombatContext(run, rng, enemies, modifier = null, opts = {}) {
   if (opts.startMana) applyCombatStartMana(run, { resume: opts.resume });
   const startCharge = clamp((run.metaStartCharge || 0) + derived(run).startCharge, 0, CONFIG.charge.max);
-  const f = {
+  const f = bindCoreMethods({
     headless: true,
     run,
     rng,
@@ -1098,6 +1204,9 @@ export function createCombatContext(run, rng, enemies, modifier = null, opts = {
     mod: modifier || {},
     player: { statuses: {}, buffs: [], partyBuffs: [], guarding: false },
     charge: startCharge,
+    skillCDs: {},
+    _cdUsedThisTurn: {},
+    _turnPrepared: false,
     corpses: 0,
     round: 0,
     target: 0,
@@ -1110,8 +1219,9 @@ export function createCombatContext(run, rng, enemies, modifier = null, opts = {
     _actingKey: null,
     shared: false,
     locked: false,
-  };
-  return bindCoreMethods(f);
+  });
+  if (opts.snapshot) applyCombatSnapshot(f, opts.snapshot);
+  return f;
 }
 
 export async function applyAction(f, action) {

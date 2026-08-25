@@ -2,6 +2,7 @@
 // developer simulations in tools/ (handoff §34).
 
 import { CONFIG } from './data/config.js';
+import { SKILL_COOLDOWNS, defaultCooldownForCharge } from './data/skill_cooldowns.js';
 
 /** Does a status bag contain this named affliction? */
 export function statusPresent(statuses, key) {
@@ -109,6 +110,55 @@ export function tickEnemyCharge(enemy, mod = 1) {
 
 export function canAfford(skill, mp, charge) {
   return mp >= (skill.cost || 0) && charge >= (skill.charge || 0);
+}
+
+/** Authored player cooldown in completed player turns. Zero-charge skills are always 0. */
+export function skillCooldownTurns(sk) {
+  if (!sk || (sk.charge || 0) < 1) return 0;
+  if (sk.cooldown != null) return Math.max(0, sk.cooldown | 0);
+  const authored = SKILL_COOLDOWNS[sk.id];
+  if (authored != null) return Math.max(0, authored | 0);
+  return defaultCooldownForCharge(sk.charge);
+}
+
+export function cooldownRemaining(cds, skillId) {
+  if (!skillId || !cds) return 0;
+  return Math.max(0, cds[skillId] | 0);
+}
+
+/**
+ * Why a player skill cannot be used right now. Order is the UI's primary reason:
+ * incompatible → stance → cooldown → charge → resource → target.
+ */
+export function skillEligibility(sk, {
+  mp = 0, charge = 0, cds = null, hasTarget = true, usable = true, stanceLocked = false,
+  cost = null,
+} = {}) {
+  const remaining = cooldownRemaining(cds, sk?.id);
+  const reasons = [];
+  if (!sk) return { ok: false, reasons: ['invalid'], remaining: 0 };
+  if (usable === false) reasons.push('incompatible');
+  if (stanceLocked) reasons.push('stance');
+  if (remaining > 0) reasons.push('cooldown');
+  if ((charge || 0) < (sk.charge || 0)) reasons.push('charge');
+  const need = cost != null ? cost : (sk.cost || 0);
+  if ((mp || 0) < need) reasons.push('resource');
+  if (sk.target === 'one' && hasTarget === false) reasons.push('target');
+  return { ok: reasons.length === 0, reasons, remaining };
+}
+
+export function skillBlockLabel(reason, { remaining = 0, resName = 'resource' } = {}) {
+  if (reason === 'cooldown') {
+    return remaining > 0
+      ? `Cooldown: ${remaining} turn${remaining === 1 ? '' : 's'}`
+      : 'On cooldown';
+  }
+  if (reason === 'charge') return `Not enough ${CONFIG.charge.displayName}`;
+  if (reason === 'resource') return `Not enough ${resName}`;
+  if (reason === 'target') return 'No valid target';
+  if (reason === 'stance') return 'Iron Stance holds you rooted — you cannot Guard.';
+  if (reason === 'incompatible') return 'Incompatible weapon — only Strike and Guard are available.';
+  return null;
 }
 
 /**

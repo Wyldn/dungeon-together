@@ -23,6 +23,8 @@
     "ended": false,
     "outcome": null,
     "charge": 0,
+    "skillCDs": {},
+    "turnPrepared": false,
     "corpses": 0,
     "usedDeathward": false,
     "usedUltimate": false,

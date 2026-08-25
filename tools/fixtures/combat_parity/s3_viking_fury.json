@@ -9,7 +9,11 @@
     "round": 0,
     "ended": false,
     "outcome": null,
-    "charge": 2,
+    "charge": 1,
+    "skillCDs": {
+      "blood_howl": 2
+    },
+    "turnPrepared": false,
     "corpses": 0,
     "usedDeathward": false,
     "usedUltimate": false,

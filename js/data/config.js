@@ -69,7 +69,7 @@ export const CONFIG = {
     max: 6,
     startAt: 0,
     resetAfterCombat: true,
-    gainPerTurn: 1,        // passive gain per completed turn
+    gainPerTurn: 1,        // player: start of each of their turns; enemies keep their own tick
     gainOnKill: 1,
     gainOnCrit: 1,
   },

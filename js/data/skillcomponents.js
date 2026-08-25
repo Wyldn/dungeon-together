@@ -11,6 +11,7 @@ export const COMP = {
   /* ---- targeting / economy (usually in meta, but available as comps) ---- */
   cost: (n) => ({ cost: n }),
   charge: (n) => ({ charge: n }),
+  cooldown: (n) => ({ cooldown: n }),
   target: (t) => ({ target: t }), // 'one' | 'all' | 'self'
   tier: (n) => ({ tier: n }),
   fx: (id) => ({ fx: id }),

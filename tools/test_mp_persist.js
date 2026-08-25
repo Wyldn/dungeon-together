@@ -313,7 +313,10 @@ export async function runMpPersistTests(t) {
     t('partial boss spend leaves remainder', spendEnemySpecialCharge(enemy, enemy.specials[0]) === 4 && enemy.charge === 2);
     const midBoss = serializeClimber(climber('Ava', { pending: { kind: 'boss', enemies: [enemy] } }));
     t('boss charge bar is not client-restored from combat pending', midBoss.ok === false && midBoss.why === 'combat-pending');
-    const afterFight = serializeClimber(climber('Ava', { floor: 10 }));
+    const cdPending = serializeClimber(climber('Ava', { pending: { kind: 'combat', skillCDs: { whirlwind: 3 } } }));
+    t('player cooldowns are not checkpointed mid-combat', cdPending.ok === false && cdPending.why === 'combat-pending');
+    const afterFight = serializeClimber(climber('Ava', { floor: 10, skillCDs: { whirlwind: 3 } }));
+    t('event/shop climber snapshot drops live combat CDs', afterFight.ok && afterFight.climber.skillCDs == null);
     t('safe checkpoint has no leftover enemy charge blob', afterFight.ok && afterFight.climber.charge == null && !afterFight.climber.pending);
     const still = { boss: true, charge: 6 };
     spendEnemySpecialCharge(still, { at: 4 });

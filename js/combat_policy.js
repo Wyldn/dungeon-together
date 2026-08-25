@@ -9,7 +9,7 @@
 import { SKILLS } from './data/skills.js';
 import { CONSUMABLES } from './data/items.js';
 import { usableSkillIds } from './character.js';
-import { canAfford, skillEffectivePower, enemyTelegraph } from './systems.js';
+import { skillEffectivePower, enemyTelegraph, skillEligibility } from './systems.js';
 
 /** Canonical: can this skill legally apply its heal to the acting player? */
 export function skillCanHealSelf(sk) {
@@ -63,10 +63,15 @@ export function chooseAutoPlayAction(f) {
 
   const costMult = f.mod?.costMult || 1;
   const usable = usableSkillIds(run);
-  const afford = sk => canAfford(
-    { cost: Math.ceil((sk.cost || 0) * costMult), charge: sk.charge || 0 },
-    run.mp, f.charge,
-  );
+  const afford = sk => skillEligibility(sk, {
+    mp: run.mp,
+    charge: f.charge,
+    cds: f.skillCDs,
+    hasTarget: (f.aliveEnemies?.() || f.enemies.filter(e => e.hp > 0)).length > 0 || sk.target !== 'one',
+    usable: true,
+    stanceLocked: sk.id === 'guard' && !!f.player?.ironStance,
+    cost: Math.ceil((sk.cost || 0) * costMult),
+  }).ok;
 
   if (hpRatio < 0.4) {
     const healSk = ['basic_attack', ...run.skills]

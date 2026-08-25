@@ -14,7 +14,7 @@ import {
   softLevelDamage, rewardMult, partyBossAoeMult, partyOutgoingDmgMult, TDC,
 } from './data/tdc.js';
 import { derived, heal, restoreMana, usableSkillIds, resourceName, changeFame, classTitle } from './character.js';
-import { initiativeOrder, canAfford, skillEffectivePower, enemyTelegraph, formatEnemyTelegraph, applyGuard, applyDefense, enemySpecialPayoff, enemyPayoffLine } from './systems.js';
+import { initiativeOrder, skillEffectivePower, enemyTelegraph, formatEnemyTelegraph, applyGuard, applyDefense, enemySpecialPayoff, enemyPayoffLine, skillEligibility, skillBlockLabel, skillCooldownTurns } from './systems.js';
 import { biomeForFloor } from './data/enemies.js';
 import {
   skillStatValue, buildEnemy, spawnSummon as coreSpawnSummon,
@@ -39,7 +39,8 @@ import {
   tickEnemyStatuses as coreTickEnemyStatuses, upkeep as coreUpkeep,
   beginPlayerTurn, combatantEntries, rollRoundInitiativeSolo,
   endPlayerAction as coreEndPlayerAction,
-  snapshotCombat, applyCombatStartMana,
+  snapshotCombat, applyCombatStartMana, applyCombatSnapshot,
+  startSkillCooldown, tickPlayerCooldowns, resetPlayerCooldowns,
 } from './combat_core.js';
 import { computeCombatPayout } from './rewards.js';
 import { chooseAutoPlayAction } from './combat_policy.js';
@@ -98,6 +99,8 @@ export function snapshotActiveCombat() {
       _m: e._m, summon: e.summon,
     })),
     charge: activeFight.charge,
+    skillCDs: { ...(activeFight.skillCDs || {}) },
+    turnPrepared: !!activeFight._turnPrepared,
     round: activeFight.round || 0,
     introText: activeFight.introText || null,
     modifier: activeFight.mod || null,
@@ -124,11 +127,14 @@ export function startCombat({
       onCharacter, onSettings,
     });
     if (resume) {
+      applyCombatSnapshot(C, resume);
       if (resume.charge != null) C.charge = resume.charge;
       if (resume.playerStatuses) C.player.statuses = { ...resume.playerStatuses };
       if (resume.playerBuffs) C.player.buffs = [...resume.playerBuffs];
       if (resume.round != null) C.round = resume.round;
       if (resume.corpses != null) C.corpses = resume.corpses;
+      if (resume.skillCDs) C.skillCDs = { ...resume.skillCDs };
+      if (resume.turnPrepared != null) C._turnPrepared = !!resume.turnPrepared;
     }
     if (!coop) activeFight = C;
     const done = (result) => {
@@ -173,6 +179,9 @@ class Fight {
     this.player = { statuses: {}, buffs: [], guarding: false };
     this.corpses = 0;
     this.charge = clamp((run.metaStartCharge || 0) + derived(run).startCharge, 0, CONFIG.charge.max);
+    this.skillCDs = {};
+    this._cdUsedThisTurn = {};
+    this._turnPrepared = false;
     this.actionMode = 'root'; // root | skills | items | flee (handoff moded menu)
     this._actEnabled = false;
     this.target = 0;
@@ -991,22 +1000,45 @@ class Fight {
       const chargeCost = sk.charge || 0;
       const isUsable = usable.includes(id);
       const stanceLocked = id === 'guard' && !!this.player.ironStance;
-      const affordable = canAfford({ cost, charge: chargeCost }, this.run.mp, this.charge);
+      const hasTarget = sk.target !== 'one' || this.aliveEnemies().length > 0;
+      const elig = skillEligibility(sk, {
+        mp: this.run.mp,
+        charge: this.charge,
+        cds: this.skillCDs,
+        hasTarget,
+        usable: isUsable,
+        stanceLocked,
+        cost,
+      });
       const est = this.estimateSkill(sk);
       // damage-formula hint (§4): "≈42 dmg · 130% DEX + weapon"
       const formula = est
         ? `≈${est.avg}${sk.target === 'all' ? ' ea' : ''} dmg · ${est.power}% ${est.label}`
         : '';
+      const cdTurns = skillCooldownTurns(sk);
+      const cdLeft = elig.remaining;
+      const primary = elig.reasons[0];
+      const blockLines = elig.reasons
+        .map(r => skillBlockLabel(r, { remaining: cdLeft, resName }))
+        .filter(Boolean);
       const btn = document.createElement('button');
-      btn.className = `skill-btn ${sk.class === 'universal' ? 'universal' : ''} ${!isUsable ? 'incompatible' : ''}`;
-      btn.disabled = !enabled || !isUsable || !affordable || stanceLocked;
-      btn.title = stanceLocked
-        ? 'Iron Stance holds you rooted — you cannot Guard.'
+      const reasonClass = primary === 'cooldown' ? 'on-cooldown'
+        : primary === 'charge' ? 'need-charge'
+        : primary === 'resource' ? 'need-resource'
+        : primary === 'target' ? 'need-target'
+        : '';
+      btn.className = `skill-btn ${sk.class === 'universal' ? 'universal' : ''} ${!isUsable ? 'incompatible' : ''} ${reasonClass}`.trim();
+      btn.disabled = !enabled || !elig.ok;
+      const cdCost = cdTurns ? ` CD ${cdTurns}` : '';
+      const cdNow = cdLeft ? ` · ${cdLeft} left` : '';
+      btn.title = blockLines.length
+        ? `${sk.name}\n${blockLines.join('\n')}${formula ? '\n\n' + formula : ''}`
         : isUsable ? `${sk.name}\n${sk.desc}${formula ? '\n\n' + formula : ''}` : 'Incompatible weapon — only Strike and Guard are available.';
       btn.innerHTML = `
         <div class="sk-name"><span>${sk.name}</span>
-          <span class="sk-cost">${cost ? `${cost} ${resName}` : ''}${cost && chargeCost ? ' + ' : ''}${chargeCost ? `${chargeCost}⚡` : ''}${!cost && !chargeCost ? 'FREE' : ''}</span></div>
+          <span class="sk-cost">${cost ? `${cost} ${resName}` : ''}${cost && chargeCost ? ' + ' : ''}${chargeCost ? `${chargeCost}⚡` : ''}${!cost && !chargeCost ? 'FREE' : ''}${cdTurns ? ` ·${cdCost}` : ''}${cdNow}</span></div>
         <div class="sk-desc">${!isUsable ? '⚠ Your weapon cannot channel this — class techniques need a compatible weapon.' : sk.desc}</div>
+        ${primary && primary !== 'incompatible' ? `<div class="sk-block">${skillBlockLabel(primary, { remaining: cdLeft, resName })}</div>` : ''}
         ${isUsable && formula ? `<div class="sk-formula">⚔ ${formula}</div>` : ''}`;
       btn.onclick = () => { if (!this.locked) this.useSkill(sk, cost); };
       this.actionBar.appendChild(btn);
@@ -1129,6 +1161,7 @@ class Fight {
   }
 
   endPlayerAction() { return coreEndPlayerAction(this); }
+  beginPlayerTurn() { return beginPlayerTurn(this); }
 
   /* ================= SHARED DRIVER (co-op) ================= */
   async sharedLoop() {
@@ -1314,6 +1347,7 @@ class Fight {
     if (this.run.down) {
       this.coop.net.send({ k: 'cpass', why: 'down' });
       this.log('You are down — your companions fight on.', 'log-foe');
+      tickPlayerCooldowns(this);
       await sleep(400);
       return;
     }
@@ -1371,7 +1405,15 @@ class Fight {
     const pool = ['basic_attack', 'guard', ...this.run.skills]
       .map(id => SKILLS[id])
       .filter(sk => sk && usable.includes(sk.id) && !sk.allyTarget)
-      .filter(sk => canAfford({ cost: Math.ceil((sk.cost || 0) * costMult), charge: sk.charge || 0 }, this.run.mp, this.charge));
+      .filter(sk => skillEligibility(sk, {
+        mp: this.run.mp,
+        charge: this.charge,
+        cds: this.skillCDs,
+        hasTarget: this.aliveEnemies().length > 0 || sk.target !== 'one',
+        usable: true,
+        stanceLocked: sk.id === 'guard' && !!this.player.ironStance,
+        cost: Math.ceil((sk.cost || 0) * costMult),
+      }).ok);
     const sk = pool.length ? pool[Math.floor(Math.random() * pool.length)] : SKILLS.basic_attack;
     const alive = this.enemies.map((e, i) => ({ e, i })).filter(x => x.e.hp > 0);
     if (alive.length) this.setAim(alive[Math.floor(Math.random() * alive.length)].i);
@@ -1789,10 +1831,16 @@ class Fight {
 
   /* ================= PLAYER ACTIONS (both modes) ================= */
   async useSkill(sk, cost) {
+    if (skillCooldownTurns(sk) > 0 && (this.skillCDs?.[sk.id] || 0) > 0) {
+      this.locked = false;
+      this.renderActions(true);
+      return;
+    }
     this.locked = true;
     this.actionBar?.querySelectorAll?.('button')?.forEach(b => { b.disabled = true; });
     this.run.mp -= cost;
     if (sk.charge) { this.charge = Math.max(0, this.charge - sk.charge); this.renderCharge(); if (sk.charge >= 6) this.usedUltimate = true; }
+    startSkillCooldown(this, sk);
     if (sk.selfHpCost) {
       const paid = Math.round(this.run.maxHp * sk.selfHpCost);
       this.run.hp = Math.max(1, this.run.hp - paid);
@@ -2086,6 +2134,7 @@ class Fight {
     }
     delete this.run.combatTaunt;
     if (CONFIG.charge.resetAfterCombat) this.charge = 0;
+    resetPlayerCooldowns(this);
     this.rng.advance?.();
     const { _delayMs, ...rest } = extra;
     const payload = { result, noDamage: !this.damageTaken, usedUltimate: !!this.usedUltimate, ...rest };

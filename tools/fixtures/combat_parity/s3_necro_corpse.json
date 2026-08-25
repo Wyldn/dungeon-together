@@ -9,7 +9,11 @@
     "round": 0,
     "ended": false,
     "outcome": null,
-    "charge": 4,
+    "charge": 2,
+    "skillCDs": {
+      "bone_spike": 1
+    },
+    "turnPrepared": false,
     "corpses": 0,
     "usedDeathward": false,
     "usedUltimate": false,

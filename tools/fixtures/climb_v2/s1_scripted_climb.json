@@ -46,14 +46,11 @@
       "i": 1
     },
     {
-      "t": "event",
-      "i": 0,
-      "label": "Knock politely"
+      "t": "approach",
+      "act": "fight"
     },
     {
-      "t": "equip",
-      "act": "equip",
-      "slot": "weapon"
+      "t": "combatAuto"
     },
     {
       "t": "card",
@@ -62,17 +59,7 @@
     {
       "t": "event",
       "i": 0,
-      "label": "Ask for counsel"
-    },
-    {
-      "t": "option",
-      "i": 1,
-      "id": "veteran_cuirass"
-    },
-    {
-      "t": "equip",
-      "act": "equip",
-      "slot": "chest"
+      "label": "Spin the wheel"
     }
   ],
   "stopAfterFloor": 4,
@@ -80,15 +67,17 @@
     "outcome": "stopped",
     "checkpoint": {
       "floor": 4,
-      "rngState": 2520262272,
-      "hp": 74,
-      "maxHp": 86,
-      "mp": 20,
-      "maxMp": 44,
-      "gold": 102,
-      "xp": 4,
-      "xpNext": 39,
-      "level": 2,
+      "rngState": 4272798945,
+      "hp": 72,
+      "maxHp": 90,
+      "mp": 42,
+      "maxMp": 48,
+      "gold": 64,
+      "goldEarned": 61,
+      "goldSpent": 27,
+      "xp": 32,
+      "xpNext": 47,
+      "level": 3,
       "skills": [
         "slash",
         "shield_bash",
@@ -102,9 +91,9 @@
         "war_cry"
       ],
       "equipment": {
-        "weapon": "kindling_hatchet__3d4526",
+        "weapon": "rusty_sword",
         "helmet": null,
-        "chest": "veteran_cuirass",
+        "chest": "cloth_garb",
         "legs": null,
         "boots": null,
         "accessory1": null,
@@ -115,20 +104,14 @@
       "consumables": [
         "potion_s"
       ],
+      "healConsumables": 1,
       "flags": {},
       "knowledge": [],
-      "threads": {
-        "oathbound": {
-          "stage": "counseled",
-          "status": "active",
-          "floor": 4
-        }
-      },
+      "threads": {},
       "seenEvents": [
         "merchant",
         "bandit_toll",
-        "mysterious_door",
-        "blade_hero_meet"
+        "wheel_of_the_tower"
       ],
       "bossPicks": {
         "10": "elderwood"
@@ -195,66 +178,66 @@
       },
       {
         "label": "after_2",
-        "rngState": 2699136049,
+        "rngState": 1076798055,
         "floor": 2,
-        "hp": 72,
-        "gold": 57,
+        "hp": 75,
+        "gold": 63,
         "xp": 4,
         "level": 2
       },
       {
         "label": "enter_3_travel",
-        "rngState": 2699136049,
+        "rngState": 1076798055,
         "floor": 3,
-        "hp": 73,
-        "gold": 57,
+        "hp": 76,
+        "gold": 63,
         "xp": 4,
         "level": 2
       },
       {
         "label": "deal_3",
-        "rngState": 2181297533,
+        "rngState": 1827766427,
         "floor": 3,
-        "hp": 73,
-        "gold": 57,
+        "hp": 76,
+        "gold": 63,
         "xp": 4,
         "level": 2
       },
       {
         "label": "after_3",
-        "rngState": 701893152,
+        "rngState": 1948102798,
         "floor": 3,
-        "hp": 73,
-        "gold": 102,
-        "xp": 4,
-        "level": 2
+        "hp": 71,
+        "gold": 91,
+        "xp": 2,
+        "level": 3
       },
       {
         "label": "enter_4_travel",
-        "rngState": 701893152,
+        "rngState": 1948102798,
         "floor": 4,
-        "hp": 74,
-        "gold": 102,
-        "xp": 4,
-        "level": 2
+        "hp": 72,
+        "gold": 91,
+        "xp": 2,
+        "level": 3
       },
       {
         "label": "deal_4",
-        "rngState": 1145963636,
+        "rngState": 1060624503,
         "floor": 4,
-        "hp": 74,
-        "gold": 102,
-        "xp": 4,
-        "level": 2
+        "hp": 72,
+        "gold": 91,
+        "xp": 2,
+        "level": 3
       },
       {
         "label": "after_4",
-        "rngState": 2520262272,
+        "rngState": 4272798945,
         "floor": 4,
-        "hp": 74,
-        "gold": 102,
-        "xp": 4,
-        "level": 2
+        "hp": 72,
+        "gold": 64,
+        "xp": 32,
+        "level": 3
       }
     ]
   }

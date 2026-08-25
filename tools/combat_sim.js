@@ -18,7 +18,7 @@ import { biomeForFloor } from '../js/data/enemies.js';
 import {
   applyGuard, applyDefense, addCharge, tickEnemyCharge, pickEnemySpecial,
   specialChargeCost, spendEnemySpecialCharge, bossChargeDamageScale,
-  enemyTelegraph, canAfford, skillEffectivePower,
+  enemyTelegraph, canAfford, skillEffectivePower, skillCooldownTurns,
 } from '../js/systems.js';
 
 /** Re-export: build a fight snapshot from a real run (derived stats + SKILLS). */
@@ -179,9 +179,34 @@ function enemyHit(e, p, rng, { special = null, chargeScale = 1, playerGuarding =
   return Math.max(1, Math.round(dmg));
 }
 
+function startSimTurn(p) {
+  p.charge = addCharge(p.charge || 0, CONFIG.charge.gainPerTurn);
+}
+
 function endSimTurn(p) {
-  p.charge = addCharge(p.charge, CONFIG.charge.gainPerTurn);
   p.mp = Math.min(p.maxMp, (p.mp || 0) + (p.manaRegen || 4));
+  const cds = p.skillCDs || {};
+  const used = p._cdUsedThisTurn || {};
+  for (const id of Object.keys(cds)) {
+    if (used[id]) continue;
+    const n = (cds[id] | 0) - 1;
+    if (n <= 0) delete cds[id];
+    else cds[id] = n;
+  }
+  p._cdUsedThisTurn = {};
+}
+
+function simSkillOnCd(p, sk) {
+  return !!(sk?.id && p.skillCDs && p.skillCDs[sk.id] > 0);
+}
+
+function markSimCooldown(p, sk) {
+  const turns = skillCooldownTurns(sk) || ((sk.charge || 0) >= 1 ? 2 : 0);
+  if (turns <= 0 || !sk?.id) return;
+  p.skillCDs = p.skillCDs || {};
+  p.skillCDs[sk.id] = turns;
+  p._cdUsedThisTurn = p._cdUsedThisTurn || {};
+  p._cdUsedThisTurn[sk.id] = true;
 }
 
 /**
@@ -191,12 +216,13 @@ function endSimTurn(p) {
 function simAutoPlayTurn(p, enemies, rng, partySize = 1) {
   const living = () => enemies.filter(e => e.hp > 0);
   if (!living().length) return false;
+  startSimTurn(p);
 
   const hpRatio = p.hp / Math.max(1, p.maxHp);
   const skills = p.skills?.length
     ? p.skills
     : [{ id: 'basic_attack', power: 100, cost: 0, charge: 0, target: 'one' }];
-  const afford = sk => canAfford(
+  const afford = sk => !simSkillOnCd(p, sk) && canAfford(
     { cost: sk.cost || 0, charge: sk.charge || 0 },
     p.mp || 0,
     p.charge || 0,
@@ -216,6 +242,7 @@ function simAutoPlayTurn(p, enemies, rng, partySize = 1) {
     if (healSk) {
       p.mp = Math.max(0, (p.mp || 0) - (healSk.cost || 0));
       if (healSk.charge) p.charge = Math.max(0, p.charge - healSk.charge);
+      markSimCooldown(p, healSk);
       p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * healSk.healPct));
       endSimTurn(p);
       return true;
@@ -242,6 +269,7 @@ function simAutoPlayTurn(p, enemies, rng, partySize = 1) {
 
   p.mp = Math.max(0, (p.mp || 0) - (sk.cost || 0));
   if (sk.charge) p.charge = Math.max(0, p.charge - sk.charge);
+  markSimCooldown(p, sk);
 
   const foes = living().sort((a, b) => a.hp - b.hp);
   const targets = sk.target === 'all' ? foes : (foes[0] ? [foes[0]] : []);
@@ -294,6 +322,8 @@ export function simulateFight(rng, playerOrParty, enemySpecs, {
     mp: pl.mp ?? pl.maxMp ?? 40,
     maxMp: pl.maxMp ?? pl.mp ?? 40,
     charge: pl.charge || 0,
+    skillCDs: {},
+    _cdUsedThisTurn: {},
     guarding: false,
     skills: pl.skills || buildSimKit(pl.level || 1, pl.loot || 0.3, pl.band || 0.5),
     potions: pl.potions ?? 0,

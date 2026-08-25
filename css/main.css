@@ -1091,6 +1091,11 @@ html.hide-choice-hints .choice-hint:not(.choice-hint-keep) { display: none; }
 }
 .skill-btn:hover:not(:disabled) { transform: translateY(-3px); border-color: var(--accent, var(--gold)); box-shadow: 0 8px 22px rgba(0,0,0,.4); }
 .skill-btn:disabled { opacity: .4; cursor: not-allowed; }
+.skill-btn.on-cooldown { border-color: color-mix(in srgb, var(--crit, #e07070) 45%, var(--panel-edge)); }
+.skill-btn.need-charge { border-color: color-mix(in srgb, var(--gold, #d4b45a) 40%, var(--panel-edge)); }
+.skill-btn.need-resource { border-color: color-mix(in srgb, var(--mp, #6f8ff0) 45%, var(--panel-edge)); }
+.skill-btn.need-target { border-color: color-mix(in srgb, var(--ink-dim) 50%, var(--panel-edge)); }
+.skill-btn .sk-block { font-family: var(--font-mono); font-size: 11px; color: var(--crit, #e07070); margin-top: 4px; }
 .skill-btn .sk-name { font-family: var(--font-display); font-weight: 700; font-size: 14px; display: flex; justify-content: space-between; align-items: baseline; }
 .skill-btn .sk-cost { font-family: var(--font-mono); font-size: 11px; color: var(--mp); }
 .skill-btn .sk-desc { font-size: 13px; color: var(--ink-dim); margin-top: 3px; line-height: 1.35; }

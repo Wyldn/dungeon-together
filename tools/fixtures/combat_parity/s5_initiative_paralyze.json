@@ -10,6 +10,8 @@
     "ended": false,
     "outcome": null,
     "charge": 2,
+    "skillCDs": {},
+    "turnPrepared": false,
     "corpses": 0,
     "usedDeathward": false,
     "usedUltimate": false,
@@ -72,6 +74,11 @@
         "summon": false
       }
     ],
-    "logs": []
+    "logs": [
+      {
+        "msg": "You are frozen solid — turn lost!",
+        "cls": "log-foe"
+      }
+    ]
   }
 }
