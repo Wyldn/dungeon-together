@@ -16,6 +16,15 @@ export function defaultServerUrl(loc = globalThis.location) {
   if (loc?.protocol === 'http:' && loc.hostname && !['localhost', '127.0.0.1'].includes(loc.hostname)) {
     return `ws://${loc.host}`;
   }
+  // Local relay serves the game on the same port (3117+). Static file
+  // servers (python -m http.server on 8000/8877, etc.) keep the public relay.
+  const host = String(loc?.host || '');
+  const port = String(loc?.port || host.split(':')[1] || '');
+  const staticDev = new Set(['', '80', '8000', '8080', '5500', '5173', '8877']);
+  if (loc?.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(loc.hostname)
+    && !staticDev.has(port)) {
+    return `ws://${host}`;
+  }
   return PUBLIC_RELAY;
 }
 

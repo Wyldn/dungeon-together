@@ -2707,3 +2707,21 @@ body.crystal-holding #app > .screen { transform: scale(.93); transform-origin: 5
 }
 .dbg-input-sm { min-width: 4rem; width: 4.5rem; }
 .dbg-check-lab { user-select: none; }
+
+.dbg-filters { margin: 0 0 14px; }
+.dbg-search {
+  width: 100%; max-width: 420px; display: block; margin: 0 auto 8px;
+  background: rgba(12,8,24,.7); color: var(--ink); border: 1px solid var(--panel-edge);
+  padding: 6px 10px; font: inherit; font-size: 14px;
+}
+.dbg-filter-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 6px; }
+.tag-cursed {
+  color: #f0c9a0; border-color: #a86b3a; letter-spacing: .08em; font-weight: 700;
+}
+.tag-evolving { color: #b8d4ff; border-color: #6a8fc9; }
+.tag-set { color: #d4c27a; border-color: #8a7a3a; }
+.curse-box {
+  margin-top: 6px; padding: 6px 8px; border: 1px solid #a86b3a;
+  background: rgba(80, 32, 12, .28); font-size: 13px;
+}
+.curse-drawback, .curse-res, .curse-evo { margin-top: 3px; color: var(--ink-dim); }

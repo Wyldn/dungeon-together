@@ -97,6 +97,15 @@ export async function runPartyProxyTests(t) {
   t('127.0.0.1 keeps direct public relay',
     defaultServerUrl({ protocol: 'http:', host: '127.0.0.1:8000', hostname: '127.0.0.1' })
       === PUBLIC_RELAY);
+  t('local relay port 3118 uses same-origin ws',
+    defaultServerUrl({ protocol: 'http:', host: '127.0.0.1:3118', hostname: '127.0.0.1', port: '3118' })
+      === 'ws://127.0.0.1:3118');
+  t('localhost relay port 3118 uses same-origin ws',
+    defaultServerUrl({ protocol: 'http:', host: 'localhost:3118', hostname: 'localhost', port: '3118' })
+      === 'ws://localhost:3118');
+  t('local relay port 3119 uses same-origin ws',
+    defaultServerUrl({ protocol: 'http:', host: '127.0.0.1:3119', hostname: '127.0.0.1', port: '3119' })
+      === 'ws://127.0.0.1:3119');
   t('missing location keeps direct public relay', defaultServerUrl(null) === PUBLIC_RELAY);
   t('https is not treated as mixed-content blocked', isMixedContentBlocked() === false);
   t('lobby drop recovers by rejoin', partyLinkRecovery({ climbing: false, hasCode: true }) === 'rejoin');

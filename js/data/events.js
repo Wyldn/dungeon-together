@@ -32,6 +32,8 @@ import { tagsForEvent } from './eventtagmap.js';
 import { NARRATIVE_EVENTS } from './narrative_events.js';
 import { eventEligible, choiceBridgeTag } from './world.js';
 import { eventDrawWeight } from './eventpace.js';
+import '../content_pack/bootstrap.js';
+import { liveEvents } from '../content_pack/registry.js';
 
 export const EVENTS = [
 
@@ -2067,12 +2069,22 @@ export const CATEGORY_META = {
 // Weighted pick honoring biome, conditions, once-flags, underdog comeback
 // weighting, recent-category history, and narrative pacing. Weights come
 // from eventDrawWeight — the same function ?dev=world prints.
+export function findEvent(id) {
+  if (!id) return null;
+  return liveEvents(EVENTS).find(e => e.id === id) || null;
+}
+
+export function liveEventCatalog() {
+  return liveEvents(EVENTS);
+}
+
 export function eventDrawPool(state, { exclude = [], party = [], skipPace = false } = {}) {
-  const excludeFamilies = EVENTS
+  const catalog = liveEvents(EVENTS);
+  const excludeFamilies = catalog
     .filter(e => exclude.includes(e.id) && e.family)
     .map(e => e.family);
-  const pool = EVENTS.filter(e => eventEligible(e, state, { exclude, excludeFamilies, party }));
-  const offered = exclude.map(id => EVENTS.find(e => e.id === id)).filter(Boolean);
+  const pool = catalog.filter(e => eventEligible(e, state, { exclude, excludeFamilies, party }));
+  const offered = exclude.map(id => catalog.find(e => e.id === id)).filter(Boolean);
   return pool.map(e => {
     const wt = eventDrawWeight(e, state, { exclude, offered, skipPace });
     return { id: e.id, w: wt.w, role: wt.role, e };

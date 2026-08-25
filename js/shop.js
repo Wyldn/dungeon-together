@@ -7,6 +7,9 @@ import { biomeTier } from './biome_tier.js';
 import { appraiseRun } from './character.js';
 import { applyWorldPatch } from './data/world.js';
 import { earnGold, spendGold, healConsumableCount } from './economy.js';
+import { packOnShopAction } from './content_pack/world_bind.js';
+import { packGet, packSet } from './content_pack/state.js';
+import { noteDiscovery } from './compendium_seen.js';
 
 /** Flags this module reads. Catalog walker imports this — do not duplicate lists. */
 export const SHOP_NARRATIVE_READS = {
@@ -22,11 +25,13 @@ export function shopDiscount(run) {
   else if (run.flags?.undercity_ties) storyDisc += 0.04;
   else if (run.flags?.paid_toll) storyDisc += 0.03;
   if (run.flags?.dukes_mark && run.biomeId === 'hell') storyDisc += 0.04;
+  const packDisc = (packGet(run, 'run', 'reservedShop') && !packGet(run, 'run', 'receiptSpent')) ? 0.2 : 0;
   return {
     fameDisc,
     faceDisc,
     storyDisc,
-    discount: Math.min(0.35, fameDisc + faceDisc + storyDisc),
+    packDisc,
+    discount: Math.min(0.35, fameDisc + faceDisc + storyDisc + packDisc),
   };
 }
 
@@ -35,7 +40,9 @@ export function shopDiscountFlavor(run) {
   const d = shopDiscount(run);
   if (!d.discount) return '';
   let quote;
-  if (d.storyDisc && !d.fameDisc && !d.faceDisc) {
+  if (d.packDisc && !d.fameDisc && !d.faceDisc && !d.storyDisc) {
+    quote = '"I have yesterday\'s receipt for this. Original price."';
+  } else if (d.storyDisc && !d.fameDisc && !d.faceDisc) {
     if (run.flags?.dukes_mark && run.biomeId === 'hell') {
       quote = '"The Duke\'s stamp is in the ledger. A consideration."';
     } else if (run.flags?.paid_toll && !run.flags?.guild_notes && !run.flags?.undercity_ties) {
@@ -57,6 +64,7 @@ export function shopDiscountFlavor(run) {
     else if (run.flags?.paid_toll) tags.push('toll');
     if (run.flags?.dukes_mark && run.biomeId === 'hell') tags.push("Duke's mark");
   }
+  if (d.packDisc) tags.push('receipt');
   return `${quote} (${tags.join(' + ')} discount)`;
 }
 
@@ -189,6 +197,7 @@ export function applyShopBuy(run, stock, index, discount, hooks = {}) {
   const p = shopPrice(s.price, discount);
   const gold = shopGold(run);
   if (gold < p) return { ok: false, price: p, reason: 'gold' };
+  const hadReserve = packGet(run, 'run', 'reservedShop') && !packGet(run, 'run', 'receiptSpent');
   spendGold(run, p, 'shop');
   if (s.kind === 'consumable') {
     if (s.item.appraisal) {
@@ -203,6 +212,10 @@ export function applyShopBuy(run, stock, index, discount, hooks = {}) {
   }
   if (s.kind === 'relic') run.relics.push(s.item.id);
   stock.splice(index, 1);
+  packOnShopAction(run, 'buy', { price: p });
+  if (hadReserve) packSet(run, 'run', 'receiptSpent', 1);
+  const catalogId = s.item?.baseId || s.item?.id;
+  if (catalogId) noteDiscovery(catalogId);
   return { ok: true, price: p, listing: s };
 }
 

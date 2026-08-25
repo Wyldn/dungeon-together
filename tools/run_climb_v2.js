@@ -2,7 +2,7 @@
 // Simulation V2 — faithful solo climb. Does not call grantCombatLoot, combat_sim, or run_sim.
 
 import { newRun, runRng, loadMeta, rollStart, awakenMonolith } from '../js/state.js';
-import { EVENTS } from '../js/data/events.js';
+import { EVENTS, findEvent } from '../js/data/events.js';
 import { presentEvent, recordEvent } from '../js/data/world.js';
 import { classifyFloor, dealLiveFloorCards, LAST_FLOOR } from '../js/data/floorcards.js';
 import { biomeForFloor, ENEMIES, pickBossForFloor, pickTrialModifier, ALT_BOSSES } from '../js/data/enemies.js';
@@ -155,7 +155,7 @@ async function resolveEvent(run, ev, policy) {
   }
 
   let choices = [...(presented.choices || [])];
-  if (choices.length && choices.every(c => !reqMet(run, c.req).ok)) {
+  if (choices.length && choices.every(c => !reqMet(run, c.req, { identityScope: presented.identityScope }).ok)) {
     choices.push({ label: 'Move on', hint: 'leave empty-handed', outcome: { text: 'Nothing here is for you today.' } });
   }
   const choice = policy.chooseEvent(run, presented, choices);
@@ -248,7 +248,7 @@ async function resolveTravelCard(run, card, policy) {
     pushEncounterHistory(run, card.enemies);
     return resolveEncounter(run, policy, card.enemies, card.hpMult || 1);
   }
-  const ev = presentEvent(EVENTS.find(e => e.id === card.eventId), run);
+  const ev = presentEvent(findEvent(card.eventId) || EVENTS.find(e => e.id === 'campfire'), run);
   run.eventSparkle = !!card.sparkle;
   pushEventHistory(run, ev.category || 'unknown');
   recordEvent(run, ev);

@@ -2,8 +2,9 @@
 // local resume slot. The Oracle relay holds the authoritative checkpoint;
 // this module never treats a client blob as party truth on its own.
 
-export const CHECKPOINT_SCHEMA = 1;
-export const GAME_CONTENT_VERSION = 'dt-mp-1';
+export const CHECKPOINT_SCHEMA = 2;
+export const CHECKPOINT_SCHEMA_MIN = 1;
+export const GAME_CONTENT_VERSION = 'dt-mp-2';
 export const COOP_RESUME_KEY = 'dt_coop_resume_v1';
 export const MAX_CHECKPOINT_BYTES = 200_000;
 
@@ -42,8 +43,10 @@ const CLIMBER_KEYS = Object.freeze([
   'goldSpent', 'goldEarnedBy', 'goldSpentBy',
   'usedRevive', 'down', 'over', 'metaStartCharge',
   'foodBuff', 'climb', 'combatTaunt', 'safeFloorStreak',
-  'coopMode',
+  'coopMode', 'packState', 'arts',
 ]);
+
+import { persistablePackState, boundPackStateSize } from './content_pack/state.js';
 
 function jsonClone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -62,6 +65,11 @@ export function serializeClimber(run) {
     if (run[k] !== undefined) src[k] = run[k];
   }
   src.coopMode = true;
+  if (src.packState) {
+    src.packState = persistablePackState(run) || {};
+    const bound = boundPackStateSize(src.packState);
+    if (!bound.ok) return { ok: false, why: bound.why || 'pack-state-too-large' };
+  }
   delete src.pending;
   let cloned;
   try { cloned = jsonClone(src); }
@@ -177,10 +185,26 @@ export function buildCheckpoint({
   return { ok: true, checkpoint };
 }
 
+export function migrateCheckpoint(cp) {
+  if (!cp || typeof cp !== 'object') return cp;
+  if ((cp.schema === 1 || cp.gameVersion === 'dt-mp-1') && CHECKPOINT_SCHEMA === 2) {
+    return { ...cp, schema: CHECKPOINT_SCHEMA, gameVersion: GAME_CONTENT_VERSION };
+  }
+  return cp;
+}
+
 export function validateCheckpoint(cp, { current = null, gameVersion = GAME_CONTENT_VERSION } = {}) {
   if (!cp || typeof cp !== 'object') return { ok: false, why: 'missing', code: 'unrecoverable' };
+  cp = migrateCheckpoint(cp);
+  if (cp.schema !== CHECKPOINT_SCHEMA && cp.schema !== CHECKPOINT_SCHEMA_MIN) {
+    return { ok: false, why: 'schema', code: 'incompatible' };
+  }
+  if (cp.schema === CHECKPOINT_SCHEMA_MIN) cp = migrateCheckpoint({ ...cp, schema: 1 });
   if (cp.schema !== CHECKPOINT_SCHEMA) return { ok: false, why: 'schema', code: 'incompatible' };
-  if (cp.gameVersion !== gameVersion) return { ok: false, why: 'version', code: 'incompatible' };
+  if (cp.gameVersion !== gameVersion && cp.gameVersion !== 'dt-mp-1') {
+    return { ok: false, why: 'version', code: 'incompatible' };
+  }
+  cp = { ...cp, schema: CHECKPOINT_SCHEMA, gameVersion };
   if (!isSafePhase(cp.phase)) return { ok: false, why: 'unsafe-phase', code: 'unrecoverable' };
   if (!cp.runId || typeof cp.runId !== 'string') return { ok: false, why: 'runId', code: 'unrecoverable' };
   const revision = checkpointRevision(cp.floor, cp.phase);
@@ -223,6 +247,7 @@ export function defaultResumeMeta() {
 
 export function classifyResumeMeta(meta, { gameVersion = GAME_CONTENT_VERSION } = {}) {
   if (!meta) return { kind: 'none' };
+  meta = migrateCheckpoint(meta);
   if (meta.schema !== CHECKPOINT_SCHEMA || meta.gameVersion !== gameVersion) {
     return { kind: 'incompatible', meta };
   }

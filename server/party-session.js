@@ -2,8 +2,8 @@
 // Not durable across process restart. No account system. One resume token
 // maps to one seat in one room. Combat is never stored as a restorable snapshot.
 
-const CHECKPOINT_SCHEMA = 1;
-const GAME_CONTENT_VERSION = 'dt-mp-1';
+const CHECKPOINT_SCHEMA = 2;
+const GAME_CONTENT_VERSION = 'dt-mp-2';
 const MAX_ROOM = 4;
 const MAX_CHECKPOINT_BYTES = 200_000;
 const SAFE_PHASES = new Set(['floor-ready', 'floor-resolved', 'ended']);
@@ -102,6 +102,9 @@ function pickHost(room) {
 
 function validateCheckpoint(cp, current) {
   if (!cp || typeof cp !== 'object') return { ok: false, why: 'missing', code: 'unrecoverable' };
+  if (cp.schema === 1 || cp.gameVersion === 'dt-mp-1') {
+    cp = { ...cp, schema: CHECKPOINT_SCHEMA, gameVersion: GAME_CONTENT_VERSION };
+  }
   if (cp.schema !== CHECKPOINT_SCHEMA) return { ok: false, why: 'schema', code: 'incompatible' };
   if (cp.gameVersion !== GAME_CONTENT_VERSION) return { ok: false, why: 'version', code: 'incompatible' };
   if (!SAFE_PHASES.has(cp.phase)) return { ok: false, why: 'unsafe-phase', code: 'unrecoverable' };

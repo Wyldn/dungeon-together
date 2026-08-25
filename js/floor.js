@@ -2,6 +2,7 @@ import { CONFIG } from './data/config.js';
 import { biomeForFloor, BOSSES, pickBossForFloor } from './data/enemies.js';
 import { heal, restoreMana, relicItems } from './character.js';
 import { runRng } from './state.js';
+import { packOnFloorAdvance } from './content_pack/world_bind.js';
 
 const BOSS_FLOORS = Object.keys(BOSSES).map(Number);
 
@@ -34,6 +35,7 @@ export function previewUpcomingBoss(run) {
 }
 
 export function enterNextFloor(run) {
+  const prevBiome = run.biomeId;
   run.floor++;
   const biome = biomeForFloor(run.floor);
   run.biomeId = biome.id;
@@ -49,5 +51,6 @@ export function enterNextFloor(run) {
   tickFoodBuff(run);
   applyLowHpRelic(run);
   previewUpcomingBoss(run);
+  packOnFloorAdvance(run, { prevBiome });
   return biome;
 }

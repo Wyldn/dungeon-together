@@ -1,0 +1,176 @@
+{
+  "schema": {
+    "family": "schema",
+    "gate": 1,
+    "gateName": "SCHEMA",
+    "enabled": false
+  },
+  "state_scopes": {
+    "family": "state",
+    "gate": 1,
+    "gateName": "SCHEMA",
+    "enabled": false
+  },
+  "mutex": {
+    "family": "mutex",
+    "gate": 1,
+    "gateName": "SCHEMA",
+    "enabled": false
+  },
+  "legacy_mirror": {
+    "family": "legacy",
+    "gate": 2,
+    "gateName": "LEGACY_MIGRATE",
+    "enabled": false
+  },
+  "simple_stat": {
+    "family": "foundation",
+    "gate": 3,
+    "gateName": "FOUNDATION",
+    "enabled": false
+  },
+  "simple_hook": {
+    "family": "foundation",
+    "gate": 3,
+    "gateName": "FOUNDATION",
+    "enabled": false
+  },
+  "armor_set": {
+    "family": "sets",
+    "gate": 4,
+    "gateName": "CLASS_BLOODLINE",
+    "enabled": false
+  },
+  "bloodline_resonance": {
+    "family": "resonance",
+    "gate": 4,
+    "gateName": "CLASS_BLOODLINE",
+    "enabled": false
+  },
+  "class_technique": {
+    "family": "techniques",
+    "gate": 4,
+    "gateName": "CLASS_BLOODLINE",
+    "enabled": false
+  },
+  "class_gear": {
+    "family": "class_gear",
+    "gate": 4,
+    "gateName": "CLASS_BLOODLINE",
+    "enabled": false
+  },
+  "bloodline_art": {
+    "family": "arts",
+    "gate": 4,
+    "gateName": "CLASS_BLOODLINE",
+    "enabled": false
+  },
+  "curse": {
+    "family": "curses",
+    "gate": 5,
+    "gateName": "ADVANCED",
+    "enabled": false
+  },
+  "curse_resolution": {
+    "family": "curses",
+    "gate": 5,
+    "gateName": "ADVANCED",
+    "enabled": false
+  },
+  "evolution": {
+    "family": "evolution",
+    "gate": 5,
+    "gateName": "ADVANCED",
+    "enabled": false
+  },
+  "item_instance_state": {
+    "family": "instance",
+    "gate": 5,
+    "gateName": "ADVANCED",
+    "enabled": false
+  },
+  "cross_combat_memory": {
+    "family": "memory",
+    "gate": 5,
+    "gateName": "ADVANCED",
+    "enabled": false
+  },
+  "echo_copy": {
+    "family": "echo",
+    "gate": 5,
+    "gateName": "ADVANCED",
+    "enabled": false
+  },
+  "summon": {
+    "family": "summon",
+    "gate": 5,
+    "gateName": "ADVANCED",
+    "enabled": false
+  },
+  "delayed_consequence": {
+    "family": "delay",
+    "gate": 5,
+    "gateName": "ADVANCED",
+    "enabled": false
+  },
+  "intent_manipulation": {
+    "family": "intent",
+    "gate": 5,
+    "gateName": "ADVANCED",
+    "enabled": false
+  },
+  "fame_gold_power": {
+    "family": "currency_power",
+    "gate": 5,
+    "gateName": "ADVANCED",
+    "enabled": false
+  },
+  "resource_conversion": {
+    "family": "conversion",
+    "gate": 5,
+    "gateName": "ADVANCED",
+    "enabled": false
+  },
+  "technique_borrow": {
+    "family": "borrow",
+    "gate": 5,
+    "gateName": "ADVANCED",
+    "enabled": false
+  },
+  "event_linked_acquire": {
+    "family": "events",
+    "gate": 6,
+    "gateName": "EVENTS",
+    "enabled": false
+  },
+  "event_chain": {
+    "family": "events",
+    "gate": 6,
+    "gateName": "EVENTS",
+    "enabled": false
+  },
+  "identity_route": {
+    "family": "events",
+    "gate": 6,
+    "gateName": "EVENTS",
+    "enabled": false
+  },
+  "mp_aware": {
+    "family": "multiplayer",
+    "gate": 7,
+    "gateName": "MULTIPLAYER",
+    "enabled": false
+  },
+  "companion": {
+    "family": "summon",
+    "gate": 5,
+    "gateName": "ADVANCED",
+    "enabled": false
+  },
+  "turn_order": {
+    "family": "turn_order",
+    "gate": 7,
+    "gateName": "MULTIPLAYER",
+    "enabled": false
+  }
+}

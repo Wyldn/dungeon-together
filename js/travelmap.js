@@ -3,7 +3,7 @@
 // array generateCards() produces; picking a node calls the same resolveCard().
 // Co-op vote/lock contract is preserved verbatim (picks / renderVotes / bind).
 
-import { CATEGORY_META, EVENTS } from './data/events.js';
+import { CATEGORY_META, findEvent } from './data/events.js';
 import { presentEvent } from './data/world.js';
 import { travelMapBgUrl, eventCatUrl, enemySpriteHtml } from './art.js';
 import { findEnemySpec } from './data/enemies.js';
@@ -192,7 +192,7 @@ export function pathNodeView(card) {
     };
   }
 
-  const raw = EVENTS.find(e => e.id === card?.eventId);
+  const raw = findEvent(card?.eventId);
   const ev = raw && viewRun ? presentEvent(raw, viewRun) : raw;
   if (!ev) {
     const cat = card?.category || 'unknown';

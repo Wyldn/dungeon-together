@@ -7,6 +7,7 @@ import { rollGrowthRank } from './data/ranks.js';
 import { makeRng, randomSeed } from './rng.js';
 import { defaultAppearanceId } from './data/appearances.js';
 import { emptyWorld, ensureWorld, syncSecretUnlockFromSubclass } from './data/world.js';
+import { persistCompendiumSeen } from './compendium_seen.js';
 
 const META_KEY = 'dt_meta_v1';
 const RUN_KEY = 'dt_run_v2'; // schema v2: fame, races, 8 equip slots, growth
@@ -429,6 +430,7 @@ export function newRun(meta, { classId, raceId = 'human', originId = null, name,
 
 export function saveRun(run) {
   if (run?.coopMode) return; // co-op persistence is the resume token + relay checkpoint
+  persistCompendiumSeen();
   localStorage.setItem(RUN_KEY, JSON.stringify(run));
 }
 

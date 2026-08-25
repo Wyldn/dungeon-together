@@ -26,9 +26,17 @@ function catalogId(id) {
 
 export function isProtectedItem(run, item, id) {
   if (!item) return true;
+  if (item.quest) return true;
   if (item.unique || item.wrld || item.exclusive || item.noAffix && item.rarity === 'unique') return true;
   if (PROTECTED_RARITIES.has(item.rarity)) return true;
   if (QUEST_IDS.has(item.id) || QUEST_IDS.has(catalogId(id || item.id))) return true;
+  if (run?.flags?.sealedItem) {
+    const sealed = (run.inventory || []).find(invId => {
+      const it = resolveItem(run, invId);
+      return it?.slot && !isEquippedId(run, invId);
+    });
+    if (sealed && catalogId(id || item.id) === catalogId(sealed)) return true;
+  }
   return false;
 }
 

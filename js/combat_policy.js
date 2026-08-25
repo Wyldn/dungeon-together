@@ -6,7 +6,7 @@
 // that also allows aiming the same skill at a living companion. Autoplay
 // must not treat `allyTarget` as "cannot heal self".
 
-import { SKILLS } from './data/skills.js';
+import { SKILLS, skillById } from './data/skills.js';
 import { CONSUMABLES } from './data/items.js';
 import { usableSkillIds } from './character.js';
 import { skillEffectivePower, enemyTelegraph, skillEligibility } from './systems.js';
@@ -75,7 +75,7 @@ export function chooseAutoPlayAction(f) {
 
   if (hpRatio < 0.4) {
     const healSk = ['basic_attack', ...run.skills]
-      .map(id => SKILLS[id])
+      .map(id => skillById(id) || SKILLS[id])
       .find(sk => sk && usable.includes(sk.id) && skillCanHealSelf(sk) && afford(sk));
     if (healSk) {
       return { type: 'useSkill', skillId: healSk.id, healTo: pickAutoplayHealTo(f, healSk) };
@@ -91,7 +91,7 @@ export function chooseAutoPlayAction(f) {
   }
 
   const pool = ['basic_attack', ...run.skills]
-    .map(id => SKILLS[id])
+    .map(id => skillById(id) || SKILLS[id])
     .filter(sk => sk && usable.includes(sk.id) && !sk.allyTarget && sk.id !== 'guard')
     .filter(afford)
     .sort((a, b) => skillEffectivePower(b) - skillEffectivePower(a) || (b.charge || 0) - (a.charge || 0));

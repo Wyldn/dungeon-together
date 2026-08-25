@@ -27,6 +27,13 @@ export function climbCheckpoint(run, extra = {}) {
     knowledge: [...(run.world?.knowledge || [])],
     threads: { ...(run.world?.threads || {}) },
     seenEvents: [...(run.seenEvents || [])],
+    packState: run.packState ? {
+      run: { ...(run.packState.run || {}) },
+      permanent: { ...(run.packState.permanent || {}) },
+      biome: { ...(run.packState.biome || {}) },
+      floor: { ...(run.packState.floor || {}) },
+    } : {},
+    arts: [...(run.arts || [])],
     bossPicks: { ...(run.bossPicks || {}) },
     sigils: [...(run.sigils || [])],
     subclassId: run.subclassId || null,

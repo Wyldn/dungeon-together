@@ -5,6 +5,9 @@ import { RACES } from './data/races.js';
 import { resolveItem, RELICS, EQUIP_SLOTS } from './data/items.js';
 import { SKILLS } from './data/skills.js';
 import { CONFIG } from './data/config.js';
+import { packLookup, packSkillMap } from './content_pack/registry.js';
+import { isPackOn } from './content_pack/flags.js';
+import { noteDiscovery } from './compendium_seen.js';
 import { rankFor, appraisalRange, growthMult, growthGainMult } from './data/ranks.js';
 import { cappedDmgTakenMult, softHpGain, levelDefBonus, resourceRegen } from './data/tdc.js';
 
@@ -15,7 +18,7 @@ export function equippedItems(run) {
 }
 
 export function relicItems(run) {
-  return run.relics.map(id => RELICS.find(r => r.id === id)).filter(Boolean);
+  return run.relics.map(id => RELICS.find(r => r.id === id) || packLookup(id)).filter(Boolean);
 }
 
 function gearSum(run, prop) {
@@ -233,7 +236,10 @@ export function applySubclass(run, sub) {
   for (const k of ['str', 'dex', 'int', 'wis', 'lk']) if (b[k]) run.stats[k] += b[k];
   if (b.hp) { run.maxHp += b.hp; run.hp += b.hp; }
   if (b.mp) { run.maxMp += b.mp; run.mp += b.mp; }
-  if (sub.skill && !run.knownSkills.includes(sub.skill)) run.knownSkills.push(sub.skill);
+  if (sub.skill && !run.knownSkills.includes(sub.skill)) {
+    run.knownSkills.push(sub.skill);
+    noteDiscovery(sub.skill);
+  }
   return sub;
 }
 
@@ -291,8 +297,12 @@ export function gainXp(run, amount, rng) {
 // Skills the player could learn right now.
 export function learnableSkills(run) {
   const tier = skillTier(run);
-  return Object.values(SKILLS).filter(sk =>
-    sk.class === run.classId && (sk.tier || 1) <= tier && sk.offer !== false && !run.knownSkills.includes(sk.id));
+  const extra = isPackOn() ? Object.values(packSkillMap()) : [];
+  return [...Object.values(SKILLS), ...extra].filter(sk => {
+    if ((sk.tier || 1) > tier || sk.offer === false || run.knownSkills.includes(sk.id)) return false;
+    if (sk.bloodline) return sk.bloodline === run.raceId;
+    return sk.class === run.classId;
+  });
 }
 
 export function heal(run, amount) {

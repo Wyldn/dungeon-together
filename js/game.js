@@ -4,9 +4,9 @@
 import { CLASSES, SUBCLASSES, RANDOM_NAMES, subclassOptions } from './data/classes.js';
 import { RACES, applyRacePromotion } from './data/races.js';
 import { ORIGINS, originById, defaultOriginId } from './data/origins.js';
-import { SKILLS } from './data/skills.js';
+import { SKILLS, skillById } from './data/skills.js';
 import { BIOMES, biomeForFloor, ENEMIES, BOSSES, ALT_BOSSES, MODIFIERS, pickBossForFloor, pickTrialModifier, bossById, resolveThroneBoss, findEnemySpec, NPC_ENEMIES, WANDERING_ENEMIES, SECRET_BOSS, mimicSpec } from './data/enemies.js';
-import { EVENTS, CATEGORY_META, drawEvent, NPC_EVENTS } from './data/events.js';
+import { EVENTS, CATEGORY_META, drawEvent, NPC_EVENTS, findEvent } from './data/events.js';
 import {
   presentEvent, presentBoss, recordEvent, applyWorldPatch, applyOutcomeWorld, ensureWorld,
   charRel, worldDebugSnapshot, explainEligibility, eventEligible, eligibilitySnapshot,
@@ -22,6 +22,15 @@ import { planBossEncounter, pushEventHistory, pushEncounterHistory, pushTakenEve
 import { dealLiveFloorCards, pickEnemyPlan as planFloorEnemies } from './data/floorcards.js';
 import { rankFor } from './data/ranks.js';
 import { CONSUMABLES, itemById, resolveItem, rollEquipment, rollRelic, rollUnique, rollWrld, npcDuelLoot, markWrldClaimed, EQUIP_SLOTS, RELICS, ALL_EQUIPMENT, WEAPONS, itemUsefulForClass, itemIncompatibleForClass, shopConsumablePool, shopListingPrice, consumableCombatValue, sellGold } from './data/items.js';
+import { grantCatalogItem } from './content_pack/grants.js';
+import { isPackOn } from './content_pack/flags.js';
+import { liveEvents } from './content_pack/registry.js';
+import { curseDisclosureHtml, itemTraitTagsHtml } from './content_pack/curse.js';
+import {
+  renderFilterBar, renderEquipmentPanel, renderSkillsPanel, renderRelicsPanel,
+  renderEventsPanel, defaultFilters,
+} from './compendium.js';
+import { noteDiscovery } from './compendium_seen.js';
 import { applyTagOutcomeMods, applySparkleOutcomeMods } from './data/eventtags.js';
 import { loadMeta, saveMeta, upgradeRank, award, UPGRADES, ACHIEVEMENTS, newRun, saveRun, loadRun, clearRun, runRng, rollStart, startDescriptor, awakenMonolith, fateGrowthBoost, fateGrowthPct, fateGrowthPctOne, randomRaceId, randomClassId, unlockedCosmetics, climberNameHtml, resetSanctumUpgrades, noteCallings, getChoiceOutcomeHints, setChoiceOutcomeHints } from './state.js';
 import {
@@ -554,35 +563,17 @@ function debugScreen({ debug = false } = {}) {
     </div>`;
   }).join('');
 
-  // skills grouped by class
-  const skillClasses = [...new Set(Object.values(SKILLS).map(s => s.class))];
-  const skillHtml = skillClasses.map(cls => {
-    const list = Object.values(SKILLS).filter(s => {
-      if (s.class !== cls) return false;
-      if (debug) return true;
-      if (cls === 'universal' || cls === 'special') return true;
-      const parent = CLASSES[cls];
-      if (!parent || !callingUnlocked(parent)) return false;
-      return !secretSkillIds.has(s.id);
-    });
-    if (!list.length) return '';
-    const label = CLASSES[cls]?.name || (cls === 'universal' ? 'Universal' : cls === 'special' ? 'Exclusive / Drop' : cls);
-    return `<div class="dbg-group"><h4>${label} <span class="dbg-dim">(${list.length})</span></h4>
-      ${list.map(s => `<div class="dbg-row"><b>${s.name}</b> <span class="tag">${s.cost || 0}${s.charge ? ' +' + s.charge + '⚡' : ''}</span> <span class="tag">${s.target}</span>${s.power ? ` <span class="dbg-dim">${s.power}% ${s.stat}</span>` : ''}<div class="dbg-dim">${s.desc}</div></div>`).join('')}
-    </div>`;
-  }).join('');
-
-  // equipment by slot (+ class/exclusive tags)
-  const slots = ['weapon', 'helmet', 'chest', 'legs', 'boots', 'accessory'];
-  const equipHtml = slots.map(sl => {
-    const list = ALL_EQUIPMENT.filter(i => i.slot === sl);
-    return `<div class="dbg-group"><h4>${sl} <span class="dbg-dim">(${list.length})</span></h4>
-      ${list.map(i => `<div class="dbg-row">${itemIconHtml(i.id, 26)}<b class="${rarityClass(i.rarity)}">${i.name}</b> <span class="tag ${rarityClass(i.rarity)}">${i.rarity}</span>${i.wtype ? ` <span class="tag">${i.wtype}</span>` : ''}${i.exclusive ? ' <span class="tag" style="color:var(--gold)">exclusive</span>' : ''}${i.unique ? ' <span class="tag">unique</span>' : ''}${i.wrld ? ' <span class="tag">wrld</span>' : ''}<div class="dbg-dim">${i.desc}</div></div>`).join('')}
-    </div>`;
-  }).join('');
-
-  const relicHtml = RELICS.map(r => `<div class="dbg-row"><b class="${rarityClass(r.rarity)}">${r.name}</b> <span class="tag ${rarityClass(r.rarity)}">${r.rarity}</span><div class="dbg-dim">${r.desc}</div></div>`).join('');
-  const consHtml = CONSUMABLES.map(c => `<div class="dbg-row">${itemIconHtml(c.id, 24)}<b>${c.name}</b> <span class="tag ${rarityClass(c.rarity)}">${c.rarity}</span><div class="dbg-dim">${c.desc}</div></div>`).join('');
+  const compCtx = {
+    debug,
+    packOn: isPackOn(),
+    callingUnlocked,
+    secretSkillIds,
+    unlockedClasses: meta.unlockedClasses || [],
+    knownBloodlines: run?.raceId ? [run.raceId] : [],
+    run,
+  };
+  const iconHtml = id => itemIconHtml(id, 26);
+  const filters = defaultFilters();
 
   // enemies by biome + wandering + bosses, with sprites (artId when present)
   // Thumb box is 72×72 — pass the same edge so sprites fit inside, not combat scale.
@@ -619,7 +610,7 @@ function debugScreen({ debug = false } = {}) {
   const signed = n => (n > 0 ? '+' : '') + n;
   const pct = n => signed(Math.round(n * 100)) + '%';
   const itemName = id => itemById(id)?.name || id;
-  const skillName = id => SKILLS[id]?.name || id;
+  const skillName = id => skillById(id)?.name || id;
 
   const formatReq = req => {
     if (!req) return '';
@@ -728,7 +719,7 @@ function debugScreen({ debug = false } = {}) {
   };
 
   const eventHtml = Object.keys(CATEGORY_META).map(cat => {
-    const list = EVENTS.filter(e => (e.category || 'unknown') === cat);
+    const list = liveEvents(EVENTS).filter(e => (e.category || 'unknown') === cat);
     if (!list.length) return '';
     const meta = CATEGORY_META[cat];
     return `<details class="dbg-group dbg-collapse">
@@ -784,38 +775,74 @@ function debugScreen({ debug = false } = {}) {
   const scr = el(`<div class="screen dbg-screen">
     <div class="select-header"><h2>${debug ? 'Compendium / Debug' : 'Compendium'}</h2><p>${debug
       ? 'Every class, technique, relic, item, enemy, boss, NPC, and event in the tower.'
-      : 'Callings, techniques, relics, and creatures of the tower. Hidden paths stay hidden.'}</p></div>
+      : 'Callings, techniques, relics, and creatures of the tower. Hidden paths stay hidden. Cursed gear is a trait, not a rarity.'}</p></div>
     <div style="text-align:center;margin-bottom:12px"><button class="btn small" id="dbg-back">← Title</button></div>
     <div class="dbg-tabs">
       <button class="btn small primary" data-tab="classes">Classes</button>
       <button class="btn small" data-tab="skills">Techniques</button>
       <button class="btn small" data-tab="equip">Equipment</button>
       <button class="btn small" data-tab="relics">Relics &amp; Items</button>
+      <button class="btn small" data-tab="events">Events</button>
       <button class="btn small" data-tab="enemies">Bestiary</button>
       <button class="btn small" data-tab="npcs">NPCs</button>
-      ${debug ? '<button class="btn small" data-tab="events">Events</button><button class="btn small" data-tab="world">World</button>' : ''}
+      ${debug ? '<button class="btn small" data-tab="world">World</button>' : ''}
     </div>
+    <div id="dbg-filter-host">${renderFilterBar(filters)}</div>
     <div class="dbg-panel" id="dbg-classes"><div class="dbg-grid">${classCards}</div></div>
-    <div class="dbg-panel" id="dbg-skills" style="display:none">${skillHtml}</div>
-    <div class="dbg-panel" id="dbg-equip" style="display:none">${equipHtml}</div>
-    <div class="dbg-panel" id="dbg-relics" style="display:none"><div class="dbg-group"><h4>Relics (${RELICS.length})</h4>${relicHtml}</div><div class="dbg-group"><h4>Consumables (${CONSUMABLES.length})</h4>${consHtml}</div></div>
+    <div class="dbg-panel" id="dbg-skills" style="display:none"></div>
+    <div class="dbg-panel" id="dbg-equip" style="display:none"></div>
+    <div class="dbg-panel" id="dbg-relics" style="display:none"></div>
+    <div class="dbg-panel" id="dbg-events" style="display:none"></div>
     <div class="dbg-panel" id="dbg-enemies" style="display:none">${enemyHtml}${wanderHtml}${bossHtml}</div>
     <div class="dbg-panel" id="dbg-npcs" style="display:none">
       <div class="dbg-group"><h4>NPC Encounters</h4><div class="dbg-grid">${npcHtml}</div></div>
       <div class="dbg-group"><h4>Farmstead faces</h4><div class="dbg-enemy-grid">${farmerStrip}</div></div>
       <div class="dbg-group"><h4>The Old Man</h4><div class="dbg-enemy-grid">${oldmanStrip}</div></div>
     </div>
-    ${debug ? `<div class="dbg-panel" id="dbg-events" style="display:none">${eventHtml}</div>
-    <div class="dbg-panel" id="dbg-world" style="display:none">${worldDebugHtml()}</div>` : ''}
+    ${debug ? `<div class="dbg-panel" id="dbg-world" style="display:none">${worldDebugHtml()}</div>` : ''}
   </div>`);
   app.appendChild(scr);
-  const panels = { classes: 'dbg-classes', skills: 'dbg-skills', equip: 'dbg-equip', relics: 'dbg-relics', enemies: 'dbg-enemies', npcs: 'dbg-npcs' };
-  if (debug) { panels.events = 'dbg-events'; panels.world = 'dbg-world'; }
+  const paintCatalog = () => {
+    document.getElementById('dbg-skills').innerHTML = renderSkillsPanel(compCtx, filters);
+    document.getElementById('dbg-equip').innerHTML = renderEquipmentPanel(compCtx, filters, iconHtml);
+    document.getElementById('dbg-relics').innerHTML = renderRelicsPanel(compCtx, filters, iconHtml);
+    const eventsBody = renderEventsPanel(compCtx, filters);
+    document.getElementById('dbg-events').innerHTML = debug
+      ? `${eventsBody}<div class="dbg-group"><h4>Authored dump</h4>${eventHtml}</div>`
+      : eventsBody;
+    scr.querySelectorAll('[data-comp-filter]').forEach(b => {
+      b.classList.toggle('primary', filters[b.dataset.compFilter] === b.dataset.compValue);
+    });
+  };
+  paintCatalog();
+  const host = scr.querySelector('#dbg-filter-host');
+  host.addEventListener('click', e => {
+    const btn = e.target.closest('[data-comp-filter]');
+    if (!btn) return;
+    SFX.click();
+    filters[btn.dataset.compFilter] = btn.dataset.compValue;
+    paintCatalog();
+  });
+  host.addEventListener('input', e => {
+    if (e.target?.matches?.('[data-comp-search]')) {
+      filters.q = e.target.value;
+      paintCatalog();
+    }
+  });
+  const panels = {
+    classes: 'dbg-classes', skills: 'dbg-skills', equip: 'dbg-equip', relics: 'dbg-relics',
+    events: 'dbg-events', enemies: 'dbg-enemies', npcs: 'dbg-npcs',
+  };
+  if (debug) panels.world = 'dbg-world';
+  const catalogTabs = new Set(['skills', 'equip', 'relics', 'events']);
+  const filterHost = scr.querySelector('#dbg-filter-host');
   scr.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => {
     SFX.click();
     scr.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('primary', x === b));
     for (const [tab, id] of Object.entries(panels)) document.getElementById(id).style.display = tab === b.dataset.tab ? '' : 'none';
+    filterHost.style.display = catalogTabs.has(b.dataset.tab) ? '' : 'none';
   });
+  filterHost.style.display = 'none';
   scr.querySelector('#dbg-back').onclick = () => { SFX.click(); endInspectSession(); titleScreen(); };
   if (debug) bindWorldPoke();
 }
@@ -2523,14 +2550,14 @@ async function resumePending(stage, p) {
     return renderTravelMap(stage, p.cards, null, travelCtx());
   }
   if (p.kind === 'event' && p.eventId) {
-    const ev = presentEvent(EVENTS.find(e => e.id === p.eventId), run);
+    const ev = presentEvent(findEvent(p.eventId), run);
     if (ev) {
       run.eventSparkle = !!p.sparkle;
       return renderEventCard(stage, ev);
     }
   }
   if (p.kind === 'shop' && p.eventId) {
-    const ev = presentEvent(EVENTS.find(e => e.id === p.eventId) || { id: p.eventId, title: 'Merchant', shop: true }, run);
+    const ev = presentEvent(findEvent(p.eventId) || { id: p.eventId, title: 'Merchant', shop: true }, run);
     return shopScreen(stage, ev, { resumeStock: p.stock || null });
   }
   if (p.kind === 'combat' && p.enemies?.length) {
@@ -2753,13 +2780,13 @@ function partnerSheetModal(partnerId) {
         <div class="sheet-section">
           <h4>Equipped</h4>
           ${gear.length ? gear.map(g => `
-            <div class="inv-item"><div><div class="item-name ${rarityClass(g.rarity)}">${g.name}</div>
-            <div class="item-desc">${g.desc || ''}</div></div>
+            <div class="inv-item"><div><div class="item-name ${rarityClass(g.rarity)}">${g.name} ${itemTraitTagsHtml(g)}</div>
+            <div class="item-desc">${g.desc || ''}</div>${curseDisclosureHtml(g, run)}</div>
             <span class="tag slot-tag">${g.slot || ''}</span></div>`).join('') : '<div style="color:var(--ink-faint);font-size:14px">Nothing equipped.</div>'}
           <h4 style="margin-top:14px">Pack (preview)</h4>
           ${pack.length ? pack.map(g => `
-            <div class="inv-item"><div><div class="item-name ${rarityClass(g.rarity)}">${g.name}</div>
-            <div class="item-desc">${g.desc || ''}</div></div></div>`).join('') : '<div style="color:var(--ink-faint);font-size:14px">Empty pack.</div>'}
+            <div class="inv-item"><div><div class="item-name ${rarityClass(g.rarity)}">${g.name} ${itemTraitTagsHtml(g)}</div>
+            <div class="item-desc">${g.desc || ''}</div>${curseDisclosureHtml(g, run)}</div></div>`).join('') : '<div style="color:var(--ink-faint);font-size:14px">Empty pack.</div>'}
         </div>
       </div>
       <div class="divider"></div>
@@ -2862,7 +2889,7 @@ function resolveCard(stage, card, cardIndex = null) {
     }
     return encounterFloor(stage, card.enemies, card.hpMult || 1);
   }
-  const ev = presentEvent(EVENTS.find(e => e.id === card.eventId), run);
+  const ev = presentEvent(findEvent(card.eventId), run);
   run.seenEvents.push(ev.id);
   run.eventSparkle = !!card.sparkle;
   noteEventTags(ev);
@@ -3119,17 +3146,19 @@ async function applyRewardOption(opt, lines) {
   if (itemId) {
     const it = itemById(itemId);
     if (it && it.slot) await offerEquipment(it, lines);
-    else if (it) { run.consumables.push(it.id); lines.push({ text: `Received: ${it.name}`, cls: 'item' }); }
+    else if (it) { run.consumables.push(it.id); noteDiscovery(it.id); lines.push({ text: `Received: ${it.name}`, cls: 'item' }); }
   }
-  if (skillId && SKILLS[skillId]) {
+  if (skillId && skillById(skillId)) {
+    const sk = skillById(skillId);
+    noteDiscovery(skillId);
     if (!run.knownSkills.includes(skillId)) run.knownSkills.push(skillId);
-    lines.push({ text: `Technique learned: ${SKILLS[skillId].name} — ${SKILLS[skillId].desc}`, cls: 'item' });
-    await maybeEquipSkill(SKILLS[skillId]);
+    lines.push({ text: `Technique learned: ${sk.name} — ${sk.desc}`, cls: 'item' });
+    await maybeEquipSkill(sk);
     SFX.evolve();
   }
   if (relicId) {
     const r = itemById(relicId) || rollRelic(runRng(run), run.relics);
-    if (r && !run.relics.includes(r.id)) { run.relics.push(r.id); lines.push({ text: `Relic: ${r.name}`, cls: 'item' }); SFX.unlock(); }
+    if (r && !run.relics.includes(r.id)) { run.relics.push(r.id); noteDiscovery(r.id); lines.push({ text: `Relic: ${r.name}`, cls: 'item' }); SFX.unlock(); }
   }
 }
 
@@ -3141,10 +3170,10 @@ async function pickSpoilsOption(reward, options, skillCost) {
     const pool = affordable.length ? affordable : options;
     return pool.reduce((best, op) => {
       const score = op.kind === 'skill' || op.skill
-        ? skillAutoScore(SKILLS[op.kind === 'skill' ? op.id : op.skill])
+        ? skillAutoScore(skillById(op.kind === 'skill' ? op.id : op.skill))
         : gearScore(itemById(op.id));
       const bestScore = best.kind === 'skill' || best.skill
-        ? skillAutoScore(SKILLS[best.kind === 'skill' ? best.id : best.skill])
+        ? skillAutoScore(skillById(best.kind === 'skill' ? best.id : best.skill))
         : gearScore(itemById(best.id));
       return score > bestScore ? op : best;
     }, pool[0]);
@@ -3152,8 +3181,8 @@ async function pickSpoilsOption(reward, options, skillCost) {
   await modalCustom((m, close) => {
     m.innerHTML = `<h3>Spoils</h3><p class="modal-sub">${reward?.chooseLabel || 'Take one:'}</p>
       <div class="pick-grid">${options.map((op, i) => {
-        const nm = op.kind === 'skill' ? SKILLS[op.id]?.name : itemById(op.id)?.name;
-        const desc = op.kind === 'skill' ? SKILLS[op.id]?.desc : itemById(op.id)?.desc;
+        const nm = op.kind === 'skill' ? skillById(op.id)?.name : itemById(op.id)?.name;
+        const desc = op.kind === 'skill' ? skillById(op.id)?.desc : itemById(op.id)?.desc;
         const cost = skillCost(op);
         const short = anyAffordable && cost > run.gold;
         return `<button class="pick-option" data-i="${i}" ${short ? 'disabled' : ''}>
@@ -3459,7 +3488,7 @@ async function coopFloor(stage) {
   if (content.type === 'cards') {
     return coopCardChoice(stage, content.cards);
   }
-  const ev = presentEvent(EVENTS.find(e => e.id === content.eventId) || EVENTS.find(e => e.id === 'campfire'), run);
+  const ev = presentEvent(findEvent(content.eventId) || EVENTS.find(e => e.id === 'campfire'), run);
   if (!run.seenEvents.includes(ev.id)) {
     run.seenEvents.push(ev.id);
     noteEventTags(ev);
@@ -3707,8 +3736,15 @@ function rehydrateEnemies(list) {
 /* ============================================================
    EVENT CARDS
    ============================================================ */
-function reqMet(req) {
-  return reqMetOf(run, req);
+function eventIdentityCtx(ev) {
+  const party = (typeof coopS !== 'undefined' && coopS && !coopS.alone)
+    ? [...(coopS.partners?.values?.() || [])].map(p => ({ classId: p.classId, raceId: p.raceId }))
+    : [];
+  return { identityScope: ev?.identityScope || 'actor', party };
+}
+
+function reqMet(req, ev) {
+  return reqMetOf(run, req, eventIdentityCtx(ev));
 }
 
 const TYPE_LABEL = { story: 'STORY', risk: 'RISK', blessing: 'BLESSING', treasure: 'TREASURE', rest: 'RESPITE', shop: 'MERCHANT' };
@@ -3734,7 +3770,7 @@ function eventHasCombatPath(ev) {
 
 function eventChoicesForRender(ev) {
   const choices = [...(ev.choices || [])];
-  if (choices.length && choices.every(c => !reqMet(c.req).ok)) {
+  if (choices.length && choices.every(c => !reqMet(c.req, ev).ok)) {
     choices.push({
       label: 'Move on',
       hint: 'leave empty-handed',
@@ -3786,7 +3822,7 @@ function renderEventCard(stage, ev, { originIntro = false } = {}) {
   const box = document.getElementById('choices');
   const choices = eventChoicesForRender(ev);
   choices.forEach(choice => {
-    const r = reqMet(choice.req);
+    const r = reqMet(choice.req, ev);
     const btn = el(`<button class="${choiceBtnClass(choice.label, r.ok ? '' : 'locked')}" ${r.ok ? '' : 'disabled'}>
       <span class="choice-label">${choice.label}</span>
       ${choiceHintSpan(r.ok ? (choice.hint || '') : `🔒 ${r.why}`, { req: !!choice.req, keep: !r.ok })}
@@ -3933,7 +3969,7 @@ function coopEventChoice(stage, ev) {
   }));
 
   choices.forEach((choice, idx) => {
-    const r = reqMet(choice.req);
+    const r = reqMet(choice.req, ev);
     const btn = el(`<button class="${choiceBtnClass(choice.label, r.ok ? '' : 'locked')}" data-ev-idx="${idx}" ${r.ok ? '' : 'disabled'}>
       <span class="choice-label">${choice.label}</span>
       ${choiceHintSpan(r.ok ? (choice.hint || '') : `🔒 ${r.why}`, { req: !!choice.req, keep: !r.ok })}
@@ -4395,8 +4431,8 @@ async function applyOutcomeCoop(stage, ev, o, rng, lines, opts = {}) {
   }
   if (o.item) {
     const item = resolveItem(run, o.item) || itemById(o.item);
-    if (item.slot) await offerEquipment(item, lines);
-    else { run.consumables.push(item.id); lines.push({ text: `Received: ${item.name}`, cls: 'item' }); }
+    if (!item) lines.push({ text: 'The promised object is missing from this timeline.', cls: 'bad' });
+    else await grantCatalogItem(run, item, lines, { onEquip: (it, ls) => offerEquipment(it, ls) });
   }
   if (o.relicRoll) {
     const r = rollRelic(rng, run.relics, Math.floor(d.lk / 3) + (sparkle ? (o._sparkleLuck || 5) : 0));
@@ -4417,8 +4453,8 @@ async function applyOutcomeCoop(stage, ev, o, rng, lines, opts = {}) {
   if (o.learnAoe) {
     const aoeId = CLASSES[run.classId].aoeSkill;
     if (aoeId && !run.knownSkills.includes(aoeId)) {
-      lines.push({ text: `The technique takes root: ${SKILLS[aoeId].name}.`, cls: 'item' });
-      await maybeEquipSkill(SKILLS[aoeId]);
+      lines.push({ text: `The technique takes root: ${skillById(aoeId).name}.`, cls: 'item' });
+      await maybeEquipSkill(skillById(aoeId));
     } else {
       lines.push({ text: 'The lesson sharpens what you already know.', cls: 'good' });
       run.xp += 20;
@@ -4902,7 +4938,9 @@ function gearCard(item, label) {
     ${itemIconHtml(item.id, 44)}
     <div class="gc-name ${rarityClass(item.rarity)}">${item.name}</div>
     <div class="gc-rarity tag ${rarityClass(item.rarity)}">${item.rarity} ${item.slot}${item.wtype ? ' · ' + item.wtype : ''}</div>
+    ${itemTraitTagsHtml(item)}
     <div class="gc-desc">${item.desc}</div>
+    ${curseDisclosureHtml(item, run)}
     ${item.wtype && !allowedWeaponTypes(run).includes(item.wtype) ? '<div class="gc-warn">⚠ Incompatible with your class — equipping it disables all techniques except Strike and Guard.</div>' : ''}
   </div>`;
 }
@@ -5080,6 +5118,7 @@ async function chooseEquipSlot(item) {
 }
 
 async function offerEquipment(item, lines) {
+  if (item?.id) noteDiscovery(item.baseId || item.id);
   if (isAutoPlay()) {
     autoPlayTakeEquipment(item, lines);
     return;
@@ -5433,7 +5472,7 @@ async function swapSkillModal(newSkill) {
     let worstI = 0;
     let worst = Infinity;
     run.skills.forEach((id, i) => {
-      const sc = skillAutoScore(SKILLS[id]);
+      const sc = skillAutoScore(skillById(id));
       if (sc < worst) { worst = sc; worstI = i; }
     });
     if (skillAutoScore(newSkill) > worst) {
@@ -5456,7 +5495,7 @@ async function swapSkillModal(newSkill) {
           <div class="po-desc">Fill an open slot (${run.skills.length + 1}/${cap}).</div>
         </button>` : ''}
         ${run.skills.map((id, i) => {
-          const s = SKILLS[id];
+          const s = skillById(id);
           return `<button class="pick-option" data-i="${i}">
             <div class="po-name">Replace ${s.name}</div>
             <div class="po-cost">${skillCostTip(s)} · ${skillEffectTip(s)}</div>
@@ -5498,9 +5537,14 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
   const visit = openShopVisit(stock, discount);
 
   function shopTags(s) {
-    if (s.kind !== 'equip') return '';
-    if (!itemIncompatibleForClass(s.item, run.classId)) return '';
-    return `<div class="si-tags"><span class="si-tag incompatible">⚠ incompatible</span></div>`;
+    const bits = [];
+    if (s.kind === 'equip' && itemIncompatibleForClass(s.item, run.classId)) {
+      bits.push('<span class="si-tag incompatible">⚠ incompatible</span>');
+    }
+    const traits = itemTraitTagsHtml(s.item);
+    if (traits) bits.push(traits);
+    if (!bits.length) return '';
+    return `<div class="si-tags">${bits.join('')}</div>`;
   }
 
   function refreshShop() {
@@ -5523,7 +5567,7 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
             ${visit.stock.map((s, i) => `
               <div class="shop-item">
                 ${itemIconHtml(s.item.id, 32)}
-                <div class="si-info"><div class="si-name ${rarityClass(s.item.rarity)}">${s.item.name}</div><div class="si-desc">${s.item.desc}</div>${shopTags(s)}</div>
+                <div class="si-info"><div class="si-name ${rarityClass(s.item.rarity)}">${s.item.name}</div><div class="si-desc">${s.item.desc}</div>${curseDisclosureHtml(s.item, run)}${shopTags(s)}</div>
                 <span class="si-price">🪙 ${view.listings[i].price}</span>
                 <button class="btn small ${view.listings[i].canBuy ? 'primary' : ''}" data-i="${i}" ${view.listings[i].disabled ? 'disabled' : ''}>Buy</button>
               </div>`).join('')}
@@ -5673,8 +5717,8 @@ function characterSheet({ locked = false } = {}) {
               const packBtn = (!locked && it)
                 ? `<button class="btn small ghost" data-unequip="${slot}">To pack</button>`
                 : '';
-              return `<div class="inv-item">${it ? itemIconHtml(it.baseId || it.id, 30) : ''}<div><div class="item-name ${it ? rarityClass(it.rarity) : ''}">${it ? it.name : `<span style="color:var(--ink-faint)">— empty —</span>`}</div>
-                ${it ? `<div class="item-desc">${it.desc}</div>` : ''}</div>
+              return `<div class="inv-item">${it ? itemIconHtml(it.baseId || it.id, 30) : ''}<div><div class="item-name ${it ? rarityClass(it.rarity) : ''}">${it ? it.name : `<span style="color:var(--ink-faint)">— empty —</span>`} ${it ? itemTraitTagsHtml(it) : ''}</div>
+                ${it ? `<div class="item-desc">${it.desc}</div>${curseDisclosureHtml(it, run)}` : ''}</div>
                 <div class="inv-actions">${packBtn}<span class="tag slot-tag">${label}</span></div></div>`;
             }).join('')}
             ${run.weaponBonus ? `<div style="font-size:13px;color:var(--ink-dim)">Forge-honed: +${run.weaponBonus} weapon damage</div>` : ''}
@@ -5683,7 +5727,7 @@ function characterSheet({ locked = false } = {}) {
             <h4>Techniques (${run.skills.length}/${skillCapacity(run)} + Strike &amp; Guard)</h4>
             <p class="modal-sub" style="margin-top:-4px;margin-bottom:8px">Use ↑↓ to rearrange battle order.</p>
             ${run.skills.map((id, idx) => {
-              const s = SKILLS[id];
+              const s = skillById(id);
               const reorder = !locked ? `
                 <div class="inv-actions skill-order">
                   <button class="btn small ghost" data-skill-up="${idx}" ${idx === 0 ? 'disabled' : ''} title="Move up">↑</button>
@@ -5700,7 +5744,7 @@ function characterSheet({ locked = false } = {}) {
             ${!locked && run.knownSkills.filter(id => !run.skills.includes(id)).length ? `
               <h4 style="margin-top:12px">Reserve</h4>
               ${run.knownSkills.filter(id => !run.skills.includes(id)).map(id => {
-                const s = SKILLS[id];
+                const s = skillById(id);
                 const canAdd = run.skills.length < skillCapacity(run);
                 return `
                 <div class="inv-item"><div><div class="item-name">${s.name}</div>
@@ -5717,7 +5761,7 @@ function characterSheet({ locked = false } = {}) {
                   <button class="btn small" data-equip="${i}">Equip</button>
                   <button class="btn small ghost" data-sellinv="${i}">Sell ${sellGold(it, { from: 'inventory' })}g</button>
                 </div>`;
-              return `<div class="inv-item">${itemIconHtml(it.baseId || it.id, 30)}<div><div class="item-name ${rarityClass(it.rarity)}">${it.name}</div><div class="item-desc">${it.desc}</div></div>
+              return `<div class="inv-item">${itemIconHtml(it.baseId || it.id, 30)}<div><div class="item-name ${rarityClass(it.rarity)}">${it.name} ${itemTraitTagsHtml(it)}</div><div class="item-desc">${it.desc}</div>${curseDisclosureHtml(it, run)}</div>
                 ${actions}</div>`;
             }).join('') : '<div style="color:var(--ink-faint);font-size:14px">No spare gear.</div>'}
             <h4 style="margin-top:14px">Consumables</h4>
@@ -5725,11 +5769,11 @@ function characterSheet({ locked = false } = {}) {
               const c = itemById(id);
               const n = run.consumables.filter(x => x === id).length;
               const useBtn = locked ? '' : `<button class="btn small" data-use="${id}">Use</button>`;
-              return `<div class="inv-item">${itemIconHtml(c.id, 28)}<div><div class="item-name">${c.name} ×${n}</div><div class="item-desc">${c.desc}</div></div>
+              return `<div class="inv-item">${itemIconHtml(c.id, 28)}<div><div class="item-name">${c.name} ×${n} ${itemTraitTagsHtml(c)}</div><div class="item-desc">${c.desc}</div>${curseDisclosureHtml(c, run)}</div>
                 ${useBtn}</div>`;
             }).join('') : '<div style="color:var(--ink-faint);font-size:14px">Empty pockets.</div>'}
             <h4 style="margin-top:14px">Relics</h4>
-            <div class="relic-row">${run.relics.length ? relicItems(run).map(r => `<span class="relic-chip" title="${r.desc}">${r.name}</span>`).join('') : '<span style="color:var(--ink-faint);font-size:14px">None yet.</span>'}</div>
+            <div class="relic-row">${run.relics.length ? relicItems(run).map(r => `<span class="relic-chip" title="${r.desc}">${r.name} ${itemTraitTagsHtml(r)}</span>`).join('') : '<span style="color:var(--ink-faint);font-size:14px">None yet.</span>'}</div>
             ${run.sigils.length ? `<h4 style="margin-top:14px">Sigils</h4><div class="relic-row">${run.sigils.map(s => `<span class="relic-chip" style="border-color:var(--gold)">✦ Sigil of ${s[0].toUpperCase() + s.slice(1)}</span>`).join('')}</div>` : ''}
           </div>
         </div>
@@ -5778,7 +5822,7 @@ function characterSheet({ locked = false } = {}) {
         SFX.heal(); saveRun(run); renderHud(); render();
       });
       m.querySelectorAll('[data-swap]').forEach(b => b.onclick = async () => {
-        const sk = SKILLS[b.dataset.swap];
+        const sk = skillById(b.dataset.swap);
         if (!sk) return;
         if (run.skills.length < skillCapacity(run) && !run.skills.includes(sk.id)) {
           run.skills.push(sk.id);
@@ -6121,7 +6165,7 @@ function showClimbSummary(summary, { shards, wasCoop, myName, isWin, fromHistory
   };
 
   const techChips = (summary.skills || []).map(id => {
-    const sk = SKILLS[id];
+    const sk = skillById(id);
     return tipCard(sk?.name || id, sk?.desc || '', 'cs-tech-chip');
   }).join('') || '<span class="cs-muted">—</span>';
 

@@ -1,7 +1,7 @@
 // Live combat payout, victory aftermath, grantReward, boss hoard.
 // Callers own UI. Do not invent extra loot (no grantCombatLoot).
 
-import { SKILLS } from './data/skills.js';
+import { SKILLS, skillById } from './data/skills.js';
 import {
   CONSUMABLES, itemById, resolveItem, rollEquipment, rollRelic, rollUnique, rollWrld,
   npcDuelLoot, markWrldClaimed, sellGold,
@@ -14,6 +14,7 @@ import {
 import { runRng } from './state.js';
 import { biomeTier } from './biome_tier.js';
 import { earnGold, spendGold } from './economy.js';
+import { noteDiscovery } from './compendium_seen.js';
 
 export function computeCombatPayout(run, rng, enemies, mod = {}) {
   const d = derived(run);
@@ -63,18 +64,22 @@ async function applyRewardOption(run, opt, lines, hooks) {
     if (it && it.slot) await hooks.onItem?.(it, lines);
     else if (it) {
       run.consumables.push(it.id);
+      noteDiscovery(it.id);
       lines.push({ text: `Received: ${it.name}`, cls: 'item' });
     }
   }
-  if (skillId && SKILLS[skillId]) {
+  if (skillId && skillById(skillId)) {
+    const sk = skillById(skillId);
+    noteDiscovery(skillId);
     if (!run.knownSkills.includes(skillId)) run.knownSkills.push(skillId);
-    lines.push({ text: `Technique learned: ${SKILLS[skillId].name} — ${SKILLS[skillId].desc}`, cls: 'item' });
-    await hooks.onLearnSkill?.(SKILLS[skillId], lines);
+    lines.push({ text: `Technique learned: ${sk.name} — ${sk.desc}`, cls: 'item' });
+    await hooks.onLearnSkill?.(sk, lines);
   }
   if (relicId) {
     const r = itemById(relicId) || rollRelic(hooks.rng, run.relics);
     if (r && !run.relics.includes(r.id)) {
       run.relics.push(r.id);
+      noteDiscovery(r.id);
       lines.push({ text: `Relic: ${r.name}`, cls: 'item' });
     }
   }

@@ -19,6 +19,8 @@ import { mimicSpec } from './data/enemies.js';
 import { pickEventEnemyIds, specsFromEnemyIds, maybeEscortNpcDuel, buildEventFightEnemies } from './encounter.js';
 import { earnGold, spendGold, applyGoldDelta } from './economy.js';
 import { applyOfferingOutcome, defaultOfferingPick } from './offering.js';
+import { grantCatalogItem } from './content_pack/grants.js';
+import { packOnEventResolve } from './content_pack/world_bind.js';
 
 const STAT_ROLL = { str: 'Strength', dex: 'Agility', int: 'Intellect', wis: 'Wisdom', lk: 'Luck' };
 
@@ -86,7 +88,10 @@ export async function applyEventOutcome(run, ev, o, rng, hooks = {}) {
     lines.push({ text: 'The tower decides…', cls: 'item' });
   }
 
-  if (o.escape) return { kind: 'escape', lines };
+  if (o.escape) {
+    packOnEventResolve(run, ev, o, rng);
+    return { kind: 'escape', lines };
+  }
 
   if (sparkle) {
     lines.push({ text: '✦ The path shimmered — fortune leans your way.', cls: 'item' });
@@ -118,6 +123,7 @@ export async function applyEventOutcome(run, ev, o, rng, hooks = {}) {
     }
     if (isMimic) {
       rng.advance();
+      packOnEventResolve(run, ev, o, rng);
       const mimic = mimicSpec(run.floor);
       const foes = buildEventFightEnemies(run, [mimic], { partySize: 1 });
       return {
@@ -284,8 +290,8 @@ export async function applyEventOutcome(run, ev, o, rng, hooks = {}) {
   }
   if (o.item) {
     const item = resolveItem(run, o.item) || itemById(o.item);
-    if (item.slot) await onItem(item, lines);
-    else { run.consumables.push(item.id); lines.push({ text: `Received: ${item.name}`, cls: 'item' }); }
+    if (!item) lines.push({ text: 'The promised object is missing from this timeline.', cls: 'bad' });
+    else await grantCatalogItem(run, item, lines, { onEquip: (it, ls) => onItem(it, ls) });
   }
   if (o.relicRoll) {
     const r = rollRelic(rng, run.relics, Math.floor(d.lk / 3) + (sparkle ? (o._sparkleLuck || 5) : 0));
@@ -372,10 +378,11 @@ export async function applyEventOutcome(run, ev, o, rng, hooks = {}) {
     return finalizeCombat(run, ev, o, rng, lines, ups, partySize, { alreadyAdvanced: false });
   }
 
-  return finishOutcome(run, o, lines, ups, { alreadyAdvanced: false, rng });
+  return finishOutcome(run, ev, o, lines, ups, { alreadyAdvanced: false, rng });
 }
 
-function finishOutcome(run, o, lines, ups, { alreadyAdvanced, rng }) {
+function finishOutcome(run, ev, o, lines, ups, { alreadyAdvanced, rng }) {
+  packOnEventResolve(run, ev, o, rng);
   if (!alreadyAdvanced && rng) rng.advance();
   if (run.hp <= 0) return { kind: 'dead', lines, ups };
   return { kind: 'done', lines, ups, coopTrade: !!o.coopTrade, originIntro: false };
@@ -391,6 +398,7 @@ function finalizeCombat(run, ev, o, rng, lines, ups, partySize, { alreadyAdvance
   const fightReward = o.combat.reward || o.combat.xp ? { ...(o.combat.reward || {}) } : null;
   if (fightReward && o.combat.xp) fightReward.xp = (fightReward.xp || 0) + o.combat.xp;
   if (!alreadyAdvanced) rng.advance();
+  packOnEventResolve(run, ev, o, rng);
   const foes = buildEventFightEnemies(run, specs, { partySize: 1 });
   return {
     kind: 'combat',

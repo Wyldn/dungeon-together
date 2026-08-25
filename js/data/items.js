@@ -7,6 +7,10 @@
 import { applyAffixes, finalizeLootItem } from './affixes.js';
 import { CLASSES } from './classes.js';
 import { CONFIG } from './config.js';
+import '../content_pack/bootstrap.js';
+import { packLookup, packEquipment } from '../content_pack/registry.js';
+import { isPackOn } from '../content_pack/flags.js';
+import { inOrdinaryLoot } from '../content_pack/acquisition.js';
 
 export const EQUIP_SLOTS = ['weapon', 'helmet', 'chest', 'legs', 'boots', 'accessory1', 'accessory2', 'accessory3'];
 
@@ -282,6 +286,7 @@ export function itemById(id, gearBag = null) {
   return ALL_EQUIPMENT.find(i => i.id === id)
     || RELICS.find(i => i.id === id)
     || CONSUMABLES.find(i => i.id === id)
+    || packLookup(id)
     || null;
 }
 
@@ -464,6 +469,11 @@ export function itemUsefulForClass(item, classId) {
   return cls.weapons.includes(item.wtype);
 }
 
+function lootEquipmentPool() {
+  if (!isPackOn()) return ALL_EQUIPMENT;
+  return ALL_EQUIPMENT.concat(packEquipment().filter(inOrdinaryLoot));
+}
+
 /**
  * Roll a base template, apply TDC-gated affixes, and optionally register
  * the instance on the run. Pass `{ floor, run, classId, usefulBias, slot,
@@ -480,6 +490,7 @@ export function rollEquipment(rng, tier, luckBonus = 0, opts = {}) {
   const wantWtype = opts.wtype || null;
   // event-exclusive + starter kit + UNIQUE + WRLD never surface in ordinary loot/shops
   const excludeIds = opts.excludeIds || [];
+  const catalog = lootEquipmentPool();
   const matches = (i, looseTier = false, useExclude = true) => {
     if (i.exclusive) return false;
     if (i.starter) return false;
@@ -491,11 +502,11 @@ export function rollEquipment(rng, tier, luckBonus = 0, opts = {}) {
     if (looseTier) return i.tier <= tier + 1;
     return i.tier <= tier && i.tier >= Math.max(1, tier - 1);
   };
-  let pool = ALL_EQUIPMENT.filter(i => matches(i));
-  if (!pool.length) pool = ALL_EQUIPMENT.filter(i => matches(i, true));
+  let pool = catalog.filter(i => matches(i));
+  if (!pool.length) pool = catalog.filter(i => matches(i, true));
   if (!pool.length && excludeIds.length) {
-    pool = ALL_EQUIPMENT.filter(i => matches(i, false, false));
-    if (!pool.length) pool = ALL_EQUIPMENT.filter(i => matches(i, true, false));
+    pool = catalog.filter(i => matches(i, false, false));
+    if (!pool.length) pool = catalog.filter(i => matches(i, true, false));
   }
   if (requireUseful) {
     const useful = pool.filter(i => itemUsefulForClass(i, classId));

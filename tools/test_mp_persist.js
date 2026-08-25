@@ -95,7 +95,7 @@ export async function runMpPersistTests(t) {
 
   {
     const built = buildCheckpoint({ runId: 'r-1', floor: 2, phase: 'floor-ready', seed: 9, shared: { cardResults: { 2: 1 } } });
-    t('buildCheckpoint stamps schema and revision', built.ok && built.checkpoint.schema === 1 && built.checkpoint.revision === 21);
+    t('buildCheckpoint stamps schema and revision', built.ok && built.checkpoint.schema === CHECKPOINT_SCHEMA && built.checkpoint.revision === 21);
     const older = buildCheckpoint({ runId: 'r-1', floor: 1, phase: 'floor-ready', seed: 9, shared: {} });
     const stale = validateCheckpoint(older.checkpoint, { current: built.checkpoint });
     t('stale revision is rejected', stale.ok === false && stale.code === 'stale');
@@ -308,6 +308,62 @@ export async function runMpPersistTests(t) {
     t('shop gold is not replayed on re-serialize',
       serializeClimber(ser.climber).climber.gold === goldAfter && ser.climber.gold === goldAfter);
     t('sold-out listing cannot fire twice', applyShopBuy(shopper, stock, 0, 0).ok === false);
+  }
+
+  {
+    const packed = climber('Ava', {
+      floor: 4,
+      gold: 80,
+      inventory: ['cp_cowards_first_sword', 'cp_last_bastion_helm'],
+      relics: ['cp_receipt_from_tomorrow', 'cp_thrones_blank_sheet'],
+      arts: ['cp_art_borrowed_mastery'],
+      knownSkills: ['slash', 'cp_gatebreaker_charge'],
+      skills: ['slash', 'cp_gatebreaker_charge'],
+      seenEvents: ['cp_backward_threshold', 'cp_mage_illegal_margin'],
+      packState: {
+        action: {}, turn: {}, combat: { summons: 1, echo: 1 },
+        floor: {}, biome: {},
+        run: { 'evo:cp_thrones_blank_sheet': 2, storedArchetype: 'skeleton', reservedShop: 40 },
+        permanent: {},
+      },
+    });
+    packed.compendiumSeen = ['should-not-travel'];
+    const ser = serializeClimber(packed);
+    t('pack checkpoint keeps cursed/set/relic/art ids', ser.ok
+      && ser.climber.inventory.includes('cp_cowards_first_sword')
+      && ser.climber.inventory.includes('cp_last_bastion_helm')
+      && ser.climber.relics.includes('cp_receipt_from_tomorrow')
+      && ser.climber.arts.includes('cp_art_borrowed_mastery'));
+    t('pack checkpoint keeps identity event ids the actor saw',
+      ser.ok && ser.climber.seenEvents.includes('cp_mage_illegal_margin'));
+    t('pack checkpoint keeps run-scoped evolution and receipt, drops combat echo/summon',
+      ser.ok
+      && ser.climber.packState.run['evo:cp_thrones_blank_sheet'] === 2
+      && ser.climber.packState.run.reservedShop === 40
+      && ser.climber.packState.run.storedArchetype === 'skeleton'
+      && !ser.climber.packState.combat);
+    t('pack checkpoint never copies Compendium discovery',
+      ser.ok && ser.climber.compendiumSeen == null
+      && !JSON.stringify(ser.climber).includes('dt_compendium_seen'));
+
+    const hubP = createPartyHub();
+    const pa = new MockWs();
+    const pb = new MockWs();
+    hubP.receive(pa, { t: 'create', name: 'Ava', token: 'ee'.repeat(16) });
+    const codeP = pa.last('room').code;
+    hubP.receive(pb, { t: 'join', code: codeP, name: 'Bo', token: 'ff'.repeat(16) });
+    hubP.receive(pa, { t: 'msg', data: { k: 'start' } });
+    const runP = pa.last('run').runId;
+    const builtP = buildCheckpoint({ runId: runP, floor: 4, phase: 'floor-ready', seed: 1, shared: {} });
+    hubP.receive(pa, { t: 'checkpoint', checkpoint: builtP.checkpoint, climber: ser.climber, revision: builtP.checkpoint.revision });
+    hubP.disconnect(pa);
+    const pa2 = new MockWs();
+    hubP.receive(pa2, { t: 'resume', code: codeP, token: 'ee'.repeat(16), name: 'Ava' });
+    const restored = pa2.last('resume-ok')?.climber;
+    t('pack checkpoint restores cursed gear and evolution after reconnect',
+      restored?.inventory?.includes('cp_cowards_first_sword')
+      && restored?.packState?.run?.['evo:cp_thrones_blank_sheet'] === 2);
+    t('restored climber still has no Compendium seen list', restored && restored.compendiumSeen == null);
   }
 
   {

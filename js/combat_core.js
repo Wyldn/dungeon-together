@@ -2,9 +2,16 @@
 // Browser Fight and headless simulation both execute these functions.
 // Do not reorder RNG calls. Do not retune numbers to match combat_sim.js.
 
-import { SKILLS } from './data/skills.js';
-import { CONSUMABLES, consumableCombatValue } from './data/items.js';
+import { SKILLS, skillById } from './data/skills.js';
+import { CONSUMABLES, consumableCombatValue, itemById } from './data/items.js';
 import { CONFIG } from './data/config.js';
+import {
+  packOnCombatStart, packOnCombatEnd, packOnTurnStart, packOnTurnEnd,
+  packOnGuard, packOnSkillUse, packOnConsumable, packModifyOutgoing, packAfterHit,
+  packEchoHit, packModifyIncoming, packTryDeathSave, packAllyStrikes,
+  packOnDamageTaken, packOnHeal, packOnIntentRevealed,
+  packOnMiss, packOnStatusApplied, packOnPhaseChange,
+} from './content_pack/combat_bind.js';
 import {
   enemyScale, softLevelDamage, partyOutgoingDmgMult, soloBossChargeForScale,
   soloBossSpecialDmgMult, f30SoloGateMults, f40SoloGateMults,
@@ -41,6 +48,9 @@ const DEFAULT_SUMMONS = {
   imp: { id: 'imp', name: 'Cinder Imp', glyph: '👺', hp: 26, atk: 11, def: 2, spd: 11, gold: [0, 0], xp: 5, burn: 0.25 },
   slime: { id: 'slime', name: 'Spawn Slime', glyph: '🟢', hp: 24, atk: 8, def: 1, spd: 4, gold: [0, 0], xp: 5 },
   rat: { id: 'rat', name: 'Sewer Rat', glyph: '🐀', hp: 18, atk: 7, def: 0, spd: 10, gold: [0, 0], xp: 4 },
+  wolf: { id: 'wolf', name: 'Bound Wolf', glyph: '🐺', hp: 22, atk: 9, def: 1, spd: 10, gold: [0, 0], xp: 4 },
+  spider: { id: 'spider', name: 'Bound Spider', glyph: '🕷️', hp: 20, atk: 8, def: 1, spd: 9, gold: [0, 0], xp: 4 },
+  bandit: { id: 'bandit', name: 'Shade Bandit', glyph: '🗡️', hp: 24, atk: 9, def: 2, spd: 8, gold: [0, 0], xp: 5 },
 };
 
 export function summonSpecFor(summonId) {
@@ -229,11 +239,13 @@ export function preparePlayerTurnStart(f) {
   f._turnPrepared = true;
   f._cdUsedThisTurn = f._cdUsedThisTurn || {};
   gainCharge(f, CONFIG.charge.gainPerTurn);
+  packOnTurnStart(f);
   return true;
 }
 
 export function completePlayerTurn(f) {
   tickPlayerCooldowns(f);
+  packOnTurnEnd(f);
   f._turnPrepared = false;
 }
 
@@ -284,6 +296,7 @@ export function consumeStanceIgnore(f) {
 export function notePlayerHpLoss(f, dmg) {
   f.damageTaken = (f.damageTaken || 0) + dmg;
   f._taken?.(dmg);
+  packOnDamageTaken(f, dmg);
   if (f.d().chargeOnHit) gainCharge(f, 1);
   const rate = CONFIG.identity?.viking?.furyPerDamage ?? 0.25;
   gainFury(f, Math.max(1, Math.round(dmg * rate)));
@@ -361,16 +374,16 @@ export function resolveEnemySpecial(f, e, special) {
 export function applyStatusRiders(f, r) {
   if (!r || !Object.keys(r).length) return;
   const st = f.player.statuses;
-  if (r.poison && !f.rng.chance(f.d().poisonResist)) { st.poison = r.poison; f.log('You are poisoned!', 'log-foe'); }
-  if (r.burn) { st.burn = r.burn; f.log('You are set ablaze!', 'log-foe'); }
-  if (r.freeze) { st.frozen = 1; f.log('You are frozen!', 'log-foe'); }
-  if (r.weaken) { st.weaken = r.weaken; f.log('You feel weakened!', 'log-foe'); }
-  if (r.hexed) { st.hexed = r.hexed; f.log('A hex settles on you!', 'log-foe'); }
-  if (r.frail) { st.frail = r.frail; f.log('You feel frail!', 'log-foe'); }
-  if (r.tormented) { st.tormented = r.tormented; f.log('Torment claws at you!', 'log-foe'); }
-  if (r.confused) { st.confused = r.confused; f.log('Your thoughts tangle!', 'log-foe'); }
-  if (r.lazy) { st.lazy = r.lazy; f.log('Your limbs grow heavy!', 'log-foe'); }
-  if (r.paralyze) { st.paralyzed = r.paralyze; f.log('Your nerves seize — paralysis!', 'log-foe'); }
+  if (r.poison && !f.rng.chance(f.d().poisonResist)) { st.poison = r.poison; f.log('You are poisoned!', 'log-foe'); packOnStatusApplied(f, 'poison'); }
+  if (r.burn) { st.burn = r.burn; f.log('You are set ablaze!', 'log-foe'); packOnStatusApplied(f, 'burn'); }
+  if (r.freeze) { st.frozen = 1; f.log('You are frozen!', 'log-foe'); packOnStatusApplied(f, 'frozen'); }
+  if (r.weaken) { st.weaken = r.weaken; f.log('You feel weakened!', 'log-foe'); packOnStatusApplied(f, 'weaken'); }
+  if (r.hexed) { st.hexed = r.hexed; f.log('A hex settles on you!', 'log-foe'); packOnStatusApplied(f, 'hexed'); }
+  if (r.frail) { st.frail = r.frail; f.log('You feel frail!', 'log-foe'); packOnStatusApplied(f, 'frail'); }
+  if (r.tormented) { st.tormented = r.tormented; f.log('Torment claws at you!', 'log-foe'); packOnStatusApplied(f, 'tormented'); }
+  if (r.confused) { st.confused = r.confused; f.log('Your thoughts tangle!', 'log-foe'); packOnStatusApplied(f, 'confused'); }
+  if (r.lazy) { st.lazy = r.lazy; f.log('Your limbs grow heavy!', 'log-foe'); packOnStatusApplied(f, 'lazy'); }
+  if (r.paralyze) { st.paralyzed = r.paralyze; f.log('Your nerves seize — paralysis!', 'log-foe'); packOnStatusApplied(f, 'stunned'); }
 }
 
 export function deathSaves(f) {
@@ -384,7 +397,9 @@ export function deathSaves(f) {
     f.usedDeathward = true;
     f.run.hp = 1;
     f.log('The Cracked Hourglass shatters — time stumbles, and you are spared. Barely.', 'log-sys');
+    return;
   }
+  packTryDeathSave(f);
 }
 
 export function applyEnrage(f) {
@@ -414,6 +429,7 @@ export function bossPhaseChecksSolo(f, e, ops = null) {
         const text = 'A severed head regrows — angrier. The Hydra swells with grief.';
         f.log(text, 'log-foe');
         ops?.push({ type: 'phase', uid: e.uid, atk: e.atk, hpAfter: e.hp, text });
+        packOnPhaseChange(f, e);
         f.renderEnemies?.();
       }
     }
@@ -435,6 +451,7 @@ export function bossPhaseChecksSolo(f, e, ops = null) {
       artId: e.artId, name: e.name, glyph: e.glyph, specials: e.specials, text: evolve,
     });
     f.renderEnemies?.(); f.renderPlayers?.();
+    packOnPhaseChange(f, e);
   }
 }
 
@@ -541,6 +558,9 @@ export function resolvePlayerHit(f, e, sk, d) {
   if (e.statuses.shield) dmg *= (1 - (e.statuses.shield.mult || 0));
   dmg = applyDefense(dmg, def, { ignoreDef: !!sk.ignoreDef || stanceIgnore || corpseIgnore });
 
+  const packHit = packModifyOutgoing(f, e, sk, dmg, { crit: isCrit, copyDepth: f._copyDepth || 0 });
+  dmg = packHit.dmg;
+
   let exec = sk.execute || 0;
   if (e.statuses.frail) exec += (C.frailExecuteBonus ?? 0);
   if (sk.consumeMark && e.statuses.marked) {
@@ -582,7 +602,10 @@ export function resolvePlayerHit(f, e, sk, d) {
 
   if (sk.healPct) {
     const amt = heal(f.run, f.run.maxHp * sk.healPct);
-    if (amt > 0) f._healed?.(amt);
+    if (amt > 0) {
+      f._healed?.(amt);
+      packOnHeal(f, amt);
+    }
   }
 
   const newStatuses = {};
@@ -644,6 +667,9 @@ export function resolvePlayerHit(f, e, sk, d) {
   }
   if (e.hp <= 0) combatLogLine(f, `${e.name} is defeated!`, 'log-ally');
 
+  packAfterHit(f, e, sk, packHit.acc, { copyDepth: f._copyDepth || 0 });
+  if (!(f._copyDepth > 0)) packEchoHit(f, e, sk, packHit.acc, d, resolvePlayerHit);
+
   return { uid: e.uid, dmg, crit: isCrit, hpAfter: e.hp, statuses: newStatuses, fx: sk.fx, notes };
 }
 
@@ -661,7 +687,8 @@ export function applySelfSkill(f, sk, d) {
     f.log(`Iron Stance: the next ${sk.stanceStrikes === 1 ? 'strike ignores' : `${sk.stanceStrikes} strikes ignore`} armor. You cannot Guard.`, 'log-ally');
   }
   if (sk.healPct) {
-    heal(f.run, f.run.maxHp * sk.healPct);
+    const amt = heal(f.run, f.run.maxHp * sk.healPct);
+    if (amt > 0) packOnHeal(f, amt);
   }
   for (const b of [sk.buff, sk.buff2].filter(Boolean)) {
     f.player.buffs.push({ ...b, turns: b.turns, label: b.stat === 'dodge' ? 'DODGE' : 'PWR' });
@@ -701,6 +728,7 @@ export async function resolveUseSkill(f, sk, cost) {
     if (sk.charge >= 6) f.usedUltimate = true;
   }
   startSkillCooldown(f, sk);
+  packOnSkillUse(f, sk);
   f._skillUseLog = f._skillUseLog || [];
   f._skillUseLog.push(sk.id);
   if (sk.selfHpCost) {
@@ -732,6 +760,7 @@ export async function resolveUseSkill(f, sk, cost) {
     f.run.guardCount = (f.run.guardCount || 0) + 1;
     gainCharge(f, CONFIG.guard.chargeGain);
     f.log('You brace behind your guard.', 'log-ally');
+    packOnGuard(f, sk);
     f.renderPlayers?.(f._actingKey);
     endPlayerAction(f);
     return { kind: 'guard' };
@@ -741,6 +770,7 @@ export async function resolveUseSkill(f, sk, cost) {
     const C = CONFIG.combat;
     if (!f.shared && f.rng.chance(C.confuseSoloWhiffChance ?? 0.4)) {
       emitCombatEvent(f, { type: 'miss', reason: 'whiff', actor: 'You' });
+      packOnMiss(f, sk);
       emitSkillCooldown(f, sk, skillCooldownTurns(sk));
       f.renderPlayers?.();
       endPlayerAction(f);
@@ -769,6 +799,7 @@ export async function resolveUseSkill(f, sk, cost) {
     if (batch) endActionLog(f);
   }
   emitSkillCooldown(f, sk, skillCooldownTurns(sk));
+  packAllyStrikes(f);
   f.renderEnemies?.();
   f.renderPlayers?.(f._actingKey);
   endPlayerAction(f);
@@ -781,8 +812,14 @@ export function resolveUseConsumable(f, c) {
   if (idx === -1) return;
   f.run.consumables.splice(idx, 1);
   const cv = consumableCombatValue(c, f.run.floor);
-  if (cv.heal) heal(f.run, cv.heal);
-  if (cv.healPct) heal(f.run, Math.round(f.run.maxHp * cv.healPct));
+  if (cv.heal) {
+    const amt = heal(f.run, cv.heal);
+    if (amt > 0) packOnHeal(f, amt);
+  }
+  if (cv.healPct) {
+    const amt = heal(f.run, Math.round(f.run.maxHp * cv.healPct));
+    if (amt > 0) packOnHeal(f, amt);
+  }
   if (c.mana) restoreMana(f.run, c.mana);
   if (c.fame) changeFame(f.run, c.fame);
   if (c.foodBuff) f.run.foodBuff = { ...c.foodBuff, floorsLeft: c.foodBuff.floors || 3 };
@@ -801,6 +838,7 @@ export function resolveUseConsumable(f, c) {
   } else {
     f.log(c.cure ? `Used ${c.name} — ailments cured.` : `Used ${c.name}.`, 'log-ally');
   }
+  packOnConsumable(f, c);
   f.renderEnemies?.();
   f.renderPlayers?.(f._actingKey);
 }
@@ -871,6 +909,7 @@ export function resolveEnemyTurnStart(f, e, ops = null) {
   }
 
   const special = resolveEnemySpecial(f, e, pickEnemySpecial(e, f.rng));
+  packOnIntentRevealed(f, e, special);
   let chargeScale = 1;
   if (special) {
     if (e.boss) {
@@ -908,6 +947,7 @@ export function resolveEnemyTurn(f, e) {
   const dodgeCh = clamp(d.dodge + dodgeBuff.add, 0, 80);
   if (!special && f.rng.chance(dodgeCh / 100)) {
     emitCombatEvent(f, { type: 'miss', actor: e.name, target: 'you', reason: 'evade', side: 'ally' });
+    packOnMiss(f, null);
     return;
   }
 
@@ -937,6 +977,7 @@ export function resolveEnemyTurn(f, e) {
   if (shield) dmg *= (1 - shield.mult);
   dmg = applyGuard(Math.max(1, Math.round(dmg * d.dmgTakenMult * partyBuffMult(f, 'dr'))), f.player.guarding);
   dmg = applyPlayerFrail(f, dmg);
+  dmg = packModifyIncoming(f, e, special, dmg).dmg;
 
   f.run.hp = Math.max(0, f.run.hp - dmg);
   notePlayerHpLoss(f, dmg);
@@ -1094,7 +1135,7 @@ export function beginPlayerTurn(f) {
 }
 
 export function snapshotCombat(f) {
-  return {
+  const snap = {
     round: f.round || 0,
     ended: !!f.ended,
     outcome: f._outcome || null,
@@ -1138,6 +1179,18 @@ export function snapshotCombat(f) {
     })),
     logs: [...(f.logs || [])],
   };
+  if (f.packAllies?.length) {
+    snap.packAllies = f.packAllies.map(a => ({ ...a }));
+  }
+  const ps = f.run?.packState;
+  if (ps && (Object.keys(ps.combat || {}).length || Object.keys(ps.turn || {}).length || Object.keys(ps.action || {}).length)) {
+    snap.packState = {
+      combat: { ...(ps.combat || {}) },
+      turn: { ...(ps.turn || {}) },
+      action: { ...(ps.action || {}) },
+    };
+  }
+  return snap;
 }
 
 export function applyCombatSnapshot(f, snap) {
@@ -1150,6 +1203,13 @@ export function applyCombatSnapshot(f, snap) {
   if (snap.usedDeathward != null) f.usedDeathward = !!snap.usedDeathward;
   if (snap.usedUltimate != null) f.usedUltimate = !!snap.usedUltimate;
   if (snap.damageTaken != null) f.damageTaken = snap.damageTaken;
+  if (snap.packState && f.run) {
+    f.run.packState = f.run.packState || {};
+    if (snap.packState.combat) f.run.packState.combat = { ...snap.packState.combat };
+    if (snap.packState.turn) f.run.packState.turn = { ...snap.packState.turn };
+    if (snap.packState.action) f.run.packState.action = { ...snap.packState.action };
+  }
+  if (Array.isArray(snap.packAllies)) f.packAllies = snap.packAllies.map(a => ({ ...a }));
   if (snap.target != null) f.target = snap.target;
   if (snap.actingKey != null) f._actingKey = snap.actingKey;
   if (snap.player) {
@@ -1222,10 +1282,10 @@ export function bindCoreMethods(f) {
   f.startSkillCooldown = (sk) => startSkillCooldown(f, sk);
   f.resetPlayerCooldowns = () => resetPlayerCooldowns(f);
   f.checkEndSolo = () => {
-    if (f.run.hp <= 0) { f.ended = true; f._outcome = 'dead'; return true; }
+    if (f.run.hp <= 0) { f.ended = true; f._outcome = 'dead'; packOnCombatEnd(f); return true; }
     if (f.aliveEnemies().length === 0) {
       if (maybeTransform(f)) return false;
-      f.ended = true; f._outcome = 'win'; return true;
+      f.ended = true; f._outcome = 'win'; packOnCombatEnd(f); return true;
     }
     return false;
   };
@@ -1242,6 +1302,7 @@ export function finishHeadlessSolo(f, result, extra = {}) {
   f.ended = true;
   f._outcome = result;
   delete f.run.combatTaunt;
+  packOnCombatEnd(f);
   if (CONFIG.charge.resetAfterCombat) f.charge = 0;
   resetPlayerCooldowns(f);
   f.rng.advance?.();
@@ -1281,19 +1342,20 @@ export function createCombatContext(run, rng, enemies, modifier = null, opts = {
     locked: false,
   });
   if (opts.snapshot) applyCombatSnapshot(f, opts.snapshot);
+  else packOnCombatStart(f);
   return f;
 }
 
 export async function applyAction(f, action) {
   switch (action.type) {
     case 'hitEnemy': {
-      const sk = SKILLS[action.skillId];
+      const sk = skillById(action.skillId) || SKILLS[action.skillId];
       if (action.enemy != null) f.target = action.enemy;
       const e = f.enemies[f.target];
       return resolvePlayerHit(f, e, sk, f.d());
     }
     case 'useSkill': {
-      const sk = SKILLS[action.skillId];
+      const sk = skillById(action.skillId) || SKILLS[action.skillId];
       if (action.targetUid) {
         const i = f.enemies.findIndex(e => e.uid === action.targetUid);
         if (i >= 0) f.target = i;
@@ -1302,7 +1364,7 @@ export async function applyAction(f, action) {
       return resolveUseSkill(f, sk, cost);
     }
     case 'useConsumable': {
-      const c = CONSUMABLES.find(x => x.id === action.itemId);
+      const c = itemById(action.itemId) || CONSUMABLES.find(x => x.id === action.itemId);
       return resolveUseConsumable(f, c);
     }
     case 'enemyTurn':

@@ -3,7 +3,7 @@
 
 import { CONFIG } from './config.js';
 import { TDC } from './tdc.js';
-import { EVENTS, drawEvent } from './events.js';
+import { drawEvent, findEvent, liveEventCatalog } from './events.js';
 import { NARRATIVE_EVENTS } from './narrative_events.js';
 import { eventEligible } from './world.js';
 import { biomeForFloor, ENEMIES, BOSSES, WANDERING_ENEMIES } from './enemies.js';
@@ -151,7 +151,7 @@ export function generateFloorCards(rng, run, opts = {}) {
       if (slot < 0) slot = 0;
       cards[slot] = enc;
     } else {
-      const pool = EVENTS.filter(e => e.category === forceCat
+      const pool = liveEventCatalog().filter(e => e.category === forceCat
         && eventEligible(e, run, { exclude: usedEvents, party }));
       if (pool.length) {
         const ev = rng.pick(pool);
@@ -197,7 +197,7 @@ export function cardDealFingerprint(cards) {
 }
 
 export function eventById(id) {
-  return EVENTS.find(e => e.id === id) || null;
+  return findEvent(id);
 }
 
 /** combat | narrative | shop | rest | trial | boss | other */

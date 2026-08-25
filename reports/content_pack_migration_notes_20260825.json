@@ -1,0 +1,15 @@
+{
+  "checkpointSchema": 2,
+  "gameContentVersion": "dt-mp-2",
+  "previous": {
+    "schema": 1,
+    "gameVersion": "dt-mp-1"
+  },
+  "notes": [
+    "Schema 1 climbers migrate to schema 2. packState/arts are optional allowlisted fields.",
+    "Combat-scoped pack state is never checkpointed. Disconnect is never a gameplay condition.",
+    "Pack kill switch defaults OFF (not deployed).",
+    "Utility techniques arm the next hit or incoming hit through shared armNextHit / armNextIncoming ops.",
+    "Event-linked relics persist eligibility flags (crown fragment, bent key, hero license) or convert gold/HP/Fame; shop receipts apply a one-time reserved discount."
+  ]
+}

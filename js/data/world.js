@@ -4,6 +4,7 @@
 // Old flag writes still work; FLAG_BRIDGES keep them in sync.
 
 import { noteNarrativeTake } from './eventpace.js';
+import { noteDiscovery } from '../compendium_seen.js';
 
 export function emptyWorld() {
   return {
@@ -773,6 +774,7 @@ function stampSince(run, key) {
 export function applyOutcomeWorld(run, o) {
   if (!o || typeof o !== 'object') return;
   if (o.flag) applyWorldPatch(run, { flag: o.flag });
+  if (o.flag2) applyWorldPatch(run, { flag: o.flag2 });
   if (o.clearFlag) applyWorldPatch(run, { clearFlag: o.clearFlag });
   if (o.world) applyWorldPatch(run, o.world);
   if (o.useItem) applyWorldPatch(run, { usedItem: o.useItem });
@@ -918,6 +920,7 @@ export function applyTendencyBridgesFromState(run) {
 
 export function recordEvent(run, ev, { choice = null, variantId = null } = {}) {
   if (!run || !ev?.id) return;
+  noteDiscovery(ev.id);
   const w = worldOf(run);
   const prev = w.events[ev.id] || { count: 0 };
   const sameVisit = prev.seen && prev.floor === run.floor;

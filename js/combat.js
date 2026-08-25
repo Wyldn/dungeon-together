@@ -7,7 +7,7 @@
 // (players act in seat order, then the host resolves enemies — protocol
 // constraint; the displayed order reflects what actually happens).
 
-import { SKILLS } from './data/skills.js';
+import { SKILLS, skillById } from './data/skills.js';
 import { CONSUMABLES, consumableCombatValue } from './data/items.js';
 import { CONFIG } from './data/config.js';
 import {
@@ -46,6 +46,7 @@ import {
   snapshotCombat, applyCombatStartMana, applyCombatSnapshot,
   startSkillCooldown, tickPlayerCooldowns, resetPlayerCooldowns,
 } from './combat_core.js';
+import { packOnCombatStart } from './content_pack/combat_bind.js';
 import { computeCombatPayout } from './rewards.js';
 import { chooseAutoPlayAction } from './combat_policy.js';
 
@@ -128,7 +129,7 @@ export function startCombat({
     // Skip on resume so a reloaded mid-fight doesn't free-refill.
     applyCombatStartMana(run, { resume });
     const C = new Fight(container, run, rng, enemies, modifier, introText, onHud, resolve, coop, {
-      onCharacter, onSettings,
+      onCharacter, onSettings, resume: !!resume,
     });
     if (resume) {
       applyCombatSnapshot(C, resume);
@@ -197,6 +198,7 @@ class Fight {
     this.order = []; // initiative order (display + solo driver)
     this._actingKey = null; // seat id / 'player' / enemy uid currently acting
     this.offs = [];
+    if (!ui.resume) packOnCombatStart(this);
 
     const cos = loadMeta();
     this._nameTitle = cos.equippedTitle || null;
@@ -998,7 +1000,7 @@ class Fight {
     const resName = resourceName(this.run);
     const ids = ['basic_attack', 'guard', ...this.run.skills];
     for (const id of ids) {
-      const sk = SKILLS[id];
+      const sk = skillById(id) || SKILLS[id];
       if (!sk) continue;
       const cost = Math.ceil((sk.cost || 0) * costMult);
       const chargeCost = sk.charge || 0;
@@ -1404,7 +1406,7 @@ class Fight {
       if (c) this.useConsumable(c);
       return;
     }
-    const sk = SKILLS[action.skillId] || SKILLS.basic_attack;
+    const sk = skillById(action.skillId) || SKILLS[action.skillId] || SKILLS.basic_attack;
     if (action.enemy != null) this.setAim(action.enemy);
     this._pendingHealTo = action.healTo || null;
     const costMult = this.mod.costMult || 1;
@@ -1418,7 +1420,7 @@ class Fight {
     const costMult = this.mod.costMult || 1;
     const usable = usableSkillIds(this.run);
     const pool = ['basic_attack', 'guard', ...this.run.skills]
-      .map(id => SKILLS[id])
+      .map(id => skillById(id) || SKILLS[id])
       .filter(sk => sk && usable.includes(sk.id) && !sk.allyTarget)
       .filter(sk => skillEligibility(sk, {
         mp: this.run.mp,

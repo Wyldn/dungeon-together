@@ -43,8 +43,10 @@ import { rollInitiative, initiativeOrder, addCharge, tickEnemyCharge, canAfford,
 import { makeRng } from '../js/rng.js';
 import { syntheticClimber, simulateFight } from './combat_sim.js';
 import { buildEventFightEnemies } from '../js/encounter.js';
+import { setPackEnabled } from '../js/content_pack/flags.js';
 
 globalThis.localStorage = globalThis.localStorage || { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+setPackEnabled(false);
 
 let pass = 0, fail = 0;
 function t(name, cond) {
@@ -2884,6 +2886,12 @@ console.log('— narrative event pacing —');
 {
   const { runMpPersistTests } = await import('./test_mp_persist.js');
   await runMpPersistTests(t);
+}
+
+{
+  const { runContentPackTests } = await import('./test_content_pack.js');
+  await runContentPackTests(t);
+  setPackEnabled(false);
 }
 
 console.log('— narrative typography —');

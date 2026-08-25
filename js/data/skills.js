@@ -9,6 +9,8 @@
 // tier: 1 = starting kit, 2 = level 6+, 3 = level 13+ offers
 
 import { COMP, composeSkill } from './skillcomponents.js';
+import '../content_pack/bootstrap.js';
+import { packSkillById, packSkillMap } from '../content_pack/registry.js';
 
 export const SKILLS = {
   /* ============ UNIVERSAL (every character, any weapon) ============ */
@@ -1009,7 +1011,14 @@ export const SKILLS = {
   ),
 };
 
+export function skillById(id) {
+  if (!id) return null;
+  return SKILLS[id] || packSkillById(id) || null;
+}
+
 // Learnable pool: class skills gated by tier + your subclass lineage's skills.
 export function skillsForClass(cls, tier = 1) {
-  return Object.values(SKILLS).filter(s => s.class === cls && (s.tier || 1) <= tier && s.offer !== false);
+  const extra = Object.values(packSkillMap());
+  return [...Object.values(SKILLS), ...extra]
+    .filter(s => s.class === cls && (s.tier || 1) <= tier && s.offer !== false);
 }

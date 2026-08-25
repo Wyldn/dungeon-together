@@ -1,0 +1,329 @@
+{
+  "note": "Authoritative climb_v2. Not combat_sim / run_sim / TDC.clearRate. Unexplained movement is a blocker only when pack is deployed; kill switch remains off.",
+  "warriorHumanF8": {
+    "packOff": {
+      "outcome": "stopped",
+      "deathFloor": null,
+      "floor": 8,
+      "gold": 187,
+      "hp": 29,
+      "heals": 1
+    },
+    "packOn": {
+      "outcome": "stopped",
+      "deathFloor": null,
+      "floor": 8,
+      "gold": 260,
+      "hp": 14,
+      "heals": 0
+    }
+  },
+  "byClass": {
+    "warrior": {
+      "packOff": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 187,
+        "heals": 0
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 159,
+        "heals": 2
+      }
+    },
+    "mage": {
+      "packOff": {
+        "outcome": "dead",
+        "deathFloor": 5,
+        "floor": 5,
+        "gold": 141,
+        "heals": 0
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 159,
+        "heals": 2
+      }
+    },
+    "archer": {
+      "packOff": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 62,
+        "heals": 1
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 180,
+        "heals": 0
+      }
+    },
+    "rogue": {
+      "packOff": {
+        "outcome": "dead",
+        "deathFloor": 5,
+        "floor": 5,
+        "gold": 50,
+        "heals": 0
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 69,
+        "heals": 0
+      }
+    },
+    "priest": {
+      "packOff": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 169,
+        "heals": 0
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 221,
+        "heals": 2
+      }
+    },
+    "monk": {
+      "packOff": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 94,
+        "heals": 0
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 126,
+        "heals": 2
+      }
+    },
+    "warlock": {
+      "packOff": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 194,
+        "heals": 0
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 158,
+        "heals": 1
+      }
+    },
+    "bard": {
+      "packOff": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 219,
+        "heals": 1
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 192,
+        "heals": 1
+      }
+    },
+    "necromancer": {
+      "packOff": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 91,
+        "heals": 0
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 139,
+        "heals": 2
+      }
+    },
+    "spellsword": {
+      "packOff": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 58,
+        "heals": 0
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 139,
+        "heals": 2
+      }
+    },
+    "viking": {
+      "packOff": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 93,
+        "heals": 1
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 159,
+        "heals": 2
+      }
+    }
+  },
+  "byBloodline": {
+    "human": {
+      "packOff": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 187,
+        "heals": 0
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 159,
+        "heals": 2
+      }
+    },
+    "elf": {
+      "packOff": {
+        "outcome": "dead",
+        "deathFloor": 5,
+        "floor": 5,
+        "gold": 88,
+        "heals": 0
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 39,
+        "heals": 2
+      }
+    },
+    "orc": {
+      "packOff": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 119,
+        "heals": 2
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 143,
+        "heals": 2
+      }
+    },
+    "dwarf": {
+      "packOff": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 133,
+        "heals": 2
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 164,
+        "heals": 2
+      }
+    },
+    "halfling": {
+      "packOff": {
+        "outcome": "dead",
+        "deathFloor": 5,
+        "floor": 5,
+        "gold": 88,
+        "heals": 0
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 39,
+        "heals": 2
+      }
+    },
+    "tiefling": {
+      "packOff": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 187,
+        "heals": 0
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 159,
+        "heals": 2
+      }
+    },
+    "beastfolk": {
+      "packOff": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 113,
+        "heals": 1
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 195,
+        "heals": 1
+      }
+    },
+    "dragonkin": {
+      "packOff": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 119,
+        "heals": 2
+      },
+      "packOn": {
+        "outcome": "stopped",
+        "deathFloor": null,
+        "floor": 6,
+        "gold": 143,
+        "heals": 2
+      }
+    }
+  }
+}

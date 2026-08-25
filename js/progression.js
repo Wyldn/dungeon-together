@@ -1,6 +1,7 @@
-import { SKILLS } from './data/skills.js';
+import { SKILLS, skillById } from './data/skills.js';
 import { learnableSkills, applySubclass, skillCapacity } from './character.js';
 import { runRng } from './state.js';
+import { noteDiscovery } from './compendium_seen.js';
 
 export const SKILL_OFFER_LEVELS = [5, 9, 13, 17, 21, 25];
 
@@ -12,7 +13,8 @@ export function offerSkillPool(run, rng) {
 }
 
 export function applySkillLearn(run, skillId, { replaceId = null } = {}) {
-  if (!skillId || !SKILLS[skillId]) return { learned: false };
+  if (!skillId || !skillById(skillId)) return { learned: false };
+  noteDiscovery(skillId);
   if (!run.knownSkills.includes(skillId)) run.knownSkills.push(skillId);
   const cap = skillCapacity(run);
   if (run.skills.includes(skillId)) return { learned: true, equipped: true };
@@ -36,7 +38,7 @@ export function applyLevelProgression(run, ups, policy, hooks = {}) {
       if (pick) {
         applySubclass(run, pick);
         if (pick.skill) {
-          const eq = policy.chooseSkillEquip?.(run, SKILLS[pick.skill]);
+          const eq = policy.chooseSkillEquip?.(run, skillById(pick.skill) || SKILLS[pick.skill]);
           applySkillLearn(run, pick.skill, eq || {});
         }
         results.push({ kind: 'subclass', id: pick.id });
@@ -47,7 +49,7 @@ export function applyLevelProgression(run, ups, policy, hooks = {}) {
       if (ok) {
         applySubclass(run, up.deeper);
         if (up.deeper.skill) {
-          const eq = policy.chooseSkillEquip?.(run, SKILLS[up.deeper.skill]);
+          const eq = policy.chooseSkillEquip?.(run, skillById(up.deeper.skill) || SKILLS[up.deeper.skill]);
           applySkillLearn(run, up.deeper.skill, eq || {});
         }
         results.push({ kind: 'deepen', id: up.deeper.id });
