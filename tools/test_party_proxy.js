@@ -8,6 +8,11 @@ import {
   handleParty, isPartyPath, normalizeUpstreamUrl, pipePartySockets, partyUpgradeRequiredResponse,
   DEFAULT_PARTY_UPSTREAM,
 } from '../workers/party-proxy.js';
+import {
+  buildUpgradeRequest, encodeWsFrame, parseUpstreamTarget, tryDecodeWsFrame,
+} from '../workers/ws-frames.js';
+import { openTcpWebSocket } from '../workers/tcp-ws.js';
+import { createConnection } from 'node:net';
 
 class MockSocket {
   constructor() {
@@ -29,6 +34,53 @@ class MockSocket {
     this.closed = { code, reason };
     this.emit('close', { code, reason });
   }
+}
+
+function nodeConnect({ hostname, port }) {
+  const sock = createConnection({ host: hostname, port });
+  const chunks = [];
+  let ended = false;
+  let wake = null;
+  const opened = new Promise((resolve, reject) => {
+    sock.once('connect', resolve);
+    sock.once('error', reject);
+  });
+  sock.on('data', (d) => {
+    chunks.push(Uint8Array.from(d));
+    wake?.();
+  });
+  sock.on('end', () => { ended = true; wake?.(); });
+  sock.on('close', () => { ended = true; wake?.(); });
+  sock.on('error', () => { ended = true; wake?.(); });
+  return {
+    opened,
+    close() { sock.destroy(); },
+    writable: {
+      getWriter() {
+        return {
+          write(chunk) {
+            return new Promise((resolve, reject) => {
+              sock.write(Buffer.from(chunk), (err) => err ? reject(err) : resolve());
+            });
+          },
+          close() { sock.end(); },
+        };
+      },
+    },
+    readable: {
+      getReader() {
+        return {
+          async read() {
+            while (!chunks.length && !ended) {
+              await new Promise((resolve) => { wake = resolve; });
+            }
+            if (chunks.length) return { done: false, value: chunks.shift() };
+            return { done: true };
+          },
+        };
+      },
+    },
+  };
 }
 
 export async function runPartyProxyTests(t) {
@@ -55,6 +107,20 @@ export async function runPartyProxyTests(t) {
   t('upstream ws url becomes http for fetch upgrade',
     normalizeUpstreamUrl('ws://132.226.66.6:3117') === 'http://132.226.66.6:3117');
   t('default upstream is the oracle http origin', DEFAULT_PARTY_UPSTREAM === 'http://132.226.66.6:3117');
+  {
+    const target = parseUpstreamTarget('ws://132.226.66.6:3117');
+    t('tcp target keeps oracle ip and port',
+      target.hostname === '132.226.66.6' && target.port === 3117 && target.path === '/');
+    const req = buildUpgradeRequest(target, 'dGVzdGtleXRlc3RrZXk=');
+    t('upgrade request is a websocket handshake',
+      req.startsWith('GET / HTTP/1.1') && req.includes('Host: 132.226.66.6:3117') && req.includes('Upgrade: websocket'));
+    const encoded = encodeWsFrame('{"t":"create"}', 1, true);
+    const decoded = tryDecodeWsFrame(encoded);
+    t('masked text frame round-trips', decoded?.opcode === 1 && new TextDecoder().decode(decoded.payload) === '{"t":"create"}');
+    const unmasked = encodeWsFrame('hello', 1, false);
+    t('unmasked server text decodes', tryDecodeWsFrame(unmasked)?.opcode === 1
+      && new TextDecoder().decode(tryDecodeWsFrame(unmasked).payload) === 'hello');
+  }
 
   {
     const res = partyUpgradeRequiredResponse();
@@ -133,6 +199,26 @@ export async function runPartyProxyTests(t) {
     t('non-party requests stay on static assets', assets.fetched === 1 && staticRes.status === 200);
     const partyRes = await worker.fetch(new Request('https://host/party'), { ASSETS: assets });
     t('/party does not fall through to assets', assets.fetched === 1 && partyRes.status === 426);
+  }
+
+  {
+    try {
+      const ws = await openTcpWebSocket(DEFAULT_PARTY_UPSTREAM, nodeConnect, 5000);
+      const room = await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('no room')), 5000);
+        ws.addEventListener('message', (ev) => {
+          clearTimeout(timer);
+          try { resolve(JSON.parse(ev.data)); } catch (err) { reject(err); }
+        });
+        ws.addEventListener('close', () => { clearTimeout(timer); reject(new Error('closed')); });
+        ws.send(JSON.stringify({ t: 'create', name: 'TcpProbe', pub: false }));
+      });
+      ws.close();
+      t('tcp websocket create reaches oracle', room.t === 'room' && !!room.code && room.host === true);
+    } catch (err) {
+      t('tcp websocket create reaches oracle', false);
+      console.error('  (tcp live)', err.message);
+    }
   }
 }
 
