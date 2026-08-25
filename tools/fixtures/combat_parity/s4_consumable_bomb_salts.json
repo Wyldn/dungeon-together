@@ -75,19 +75,11 @@
     ],
     "logs": [
       {
-        "msg": "The bomb detonates!",
-        "cls": "log-sys"
-      },
-      {
-        "msg": "Used Alchemist's Bomb.",
+        "msg": "You used Alchemist's Bomb — Dire Wolf 53, Dire Wolf 53.",
         "cls": "log-ally"
       },
       {
-        "msg": "Ailments cured.",
-        "cls": "log-ally"
-      },
-      {
-        "msg": "Used Smelling Salts.",
+        "msg": "Used Smelling Salts — ailments cured.",
         "cls": "log-ally"
       }
     ]

@@ -59,7 +59,7 @@
     ],
     "logs": [
       {
-        "msg": "Hex Mark hits Dire Wolf for 22",
+        "msg": "You used Hex Mark on Dire Wolf for 22 damage.",
         "cls": "log-ally"
       },
       {
@@ -67,7 +67,11 @@
         "cls": "log-ally"
       },
       {
-        "msg": "Eldritch Bolt hits Dire Wolf for 24",
+        "msg": "Hex Mark on cooldown (1 turn).",
+        "cls": "log-sys"
+      },
+      {
+        "msg": "You used Eldritch Bolt on Dire Wolf for 24 damage.",
         "cls": "log-ally"
       }
     ]

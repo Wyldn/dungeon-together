@@ -57,11 +57,7 @@
     ],
     "logs": [
       {
-        "msg": "Dire Wolf unleashes Savage Pounce!",
-        "cls": "log-foe"
-      },
-      {
-        "msg": "Dire Wolf (Savage Pounce) hits you for 3 (guarded).",
+        "msg": "Dire Wolf used Savage Pounce on you for 3 damage (guarded).",
         "cls": "log-foe"
       }
     ]

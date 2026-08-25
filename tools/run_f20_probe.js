@@ -23,6 +23,7 @@ import { baselinePolicy } from './policies/baseline.js';
 import { chooseBossAwareAction } from './policies/boss_aware.js';
 import { runHeadlessFight } from './combat_headless.js';
 import { BASE_CLASSES, climbSeed, planDifficultyJobs } from './run_difficulty.js';
+import { parseIncomingHit } from '../js/combat_log.js';
 import { derived } from '../js/character.js';
 import { applyDefense } from '../js/systems.js';
 import { enemyScale, soloBossChargeForScale } from '../js/data/tdc.js';
@@ -88,39 +89,7 @@ export function parseCombatLogs(logs = [], { bossName } = {}) {
       regenTicks += 1;
     }
 
-    let m = msg.match(/^(.+) \(([^)]+)\) hits you for (\d+)/);
-    if (m) {
-      const amt = Number(m[3]);
-      const spec = m[2];
-      const who = m[1];
-      if (SUMMON_NAME_RE.test(who)) dmg.summon += amt;
-      else {
-        dmg.special[spec] = (dmg.special[spec] || 0) + amt;
-      }
-      lastHit = {
-        kind: FINISHER_RE.test(spec) ? 'finisher' : (SUMMON_NAME_RE.test(who) ? 'summon' : 'special'),
-        name: SUMMON_NAME_RE.test(who) ? who : spec,
-        amt,
-      };
-      continue;
-    }
-    m = msg.match(/^(.+) hits you for (\d+)/);
-    if (m) {
-      const amt = Number(m[2]);
-      const who = m[1];
-      if (SUMMON_NAME_RE.test(who)) {
-        dmg.summon += amt;
-        lastHit = { kind: 'summon', name: who, amt };
-      } else if (bossName && who !== bossName && !who.startsWith(bossName.split(',')[0])) {
-        dmg.escort += amt;
-        lastHit = { kind: 'escort', name: who, amt };
-      } else {
-        dmg.basic += amt;
-        lastHit = { kind: 'basic', name: who, amt };
-      }
-      continue;
-    }
-    m = msg.match(/You burn for (\d+)/);
+    let m = msg.match(/You burn for (\d+)/);
     if (m) {
       dmg.burn += Number(m[1]);
       lastHit = { kind: 'burn', name: 'burn', amt: Number(m[1]) };
@@ -138,6 +107,33 @@ export function parseCombatLogs(logs = [], { bossName } = {}) {
       lastHit = { kind: 'torment', name: 'torment', amt: Number(m[1]) };
       continue;
     }
+
+    const hit = parseIncomingHit(msg);
+    if (hit) {
+      const amt = hit.dmg;
+      const who = hit.actor;
+      const spec = hit.move;
+      if (SUMMON_NAME_RE.test(who)) {
+        dmg.summon += amt;
+        lastHit = { kind: 'summon', name: who, amt };
+      } else if (spec) {
+        dmg.special[spec] = (dmg.special[spec] || 0) + amt;
+        lastHit = {
+          kind: FINISHER_RE.test(spec) ? 'finisher' : 'special',
+          name: spec,
+          amt,
+        };
+      } else if (bossName && who !== bossName && !who.startsWith(bossName.split(',')[0])) {
+        dmg.escort += amt;
+        lastHit = { kind: 'escort', name: who, amt };
+      } else {
+        dmg.basic += amt;
+        lastHit = { kind: 'basic', name: who, amt };
+      }
+      continue;
+    }
+    m = msg.match(/^You .+ for (\d+(?:\.\d+)?) damage/);
+    if (m) { playerDmg += Number(m[1]); continue; }
     m = msg.match(/hits (?!you\b)(.+) for (\d+)/);
     if (m) playerDmg += Number(m[2]);
   }

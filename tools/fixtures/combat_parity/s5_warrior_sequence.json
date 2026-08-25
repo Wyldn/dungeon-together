@@ -72,11 +72,11 @@
     ],
     "logs": [
       {
-        "msg": "Slash hits Dire Wolf for 18",
+        "msg": "You slashed Dire Wolf for 18 damage.",
         "cls": "log-ally"
       },
       {
-        "msg": "Dire Wolf hits you for 3.",
+        "msg": "Dire Wolf bit you for 3 damage.",
         "cls": "log-foe"
       },
       {

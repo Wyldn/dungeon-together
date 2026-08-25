@@ -15,6 +15,10 @@ import {
 } from './data/tdc.js';
 import { derived, heal, restoreMana, usableSkillIds, resourceName, changeFame, classTitle } from './character.js';
 import { initiativeOrder, skillEffectivePower, enemyTelegraph, formatEnemyTelegraph, applyGuard, applyDefense, enemySpecialPayoff, enemyPayoffLine, skillEligibility, skillBlockLabel, skillCooldownTurns } from './systems.js';
+import {
+  emitCombatEvent, beginActionLog, queueHitOutcome, endActionLog,
+  emitSkillCooldown, basicVerbFor, combatLogAriaAttrs, combatLogLine,
+} from './combat_log.js';
 import { biomeForFloor } from './data/enemies.js';
 import {
   skillStatValue, buildEnemy, spawnSummon as coreSpawnSummon,
@@ -609,7 +613,7 @@ class Fight {
           <div class="cx-lane-divider" aria-hidden="true"></div>
           <div class="player-row cx-party"></div>
           <div class="combat-fx-layer" id="combat-fx"></div>
-          <div class="combat-log cx-log"></div>
+          <div class="combat-log cx-log" ${combatLogAriaAttrs()}></div>
           <div class="combat-actions">
             <div class="combat-utility"></div>
             <div class="action-bar mode-root"></div>
@@ -1239,7 +1243,18 @@ class Fight {
       const a = this.allies.get(from);
       if (!a) return;
       this.float(this.allyFloatHost(from), `-${d.dmg}${d.guarded ? ' 🛡' : ''}`, 'incoming');
-      this.log(`${d.by || 'An enemy'}${d.special ? ` (${d.special})` : ''} hits ${a.name} for ${d.dmg}${d.guarded ? ' (guarded)' : ''}.`, 'log-foe');
+      emitCombatEvent(this, {
+        type: 'hit',
+        actor: d.by || 'An enemy',
+        target: a.name,
+        move: d.special || null,
+        verb: d.special ? (d.verb || null) : (d.verb || 'hit'),
+        dmg: d.dmg,
+        guarded: !!d.guarded,
+        shielded: !!d.shielded,
+        side: 'foe',
+        basic: !d.special,
+      });
       this.renderPlayers(this._actingKey);
     }));
     // ally healing (e.g. a Priest's Mend cast on a companion)
@@ -1451,8 +1466,18 @@ class Fight {
       setTimeout(() => sprite.classList.remove('attack'), 420);
     }
     if (act.label === 'Guard') { this.log(`${name} raises their guard.`, 'log-ally'); await sleep(300); return; }
-    if (act.label) this.log(`${name} uses ${act.label}!`, 'log-ally');
-    for (const t of act.targets || []) {
+    const targets = act.targets || [];
+    if (!targets.length) {
+      if (act.label) this.log(`${name} used ${act.label}.`, 'log-ally');
+      this.renderEnemies();
+      await sleep(CONFIG.combat.skillResolveMs || 950);
+      return;
+    }
+    const batch = targets.length > 1;
+    if (batch) {
+      beginActionLog(this, { actor: name, move: act.label, side: 'ally', aoe: true });
+    }
+    for (const t of targets) {
       const e = this.enemyByUid(t.uid);
       if (!e) continue;
       await sleep(CONFIG.combat.hitPauseMs || 340);
@@ -1467,9 +1492,17 @@ class Fight {
       }
       SpriteAnim.play(e.uid, 'hurt');
       t.crit ? SFX.crit() : SFX.hit();
-      for (const n of t.notes || []) this.log(n, 'log-ally');
-      if (e.hp <= 0) this.log(`${e.name} is defeated!`, 'log-ally');
+      if (batch) {
+        queueHitOutcome(this, { target: e.name, dmg: t.dmg, crit: t.crit, died: e.hp <= 0 });
+      } else {
+        emitCombatEvent(this, {
+          type: 'hit', actor: name, target: e.name, move: act.label, dmg: t.dmg, crit: t.crit, side: 'ally',
+        });
+      }
+      for (const n of t.notes || []) combatLogLine(this, n, 'log-ally');
+      if (e.hp <= 0) combatLogLine(this, `${e.name} is defeated!`, 'log-ally');
     }
+    if (batch) endActionLog(this);
     this.renderEnemies();
     await sleep(CONFIG.combat.skillResolveMs || 950);
   }
@@ -1493,8 +1526,17 @@ class Fight {
         if (!this.headless) await sleep(start.reason === 'summon' ? 400 : 350);
         continue;
       }
-      const { special, chargeScale } = start;
+      const { special, chargeScale, scream } = start;
       if (special && !this.headless) SFX.bossIntro();
+      if (scream && special) {
+        const tel = {
+          type: 'telegraph',
+          uid: e.uid,
+          text: `${e.name} unleashes ${special.name}!${scream}`,
+        };
+        ops.push(tel);
+        emitCombatEvent(this, { type: 'telegraph', text: tel.text, cls: 'log-foe' });
+      }
 
       const targets = [{ id: this.coop.you, def: this.d().def, dodge: this.d().dodge, down: this.run.down, taunt: this.run.combatTaunt || 0 },
         ...[...this.allies.entries()].map(([id, a]) => ({ id, def: a.def, dodge: a.dodge, down: a.down, taunt: a.taunt || 0 }))]
@@ -1544,7 +1586,12 @@ class Fight {
         dmg = applyDefense(dmg, target.def);
         const riders = collectEnemyRiders(e, special, this.rng);
         if (e.lifesteal || special?.heal) e.hp = Math.min(e.maxHp, e.hp + Math.round(e.maxHp * (special?.heal || 0)) + Math.round(dmg * (e.lifesteal || 0)));
-        const op = { type: 'hit', uid: e.uid, target: target.id, dmg, riders, special: special?.name };
+        const op = {
+          type: 'hit', uid: e.uid, target: target.id, dmg, riders,
+          special: special?.name,
+          verb: special ? (special.verb || null) : basicVerbFor(e),
+          basic: !special,
+        };
         if (payoff) op.payoff = payoff;
         ops.push(op);
         this.applyHitOp(op, e);
@@ -1581,7 +1628,7 @@ class Fight {
     if (op.dodged) {
       const el = op.target === this.coop.you ? this.playerFloatHost() : this.allyFloatHost(op.target);
       this.float(el, 'MISS', 'miss');
-      this.log(`${e?.name || 'The enemy'} attacks — a miss!`, 'log-ally');
+      emitCombatEvent(this, { type: 'miss', actor: e?.name || 'The enemy', target: 'you', reason: op.target === this.coop.you ? 'evade' : 'dodge', side: 'ally' });
       SFX.miss();
       return;
     }
@@ -1597,20 +1644,32 @@ class Fight {
       this.notePlayerHpLoss(dmg);
       this.float(this.playerFloatHost(), `-${dmg}`, 'incoming');
       SFX.hit();
-      this.log(`${e?.name || 'The enemy'}${op.special ? ` (${op.special})` : ''} hits you for ${dmg}${this.player.guarding ? ' (guarded)' : ''}.`, 'log-foe');
+      emitCombatEvent(this, {
+        type: 'hit',
+        actor: e?.name || 'The enemy',
+        target: 'you',
+        move: op.special || null,
+        verb: op.special ? (op.verb || null) : (op.verb || basicVerbFor(e)),
+        dmg,
+        guarded: !!this.player.guarding,
+        shielded: !!shield,
+        side: 'foe',
+        basic: !op.special,
+      });
       // §9: tell the party the ACTUAL damage taken (after guard/shield/armor),
       // so companions render the blocked number, not the host's raw estimate.
-      this.coop.net.send({ k: 'chit', dmg, guarded: this.player.guarding, by: e?.name, special: op.special });
+      this.coop.net.send({
+        k: 'chit', dmg, guarded: this.player.guarding, shielded: !!shield,
+        by: e?.name, special: op.special, verb: op.verb, basic: !op.special,
+      });
       this.applyStatusRiders(op.riders || {});
       if (this.run.hp <= 0) this.deathSaves();
       if (this.run.hp <= 0) this.goDown();
       this.coop.broadcastStatus(this.runStatus(), 'fighting');
       this.onHud?.();
-    } else {
-      // Target broadcasts real damage via chit; note the strike while waiting.
-      const a = this.allies.get(op.target);
-      if (a) this.log(`${e?.name || 'The enemy'}${op.special ? ` (${op.special})` : ''} strikes at ${a.name}…`, 'log-foe');
     }
+    // Ally hits log from the victim's `chit` so every client uses the same
+    // post-mitigation number — no separate "strikes at…" announcement.
     this.renderPlayers(this._actingKey);
   }
 
@@ -1688,6 +1747,8 @@ class Fight {
         const e = this.enemyByUid(op.uid);
         if (e) e.hp = op.hpAfter;
         this.renderEnemies();
+      } else if (op.type === 'telegraph') {
+        this.log(op.text, 'log-foe');
       } else if (op.type === 'hit') {
         const es = this.sprite(op.uid);
         if (es) { es.classList.add('attack'); setTimeout(() => es.classList.remove('attack'), 420); }
@@ -1961,12 +2022,20 @@ class Fight {
     if (sk.target === 'self') {
       this.applySelfSkill(sk, d);
     } else {
+      const batch = sk.target === 'all' && targets.length > 1;
+      if (batch) {
+        beginActionLog(this, {
+          actor: 'You', move: sk.name, verb: sk.verb, side: 'ally', aoe: true,
+        });
+      }
       for (const e of targets) {
         await sleep(CONFIG.combat.hitPauseMs || 340);
         const res = this.hitEnemy(e, sk, d);
         actOps.targets.push(res);
       }
+      if (batch) endActionLog(this);
     }
+    emitSkillCooldown(this, sk, skillCooldownTurns(sk));
     if (this.shared) {
       this.coop.net.send(actOps);
       this.coop.broadcastStatus(this.runStatus(), 'fighting');

@@ -18,6 +18,10 @@ import {
   skillCooldownTurns, cooldownRemaining,
 } from './systems.js';
 import { biomeForFloor, ENEMIES } from './data/enemies.js';
+import {
+  emitCombatEvent, beginActionLog, queueHitOutcome, endActionLog,
+  emitSkillCooldown, basicVerbFor, combatLogLine,
+} from './combat_log.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
@@ -261,7 +265,7 @@ export function gainCorpse(f) {
   if (f.run.classId !== 'necromancer') return;
   if ((f.corpses || 0) >= cap) return;
   f.corpses = (f.corpses || 0) + 1;
-  f.log('A corpse is yours to spend.', 'log-ally');
+  combatLogLine(f, 'A corpse is yours to spend.', 'log-ally');
 }
 
 export function consumeStanceIgnore(f) {
@@ -525,7 +529,7 @@ export function resolvePlayerHit(f, e, sk, d) {
     delete e.statuses.frail;
     const line = `${sk.name} detonates the frail mark on ${e.name}!`;
     notes.push(line);
-    f.log(line, 'log-ally');
+    combatLogLine(f, line, 'log-ally');
   }
   if (f._corpseSpent && sk.corpsePower) dmg *= sk.corpsePower;
   if (d.doubleDmgRound && f.round === d.doubleDmgRound) dmg *= 2;
@@ -543,26 +547,38 @@ export function resolvePlayerHit(f, e, sk, d) {
     exec += (C.markExecuteBonus ?? 0.1);
     delete e.statuses.marked;
     notes.push('The mark is spent.');
-    f.log('The mark is spent.', 'log-ally');
+    combatLogLine(f, 'The mark is spent.', 'log-ally');
   }
   if (sk.consumeBurn && e.statuses.burn) {
     dmg *= 1.25;
     delete e.statuses.burn;
     const line = `${sk.name} drinks the fire off ${e.name}.`;
     notes.push(line);
-    f.log(line, 'log-ally');
+    combatLogLine(f, line, 'log-ally');
   }
   if (exec && !e.boss && e.hp / e.maxHp <= exec) {
     dmg = e.hp;
     const line = `${sk.name.toUpperCase()} — ${e.name} is slain outright!`;
     notes.push(line);
-    f.log(line, 'log-ally');
+    combatLogLine(f, line, 'log-ally');
   }
 
   const hpBefore = e.hp;
   e.hp = Math.max(0, e.hp - dmg);
   f._dealt?.(hpBefore - e.hp);
-  f.log(`${sk.name} hits ${e.name} for ${dmg}${isCrit ? ' — CRITICAL!' : ''}`, isCrit ? 'log-ally' : 'log-ally');
+  const hitOutcome = { target: e.name, dmg, crit: isCrit, died: e.hp <= 0 };
+  if (!queueHitOutcome(f, hitOutcome)) {
+    emitCombatEvent(f, {
+      type: 'hit',
+      actor: 'You',
+      target: e.name,
+      move: sk.name,
+      verb: sk.verb,
+      dmg,
+      crit: isCrit,
+      side: 'ally',
+    });
+  }
 
   if (sk.healPct) {
     const amt = heal(f.run, f.run.maxHp * sk.healPct);
@@ -579,40 +595,40 @@ export function resolvePlayerHit(f, e, sk, d) {
   if (e.hp > 0) {
     if (poisonCh && f.rng.chance(poisonCh)) {
       e.statuses.poison = Cstat.poisonTurns ?? 3; newStatuses.poison = e.statuses.poison;
-      f.log(`${e.name} is poisoned.`, 'log-ally');
+      combatLogLine(f, `${e.name} is poisoned.`, 'log-ally');
     }
     if (burnCh && f.rng.chance(burnCh)) {
       e.statuses.burn = Cstat.burnTurns ?? 2; newStatuses.burn = e.statuses.burn;
-      f.log(`${e.name} catches fire.`, 'log-ally');
+      combatLogLine(f, `${e.name} catches fire.`, 'log-ally');
     }
-    if (freezeCh && f.rng.chance(freezeCh)) { e.statuses.frozen = 1; newStatuses.frozen = 1; f.log(`${e.name} is frozen solid.`, 'log-ally'); }
+    if (freezeCh && f.rng.chance(freezeCh)) { e.statuses.frozen = 1; newStatuses.frozen = 1; combatLogLine(f, `${e.name} is frozen solid.`, 'log-ally'); }
     const stunCh = (sk.stun || 0) + (d.stun || 0);
     if (stunCh && f.rng.chance(stunCh)) {
-      e.statuses.stunned = 1; newStatuses.stunned = 1; f.log(`${e.name} is stunned.`, 'log-ally');
+      e.statuses.stunned = 1; newStatuses.stunned = 1; combatLogLine(f, `${e.name} is stunned.`, 'log-ally');
       e.statuses.paralyzed = Cstat.paralyzeTurns ?? 2; newStatuses.paralyzed = e.statuses.paralyzed;
     }
     const paraCh = (sk.paralyze || 0) + (d.paralyze || 0);
     if (paraCh && f.rng.chance(paraCh)) {
       e.statuses.paralyzed = Cstat.paralyzeTurns ?? 2; newStatuses.paralyzed = e.statuses.paralyzed;
-      f.log(`${e.name} is paralyzed.`, 'log-ally');
+      combatLogLine(f, `${e.name} is paralyzed.`, 'log-ally');
     }
-    if (sk.hex && f.rng.chance(sk.hex)) { e.statuses.hexed = 3; newStatuses.hexed = 3; f.log(`${e.name} is hexed — it will suffer more.`, 'log-ally'); }
-    if (sk.mark && f.rng.chance(sk.mark)) { e.statuses.marked = 3; newStatuses.marked = 3; f.log(`${e.name} is marked as quarry.`, 'log-ally'); }
+    if (sk.hex && f.rng.chance(sk.hex)) { e.statuses.hexed = 3; newStatuses.hexed = 3; combatLogLine(f, `${e.name} is hexed — it will suffer more.`, 'log-ally'); }
+    if (sk.mark && f.rng.chance(sk.mark)) { e.statuses.marked = 3; newStatuses.marked = 3; combatLogLine(f, `${e.name} is marked as quarry.`, 'log-ally'); }
     if (f._corpseSpent && sk.corpsePoisonSure) {
       e.statuses.poison = Cstat.poisonTurns ?? 3; newStatuses.poison = e.statuses.poison;
-      f.log(`${e.name} is poisoned by the opened grave.`, 'log-ally');
+      combatLogLine(f, `${e.name} is poisoned by the opened grave.`, 'log-ally');
     }
-    if (weakenCh && f.rng.chance(Math.min(1, weakenCh))) { e.statuses.weaken = 3; newStatuses.weaken = 3; f.log(`${e.name} is weakened.`, 'log-ally'); }
-    if (frailCh && f.rng.chance(Math.min(1, frailCh))) { e.statuses.frail = 3; newStatuses.frail = 3; f.log(`${e.name} is frail.`, 'log-ally'); }
+    if (weakenCh && f.rng.chance(Math.min(1, weakenCh))) { e.statuses.weaken = 3; newStatuses.weaken = 3; combatLogLine(f, `${e.name} is weakened.`, 'log-ally'); }
+    if (frailCh && f.rng.chance(Math.min(1, frailCh))) { e.statuses.frail = 3; newStatuses.frail = 3; combatLogLine(f, `${e.name} is frail.`, 'log-ally'); }
     const tormentCh = (sk.tormented || 0) + (d.tormented || 0);
-    if (tormentCh && f.rng.chance(Math.min(1, tormentCh))) { e.statuses.tormented = 3; newStatuses.tormented = 3; f.log(`${e.name} is tormented.`, 'log-ally'); }
+    if (tormentCh && f.rng.chance(Math.min(1, tormentCh))) { e.statuses.tormented = 3; newStatuses.tormented = 3; combatLogLine(f, `${e.name} is tormented.`, 'log-ally'); }
     const confuseCh = (sk.confused || 0) + (d.confused || 0);
     if (confuseCh && f.rng.chance(confuseCh)) {
       e.statuses.confused = Cstat.confuseTurns ?? 2; newStatuses.confused = e.statuses.confused;
-      f.log(`${e.name} is confused.`, 'log-ally');
+      combatLogLine(f, `${e.name} is confused.`, 'log-ally');
     }
     const lazyCh = (sk.lazy || 0) + (d.lazy || 0);
-    if (lazyCh && f.rng.chance(lazyCh)) { e.statuses.lazy = 2; newStatuses.lazy = 2; f.log(`${e.name} grows lazy.`, 'log-ally'); }
+    if (lazyCh && f.rng.chance(lazyCh)) { e.statuses.lazy = 2; newStatuses.lazy = 2; combatLogLine(f, `${e.name} grows lazy.`, 'log-ally'); }
   } else {
     gainCharge(f, CONFIG.charge.gainOnKill);
     gainCorpse(f);
@@ -626,7 +642,7 @@ export function resolvePlayerHit(f, e, sk, d) {
     const capped = Math.min(dmg * ls, f.run.maxHp * CONFIG.combat.lifestealCapPct * (d.lifestealCapMult || 1));
     heal(f.run, capped);
   }
-  if (e.hp <= 0) f.log(`${e.name} is defeated!`, 'log-ally');
+  if (e.hp <= 0) combatLogLine(f, `${e.name} is defeated!`, 'log-ally');
 
   return { uid: e.uid, dmg, crit: isCrit, hpAfter: e.hp, statuses: newStatuses, fx: sk.fx, notes };
 }
@@ -724,7 +740,8 @@ export async function resolveUseSkill(f, sk, cost) {
   if (f.player.statuses.confused && sk.power && sk.target !== 'self' && !sk.guard) {
     const C = CONFIG.combat;
     if (!f.shared && f.rng.chance(C.confuseSoloWhiffChance ?? 0.4)) {
-      f.log('Confusion takes the wheel — you swing at phantoms and hit nothing!', 'log-foe');
+      emitCombatEvent(f, { type: 'miss', reason: 'whiff', actor: 'You' });
+      emitSkillCooldown(f, sk, skillCooldownTurns(sk));
       f.renderPlayers?.();
       endPlayerAction(f);
       return { kind: 'whiff' };
@@ -740,10 +757,18 @@ export async function resolveUseSkill(f, sk, cost) {
   if (sk.target === 'self') {
     applySelfSkill(f, sk, d);
   } else {
+    const batch = sk.target === 'all' && targets.length > 1;
+    if (batch) {
+      beginActionLog(f, {
+        actor: 'You', move: sk.name, verb: sk.verb, side: 'ally', aoe: true,
+      });
+    }
     for (const e of targets) {
       hits.push(resolvePlayerHit(f, e, sk, d));
     }
+    if (batch) endActionLog(f);
   }
+  emitSkillCooldown(f, sk, skillCooldownTurns(sk));
   f.renderEnemies?.();
   f.renderPlayers?.(f._actingKey);
   endPlayerAction(f);
@@ -761,14 +786,21 @@ export function resolveUseConsumable(f, c) {
   if (c.mana) restoreMana(f.run, c.mana);
   if (c.fame) changeFame(f.run, c.fame);
   if (c.foodBuff) f.run.foodBuff = { ...c.foodBuff, floorsLeft: c.foodBuff.floors || 3 };
-  if (c.cure) { f.player.statuses = {}; f.log('Ailments cured.', 'log-ally'); }
+  if (c.cure) { f.player.statuses = {}; }
   if (cv.bombDmg) {
+    const outcomes = [];
     for (const e of f.aliveEnemies()) {
+      const before = e.hp;
       e.hp = Math.max(0, e.hp - cv.bombDmg);
+      outcomes.push({ target: e.name, dmg: before - e.hp, died: e.hp <= 0 });
     }
-    f.log('The bomb detonates!', 'log-sys');
+    emitCombatEvent(f, {
+      type: 'aoe', actor: 'You', move: c.name, side: 'ally', outcomes,
+    });
+    if (c.cure) f.log('Ailments cured.', 'log-ally');
+  } else {
+    f.log(c.cure ? `Used ${c.name} — ailments cured.` : `Used ${c.name}.`, 'log-ally');
   }
-  f.log(`Used ${c.name}.`, 'log-ally');
   f.renderEnemies?.();
   f.renderPlayers?.(f._actingKey);
 }
@@ -777,13 +809,20 @@ export function resolveEnemyConfusedStrike(f, e) {
   const others = f.aliveEnemies().filter(x => x.uid !== e.uid);
   if (!others.length) return false;
   const victim = f.rng.pick(others);
-  f.log(`${e.name} is bewildered and turns on ${victim.name}!`, 'log-ally');
   let dmg = applyDefense(
     e.atk * CONFIG.combat.enemyAtkMult * (0.85 + f.rng.next() * 0.3),
     victim.def,
   );
   victim.hp = Math.max(0, victim.hp - dmg);
-  if (victim.hp <= 0) f.log(`${victim.name} is cut down by its own ally!`, 'log-foe');
+  emitCombatEvent(f, {
+    type: 'hit',
+    actor: e.name,
+    target: victim.name,
+    verb: 'turned on',
+    dmg,
+    side: 'ally',
+  });
+  if (victim.hp <= 0) emitCombatEvent(f, { type: 'death', target: victim.name, byAlly: true });
   return true;
 }
 
@@ -847,8 +886,8 @@ export function resolveEnemyTurnStart(f, e, ops = null) {
     const signature = special.at >= maxAt && maxAt > 0;
     const scream = !f.shared && e.boss && signature && chargeScale > 1.2
       ? ' The air screams with pent-up force.' : '';
-    f.log(`${e.name} unleashes ${special.name}!${scream}`, 'log-foe');
     ops?.push({ type: 'echarge', uid: e.uid, charge: e.charge || 0 });
+    return { done: false, special, chargeScale, signature, scream };
   }
   return { done: false, special, chargeScale };
 }
@@ -862,14 +901,24 @@ export function resolveEnemyTurn(f, e) {
     if (resolveEnemyConfusedStrike(f, e)) return;
   }
 
-  const { special, chargeScale } = start;
+  const { special, chargeScale, scream } = start;
 
   const d = f.d();
   const dodgeBuff = buffValue(f, 'dodge');
   const dodgeCh = clamp(d.dodge + dodgeBuff.add, 0, 80);
   if (!special && f.rng.chance(dodgeCh / 100)) {
-    f.log(`${e.name} attacks — you evade!`, 'log-ally');
+    emitCombatEvent(f, { type: 'miss', actor: e.name, target: 'you', reason: 'evade', side: 'ally' });
     return;
+  }
+
+  if (scream) {
+    emitCombatEvent(f, {
+      type: 'telegraph',
+      actor: e.name,
+      move: special?.name,
+      text: `${e.name} unleashes ${special.name}!${scream}`,
+      cls: 'log-foe',
+    });
   }
 
   let dmg = e.atk * CONFIG.combat.enemyAtkMult * (0.85 + f.rng.next() * 0.3) * (f.mod.dmgMult || 1) * (special?.mult || 1) * chargeScale;
@@ -891,7 +940,18 @@ export function resolveEnemyTurn(f, e) {
 
   f.run.hp = Math.max(0, f.run.hp - dmg);
   notePlayerHpLoss(f, dmg);
-  f.log(`${e.name}${special ? ` (${special.name})` : ''} hits you for ${dmg}${f.player.guarding ? ' (guarded)' : ''}.`, 'log-foe');
+  emitCombatEvent(f, {
+    type: 'hit',
+    actor: e.name,
+    target: 'you',
+    move: special?.name || null,
+    verb: special ? (special.verb || null) : basicVerbFor(e),
+    dmg,
+    guarded: !!f.player.guarding,
+    shielded: !!shield,
+    side: 'foe',
+    basic: !special,
+  });
 
   if (d.thorns && e.hp > 0 && dmg > 0) {
     const back = Math.max(1, Math.round(dmg * d.thorns));

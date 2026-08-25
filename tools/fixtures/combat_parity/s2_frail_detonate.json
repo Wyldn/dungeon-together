@@ -61,7 +61,7 @@
         "cls": "log-ally"
       },
       {
-        "msg": "Judgement hits Dire Wolf for 44",
+        "msg": "You used Judgement on Dire Wolf for 44 damage.",
         "cls": "log-ally"
       }
     ]

@@ -74,7 +74,7 @@
         "cls": "log-sys"
       },
       {
-        "msg": "Palm Strike hits Dire Wolf for 17",
+        "msg": "You used Palm Strike on Dire Wolf for 17 damage.",
         "cls": "log-ally"
       }
     ]

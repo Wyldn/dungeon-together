@@ -60,11 +60,11 @@
     ],
     "logs": [
       {
-        "msg": "Slash hits Dire Wolf for 22",
+        "msg": "You slashed Dire Wolf for 22 damage.",
         "cls": "log-ally"
       },
       {
-        "msg": "Shield Bash hits Dire Wolf for 23",
+        "msg": "You used Shield Bash on Dire Wolf for 23 damage.",
         "cls": "log-ally"
       },
       {

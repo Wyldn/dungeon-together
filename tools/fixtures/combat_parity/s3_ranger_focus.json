@@ -59,7 +59,7 @@
     ],
     "logs": [
       {
-        "msg": "Hunter's Mark hits Dire Wolf for 34",
+        "msg": "You used Hunter's Mark on Dire Wolf for 34 damage.",
         "cls": "log-ally"
       },
       {
@@ -67,7 +67,11 @@
         "cls": "log-ally"
       },
       {
-        "msg": "Strike hits Dire Wolf for 26",
+        "msg": "Hunter's Mark on cooldown (1 turn).",
+        "cls": "log-sys"
+      },
+      {
+        "msg": "You struck Dire Wolf for 26 damage.",
         "cls": "log-ally"
       }
     ]

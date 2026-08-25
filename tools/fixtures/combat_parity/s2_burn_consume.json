@@ -61,7 +61,7 @@
         "cls": "log-ally"
       },
       {
-        "msg": "Soul Siphon hits Dire Wolf for 51.25",
+        "msg": "You used Soul Siphon on Dire Wolf for 51.25 damage.",
         "cls": "log-ally"
       }
     ]

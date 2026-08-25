@@ -59,15 +59,11 @@
     ],
     "logs": [
       {
-        "msg": "Cinder Test unleashes Pyre Surge!",
-        "cls": "log-foe"
-      },
-      {
         "msg": "Cinder Test cashes the fire.",
         "cls": "log-foe"
       },
       {
-        "msg": "Cinder Test (Pyre Surge) hits you for 22.",
+        "msg": "Cinder Test used Pyre Surge on you for 22 damage.",
         "cls": "log-foe"
       },
       {

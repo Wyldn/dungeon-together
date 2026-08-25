@@ -77,7 +77,7 @@
     ],
     "logs": [
       {
-        "msg": "Soul Bolt hits Dire Wolf for 25",
+        "msg": "You used Soul Bolt on Dire Wolf for 25 damage.",
         "cls": "log-ally"
       },
       {
@@ -93,8 +93,12 @@
         "cls": "log-ally"
       },
       {
-        "msg": "Bone Spike hits Dire Wolf for 29",
+        "msg": "You used Bone Spike on Dire Wolf for 29 damage.",
         "cls": "log-ally"
+      },
+      {
+        "msg": "Bone Spike on cooldown (1 turn).",
+        "cls": "log-sys"
       }
     ]
   }

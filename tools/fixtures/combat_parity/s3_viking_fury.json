@@ -66,12 +66,16 @@
     ],
     "logs": [
       {
-        "msg": "Dire Wolf hits you for 3.",
+        "msg": "Dire Wolf bit you for 3 damage.",
         "cls": "log-foe"
       },
       {
         "msg": "Blood Howl: you feel stronger.",
         "cls": "log-ally"
+      },
+      {
+        "msg": "Blood Howl on cooldown (2 turns).",
+        "cls": "log-sys"
       }
     ]
   }

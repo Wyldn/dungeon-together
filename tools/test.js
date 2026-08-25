@@ -2828,6 +2828,11 @@ console.log('— narrative event pacing —');
 }
 
 {
+  const { runCombatLogTests } = await import('./test_combat_log.js');
+  await runCombatLogTests(t);
+}
+
+{
   const { runCombatCoreTests } = await import('./test_combat_core.js');
   await runCombatCoreTests(t);
 }

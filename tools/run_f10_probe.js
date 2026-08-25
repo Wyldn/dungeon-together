@@ -23,6 +23,7 @@ import { baselinePolicy } from './policies/baseline.js';
 import { chooseBossAwareAction } from './policies/boss_aware.js';
 import { runHeadlessFight } from './combat_headless.js';
 import { BASE_CLASSES, climbSeed, planDifficultyJobs } from './run_difficulty.js';
+import { parseIncomingHit } from '../js/combat_log.js';
 
 globalThis.localStorage = globalThis.localStorage || {
   getItem: () => null, setItem: () => {}, removeItem: () => {},
@@ -65,22 +66,7 @@ export function parseCombatLogs(logs = []) {
     if (/^Used |Close wounds|You raise a ward/.test(msg) && /potion|mend|ward|Used /i.test(msg)) {
       if (/Used /.test(msg) || /Mend|Benediction|Sanctuary|Iron Stance/.test(msg)) heals += 1;
     }
-    let m = msg.match(/^(.+) \(([^)]+)\) hits you for (\d+)/);
-    if (m) {
-      const amt = Number(m[3]);
-      const spec = m[2];
-      dmg.special[spec] = (dmg.special[spec] || 0) + amt;
-      lastHit = { kind: 'special', name: spec, amt };
-      continue;
-    }
-    m = msg.match(/^(.+) hits you for (\d+)/);
-    if (m) {
-      const amt = Number(m[2]);
-      dmg.basic += amt;
-      lastHit = { kind: 'basic', name: m[1], amt };
-      continue;
-    }
-    m = msg.match(/You burn for (\d+)/);
+    let m = msg.match(/You burn for (\d+)/);
     if (m) {
       dmg.burn += Number(m[1]);
       lastHit = { kind: 'burn', name: 'burn', amt: Number(m[1]) };
@@ -96,6 +82,19 @@ export function parseCombatLogs(logs = []) {
     if (m) {
       dmg.torment += Number(m[1]);
       lastHit = { kind: 'torment', name: 'torment', amt: Number(m[1]) };
+      continue;
+    }
+    const hit = parseIncomingHit(msg);
+    if (hit) {
+      const amt = hit.dmg;
+      if (hit.move) {
+        dmg.special[hit.move] = (dmg.special[hit.move] || 0) + amt;
+        lastHit = { kind: 'special', name: hit.move, amt };
+      } else {
+        dmg.basic += amt;
+        lastHit = { kind: 'basic', name: hit.actor, amt };
+      }
+      continue;
     }
   }
   return { dmg, lastHit, logGuards: guards };
