@@ -2857,6 +2857,11 @@ console.log('— narrative event pacing —');
   await runPartyProxyTests(t);
 }
 
+{
+  const { runMpPersistTests } = await import('./test_mp_persist.js');
+  await runMpPersistTests(t);
+}
+
 console.log('— narrative typography —');
 {
   const { isLongChoiceLabel, choiceBtnClass, CHOICE_PROSE_MIN_CHARS } = await import('../js/typography.js');
@@ -2946,6 +2951,11 @@ console.log('— narrative typography —');
 {
   const { runF48ProbeTests } = await import('./test_f48_probe.js');
   await runF48ProbeTests(t);
+}
+
+{
+  const { runEconomyEventTests } = await import('./test_economy_events.js');
+  await runEconomyEventTests(t);
 }
 
 console.log('— clear-rate CDF 1p–4p (run_sim, real loot) —');

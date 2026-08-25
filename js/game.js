@@ -66,7 +66,7 @@ import {
   applyVictoryRewards, applyEliteVictoryFind, grantReward as grantRewardShared,
   rollBossHoard,
 } from './rewards.js';
-import { buildShopStock, shopDiscount, shopDiscountFlavor, applyShopHeal, applyShopBuy, applyShopSell, shopView, openShopVisit } from './shop.js';
+import { buildShopStock, shopDiscount, shopDiscountFlavor, applyShopHeal, applyShopBuy, applyShopSell, applyShopRestock, shopView, openShopVisit } from './shop.js';
 import {
   resolveEncounterApproach,
   isSpecialEventFoe as isSpecialEventFoeOf, buildEventFightEnemies as buildEventFightEnemiesOf,
@@ -75,6 +75,8 @@ import { SKILL_OFFER_LEVELS, offerSkillPool } from './progression.js';
 import { beginThrone, resolveThroneChoice } from './throne.js';
 import { applyFloorBreath, tickFoodBuff, applyLowHpRelic, previewUpcomingBoss } from './floor.js';
 import { createClimbRecorder } from './climb_trace.js';
+import { earnGold, applyGoldDelta } from './economy.js';
+import { listEligibleOfferings, offeringHint, applyOfferingOutcome, defaultOfferingPick } from './offering.js';
 
 let meta = loadMeta();
 let run = null;
@@ -667,6 +669,7 @@ function debugScreen({ debug = false } = {}) {
     if (o.wrldItem) parts.push('WRLD gear');
     if (o.item) parts.push(`item: ${itemName(o.item)}`);
     if (o.consumable) parts.push(`consumable: ${itemName(o.consumable)}`);
+    if (o.offering) parts.push(offeringHint(o.offering));
     if (o.consumable2) parts.push(`consumable: ${itemName(o.consumable2)}`);
     if (o.useItem) parts.push(`consume ${itemName(o.useItem)}`);
     if (o.chest) parts.push(o.safeMimic ? 'open chest (safe check)' : 'open chest (mimic risk)');
@@ -3981,13 +3984,42 @@ async function coopEventFight(stage, ev, specs, { text = null, reward = null, hp
   return runShared(data.enemies, data.reward);
 }
 
+async function pickOfferingModal(runState, spec) {
+  const list = listEligibleOfferings(runState, spec);
+  if (!list.length) return { kind: 'none' };
+  return modalCustom((m, close) => {
+    const risks = (spec.hintRisks || ['remake', 'ruin', 'refuse']).join(', ');
+    m.innerHTML = `<h3>What does the kiln take?</h3>
+      <p class="modal-sub">${getChoiceOutcomeHints()
+        ? `Possible risks: ${risks}. Equipped gear and unique relics stay where they are.`
+        : 'Equipped gear and unique relics are not belongings.'}</p>
+      <div class="pick-grid">
+        ${list.map((p, i) => `
+          <button class="pick-option" data-i="${i}">
+            <div class="po-name">${p.label}</div>
+            <div class="po-desc">${p.category}${p.sell ? ` · slag value ~${p.sell}g` : ''}</div>
+          </button>`).join('')}
+        <button class="pick-option" data-skip="1"><div class="po-name" style="color:var(--ink-dim)">Keep your hands empty</div></button>
+      </div>`;
+    m.querySelectorAll('[data-i]').forEach(btn => {
+      btn.onclick = () => close(list[+btn.dataset.i]);
+    });
+    m.querySelector('[data-skip]').onclick = () => close({ kind: 'none' });
+  });
+}
+
 async function resolveChoice(stage, ev, choice, opts = {}) {
   climbTrace?.event(choice);
   const rng = runRng(run);
   const sparkle = !!run.eventSparkle;
-  recordEvent(run, ev, { choice: choice.id || choice.label, variantId: ev.variantId || null });
   let outcome = applyTagOutcomeMods(choice.outcome, ev, run);
   if (sparkle) outcome = applySparkleOutcomeMods(outcome, { floor: run.floor, rng });
+  if (outcome.offering) {
+    const pick = await pickOfferingModal(run, outcome.offering);
+    if (!pick) return;
+    outcome = { ...outcome, offering: { ...outcome.offering, picked: pick } };
+  }
+  recordEvent(run, ev, { choice: choice.id || choice.label, variantId: ev.variantId || null });
   appendChronicle(run, {
     t: 'choice',
     eventId: ev?.id,
@@ -4128,6 +4160,21 @@ async function applyOutcomeCoop(stage, ev, o, rng, lines, opts = {}) {
   }
   if (o.text) lines.push({ text: o.text, cls: '' });
 
+  if (o.offering) {
+    let spec = o.offering;
+    if (!spec.picked) {
+      spec = { ...spec, picked: defaultOfferingPick(run, spec) };
+    }
+    const off = applyOfferingOutcome(run, spec, rng, lines);
+    if (off.kiln) {
+      if (off.kiln.fame) o.fame = (o.fame || 0) + off.kiln.fame;
+      if (off.kiln.hpPct) o.hpPct = (o.hpPct || 0) + off.kiln.hpPct;
+      if (off.kiln.statUpRandom) o.statUpRandom = (o.statUpRandom || 0) + off.kiln.statUpRandom;
+      if (off.kiln.maxHp) o.maxHp = (o.maxHp || 0) + off.kiln.maxHp;
+      if (off.kiln.upgradeWeapon) o.upgradeWeapon = true;
+    }
+  }
+
   if (o.chest) {
     let isMimic = false;
     if (!o.safeMimic && !relicItems(run).some(r => r.noMimic)) {
@@ -4164,7 +4211,7 @@ async function applyOutcomeCoop(stage, ev, o, rng, lines, opts = {}) {
     }
     const sparkleGold = sparkle ? (CONFIG.events.sparkle?.goldMult || 1.65) : 1;
     const gold = Math.round((30 + run.floor * 4 + rng.int(0, 25)) * d.goldMult * sparkleGold);
-    run.gold += gold; run.goldEarned += gold;
+    earnGold(run, gold, 'chest');
     lines.push({ text: `The chest is honest for once. +${gold} gold`, cls: 'gold' });
     SFX.gold();
     const chestFindChance = sparkle ? 0.55 : 0.35;
@@ -4184,14 +4231,14 @@ async function applyOutcomeCoop(stage, ev, o, rng, lines, opts = {}) {
 
   if (o.gold) {
     const amt = o.gold > 0 ? Math.round(o.gold * d.goldMult) : o.gold;
-    run.gold = Math.max(0, run.gold + amt);
-    if (amt > 0) { run.goldEarned += amt; SFX.gold(); }
+    applyGoldDelta(run, amt, { earnReason: 'event', spendReason: 'event' });
+    if (amt > 0) SFX.gold();
     lines.push({ text: `${amt > 0 ? '+' : ''}${amt} gold`, cls: 'gold' });
   }
   if (o.goldPct) {
     const amt = Math.round(run.gold * o.goldPct);
-    run.gold = Math.max(0, run.gold + amt);
-    lines.push({ text: `${amt} gold`, cls: 'bad' });
+    applyGoldDelta(run, amt, { earnReason: 'event', spendReason: 'event' });
+    lines.push({ text: `${amt} gold`, cls: amt >= 0 ? 'gold' : 'bad' });
   }
   if (o.hp) {
     if (o.hp > 0) heal(run, o.hp); else run.hp = Math.max(0, run.hp + o.hp);
@@ -4203,7 +4250,14 @@ async function applyOutcomeCoop(stage, ev, o, rng, lines, opts = {}) {
     if (amt > 0) heal(run, amt); else run.hp = Math.max(0, run.hp + amt);
     lines.push({ text: `${amt > 0 ? '+' : ''}${amt} HP`, cls: amt > 0 ? 'good' : 'bad' });
   }
-  if (o.maxHp) { run.maxHp += o.maxHp; run.hp += o.maxHp; lines.push({ text: 'You feel your endurance deepen.', cls: 'good' }); }
+  if (o.maxHp) {
+    run.maxHp = Math.max(8, run.maxHp + o.maxHp);
+    run.hp = Math.max(1, Math.min(run.maxHp, run.hp + o.maxHp));
+    lines.push({
+      text: o.maxHp > 0 ? 'You feel your endurance deepen.' : 'Something in you is slightly less infinite.',
+      cls: o.maxHp > 0 ? 'good' : 'bad',
+    });
+  }
   if (o.fullHeal) {
     const miss = Math.max(0, run.maxHp - run.hp);
     const amt = heal(run, Math.round(miss * (CONFIG.recovery.eventFullHealMissingPct ?? 0.4)));
@@ -4277,7 +4331,7 @@ async function applyOutcomeCoop(stage, ev, o, rng, lines, opts = {}) {
   // §14: a reward scaled to how famous you are
   if (o.fameReward) {
     const goldR = Math.round((30 + Math.floor(run.fame / 10) * 22) * d.goldMult);
-    run.gold += goldR; run.goldEarned += goldR;
+    earnGold(run, goldR, 'event');
     const statR = 1 + Math.floor(run.fame / 40);
     for (let i = 0; i < statR; i++) run.stats[rng.pick(APPRAISABLE)]++;
     heal(run, run.maxHp * 0.2);
@@ -4914,8 +4968,7 @@ function unequipSlot(slot) {
 function autoPlayTakeEquipment(item, lines) {
   const sellPrice = sellGold(item);
   const sellIt = () => {
-    run.gold += sellPrice;
-    run.goldEarned += sellPrice;
+    earnGold(run, sellPrice, 'sell');
     if (run.gearBag && item.instanceId) delete run.gearBag[item.id];
     lines.push({ text: `Sold ${item.name} for ${sellPrice}g`, cls: 'gold' });
     SFX.gold();
@@ -5090,8 +5143,7 @@ async function offerEquipment(item, lines) {
     run.inventory.push(item.id);
     lines.push({ text: `Stashed: ${item.name}`, cls: 'item' });
   } else if (v.act === 'sell') {
-    run.gold += sellPrice;
-    run.goldEarned += sellPrice;
+    earnGold(run, sellPrice, 'sell');
     if (run.gearBag && item.instanceId) delete run.gearBag[item.id];
     lines.push({ text: `Sold ${item.name} for ${sellPrice}g`, cls: 'gold' });
     SFX.gold();
@@ -5470,6 +5522,11 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
               <span class="si-price">🪙 ${view.heal.cost}</span>
               <button class="btn small" id="buy-heal" ${view.heal.disabled ? 'disabled' : ''}>Buy</button>
             </div>
+            <div class="shop-item">
+              <div class="si-info"><div class="si-name">Restock the crate</div><div class="si-desc">He sends the runner. New mistakes, same margins. Optional.</div></div>
+              <span class="si-price">🪙 ${view.restock.cost}</span>
+              <button class="btn small" id="buy-restock" ${view.restock.disabled ? 'disabled' : ''}>Pay</button>
+            </div>
           </div>
           <div class="card-choices"><button class="${choiceBtnClass('Take your leave')}" id="leave"><span class="choice-label">Take your leave</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
         </div>
@@ -5515,6 +5572,18 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
       if (!r.ok) { render(); return; }
       visit.boughtHere = true;
       SFX.heal(); toast('Fully healed');
+      setPending('shop', { eventId: ev.id, stock: visit.stock });
+      refreshShop();
+    };
+    stage.querySelector('#buy-restock').onclick = () => {
+      if (visit.busy) return;
+      visit.busy = true;
+      const rng2 = runRng(run);
+      const r = applyShopRestock(run, visit.stock, rng2, visit.discount, { coop: coopS });
+      visit.busy = false;
+      if (!r.ok) { render(); return; }
+      visit.boughtHere = true;
+      SFX.gold(); toast('The runner returns with a different crate.');
       setPending('shop', { eventId: ev.id, stock: visit.stock });
       refreshShop();
     };

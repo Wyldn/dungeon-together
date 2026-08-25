@@ -9,9 +9,24 @@
   "biomeId": "forest",
   "rngSeed": 424242,
   "cards": [
-    { "kind": "encounter", "category": "combat" },
-    { "kind": "event", "category": "social", "eventId": "underdog_purse" },
-    { "kind": "event", "category": "mystery", "eventId": "void_margin" },
-    { "kind": "event", "category": "social", "eventId": "blade_hero_meet" }
+    {
+      "kind": "encounter",
+      "category": "combat"
+    },
+    {
+      "kind": "event",
+      "category": "social",
+      "eventId": "underdog_purse"
+    },
+    {
+      "kind": "event",
+      "category": "mystery",
+      "eventId": "unsung_verse"
+    },
+    {
+      "kind": "event",
+      "category": "social",
+      "eventId": "blade_hero_meet"
+    }
   ]
 }

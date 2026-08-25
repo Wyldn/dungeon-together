@@ -73,8 +73,8 @@
   "cards": [
     {
       "kind": "event",
-      "category": "training",
-      "eventId": "rare_mentor",
+      "category": "recovery",
+      "eventId": "font_of_focus",
       "hidden": false,
       "sparkle": false,
       "hpMult": null,
@@ -82,8 +82,8 @@
     },
     {
       "kind": "event",
-      "category": "equipment",
-      "eventId": "abandoned_armory",
+      "category": "merchant",
+      "eventId": "merchant",
       "hidden": false,
       "sparkle": false,
       "hpMult": null,

@@ -56,6 +56,7 @@ export const CHARACTERS = {
   mira: { name: 'Mira', title: 'the Wounded Climber', role: 'climber', faction: 'climbers' },
   lyra: { name: 'Lyra', title: 'the Bard Who Stayed', role: 'bard', faction: 'wanderers' },
   merchant: { name: 'the Hooded Merchant', title: 'of the Vertical Supply Chain', role: 'merchant', faction: 'merchants' },
+  assay: { name: 'the Assay Clerk', title: 'who opens the vertical tab', role: 'clerk', faction: 'merchants' },
   ghost_king: { name: 'the King Who Stayed', title: 'of the Sunken Ruins', role: 'ghost', faction: 'the_fallen' },
   witch: { name: 'the Heron-Hut Witch', title: 'who keeps the appointments', role: 'witch', faction: 'mire' },
   vess: { name: 'V', title: 'who leaves dinner out', role: 'host', faction: 'unknown' },
@@ -125,6 +126,7 @@ export const THREADS = {
   eclipse: { name: 'the Gap', stages: ['deferred', 'cut'] },
   valhalla: { name: 'Halls Upstairs', stages: ['deferred', 'notice'] },
   doomsong: { name: 'the Unsung Last Note', stages: ['deferred', 'taken'] },
+  assay: { name: 'the Vertical Ledger', stages: ['opened', 'collected', 'settled'] },
 };
 
 /**
@@ -167,6 +169,21 @@ export const FLAG_BRIDGES = {
   lodge_mark: { tag: 'lodge' },
   guard_trained: { tag: 'guard' },
   let_it_ride: { counter: { id: 'defiance', add: 1 } },
+  assay_paid: { char: { id: 'assay', met: true, relSet: 2, memory: 'stamped' }, thread: { id: 'assay', stage: 'opened' }, knowledge: 'assay_stamp' },
+  assay_potion: { char: { id: 'assay', met: true, memory: 'vial' }, thread: { id: 'assay', stage: 'opened' }, knowledge: 'assay_vial' },
+  assay_blood: { char: { id: 'assay', met: true, memory: 'signed_in_blood' }, thread: { id: 'assay', stage: 'opened' }, knowledge: 'assay_blood' },
+  assay_refused: { char: { id: 'assay', met: true, relSet: -1, memory: 'walked' }, thread: { id: 'assay', stage: 'opened' }, knowledge: 'assay_refused' },
+  assay_collected_paid: { thread: { id: 'assay', stage: 'collected' }, knowledge: 'assay_refined' },
+  assay_collected_foresight: { thread: { id: 'assay', stage: 'collected' }, knowledge: 'assay_foresight' },
+  assay_collected_vial: { thread: { id: 'assay', stage: 'collected' }, knowledge: 'assay_vial_returned' },
+  assay_collected_drew: { thread: { id: 'assay', stage: 'collected' }, knowledge: 'assay_drew' },
+  assay_collected_late: { thread: { id: 'assay', stage: 'collected' } },
+  assay_collected_sold: { thread: { id: 'assay', stage: 'collected' } },
+  assay_collected_reclaim: { thread: { id: 'assay', stage: 'collected' } },
+  assay_collected_bought: { thread: { id: 'assay', stage: 'collected' } },
+  assay_debt: { thread: { id: 'assay', stage: 'collected' }, knowledge: 'assay_debt' },
+  assay_marked: { thread: { id: 'assay', stage: 'collected' }, tag: 'assay_marked' },
+  assay_settled: { thread: { id: 'assay', stage: 'settled' } },
 };
 
 /**

@@ -12,6 +12,7 @@ import { catalogNarrativeGraph, TERMINAL_STATE } from './narrative_graph.js';
 export const EXCLUSIVE_FLAG_GROUPS = [
   ['saved_climber', 'left_climber'],
   ['angered_forest', 'forest_peace'],
+  ['assay_paid', 'assay_potion', 'assay_blood', 'assay_refused'],
 ];
 
 export const FACE_EVENTS = {
@@ -25,6 +26,7 @@ export const FACE_EVENTS = {
   vess: ['warm_hearth', 'v_hearth'],
   gravekeeper: ['gravekeeper_notice', 'gravekeeper_slag', 'pale_rite'],
   merchant: ['merchant', 'merchant_tab', 'bandit_shop'],
+  assay: ['assay_clerk', 'assay_collection', 'assay_settlement'],
   witch: ['witch_hut', 'witch_remembers'],
   ghost_king: ['ghost_king', 'kings_favor', 'kings_usurper'],
   oathbound: ['blade_hero_meet', 'oathbound_watch', 'oathbound_gate'],
@@ -157,7 +159,7 @@ export function npcArtMismatches() {
 
 export function exclusiveFlagViolations(run) {
   const flags = run?.flags || {};
-  return EXCLUSIVE_FLAG_GROUPS.filter(group => group.every(id => flags[id]));
+  return EXCLUSIVE_FLAG_GROUPS.filter(group => group.filter(id => flags[id]).length >= 2);
 }
 
 /** Flags/knowledge a card reads that nothing in the catalog writes. */
