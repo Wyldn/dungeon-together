@@ -1659,7 +1659,17 @@ async function resumeSavedCoop() {
 async function enterRestoredCoop(payload) {
   if (payload.wait === 'combat') return showCoopWaitCombat(payload);
   const climber = payload.climber;
-  if (!climber) return showCoopResumeProblem('unrecoverable');
+  if (!climber) {
+    // Title "Resume party" is also shown for a lobby-only slot (Fl.0). The
+    // relay returns resume-ok with no climber until the first safe checkpoint.
+    if (!payload.runId && !payload.checkpoint) {
+      const name = loadCoopResume()?.name || 'Climber';
+      persistCoopResumeSlot({ name, status: 'lobby' });
+      coopLobby(name);
+      return;
+    }
+    return showCoopResumeProblem('unrecoverable');
+  }
   if (payload.checkpoint) {
     const v = validateCheckpoint(payload.checkpoint);
     if (!v.ok) return showCoopResumeProblem(v.code || 'unrecoverable');

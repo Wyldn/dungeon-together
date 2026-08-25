@@ -1847,7 +1847,7 @@ export const EVENTS = [
     id: 'cursed_knight_vigil', biome: 'ruins', category: 'dangerous', type: 'risk', glyph: '🗡️', w: 4, once: true, cond: s => s.floor >= 11,
     title: 'The Cursed Vigil',
     text: 'A terrible knight stands watch over a cracked sarcophagus, sword planted, armor whispering to itself. The ruins remember him as a hero. He remembers something else.',
-    npc: { art: 'gv_terrible_knight', name: 'Terrible Knight', blurb: 'A ruined oath in walking armor — walk, strike, hurt, fall.' },
+    npc: { art: 'gv_terrible_knight', name: 'Gilded Knight', blurb: 'A ruined oath in walking armor — walk, strike, hurt, fall.' },
     choices: [
       { label: 'Offer a prayer for the oath', hint: 'blessing — or wake him',
         outcome: { roll: { stat: 'wis', dc: 12 },

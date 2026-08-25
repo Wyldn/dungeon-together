@@ -598,6 +598,20 @@ console.log('— creature display names (no asset leakage) —');
   for (const [id, name] of Object.entries(ROSTER.renames || {})) {
     pushName(id, name, 'ROSTER.renames');
   }
+  for (const ev of EVENTS) {
+    const npcs = [];
+    if (ev.npc?.name) npcs.push(ev.npc);
+    for (const v of ev.variants || []) {
+      if (v.npc?.name) npcs.push(v.npc);
+    }
+    for (const npc of npcs) {
+      pushName(npc.art || ev.id, npc.name, `EVENTS.${ev.id}.npc`);
+      const spec = npc.art ? findEnemySpec(npc.art) : null;
+      if (spec && /^(mcf|gv_|tr_)/.test(npc.art)) {
+        t(`${ev.id} NPC name matches creature display name`, npc.name === spec.name);
+      }
+    }
+  }
 
   let leaks = 0;
   for (const row of seen) {

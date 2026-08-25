@@ -253,6 +253,19 @@ export async function runMpPersistTests(t) {
   hub4.disconnect(lone);
   t('tokenless lobby room is deleted on last leave', !hub4.rooms.has(lobbyCode));
 
+  // Lobby-only resume: token reconnect before start has no climber yet.
+  {
+    const hubL = createPartyHub();
+    const l1 = new MockWs();
+    hubL.receive(l1, { t: 'create', name: 'Ava', token: '22'.repeat(16) });
+    const lobbyTok = l1.last('room').code;
+    const l2 = new MockWs();
+    hubL.receive(l2, { t: 'resume', code: lobbyTok, token: '22'.repeat(16) });
+    const ok = l2.last('resume-ok');
+    t('lobby second tab kicks the live socket', l1.last('kicked')?.why === 'resumed-elsewhere' && l1.closed);
+    t('lobby resume-ok has no climber or run yet', !!(ok && !ok.climber && !ok.runId && !ok.checkpoint));
+  }
+
   t('new party is blocked while a token already has a save', (() => {
     const h = createPartyHub();
     const p = new MockWs();
