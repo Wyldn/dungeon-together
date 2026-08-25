@@ -259,6 +259,10 @@ export function eventDrawWeight(ev, state, ctx = {}) {
     term('category', 'Category history', category),
     term('tags', 'Tags', tags),
   ];
+  if (ev.shop && (CONFIG.economy?.merchantWeightBonus || 0)) {
+    const bonus = CONFIG.economy.merchantWeightBonus;
+    terms.push(term('merchantBonus', 'Merchant frequency', (base + bonus) / Math.max(1, base)));
+  }
   if (eventId !== 1) terms.push(term('eventId', 'Recent event', eventId));
 
   if (ctx.skipPace) return { w: product(terms), terms, role };

@@ -17,6 +17,8 @@ import { biomeTier } from './biome_tier.js';
 import { grantReward, grantWrldFind } from './rewards.js';
 import { mimicSpec } from './data/enemies.js';
 import { pickEventEnemyIds, specsFromEnemyIds, maybeEscortNpcDuel, buildEventFightEnemies } from './encounter.js';
+import { earnGold, spendGold, applyGoldDelta } from './economy.js';
+import { applyOfferingOutcome, defaultOfferingPick } from './offering.js';
 
 const STAT_ROLL = { str: 'Strength', dex: 'Agility', int: 'Intellect', wis: 'Wisdom', lk: 'Luck' };
 
@@ -91,6 +93,24 @@ export async function applyEventOutcome(run, ev, o, rng, hooks = {}) {
   }
   if (o.text) lines.push({ text: o.text, cls: '' });
 
+  if (o.offering) {
+    let spec = o.offering;
+    if (!spec.picked) {
+      const pick = hooks.chooseOffering
+        ? hooks.chooseOffering(run, spec)
+        : defaultOfferingPick(run, spec);
+      spec = { ...spec, picked: pick || { kind: 'none' } };
+    }
+    const off = applyOfferingOutcome(run, spec, rng, lines, hooks);
+    if (off.kiln) {
+      if (off.kiln.fame) o.fame = (o.fame || 0) + off.kiln.fame;
+      if (off.kiln.hpPct) o.hpPct = (o.hpPct || 0) + off.kiln.hpPct;
+      if (off.kiln.statUpRandom) o.statUpRandom = (o.statUpRandom || 0) + off.kiln.statUpRandom;
+      if (off.kiln.maxHp) o.maxHp = (o.maxHp || 0) + off.kiln.maxHp;
+      if (off.kiln.upgradeWeapon) o.upgradeWeapon = true;
+    }
+  }
+
   if (o.chest) {
     let isMimic = false;
     if (!o.safeMimic && !relicItems(run).some(r => r.noMimic)) {
@@ -108,7 +128,7 @@ export async function applyEventOutcome(run, ev, o, rng, hooks = {}) {
     }
     const sparkleGold = sparkle ? (CONFIG.events.sparkle?.goldMult || 1.65) : 1;
     const gold = Math.round((30 + run.floor * 4 + rng.int(0, 25)) * d.goldMult * sparkleGold);
-    run.gold += gold; run.goldEarned += gold;
+    earnGold(run, gold, 'chest');
     lines.push({ text: `The chest is honest for once. +${gold} gold`, cls: 'gold' });
     const chestFindChance = sparkle ? 0.55 : 0.35;
     if (rng.chance(chestFindChance)) {
@@ -127,14 +147,13 @@ export async function applyEventOutcome(run, ev, o, rng, hooks = {}) {
 
   if (o.gold) {
     const amt = o.gold > 0 ? Math.round(o.gold * d.goldMult) : o.gold;
-    run.gold = Math.max(0, run.gold + amt);
-    if (amt > 0) run.goldEarned += amt;
+    applyGoldDelta(run, amt, { earnReason: 'event', spendReason: 'event' });
     lines.push({ text: `${amt > 0 ? '+' : ''}${amt} gold`, cls: 'gold' });
   }
   if (o.goldPct) {
     const amt = Math.round(run.gold * o.goldPct);
-    run.gold = Math.max(0, run.gold + amt);
-    lines.push({ text: `${amt} gold`, cls: 'bad' });
+    applyGoldDelta(run, amt, { earnReason: 'event', spendReason: 'event' });
+    lines.push({ text: `${amt} gold`, cls: amt >= 0 ? 'gold' : 'bad' });
   }
   if (o.hp) {
     if (o.hp > 0) heal(run, o.hp); else run.hp = Math.max(0, run.hp + o.hp);
@@ -145,7 +164,14 @@ export async function applyEventOutcome(run, ev, o, rng, hooks = {}) {
     if (amt > 0) heal(run, amt); else run.hp = Math.max(0, run.hp + amt);
     lines.push({ text: `${amt > 0 ? '+' : ''}${amt} HP`, cls: amt > 0 ? 'good' : 'bad' });
   }
-  if (o.maxHp) { run.maxHp += o.maxHp; run.hp += o.maxHp; lines.push({ text: 'You feel your endurance deepen.', cls: 'good' }); }
+  if (o.maxHp) {
+    run.maxHp = Math.max(8, run.maxHp + o.maxHp);
+    run.hp = Math.max(1, Math.min(run.maxHp, run.hp + o.maxHp));
+    lines.push({
+      text: o.maxHp > 0 ? 'You feel your endurance deepen.' : 'Something in you is slightly less infinite.',
+      cls: o.maxHp > 0 ? 'good' : 'bad',
+    });
+  }
   if (o.fullHeal) {
     const miss = Math.max(0, run.maxHp - run.hp);
     const amt = heal(run, Math.round(miss * (CONFIG.recovery.eventFullHealMissingPct ?? 0.4)));
@@ -207,7 +233,7 @@ export async function applyEventOutcome(run, ev, o, rng, hooks = {}) {
   }
   if (o.fameReward) {
     const goldR = Math.round((30 + Math.floor(run.fame / 10) * 22) * d.goldMult);
-    run.gold += goldR; run.goldEarned += goldR;
+    earnGold(run, goldR, 'event');
     const statR = 1 + Math.floor(run.fame / 40);
     for (let i = 0; i < statR; i++) run.stats[rng.pick(APPRAISABLE)]++;
     heal(run, run.maxHp * 0.2);

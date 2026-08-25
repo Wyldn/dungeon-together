@@ -13,6 +13,7 @@ import {
 } from './character.js';
 import { runRng } from './state.js';
 import { biomeTier } from './biome_tier.js';
+import { earnGold, spendGold } from './economy.js';
 
 export function computeCombatPayout(run, rng, enemies, mod = {}) {
   const d = derived(run);
@@ -45,8 +46,7 @@ export function applyItemAct(run, item, act, slot = null) {
   }
   if (act === 'sell') {
     const sellPrice = sellGold(item);
-    run.gold += sellPrice;
-    run.goldEarned = (run.goldEarned || 0) + sellPrice;
+    earnGold(run, sellPrice, 'sell');
     if (run.gearBag && item.instanceId) delete run.gearBag[item.id];
     return { act: 'sell', gold: sellPrice };
   }
@@ -104,8 +104,7 @@ export async function grantReward(run, reward, lines, hooks = {}) {
   const rng = hooks.rng || (hooks.runRng ? hooks.runRng(run) : runRng(run));
   const h = { ...hooks, rng };
   if (reward.gold) {
-    run.gold += reward.gold;
-    run.goldEarned += reward.gold;
+    earnGold(run, reward.gold, 'reward');
     lines.push({ text: `+${reward.gold} gold`, cls: 'gold' });
   }
   if (reward.fame) {
@@ -149,7 +148,7 @@ export async function grantReward(run, reward, lines, hooks = {}) {
   }
   if (reward.farmerLoot) {
     const gold = rng.int(3, 12);
-    run.gold += gold; run.goldEarned += gold;
+    earnGold(run, gold, 'farmer');
     lines.push({ text: `A few coins from the trough: +${gold} gold`, cls: 'gold' });
     const plain = ['farm_bread', 'farm_cheese', 'farm_stew'];
     const n = rng.int(1, 3);
@@ -195,7 +194,7 @@ export async function grantReward(run, reward, lines, hooks = {}) {
     }
     const fee = Math.min(skillCost(chosen), run.gold);
     if (fee > 0) {
-      run.gold -= fee;
+      spendGold(run, fee, 'skill');
       lines.push({ text: `Technique learning fee: -${fee} gold`, cls: 'bad' });
     }
     await applyRewardOption(run, chosen, lines, h);
@@ -216,8 +215,7 @@ export function applyVictoryRewards(run, enemies, gold, xp, {
   hooks = {},
 } = {}) {
   run.kills += enemies.length;
-  run.gold += gold;
-  run.goldEarned += gold;
+  earnGold(run, gold, 'combat');
   hooks.unlock?.('first_blood');
   if (run.gold >= 500) hooks.unlock?.('rich');
   if (enemies.some(e => e.id === 'mimic')) {

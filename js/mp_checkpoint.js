@@ -39,6 +39,7 @@ const CLIMBER_KEYS = Object.freeze([
   'recentCategories', 'recentNarrative', 'recentEventIds', 'recentTakenEventIds',
   'recentEncounterIds', 'recentEncounterBodies', 'recentShopItemIds',
   'lastTrialMod', 'sigils', 'kills', 'guardCount', 'bribes', 'goldEarned',
+  'goldSpent', 'goldEarnedBy', 'goldSpentBy',
   'usedRevive', 'down', 'over', 'metaStartCharge',
   'foodBuff', 'climb', 'combatTaunt', 'safeFloorStreak',
   'coopMode',

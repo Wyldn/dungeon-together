@@ -415,6 +415,9 @@ export function newRun(meta, { classId, raceId = 'human', originId = null, name,
     guardCount: 0,
     bribes: 0,
     goldEarned: 0,
+    goldSpent: 0,
+    goldEarnedBy: {},
+    goldSpentBy: {},
     usedRevive: false,
     down: false,
     over: false,
@@ -466,6 +469,10 @@ function migrateRun(run) {
   run.recentEncounterBodies = run.recentEncounterBodies || [];
   run.recentShopItemIds = run.recentShopItemIds || [];
   run.lastTrialMod = run.lastTrialMod || null;
+  run.goldEarned = run.goldEarned || 0;
+  run.goldSpent = run.goldSpent || 0;
+  run.goldEarnedBy = run.goldEarnedBy || {};
+  run.goldSpentBy = run.goldSpentBy || {};
   run.flags = run.flags || {};
   ensureWorld(run);
   syncSecretUnlockFromSubclass(run);

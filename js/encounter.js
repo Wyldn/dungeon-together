@@ -8,6 +8,7 @@ import {
   eventFightHpMult, eventFightAtkMult, npcDuelEase,
 } from './data/tdc.js';
 import { derived, gainXp } from './character.js';
+import { spendGold } from './economy.js';
 import { buildEnemy } from './combat_core.js';
 import { pickEnemyPlan } from './data/floorcards.js';
 
@@ -75,7 +76,7 @@ export function resolveEncounterApproach(run, rng, group, act, { planHp = 1, hoo
       rng.advance();
       return { kind: 'fight', group, hpMult: planHp, text: 'Steel answers steel.' };
     }
-    run.gold -= bribe;
+    spendGold(run, bribe, 'bribe');
     run.bribes = (run.bribes || 0) + 1;
     rng.advance();
     return {

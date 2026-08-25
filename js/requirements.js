@@ -1,5 +1,6 @@
 import { CLASSES } from './data/classes.js';
 import { derived } from './character.js';
+import { hasEligibleOffering } from './offering.js';
 
 const STAT_WHY = {
   str: 'strength', dex: 'deftness', int: 'learning', wis: 'insight', lk: 'fortune',
@@ -22,5 +23,8 @@ export function reqMet(run, req) {
   if (req.sigil && !(run.sigils || []).includes(req.sigil)) return { ok: false, why: '???' };
   if (req.knowledge && !(run.world?.knowledge || []).includes(req.knowledge)) return { ok: false, why: '???' };
   if (req.item && !run.consumables.includes(req.item)) return { ok: false, why: 'item needed' };
+  if (req.offering && !hasEligibleOffering(run, req.offering === true ? {} : req.offering)) {
+    return { ok: false, why: 'nothing suitable to offer' };
+  }
   return { ok: true };
 }

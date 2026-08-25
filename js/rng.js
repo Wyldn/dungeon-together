@@ -24,6 +24,9 @@ export function makeRng(seed) {
       }
       return a2;
     },
+    // Match runRng.advance: consume one sample so shop/event finishOutcome
+    // works on a bare makeRng in tests.
+    advance() { next(); },
     // weighted pick from [{w: number, ...}, ...]
     weighted(items) {
       const total = items.reduce((s, it) => s + it.w, 0);

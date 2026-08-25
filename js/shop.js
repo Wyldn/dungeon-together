@@ -6,6 +6,7 @@ import { charRel } from './data/world.js';
 import { biomeTier } from './biome_tier.js';
 import { appraiseRun } from './character.js';
 import { applyWorldPatch } from './data/world.js';
+import { earnGold, spendGold, healConsumableCount } from './economy.js';
 
 /** Flags this module reads. Catalog walker imports this — do not duplicate lists. */
 export const SHOP_NARRATIVE_READS = {
@@ -76,6 +77,10 @@ export function buildShopStock(run, rng, { resumeStock = null, coop = null } = {
   const tier = biomeTier(run.biomeId);
   const stock = [];
   const cons = rng.shuffle(shopConsumablePool(tier)).slice(0, 3);
+  if (healConsumableCount(run) === 0 && !cons.some(c => c.heal || c.healPct)) {
+    const pity = CONSUMABLES.find(c => c.id === (tier >= 4 ? 'potion_l' : 'potion_s'));
+    if (pity) cons[0] = pity;
+  }
   cons.forEach(c => stock.push({ kind: 'consumable', item: c, price: c.price }));
   if (rng.chance(0.4)) stock.push({ kind: 'consumable', item: CONSUMABLES.find(c => c.appraisal), price: 90 });
   const earlyOrMid = run.floor < 35;
@@ -153,10 +158,13 @@ export function shopView(run, stock, discount, visit = null) {
   });
   const healCost = shopHealCost(run, discount);
   const canHeal = !busy && gold >= healCost && run.hp < run.maxHp;
+  const restockCost = shopRestockCost(run, discount);
+  const canRestock = !busy && gold >= restockCost;
   return {
     gold,
     listings,
     heal: { cost: healCost, canBuy: canHeal, disabled: !canHeal },
+    restock: { cost: restockCost, canBuy: canRestock, disabled: !canRestock },
   };
 }
 
@@ -166,7 +174,7 @@ export function applyShopHeal(run, discount) {
   if (gold < cost || run.hp >= run.maxHp) {
     return { ok: false, cost, reason: gold < cost ? 'gold' : 'full' };
   }
-  run.gold = gold - cost;
+  spendGold(run, cost, 'shop_heal');
   run.hp = run.maxHp;
   return { ok: true, cost };
 }
@@ -181,7 +189,7 @@ export function applyShopBuy(run, stock, index, discount, hooks = {}) {
   const p = shopPrice(s.price, discount);
   const gold = shopGold(run);
   if (gold < p) return { ok: false, price: p, reason: 'gold' };
-  run.gold = gold - p;
+  spendGold(run, p, 'shop');
   if (s.kind === 'consumable') {
     if (s.item.appraisal) {
       const rng2 = hooks.runRng ? hooks.runRng(run) : null;
@@ -209,10 +217,29 @@ export function applyShopSell(run, index, { from = 'inventory' } = {}) {
   const gold = sellGold(item, { from });
   inv.splice(index, 1);
   if (run.gearBag && id && run.gearBag[id]) delete run.gearBag[id];
-  run.gold = shopGold(run) + gold;
+  earnGold(run, gold, 'sell');
   return { ok: true, gold, item, id };
 }
 
 export function applyShopLeave(run, boughtHere) {
   if (boughtHere) applyWorldPatch(run, { char: { id: 'merchant', met: true, rel: 1, memory: 'bought' } });
+}
+
+export function shopRestockCost(run, discount) {
+  const tier = biomeTier(run.biomeId);
+  const base = CONFIG.economy.shopRestockCost ?? 40;
+  const per = CONFIG.economy.shopRestockPerTier ?? 12;
+  return shopPrice(base + tier * per, discount);
+}
+
+/** Optional restock. Rebuilds `stock` in place. One rng.advance via buildShopStock. */
+export function applyShopRestock(run, stock, rng, discount, { coop = null } = {}) {
+  const cost = shopRestockCost(run, discount);
+  if (shopGold(run) < cost) return { ok: false, cost, reason: 'gold' };
+  if (!Array.isArray(stock)) return { ok: false, cost, reason: 'missing' };
+  spendGold(run, cost, 'shop_restock');
+  const fresh = buildShopStock(run, rng, { coop });
+  stock.length = 0;
+  for (const s of fresh) stock.push(s);
+  return { ok: true, cost };
 }

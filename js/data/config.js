@@ -138,6 +138,8 @@ export const CONFIG = {
     // Sell gold uses listing price (see sellGold), not catalog value.
     shopUniquePrice: 450,
     shopWrldPrice: 820,
+    shopRestockCost: 40,
+    shopRestockPerTier: 12,
   },
 
   /* ---- death / revival (Guard block is leaner; revive is a separate dial) ---- */

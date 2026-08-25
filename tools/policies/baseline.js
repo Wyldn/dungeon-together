@@ -8,7 +8,8 @@ import { chooseAutoPlayAction } from '../../js/combat_policy.js';
 import { itemById } from '../../js/data/items.js';
 import { SKILLS } from '../../js/data/skills.js';
 import { encounterOptions } from '../../js/encounter.js';
-import { shopHealCost, shopPrice } from '../../js/shop.js';
+import { shopHealCost, shopPrice, shopRestockCost } from '../../js/shop.js';
+import { defaultOfferingPick } from '../../js/offering.js';
 
 function pathRng(run) {
   return makeRng((run.seed ^ run.floor ^ 0xA11CE) >>> 0);
@@ -60,6 +61,11 @@ export function baselinePolicy(opts = {}) {
           return { act: 'buy', i };
         }
       }
+      const restock = shopRestockCost(run, discount);
+      const hasHealStock = stock.some(s => s.kind === 'consumable' && (s.item.heal || s.item.healPct));
+      if (!hasHealStock && run.gold >= restock * 2 && (run.consumables || []).length < 3) {
+        return { act: 'restock' };
+      }
       return { act: 'leave' };
     },
     chooseEquip(run, item) {
@@ -104,6 +110,9 @@ export function baselinePolicy(opts = {}) {
           : gearScore(itemById(best.id));
         return score > bestScore ? op : best;
       }, pool[0]);
+    },
+    chooseOffering(run, spec) {
+      return defaultOfferingPick(run, spec);
     },
     ...opts,
   };

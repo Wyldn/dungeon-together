@@ -400,7 +400,7 @@ export function authoringDefaults() {
       return {
         id: ev.id,
         role: wt.role,
-        paceTerms: wt.terms.filter(x => !['base', 'comeback', 'category', 'tags'].includes(x.id)).map(x => x.id),
+        paceTerms: wt.terms.filter(x => !['base', 'comeback', 'category', 'tags', 'merchantBonus'].includes(x.id)).map(x => x.id),
       };
     });
   return { pacedIds: paced.map(e => e.id), flavor };

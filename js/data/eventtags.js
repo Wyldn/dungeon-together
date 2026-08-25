@@ -3,6 +3,7 @@
 // light outcome hooks) via TAG_RULES. Compose freely; unknown tags are ignored.
 
 import { CONFIG } from './config.js';
+import { healConsumableCount } from '../economy.js';
 
 /**
  * Canonical tag ids (authoring vocabulary).
@@ -102,9 +103,11 @@ export const TAG_RULES = {
     weight(state) {
       if (!state.maxHp) return 1;
       const ratio = state.hp / state.maxHp;
-      if (ratio < 0.4) return 1.4;
-      if (ratio < 0.65) return 1.15;
-      return 0.9;
+      let m = 0.9;
+      if (ratio < 0.4) m = 1.4;
+      else if (ratio < 0.65) m = 1.15;
+      if (healConsumableCount(state) === 0) m *= 1.28;
+      return m;
     },
   },
   'combat-threat': {

@@ -1,6 +1,8 @@
 // Checkpoint snapshot for Simulation V2 vs live traces.
 // Includes rngState. Do not omit fields from the Phase 2 assert list.
 
+import { healConsumableCount } from './economy.js';
+
 export function climbCheckpoint(run, extra = {}) {
   return {
     floor: run.floor || 0,
@@ -10,6 +12,8 @@ export function climbCheckpoint(run, extra = {}) {
     mp: run.mp,
     maxMp: run.maxMp,
     gold: run.gold,
+    goldEarned: run.goldEarned || 0,
+    goldSpent: run.goldSpent || 0,
     xp: run.xp,
     xpNext: run.xpNext,
     level: run.level,
@@ -18,6 +22,7 @@ export function climbCheckpoint(run, extra = {}) {
     equipment: { ...(run.equipment || {}) },
     relics: [...(run.relics || [])],
     consumables: [...(run.consumables || [])],
+    healConsumables: healConsumableCount(run),
     flags: { ...(run.flags || {}) },
     knowledge: [...(run.world?.knowledge || [])],
     threads: { ...(run.world?.threads || {}) },

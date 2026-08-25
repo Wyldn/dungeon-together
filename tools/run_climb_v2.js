@@ -15,7 +15,7 @@ import {
   applyVictoryRewards, applyEliteVictoryFind,
   grantReward, rollBossHoard, applyItemAct,
 } from '../js/rewards.js';
-import { buildShopStock, shopDiscount, applyShopBuy, applyShopHeal, applyShopLeave } from '../js/shop.js';
+import { buildShopStock, shopDiscount, applyShopBuy, applyShopHeal, applyShopLeave, applyShopRestock } from '../js/shop.js';
 import {
   planEncounterGroup, encounterOptions, resolveEncounterApproach, isSpecialEventFoe,
 } from '../js/encounter.js';
@@ -27,6 +27,7 @@ import { buildEnemy } from '../js/combat_core.js';
 import { runHeadlessFight } from './combat_headless.js';
 import { baselinePolicy } from './policies/baseline.js';
 import { scriptedPolicy } from './policies/scripted.js';
+import { defaultOfferingPick } from '../js/offering.js';
 
 function specMeta(specs) {
   return (specs || []).map(s => ({
@@ -44,6 +45,8 @@ export function resourceSnap(run) {
     maxHp: run.maxHp,
     hpPct: run.maxHp ? run.hp / run.maxHp : 0,
     gold: run.gold,
+    goldEarned: run.goldEarned || 0,
+    goldSpent: run.goldSpent || 0,
     mp: run.mp,
     maxMp: run.maxMp,
     level: run.level,
@@ -91,6 +94,7 @@ function hooksFor(run, policy) {
     chooseFuture: () => policy.chooseWaypoint?.(run) || 'recovery',
     chooseOption: (options, ctx) => policy.chooseOption?.(options, ctx),
     chooseRelic: (choices) => policy.chooseRelic?.(choices),
+    chooseOffering: (r, spec) => policy.chooseOffering?.(r, spec) || defaultOfferingPick(r, spec),
     unlock: () => {},
   };
 }
@@ -155,6 +159,7 @@ async function resolveEvent(run, ev, policy) {
     choices.push({ label: 'Move on', hint: 'leave empty-handed', outcome: { text: 'Nothing here is for you today.' } });
   }
   const choice = policy.chooseEvent(run, presented, choices);
+  recordEvent(run, presented, { choice: choice?.id || choice?.label, variantId: presented.variantId || null });
   const rng = runRng(run);
   const sparkle = !!run.eventSparkle;
   const { outcome, roll } = resolveEventBranch(run, presented, choice, rng, { sparkle });
@@ -187,6 +192,12 @@ async function resolveShop(run, ev, policy) {
     if (!act || act.act === 'leave') break;
     if (act.act === 'heal') {
       const r = applyShopHeal(run, discount);
+      if (r.ok) boughtHere = true;
+      else break;
+      continue;
+    }
+    if (act.act === 'restock') {
+      const r = applyShopRestock(run, stock, rng, discount);
       if (r.ok) boughtHere = true;
       else break;
       continue;
