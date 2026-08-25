@@ -126,6 +126,11 @@ button { font-family: inherit; color: inherit; }
   background-color: transparent;
 }
 #viewport:has(.combat-screen) .battlefield.has-bg::before { display: none; }
+/* Floor chrome (run HUD, partner strip, biome node trail) sits under the
+   now-transparent battlefield and used to show through. Hide it in fights. */
+#viewport:has(.combat-screen) .screen.chrome > :not(#stage) {
+  display: none !important;
+}
 #frame {
   position: relative; width: 1280px; height: 720px; flex: 0 0 auto; z-index: 1;
   overflow: hidden; background: var(--bg-0);
