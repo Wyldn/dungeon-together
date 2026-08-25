@@ -13,6 +13,7 @@ import {
 import { derived, gearHas, heal, restoreMana, changeFame } from './character.js';
 import {
   initiativeOrder, addCharge, tickEnemyCharge, skillEffectivePower, pickEnemySpecial,
+  specialChargeCost, spendEnemySpecialCharge, bossChargeDamageScale,
   applyGuard, applyDefense, enemySpecialPayoff, enemyPayoffLine,
 } from './systems.js';
 import { biomeForFloor, ENEMIES } from './data/enemies.js';
@@ -781,16 +782,20 @@ export function resolveEnemyTurnStart(f, e, ops = null) {
   let chargeScale = 1;
   if (special) {
     if (e.boss) {
+      const spent = specialChargeCost(special);
       const banked = f.shared
-        ? (e.charge || 0)
-        : soloBossChargeForScale(f.run.floor, e.charge || 0);
-      chargeScale = 1 + CONFIG.boss.chargeDamageScale * banked;
+        ? spent
+        : soloBossChargeForScale(f.run.floor, spent);
+      chargeScale = bossChargeDamageScale(banked, special);
       if (!f.shared) chargeScale *= soloBossSpecialDmgMult(f.run.floor, special);
     }
-    e.charge = 0;
-    const scream = !f.shared && e.boss && chargeScale > 1.2 ? ' The air screams with pent-up force.' : '';
+    spendEnemySpecialCharge(e, special);
+    const maxAt = (e.specials || []).reduce((m, s) => Math.max(m, s.at || 0), 0);
+    const signature = special.at >= maxAt && maxAt > 0;
+    const scream = !f.shared && e.boss && signature && chargeScale > 1.2
+      ? ' The air screams with pent-up force.' : '';
     f.log(`${e.name} unleashes ${special.name}!${scream}`, 'log-foe');
-    ops?.push({ type: 'echarge', uid: e.uid, charge: 0 });
+    ops?.push({ type: 'echarge', uid: e.uid, charge: e.charge || 0 });
   }
   return { done: false, special, chargeScale };
 }

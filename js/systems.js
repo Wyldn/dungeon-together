@@ -133,11 +133,42 @@ export function skillEffectivePower(sk) {
   return Math.round(power + (expected - power) * close);
 }
 
+/** Charge cost of a special — `at` is both threshold and spend. */
+export function specialChargeCost(special) {
+  return Math.max(0, special?.at || 0);
+}
+
+/**
+ * Spend a special's charge cost. Bosses (and bankCharge elites) keep leftover
+ * segments so a 4⚡ mid-kit does not dump a 6-bar. Trash still empties the bar.
+ */
+export function spendEnemySpecialCharge(enemy, special) {
+  if (!special) return 0;
+  const cost = specialChargeCost(special);
+  if (enemy.boss || enemy.bankCharge) {
+    enemy.charge = Math.max(0, (enemy.charge || 0) - cost);
+  } else {
+    enemy.charge = 0;
+  }
+  return cost;
+}
+
+/**
+ * Damage scale from spent charge. Single-target hits keep the full bank curve;
+ * AOE uses aoeChargeFactor so authored AOE mults are not also wipe-scaled.
+ */
+export function bossChargeDamageScale(spentCharge, special) {
+  const banked = spentCharge || 0;
+  const aoeFactor = special?.aoe ? (CONFIG.boss?.aoeChargeFactor ?? 1) : 1;
+  return 1 + (CONFIG.boss?.chargeDamageScale ?? 0) * banked * aoeFactor;
+}
+
 /**
  * Enemy special selection: highest affordable special.
  * Bosses (and `bankCharge` elites) may return null to bank toward a heavier
  * special when close — so finishers at 5–6 actually fire instead of forever
- * dumping charge on the lightest threshold.
+ * dumping charge on the lightest threshold. Mid-cost specials bank less often
+ * than cheap openers so the kit is visible before the signature.
  *
  * @param {object} enemy
  * @param {{ chance: (p: number) => boolean } | null} [rng]  required for banking
@@ -149,40 +180,66 @@ export function pickEnemySpecial(enemy, rng = null) {
   if (!affordable.length) return null;
   const best = affordable.reduce((a, b) => (b.at > a.at ? b : a));
   const maxAt = enemy.specials.reduce((m, s) => Math.max(m, s.at || 0), 0);
+  if (best.at >= maxAt) return best;
   const next = enemy.specials.filter(s => s.at > charge).sort((a, b) => a.at - b.at)[0];
   const canBank = !!(enemy.boss || enemy.bankCharge);
-  if (canBank && next && best.at < maxAt && rng && typeof rng.chance === 'function') {
-    const gap = next.at - charge;
+  if (canBank && next && rng && typeof rng.chance === 'function') {
+    const sigGap = maxAt - charge;
     const base = enemy.bankChance ?? CONFIG.boss?.bankChance ?? 0.55;
-    // Strong urge when one segment from a heavier move; softer at gap 2–3.
+    const midBank = enemy.midBankChance ?? CONFIG.boss?.midBankChance ?? 0.32;
+    const low = (best.at || 0) <= 2;
     let p = 0;
-    if (gap === 1) p = base;
-    else if (gap === 2) p = base * 0.8;
-    else if (gap === 3) p = base * 0.4;
+    // Bank against the signature gap so extra mid rungs (4 then 5 then 6)
+    // cannot starve the finisher.
+    if (sigGap === 1) p = Math.max(base * 0.9, 0.6);
+    else if (sigGap === 2) p = Math.max(base * 0.7, 0.48);
+    else if (sigGap === 3) p = low ? 0.62 : 0.5;
+    else if (low) p = 0.74;
+    else p = midBank * 0.4;
     if (p > 0 && rng.chance(p)) return null;
   }
   return best;
 }
 
+function packTelegraph(special, charge) {
+  if (!special) return null;
+  return {
+    ready: charge >= special.at,
+    name: special.name,
+    desc: special.desc,
+    aoe: !!special.aoe,
+    at: special.at,
+  };
+}
+
 // Is a dangerous enemy move one segment away (or ready)? → telegraph.
-// Bosses telegraph the heavier upcoming special when they are banking toward it.
+// Bosses preview the signature when it is one segment away; otherwise the
+// highest affordable kit move (so mid-charge intents are actually visible).
 export function enemyTelegraph(enemy) {
   if (!enemy.specials?.length) return null;
   const c = enemy.charge || 0;
   const maxAt = enemy.specials.reduce((m, s) => Math.max(m, s.at || 0), 0);
   const canBank = !!(enemy.boss || enemy.bankCharge);
   if (canBank) {
-    // Prefer the heaviest special within 2 segments (what the boss is saving for).
-    const heavy = enemy.specials
-      .filter(s => s.at - c <= 2 && s.at >= Math.max(c, maxAt - 2))
-      .sort((a, b) => b.at - a.at)[0];
-    if (heavy) {
-      return { ready: c >= heavy.at, name: heavy.name, desc: heavy.desc, aoe: !!heavy.aoe };
+    const signature = enemy.specials.find(s => s.at === maxAt);
+    if (signature && signature.at - c <= 1) return packTelegraph(signature, c);
+    const affordable = enemy.specials.filter(s => c >= s.at);
+    if (affordable.length) {
+      const best = affordable.reduce((a, b) => (b.at > a.at ? b : a));
+      return packTelegraph(best, c);
     }
   }
   const next = enemy.specials.filter(s => s.at - c <= 1).sort((a, b) => b.at - a.at)[0];
-  if (!next) return null;
-  return { ready: c >= next.at, name: next.name, desc: next.desc, aoe: !!next.aoe };
+  return packTelegraph(next, c);
+}
+
+/** Player-facing intent line: charge cost, name, and AOE when ready. */
+export function formatEnemyTelegraph(tel) {
+  if (!tel) return '';
+  const cost = tel.at != null ? `${tel.at}⚡ ` : '';
+  const aoe = tel.aoe ? ' AOE' : '';
+  if (tel.ready) return `⚠ ${cost}${tel.name}${aoe}!`;
+  return `… ${cost}${tel.desc || tel.name}`;
 }
 
 /* ---------------- Guard (handoff §10) ---------------- */

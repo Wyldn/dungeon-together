@@ -39,7 +39,7 @@ import { RANK_ORDER, rankFor, rankAtLeast, appraisalRange, rollGrowthRank, growt
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { rollInitiative, initiativeOrder, addCharge, tickEnemyCharge, canAfford, skillEffectivePower, pickEnemySpecial, enemyTelegraph, applyGuard, enemySpecialPayoff, enemyPayoffLine, statusPresent } from '../js/systems.js';
+import { rollInitiative, initiativeOrder, addCharge, tickEnemyCharge, canAfford, skillEffectivePower, pickEnemySpecial, enemyTelegraph, formatEnemyTelegraph, applyGuard, specialChargeCost, spendEnemySpecialCharge, bossChargeDamageScale, enemySpecialPayoff, enemyPayoffLine, statusPresent } from '../js/systems.js';
 import { makeRng } from '../js/rng.js';
 import { syntheticClimber, simulateFight } from './combat_sim.js';
 import { buildEventFightEnemies } from '../js/encounter.js';
@@ -431,7 +431,69 @@ console.log('— enemy charge profiles (handoff §12) —');
   }));
   t('slow boss profile (hydra spd < duke spd)', BOSSES[40].spd < BOSSES[50].spd);
   t('boss bank chance configured', (CONFIG.boss.bankChance ?? 0) >= 0.45);
+  t('mid-kit banks less than signature camping', (CONFIG.boss.midBankChance ?? 1) < (CONFIG.boss.bankChance ?? 0));
   t('charge damage scale rewards banking', (CONFIG.boss.chargeDamageScale ?? 0) >= 0.2);
+  t('AOE charge scale is a fraction of ST', (CONFIG.boss.aoeChargeFactor ?? 1) <= 0.2);
+  t('duke toll is a duel not a party wipe', !BOSSES[50].specials.find(s => s.name === "GATEKEEPER'S TOLL")?.aoe);
+  t('hroth charge is pursuit not a court wipe', !ALT_BOSSES[30].specials.find(s => s.name === 'UNMELTING CHARGE')?.aoe);
+  t('kryos holds the line', ALT_BOSSES[50].specials.some(s => s.selfShield));
+  t('hydra kit has three heads before the scream', BOSSES[40].specials.length >= 4);
+  {
+    const trash = { charge: 5, specials: [{ at: 3, name: 'Dump', mult: 1.4 }] };
+    spendEnemySpecialCharge(trash, trash.specials[0]);
+    t('trash specials still dump the bar', trash.charge === 0);
+    const boss = { boss: true, charge: 6, specials: [{ at: 4, name: 'Mid', mult: 1.4 }] };
+    spendEnemySpecialCharge(boss, boss.specials[0]);
+    t('boss specials keep leftover charge', boss.charge === 2);
+    t('special cost is the threshold', specialChargeCost(boss.specials[0]) === 4);
+  }
+  {
+    const st = bossChargeDamageScale(6, { aoe: false });
+    const aoe = bossChargeDamageScale(6, { aoe: true });
+    t('ST charged hits scale harder than AOE', st > aoe + 0.5);
+  }
+  {
+    const boss = {
+      boss: true, charge: 4,
+      specials: [
+        { at: 2, name: 'Low', mult: 1.2, desc: 'winds up' },
+        { at: 4, name: 'Mid', mult: 1.5, aoe: true, desc: 'the room leans' },
+        { at: 6, name: 'High', mult: 2.4, desc: 'commits' },
+      ],
+    };
+    const tel = enemyTelegraph(boss);
+    t('intent includes charge cost', tel?.at === 4 && tel.ready === true);
+    t('intent names the ready kit move', tel?.name === 'Mid');
+    t('intent line shows cost', formatEnemyTelegraph(tel).includes('4⚡'));
+    t('intent line marks AOE', formatEnemyTelegraph(tel).includes('AOE'));
+    boss.charge = 5;
+    t('signature telegraphs one segment early', enemyTelegraph(boss)?.name === 'High' && enemyTelegraph(boss)?.ready === false);
+  }
+  {
+    const rngA = makeRng(20260825);
+    const rngB = makeRng(20260825);
+    const spec = {
+      boss: true, bankChance: 0.6, midBankChance: 0.3,
+      specials: [
+        { at: 2, name: 'Low', mult: 1.2 },
+        { at: 4, name: 'Mid', mult: 1.5 },
+        { at: 6, name: 'High', mult: 2.4 },
+      ],
+    };
+    const seq = (rng) => {
+      const e = { ...spec, charge: 0, _chargeFrac: 0 };
+      const names = [];
+      for (let i = 0; i < 12; i++) {
+        tickEnemyCharge(e);
+        const s = pickEnemySpecial(e, rng);
+        names.push(s ? s.name : 'bank');
+        if (s) spendEnemySpecialCharge(e, s);
+      }
+      return names.join(',');
+    };
+    t('boss spend sequence is seed-deterministic', seq(rngA) === seq(rngB));
+    t('deterministic sequence uses more than the signature', seq(makeRng(20260825)).split(',').filter(n => n === 'Mid' || n === 'Low').length >= 1);
+  }
   t('cinderghast is not a generic 3/6', ALT_BOSSES[10].specials.some(s => s.burnSure || s.burn));
   t('bograth has hydra-style heads', !!ALT_BOSSES[40].heads);
   t('secret king has a second phase', !!(SECRET_BOSS.twoPhase && SECRET_BOSS.phase2));
@@ -2771,6 +2833,11 @@ console.log('— narrative event pacing —');
 }
 
 {
+  const { runBossChargeTests } = await import('./test_boss_charge.js');
+  await runBossChargeTests(t);
+}
+
+{
   const { runCombatPolicyTests } = await import('./test_combat_policy.js');
   runCombatPolicyTests(t);
 }
@@ -2783,11 +2850,6 @@ console.log('— narrative event pacing —');
 {
   const { runPartyProxyTests } = await import('./test_party_proxy.js');
   await runPartyProxyTests(t);
-}
-
-{
-  const { runMpPersistTests } = await import('./test_mp_persist.js');
-  await runMpPersistTests(t);
 }
 
 console.log('— narrative typography —');

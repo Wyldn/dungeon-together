@@ -17,6 +17,7 @@ import {
 import { biomeForFloor } from '../js/data/enemies.js';
 import {
   applyGuard, applyDefense, addCharge, tickEnemyCharge, pickEnemySpecial,
+  specialChargeCost, spendEnemySpecialCharge, bossChargeDamageScale,
   enemyTelegraph, canAfford, skillEffectivePower,
 } from '../js/systems.js';
 
@@ -338,10 +339,11 @@ export function simulateFight(rng, playerOrParty, enemySpecs, {
       const special = pickEnemySpecial(e, rng);
       let chargeScale = 1;
       if (special && e.boss) {
+        const spent = specialChargeCost(special);
         const banked = party.length <= 1
-          ? soloBossChargeForScale(floor, e.charge || 0)
-          : (e.charge || 0);
-        chargeScale = 1 + CONFIG.boss.chargeDamageScale * banked;
+          ? soloBossChargeForScale(floor, spent)
+          : spent;
+        chargeScale = bossChargeDamageScale(banked, special);
       }
       const living = livingPlayers();
       if (!living.length) break;
@@ -376,7 +378,7 @@ export function simulateFight(rng, playerOrParty, enemySpecs, {
         if (e.lifesteal) e.hp = Math.min(e.maxHp, e.hp + Math.round(dmg * e.lifesteal));
       }
       if (special) {
-        e.charge = 0;
+        spendEnemySpecialCharge(e, special);
         if (special.heal) e.hp = Math.min(e.maxHp, e.hp + Math.round(e.maxHp * special.heal));
         if (!landed && !special.aoe) { /* dodge ate the special */ }
       }

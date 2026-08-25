@@ -14,7 +14,7 @@ import {
   softLevelDamage, rewardMult, partyBossAoeMult, partyOutgoingDmgMult, TDC,
 } from './data/tdc.js';
 import { derived, heal, restoreMana, usableSkillIds, resourceName, changeFame, classTitle } from './character.js';
-import { initiativeOrder, canAfford, skillEffectivePower, enemyTelegraph, applyGuard, applyDefense, enemySpecialPayoff, enemyPayoffLine } from './systems.js';
+import { initiativeOrder, canAfford, skillEffectivePower, enemyTelegraph, formatEnemyTelegraph, applyGuard, applyDefense, enemySpecialPayoff, enemyPayoffLine } from './systems.js';
 import { biomeForFloor } from './data/enemies.js';
 import {
   skillStatValue, buildEnemy, spawnSummon as coreSpawnSummon,
@@ -824,7 +824,7 @@ class Fight {
         domId: `sprite-${e.uid}`,
       });
       div.innerHTML = `
-        ${tel ? `<div class="telegraph ${tel.ready ? 'ready' : ''}">${tel.ready ? '⚠ ' + tel.name + '!' : '… ' + tel.desc}</div>` : ''}
+        ${tel ? `<div class="telegraph ${tel.ready ? 'ready' : ''}">${formatEnemyTelegraph(tel)}</div>` : ''}
         ${boxed}
         <div class="cx-info">
           <div class="cx-head"><span class="fighter-name">${e.name}</span><span class="cx-lv">Lv.${this.run.floor}</span></div>

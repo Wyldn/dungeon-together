@@ -4,8 +4,10 @@
 //
 // Battle Charge (handoff §12): enemies share the player charge framework.
 // specials: [{ at, name, mult, aoe?, stun?, burn?, freeze?, heal?, desc }]
-//   — used when charge >= at (highest affordable wins), then charge resets.
-//   Telegraphed in the UI one segment before it's ready.
+//   — `at` is both the charge threshold and the spend cost.
+//   — highest affordable wins; bosses may bank toward a heavier special.
+//   — bosses spend `at` and keep leftover charge; trash dumps the bar.
+//   Telegraphed in the UI one segment before it's ready (with cost).
 // freezeEvery: N → freeze only on every Nth turn (overrides per-hit freeze chance).
 // cleanseEvery / cleanseCost (bosses): periodic full shrug, or spend FOC to break freeze/stun.
 // spd doubles as the initiative stat. intelligent gates bribery (§25).
@@ -367,13 +369,13 @@ for (const e of WANDERING_ENEMIES) {
    intro/taunt/special names are the fiction layer. Do not port primary variants. */
 Object.assign(GALLERY_BOSSES.gv_grotto_escape_2_boss_dragon, {
   // Answer to Sylvanor: the grove judges; the grotto remembers being a kiln.
-  burn: 0.3, bankChance: 0.72,
+  burn: 0.3, bankChance: 0.62, midBankChance: 0.36,
   intro: 'The oldest tree is not here. In its place: a hollow that never cooled, and the dragon the grove failed to smother.\nIt has been finishing a fire for a very long time.',
   taunt: 'THEY JUDGE. I REMEMBER THE SMOKE.',
   specials: [
     { at: 2, name: 'Kiln Breath', mult: 1.3, burn: 0.4, desc: 'the grotto exhales what it used to be' },
     { at: 4, name: 'Cave-Draft', mult: 1.7, aoe: true, burn: 0.35, desc: 'sparks take the shape of a wing' },
-    { at: 6, name: 'GROTTO PYRE', mult: 2.7, aoe: true, burnSure: true, desc: 'the cave remembers it was a kiln' },
+    { at: 6, name: 'GROTTO PYRE', mult: 2.7, aoe: true, burnSure: true, vsStatus: 'burn', vsStatusMult: 1.25, desc: 'the cave remembers it was a kiln' },
   ],
   variants: [
     { id: 'smoke', when: { flag: 'angered_forest' },
@@ -386,13 +388,14 @@ Object.assign(GALLERY_BOSSES.gv_grotto_escape_2_boss_dragon, {
 });
 Object.assign(GALLERY_BOSSES.undead_executioner, {
   // Answer to the Lich: the crown wants subjects; the block still wants a name.
-  bankChance: 0.72,
+  bankChance: 0.55, midBankChance: 0.28,
   intro: 'A hooded figure stands where a king should sit. The axe is planted in a groove worn six hundred years deep.\nHe does not ask you to kneel. He asks you to hold still.',
   taunt: 'THE CROWN WANTS SUBJECTS. I WANT THE NEXT NAME.',
   specials: [
+    { at: 2, name: 'Name the Neck', mult: 1.25, hex: 0.5, desc: 'he writes you in the groove' },
     { at: 3, name: 'Toll the Block', mult: 1.55, weaken: 0.4, desc: 'the axe finds the groove' },
     { at: 5, name: 'Procession Cut', mult: 1.85, aoe: true, frail: 0.4, desc: 'a line of ghosts kneel' },
-    { at: 6, name: 'THE NEXT NAME', mult: 2.7, frailSure: true, desc: 'the hood comes down' },
+    { at: 6, name: 'THE NEXT NAME', mult: 2.7, frailSure: true, vsWounded: 1.3, desc: 'the hood comes down' },
   ],
   variants: [
     { id: 'petition', when: { flag: 'kings_petition' },
@@ -411,13 +414,13 @@ Object.assign(GALLERY_BOSSES.undead_executioner, {
 });
 Object.assign(GALLERY_BOSSES.tr_mon_centaur, {
   // Answer to Vessalia: she sits; he still rides. Freeze is pursuit, not a decree.
-  freezeEvery: 4, freeze: 0.25, cleanseCost: 3, bankChance: 0.72,
+  freezeEvery: 4, freeze: 0.25, cleanseCost: 3, bankChance: 0.60, midBankChance: 0.34,
   intro: 'Hooves strike the ice in a rhythm older than the betrayal. He has been riding this pass since the court sat down and refused to stand.\nThe queen does not rise. That is why he is here.',
   taunt: 'SHE SITS. I FETCH.',
   specials: [
     { at: 2, name: 'Hoof-Frost', mult: 1.3, freeze: 0.35, desc: 'the snow answers the hooves' },
     { at: 4, name: "Outrider's Point", mult: 1.7, aoe: true, weaken: 0.35, desc: 'he was never asked to sit' },
-    { at: 6, name: 'UNMELTING CHARGE', mult: 2.65, aoe: true, freezeSure: true, desc: 'winter arrives at a gallop' },
+    { at: 6, name: 'UNMELTING CHARGE', mult: 2.65, freezeSure: true, vsStatus: 'freeze', vsStatusMult: 1.3, desc: 'winter arrives at a gallop' },
   ],
   variants: [
     { id: 'rose', when: { any: [{ flag: 'stole_rose' }, { item: 'ice_rose' }] },
@@ -445,12 +448,14 @@ Object.assign(GALLERY_BOSSES.tr_mon_centaur, {
 });
 Object.assign(GALLERY_BOSSES.tr_live_ogre, {
   // Answer to the Hydra: not grief that multiplies — two mouths that cannot agree how to end it.
-  heads: true, regen: 0.02, bankChance: 0.75,
+  heads: true, regen: 0.02, bankChance: 0.68, midBankChance: 0.40,
   intro: 'Two heads surface, smaller than the stories, louder than they should be. One wants to finish the funeral. One wants to laugh until it is over.\nThey have not agreed in years. You are the next argument.',
   taunt: 'TWO MOUTHS. STILL ONE GRAVE.',
   specials: [
+    { at: 2, name: 'They Disagree', mult: 1.2, confused: 0.4, desc: 'one bite, one laugh, neither aimed' },
     { at: 3, name: 'Twin Bite', mult: 1.55, poisonSure: true, desc: 'both mouths inhale' },
-    { at: 6, name: 'TWO SORROWS', mult: 3.0, aoe: true, tormentedSure: true, frail: 0.4, desc: 'the laughing head stops laughing' },
+    { at: 4, name: 'Funeral Joke', mult: 1.4, aoe: true, lazy: 0.35, desc: 'the laughing head wins an argument' },
+    { at: 6, name: 'TWO SORROWS', mult: 3.0, aoe: true, tormentedSure: true, frail: 0.4, vsStatus: 'poison', vsStatusMult: 1.2, desc: 'the laughing head stops laughing' },
   ],
   variants: [
     { id: 'bell', when: { event: 'sunken_bell' },
@@ -464,13 +469,14 @@ Object.assign(GALLERY_BOSSES.tr_live_ogre, {
 Object.assign(GALLERY_BOSSES.kryos_demon_general, {
   // Answer to Malgrimm: the Duke performs; the general was left at the door.
   name: 'Kryos, the Demon General',
-  burn: 0.25, bankChance: 0.72,
+  burn: 0.25, bankChance: 0.55, midBankChance: 0.30,
   intro: 'A general in cooling iron takes the last stair without ceremony. No sword of swords. No audience.\nThe Duke had somewhere more interesting to be. Kryos did not.',
   taunt: 'THE DUKE SENDS REGRETS. I DO NOT.',
   specials: [
     { at: 2, name: 'Iron Salute', mult: 1.35, weaken: 0.4, desc: 'burning iron rings' },
+    { at: 4, name: 'Hold the Line', mult: 1.15, selfShield: 0.35, desc: 'burning iron becomes a wall' },
     { at: 5, name: 'Column Fire', mult: 2.4, aoe: true, burn: 0.45, desc: 'the rank-and-file ignite' },
-    { at: 6, name: 'LEFT AT THE POST', mult: 3.1, aoe: true, burnSure: true, tormented: 0.5, desc: 'courtesy was never his orders' },
+    { at: 6, name: 'LEFT AT THE POST', mult: 3.1, aoe: true, burnSure: true, tormented: 0.5, vsStatus: 'burn', vsStatusMult: 1.2, desc: 'courtesy was never his orders' },
   ],
   variants: [
     { id: 'mark', when: { flag: 'dukes_mark' },
@@ -482,10 +488,12 @@ Object.assign(GALLERY_BOSSES.boss_demon_slime, {
   // Answer to Vorath: the Question sits; this is what pooled when nobody answered.
   intro: 'The throne is occupied by something that used to be several answers. It has settled, crowned itself, and waited.\nIt would like you to settle too.',
   taunt: 'I DID NOT ASK. I STAYED.',
+  bankChance: 0.55, midBankChance: 0.30,
   specials: [
+    { at: 2, name: 'Throne Drip', mult: 1.2, poison: 0.45, desc: 'the puddle finds ankles' },
     { at: 3, name: 'Molten Cleave', mult: 1.85, burnSure: true, desc: 'the cleaver drinks fire' },
     { at: 5, name: 'Acid Coronation', mult: 2.2, aoe: true, poisonSure: true, desc: 'droplets become blades' },
-    { at: 6, name: 'WHAT THE CHAIR KEPT', mult: 2.7, aoe: true, burnSure: true, frailSure: true, desc: 'the question puddles' },
+    { at: 6, name: 'WHAT THE CHAIR KEPT', mult: 2.7, aoe: true, burnSure: true, frailSure: true, vsStatus: 'burn', vsStatusMult: 1.2, desc: 'the question puddles' },
   ],
   variants: [
     { id: 'tea', when: { flag: 'seen_throne' },
@@ -493,12 +501,21 @@ Object.assign(GALLERY_BOSSES.boss_demon_slime, {
       taunt: 'THE VISION HAD BETTER POSTURE.' },
   ],
 });
+Object.assign(GALLERY_BOSSES.tr_mon_demon, {
+  // Wrath sits the throne: spark, the room's weight, then a question that cashes weaken.
+  bankChance: 0.55, midBankChance: 0.32,
+  specials: [
+    { at: 2, name: 'Wrath Spark', mult: 1.35, burn: 0.4, desc: 'heat curls off his horns' },
+    { at: 4, name: "Kingdom's Weight", mult: 2.05, aoe: true, weaken: 0.4, desc: 'the room leans on you' },
+    { at: 6, name: "THE KING'S QUESTION", mult: 2.85, aoe: true, frailSure: true, vsStatus: 'weaken', vsStatusMult: 1.2, desc: 'the air takes his side' },
+  ],
+});
 Object.assign(GALLERY_BOSSES.medieval_king, {
-  twoPhase: true, bankChance: 0.72,
+  twoPhase: true, bankChance: 0.58, midBankChance: 0.32,
   specials: [
     { at: 2, name: 'Royal Feint', mult: 1.4, weaken: 0.3, desc: 'a courtly cut' },
     { at: 4, name: 'Iron Decree', mult: 2.0, aoe: true, weaken: 0.4, desc: 'the crown sheds sparks' },
-    { at: 6, name: 'MASK OFF', mult: 2.9, aoe: true, frailSure: true, desc: 'the secret ends with blood' },
+    { at: 6, name: 'MASK OFF', mult: 2.9, aoe: true, frailSure: true, vsStatus: 'weaken', vsStatusMult: 1.2, desc: 'the secret ends with blood' },
   ],
   phase2: {
     name: 'Aldric Unmasked',
@@ -506,7 +523,7 @@ Object.assign(GALLERY_BOSSES.medieval_king, {
     specials: [
       { at: 2, name: 'Kingdom\'s Lie', mult: 1.5, hex: 0.5, desc: 'the smile splits' },
       { at: 4, name: 'Tower Was Mine', mult: 2.2, aoe: true, tormented: 0.45, desc: 'every floor answers him' },
-      { at: 6, name: 'I AM THE KINGDOM', mult: 3.1, aoe: true, frailSure: true, tormentedSure: true, desc: 'the crown is a wound' },
+      { at: 6, name: 'I AM THE KINGDOM', mult: 3.1, aoe: true, frailSure: true, tormentedSure: true, vsStatus: 'hexed', vsStatusMult: 1.2, desc: 'the crown is a wound' },
     ],
     transformText: 'The crown splits. The man underneath is worse.',
     taunt: 'THE DEMON KING WAS A STORY I SOLD YOU.',
@@ -633,11 +650,12 @@ export const BOSSES = {
     id: 'elderwood', name: 'Sylvanor, the Elderwood Guardian', glyph: '🌲', biome: 'forest',
     // Scaled ~200 HP before the F10 solo gate trim; DEF keeps chip honest.
     hp: 190, atk: 27, def: 4, spd: 3, gold: [60, 90], xp: 60, regen: 0.01, boss: true,
-    // Slow bruiser — banks for 4 then 6. No cheap at:3 dump.
-    chargeGain: 1, bankChance: 0.72,
+    // Slow grove judge — root setup, sweep, then a ST verdict on the frail.
+    chargeGain: 1, bankChance: 0.62, midBankChance: 0.40,
     specials: [
-      { at: 4, name: 'Limb Sweep', mult: 1.40, aoe: true, lazy: 0.35, desc: 'branches groan overhead' },
-      { at: 6, name: 'FOREST\'S VERDICT', mult: 2.70, frail: 0.5, desc: 'ten thousand judged climbers watch through its rings' },
+      { at: 2, name: 'Root Snare', mult: 1.25, frail: 0.55, desc: 'roots take attendance' },
+      { at: 4, name: 'Limb Sweep', mult: 1.40, aoe: true, lazy: 0.35, frail: 0.35, desc: 'branches groan overhead' },
+      { at: 6, name: 'FOREST\'S VERDICT', mult: 2.70, frail: 0.5, vsStatus: 'frail', vsStatusMult: 1.3, desc: 'ten thousand judged climbers watch through its rings' },
     ],
     intro: 'The oldest tree in the forest uproots itself. It has judged ten thousand climbers.\nIt has approved of none.',
     taunt: 'YOU BURN LIKE ALL THE REST.',
@@ -664,12 +682,12 @@ export const BOSSES = {
     id: 'crowned_revenant', name: 'The Crowned Revenant', glyph: '🗡️', biome: 'ruins',
     // Midboss — tuned under F20; solo ease + this HP keep on-curve clears ~40%+ HP.
     hp: 235, atk: 26, def: 5, spd: 6, gold: [75, 110], xp: 75, boss: true,
-    // Tempo: early chip (1), mid pressure (3), then a heavy 6.
-    chargeGain: 1, bankChance: 0.72,
+    // Tempo knight — spends mid-kit instead of camping the 6.
+    chargeGain: 1, bankChance: 0.50, midBankChance: 0.22,
     specials: [
-      { at: 1, name: 'Oathbreaker', mult: 1.2, desc: 'the greatsword drags a line through the dust' },
+      { at: 2, name: 'Oathbreaker', mult: 1.25, weaken: 0.4, desc: 'the greatsword drags a line through the dust' },
       { at: 3, name: 'Ring of Ash', mult: 1.55, aoe: true, burn: 0.35, desc: 'the crown sheds a burning halo' },
-      { at: 6, name: 'CROWN OF ASH', mult: 2.75, frailSure: true, desc: 'the dead king remembers he was crowned' },
+      { at: 6, name: 'CROWN OF ASH', mult: 2.75, frailSure: true, vsWounded: 1.25, desc: 'the dead king remembers he was crowned' },
     ],
     intro: 'A knight kneels in the dust, greatsword planted, crown fused to the helm.\nHe has knelt here for six hundred years, waiting for a king who never came.\nHe stands up for you.',
     taunt: 'I KEPT MY OATH. WHERE IS YOURS?',
@@ -697,11 +715,12 @@ export const BOSSES = {
   20: {
     id: 'lich', name: 'Lich of the Fallen King', glyph: '👑', biome: 'ruins',
     hp: 340, atk: 30, def: 7, spd: 8, gold: [90, 130], xp: 90, caster: true, summons: 'skeleton', boss: true,
-    // Mid-bar pressure only — no free at:3; banks 4→5.
-    chargeGain: 1, bankChance: 0.72,
+    // Crown wants subjects: hex, drain, then the dynasty (summons already eat a turn).
+    chargeGain: 1, bankChance: 0.58, midBankChance: 0.28,
     specials: [
+      { at: 2, name: 'Grave Hex', mult: 1.3, hex: 0.55, weaken: 0.4, desc: 'the lights dim around one soul' },
       { at: 4, name: 'Soul Tithe', mult: 1.65, heal: 0.06, weaken: 0.5, desc: 'the crown\'s lights burn colder' },
-      { at: 5, name: 'DYNASTY\'S END', mult: 2.60, aoe: true, tormentedSure: true, desc: 'six hundred years of grievance condenses' },
+      { at: 5, name: 'DYNASTY\'S END', mult: 2.60, aoe: true, tormentedSure: true, vsStatus: 'weaken', vsStatusMult: 1.25, desc: 'six hundred years of grievance condenses' },
     ],
     intro: 'A crown floats above a throne of dust. Beneath it, two cold lights ignite.\n"Kneel. My kingdom needs subjects."',
     taunt: 'DEATH IS A DOOR. I AM THE KEY.',
@@ -741,12 +760,12 @@ export const BOSSES = {
     // Freeze is a court decree, not every swing — pulse every 4 of her turns.
     freezeEvery: 4,
     cleanseCost: 3, // harder to burn FOC out of ice than most bosses
-    // Court tempo: light 2, mid 4, finale 6.
-    chargeGain: 1, bankChance: 0.72,
+    // Court tempo: freeze setup, reproach, then winter that cashes the ice.
+    chargeGain: 1, bankChance: 0.60, midBankChance: 0.34,
     specials: [
       { at: 2, name: 'Glacial Decree', mult: 1.3, freeze: 0.35, desc: 'the temperature plummets' },
       { at: 4, name: 'Courtly Reproach', mult: 1.7, aoe: true, weaken: 0.4, desc: 'the frozen court exhales as one' },
-      { at: 6, name: 'ETERNAL WINTER', mult: 2.65, aoe: true, freezeSure: true, desc: 'the court\'s frozen betrayers turn their heads in unison' },
+      { at: 6, name: 'ETERNAL WINTER', mult: 2.65, aoe: true, freezeSure: true, vsStatus: 'freeze', vsStatusMult: 1.3, desc: 'the court\'s frozen betrayers turn their heads in unison' },
     ],
     intro: 'The Frost Queen does not rise from her throne. She merely opens her eyes,\nand the temperature of your blood becomes negotiable.',
     taunt: 'WINTER OUTLASTS EVERYTHING. EVEN HOPE.',
@@ -780,11 +799,13 @@ export const BOSSES = {
   40: {
     id: 'hydra', name: 'The Grieving Hydra', glyph: '🐉', biome: 'swamp',
     hp: 550, atk: 38, def: 12, spd: 4, gold: [160, 220], xp: 180, regen: 0.02, heads: true, boss: true,
-    // Two-step: bite at 3, then bank hard for the 6.
-    chargeGain: 1, bankChance: 0.75,
+    // Three heads, three spends — then the scream that cashes the venom.
+    chargeGain: 1, bankChance: 0.68, midBankChance: 0.42,
     specials: [
+      { at: 2, name: 'Weeping Bite', mult: 1.3, poisonSure: true, desc: 'the weeping head finds a pulse' },
       { at: 3, name: 'Threefold Snap', mult: 1.55, poisonSure: true, desc: 'three heads inhale together' },
-      { at: 6, name: 'SORROW UNENDING', mult: 3.05, aoe: true, tormentedSure: true, frail: 0.5, desc: 'the weeping head finally screams' },
+      { at: 4, name: 'Laughing Coil', mult: 1.45, aoe: true, lazy: 0.4, desc: 'the laughing head will not stop' },
+      { at: 6, name: 'SORROW UNENDING', mult: 3.05, aoe: true, tormentedSure: true, frail: 0.5, vsStatus: 'poison', vsStatusMult: 1.25, desc: 'the weeping head finally screams' },
     ],
     intro: 'Three heads surface from the black water. One weeps. One laughs.\nThe third simply opens its jaws.',
     taunt: 'CUT ONE SORROW DOWN. TWO MORE RISE.',
@@ -806,12 +827,13 @@ export const BOSSES = {
   50: {
     id: 'infernal_duke', name: 'Duke Malgrimm, Gatekeeper of the Throne', glyph: '😈', biome: 'hell',
     hp: 655, atk: 40, def: 14, spd: 10, gold: [220, 300], xp: 250, burn: 0.22, boss: true,
-    // Duelist: feint at 2, heavy 5, ultimate 6.
-    chargeGain: 1, bankChance: 0.72,
+    // Duelist: pick a name, tax the crowd, then collect the toll from one body.
+    chargeGain: 1, bankChance: 0.55, midBankChance: 0.30,
     specials: [
       { at: 2, name: 'Sword of Swords', mult: 1.35, weaken: 0.45, desc: 'the blades within his blade align' },
+      { at: 4, name: 'Duelist\'s Claim', mult: 1.7, frail: 0.5, desc: 'he picks a name from the crowd' },
       { at: 5, name: 'Bladestorm Toll', mult: 2.95, aoe: true, frail: 0.5, desc: 'the sword of swords fans open' },
-      { at: 6, name: 'GATEKEEPER\'S TOLL', mult: 3.25, aoe: true, burnSure: true, tormented: 0.55, desc: 'he stops being polite about it' },
+      { at: 6, name: 'GATEKEEPER\'S TOLL', mult: 3.25, burnSure: true, tormented: 0.55, vsStatus: 'weaken', vsStatusMult: 1.25, desc: 'he stops being polite about it' },
     ],
     intro: '"Fifty floors," the Duke muses, drawing a sword made of other swords.\n"Impressive. The King will want to kill you personally. Let\'s disappoint him."',
     taunt: 'THE THRONE IS A PRIVILEGE. DYING HERE IS FREE.',

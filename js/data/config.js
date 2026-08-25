@@ -89,11 +89,17 @@ export const CONFIG = {
     // Spend this much Battle Charge to break freeze/stun early and still act.
     // Per-boss override via `cleanseCost` on the enemy def.
     cleanseCost: 1,
-    // Heavy telegraphed hits gain this much damage per banked charge segment.
-    // At 6 charge: 1 + 0.32×6 = 2.92× on top of special mult.
+    // Single-target charged hits gain this much damage per spent charge segment.
+    // At 6⚡ ST: 1 + 0.32×6 = 2.92× on top of special mult. AOE uses aoeChargeFactor
+    // so authored AOE mults are not also multiplied into party-wipe range.
     chargeDamageScale: 0.32,
+    // Multiplier on chargeDamageScale for AOE specials (0 = authored mult only).
+    aoeChargeFactor: 0.10,
     // Chance a boss skips a light affordable special to bank toward a heavier one.
     bankChance: 0.72,
+    // When a mid-cost special is ready, bank toward the signature this often
+    // (lower than bankChance so the kit actually fires).
+    midBankChance: 0.32,
     // Bosses sometimes shrug taunt and pick freely (after taunt pool exists).
     ignoreTauntChance: 0.28,
     // Solo taunt: delay the special (force a basic; charge is kept).

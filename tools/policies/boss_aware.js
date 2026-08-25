@@ -62,8 +62,10 @@ function estimateHit(f, enemy, special) {
   const mult = specialMult(special);
   let chargeScale = 1;
   if (special && enemy.boss) {
-    const banked = soloBossChargeForScale(f.run.floor, enemy.charge || 0);
-    chargeScale = 1 + (CONFIG.boss?.chargeDamageScale ?? 0.32) * banked;
+    const spent = special.at || 0;
+    const banked = soloBossChargeForScale(f.run.floor, spent);
+    const aoeFactor = special.aoe ? (CONFIG.boss?.aoeChargeFactor ?? 1) : 1;
+    chargeScale = 1 + (CONFIG.boss?.chargeDamageScale ?? 0.32) * banked * aoeFactor;
   }
   let raw = (enemy.atk || 0)
     * (CONFIG.combat.enemyAtkMult ?? 1.35)

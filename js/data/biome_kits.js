@@ -11,6 +11,7 @@ export const SUPPORTED_SPECIAL_KEYS = new Set([
   'at', 'name', 'mult', 'desc', 'aoe', 'heal',
   'selfShield', 'selfDef', 'vsStatus', 'vsStatusMult', 'consumeStatus',
   'vsWounded', 'vsWoundedAt',
+  'hex', 'hexSure',
   ...SPECIAL_RIDER_KEYS,
 ]);
 
