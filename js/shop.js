@@ -1,7 +1,7 @@
 // Live merchant stock, price, and heal. buildShopStock owns one advance().
 
 import { CONFIG } from './data/config.js';
-import { CONSUMABLES, rollEquipment, rollRelic, rollUnique, rollWrld, shopConsumablePool, shopListingPrice, itemUsefulForClass } from './data/items.js';
+import { CONSUMABLES, rollEquipment, rollRelic, rollUnique, rollWrld, shopConsumablePool, shopListingPrice, itemUsefulForClass, resolveItem, sellGold } from './data/items.js';
 import { charRel } from './data/world.js';
 import { biomeTier } from './biome_tier.js';
 import { appraiseRun } from './character.js';
@@ -127,20 +127,61 @@ export function buildShopStock(run, rng, { resumeStock = null, coop = null } = {
   return stock;
 }
 
+/** Live wallet. Never snapshot this at shop entry — sale proceeds must spend in-visit. */
+export function shopGold(run) {
+  const n = Number(run?.gold);
+  return Number.isFinite(n) ? n : 0;
+}
+
+export function shopCanAfford(run, cost) {
+  return shopGold(run) >= cost;
+}
+
+/** Visit handle. Freezes stock + discount (pricing), not gold. */
+export function openShopVisit(stock, discount) {
+  return { stock, discount, boughtHere: false, busy: false };
+}
+
+/** Button / affordability snapshot from current gold. Recompute after every tx. */
+export function shopView(run, stock, discount, visit = null) {
+  const gold = shopGold(run);
+  const busy = !!visit?.busy;
+  const listings = (stock || []).map((s, i) => {
+    const price = shopPrice(s.price, discount);
+    const canBuy = !busy && gold >= price;
+    return { i, price, canBuy, disabled: !canBuy };
+  });
+  const healCost = shopHealCost(run, discount);
+  const canHeal = !busy && gold >= healCost && run.hp < run.maxHp;
+  return {
+    gold,
+    listings,
+    heal: { cost: healCost, canBuy: canHeal, disabled: !canHeal },
+  };
+}
+
 export function applyShopHeal(run, discount) {
   const cost = shopHealCost(run, discount);
-  if (run.gold < cost || run.hp >= run.maxHp) return { ok: false, cost };
-  run.gold -= cost;
+  const gold = shopGold(run);
+  if (gold < cost || run.hp >= run.maxHp) {
+    return { ok: false, cost, reason: gold < cost ? 'gold' : 'full' };
+  }
+  run.gold = gold - cost;
   run.hp = run.maxHp;
   return { ok: true, cost };
 }
 
 export function applyShopBuy(run, stock, index, discount, hooks = {}) {
+  // hooks.claimedGold is intentionally ignored. Purchases read shopGold(run) only.
+  if (!Array.isArray(stock) || index < 0 || index >= stock.length) {
+    return { ok: false, reason: 'missing' };
+  }
   const s = stock[index];
-  if (!s) return { ok: false };
+  if (!s) return { ok: false, reason: 'missing' };
   const p = shopPrice(s.price, discount);
-  if (run.gold < p) return { ok: false, price: p };
-  run.gold -= p;
+  const gold = shopGold(run);
+  if (gold < p) return { ok: false, price: p, reason: 'gold' };
+  run.gold = gold - p;
   if (s.kind === 'consumable') {
     if (s.item.appraisal) {
       const rng2 = hooks.runRng ? hooks.runRng(run) : null;
@@ -155,6 +196,21 @@ export function applyShopBuy(run, stock, index, discount, hooks = {}) {
   if (s.kind === 'relic') run.relics.push(s.item.id);
   stock.splice(index, 1);
   return { ok: true, price: p, listing: s };
+}
+
+/** Pack sell. Credits current gold so the same visit can spend the proceeds. */
+export function applyShopSell(run, index, { from = 'inventory' } = {}) {
+  const inv = run?.inventory;
+  if (!Array.isArray(inv) || index < 0 || index >= inv.length) {
+    return { ok: false, reason: 'missing' };
+  }
+  const id = inv[index];
+  const item = resolveItem(run, id);
+  const gold = sellGold(item, { from });
+  inv.splice(index, 1);
+  if (run.gearBag && id && run.gearBag[id]) delete run.gearBag[id];
+  run.gold = shopGold(run) + gold;
+  return { ok: true, gold, item, id };
 }
 
 export function applyShopLeave(run, boughtHere) {

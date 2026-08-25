@@ -66,7 +66,7 @@ import {
   applyVictoryRewards, applyEliteVictoryFind, grantReward as grantRewardShared,
   rollBossHoard,
 } from './rewards.js';
-import { buildShopStock, shopDiscount, shopDiscountFlavor, shopPrice, shopHealCost, applyShopHeal } from './shop.js';
+import { buildShopStock, shopDiscount, shopDiscountFlavor, applyShopHeal, applyShopBuy, applyShopSell, shopView, openShopVisit } from './shop.js';
 import {
   resolveEncounterApproach,
   isSpecialEventFoe as isSpecialEventFoeOf, buildEventFightEnemies as buildEventFightEnemiesOf,
@@ -5431,12 +5431,9 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
 
   // fame opens wallets and lowers prices (handoff §18);
   // a familiar merchant stacks a small face discount on top.
+  // Discount/stock freeze for the visit; gold is always read live via shopView.
   const { discount } = shopDiscount(run);
-  let boughtHere = false;
-
-  function price(p) {
-    return shopPrice(p, discount);
-  }
+  const visit = openShopVisit(stock, discount);
 
   function shopTags(s) {
     if (s.kind !== 'equip') return '';
@@ -5444,9 +5441,15 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
     return `<div class="si-tags"><span class="si-tag incompatible">⚠ incompatible</span></div>`;
   }
 
+  function refreshShop() {
+    saveRun(run);
+    renderHud();
+    render();
+  }
+
   shopRefreshHook = () => render();
   function render() {
-    const healCost = shopHealCost(run, discount);
+    const view = shopView(run, visit.stock, visit.discount, visit);
     stage.innerHTML = `
       <div class="card-stage"><div class="panel event-card">
         <div class="card-art"><div class="card-glyph">🧳</div>
@@ -5455,17 +5458,17 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
           <h3>${ev.title}</h3>
           <div class="card-text">${ev.text || '"Browse, browse! Prices reflect the difficulty of my supply chain, which is <i>vertical</i>."'}${discount ? `<br/><i>${shopDiscountFlavor(run)}</i>` : ''}</div>
           <div class="shop-list">
-            ${stock.map((s, i) => `
+            ${visit.stock.map((s, i) => `
               <div class="shop-item">
                 ${itemIconHtml(s.item.id, 32)}
                 <div class="si-info"><div class="si-name ${rarityClass(s.item.rarity)}">${s.item.name}</div><div class="si-desc">${s.item.desc}</div>${shopTags(s)}</div>
-                <span class="si-price">🪙 ${price(s.price)}</span>
-                <button class="btn small ${run.gold >= price(s.price) ? 'primary' : ''}" data-i="${i}" ${run.gold < price(s.price) ? 'disabled' : ''}>Buy</button>
+                <span class="si-price">🪙 ${view.listings[i].price}</span>
+                <button class="btn small ${view.listings[i].canBuy ? 'primary' : ''}" data-i="${i}" ${view.listings[i].disabled ? 'disabled' : ''}>Buy</button>
               </div>`).join('')}
             <div class="shop-item">
               <div class="si-info"><div class="si-name">Patch you up</div><div class="si-desc">Full heal. "I studied medicine for a week."</div></div>
-              <span class="si-price">🪙 ${healCost}</span>
-              <button class="btn small" id="buy-heal" ${run.gold < healCost || run.hp >= run.maxHp ? 'disabled' : ''}>Buy</button>
+              <span class="si-price">🪙 ${view.heal.cost}</span>
+              <button class="btn small" id="buy-heal" ${view.heal.disabled ? 'disabled' : ''}>Buy</button>
             </div>
           </div>
           <div class="card-choices"><button class="${choiceBtnClass('Take your leave')}" id="leave"><span class="choice-label">Take your leave</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
@@ -5473,27 +5476,26 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
       </div></div>`;
 
     stage.querySelectorAll('[data-i]').forEach(btn => btn.onclick = async () => {
-      const s = stock[+btn.dataset.i];
-      const p = price(s.price);
-      if (run.gold < p) return;
-      run.gold -= p;
+      if (visit.busy) return;
+      visit.busy = true;
+      const wasHidden = !run.growthRevealed;
+      const r = applyShopBuy(run, visit.stock, +btn.dataset.i, visit.discount, { runRng });
+      if (!r.ok) { visit.busy = false; render(); return; }
+      visit.boughtHere = true;
       SFX.gold();
-      boughtHere = true;
+      const s = r.listing;
       if (s.kind === 'consumable') {
         if (s.item.appraisal) {
-          const rng2 = runRng(run);
-          const wasHidden = !run.growthRevealed;
-          appraiseRun(rng2, run, { partial: false, location: 'a merchant\'s scroll' });
-          rng2.advance();
           toast(wasHidden
             ? `Growth potential: ${run.growthRank}. Check your Character page.`
             : 'The scroll reads you. Check your Character page.', 'info');
         } else {
-          run.consumables.push(s.item.id);
           toast(`Bought ${s.item.name}`);
         }
       }
-      if (s.kind === 'relic') { run.relics.push(s.item.id); toast(`Relic: ${s.item.name}`, 'info'); SFX.unlock(); }
+      if (s.kind === 'relic') { toast(`Relic: ${s.item.name}`, 'info'); SFX.unlock(); }
+      setPending('shop', { eventId: ev.id, stock: visit.stock });
+      refreshShop();
       if (s.kind === 'equip') {
         if (s.item.rarity === 'wrld' || s.item.wrld) {
           markWrldClaimed(run, s.item.baseId || s.item.id, coopS);
@@ -5502,20 +5504,23 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
         const lines = [];
         await offerEquipment(s.item, lines);
       }
-      stock.splice(+btn.dataset.i, 1);
-      setPending('shop', { eventId: ev.id, stock });
-      saveRun(run); renderHud(); render();
+      visit.busy = false;
+      refreshShop();
     });
     stage.querySelector('#buy-heal').onclick = () => {
-      const r = applyShopHeal(run, discount);
-      if (!r.ok) return;
-      boughtHere = true;
+      if (visit.busy) return;
+      visit.busy = true;
+      const r = applyShopHeal(run, visit.discount);
+      visit.busy = false;
+      if (!r.ok) { render(); return; }
+      visit.boughtHere = true;
       SFX.heal(); toast('Fully healed');
-      saveRun(run); renderHud(); render();
+      setPending('shop', { eventId: ev.id, stock: visit.stock });
+      refreshShop();
     };
     stage.querySelector('#leave').onclick = async () => {
       SFX.click();
-      if (boughtHere) applyWorldPatch(run, { char: { id: 'merchant', met: true, rel: 1, memory: 'bought' } });
+      if (visit.boughtHere) applyWorldPatch(run, { char: { id: 'merchant', met: true, rel: 1, memory: 'bought' } });
       shopRefreshHook = null;
       clearPending();
       if (coopS) {
@@ -5739,12 +5744,8 @@ function characterSheet({ locked = false } = {}) {
         characterSheet();
       });
       m.querySelectorAll('[data-sellinv]').forEach(b => b.onclick = () => {
-        const idx = +b.dataset.sellinv;
-        const id = run.inventory[idx];
-        const it = resolveItem(run, id);
-        run.inventory.splice(idx, 1);
-        if (run.gearBag && run.gearBag[id]) delete run.gearBag[id];
-        run.gold += sellGold(it, { from: 'inventory' });
+        const r = applyShopSell(run, +b.dataset.sellinv);
+        if (!r.ok) return;
         SFX.gold(); saveRun(run); renderHud(); render();
         shopRefreshHook?.();
       });

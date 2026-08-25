@@ -2838,6 +2838,11 @@ console.log('— narrative event pacing —');
 }
 
 {
+  const { runShopTests } = await import('./test_shop.js');
+  await runShopTests(t);
+}
+
+{
   const { runCombatPolicyTests } = await import('./test_combat_policy.js');
   runCombatPolicyTests(t);
 }
