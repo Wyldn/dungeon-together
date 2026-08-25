@@ -425,6 +425,7 @@ export function newRun(meta, { classId, raceId = 'human', originId = null, name,
 }
 
 export function saveRun(run) {
+  if (run?.coopMode) return; // co-op persistence is the resume token + relay checkpoint
   localStorage.setItem(RUN_KEY, JSON.stringify(run));
 }
 

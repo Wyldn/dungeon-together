@@ -50,6 +50,11 @@ import { choiceBtnClass } from './typography.js';
 import { makeRng, randomSeed } from './rng.js';
 import { defaultServerUrl, partyLinkRecovery } from './net.js';
 import { CoopSession, connectCoop } from './coop.js';
+import {
+  GAME_CONTENT_VERSION, buildCheckpoint, checkpointRevision,
+  classifyResumeMeta, clearCoopResume, loadCoopResume, newResumeToken,
+  resumeErrorCopy, saveCoopResume, serializeClimber, validateCheckpoint,
+} from './mp_checkpoint.js';
 import { Music } from './music.js';
 import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl, raceArtHtml, originArtHtml, raceIconUrl, originIconUrl, eventCatUrl, npcArtUrl, enemySpriteHtml } from './art.js';
 import { isAutoPlay, setAutoPlay, syncAutoPlayLoop } from './autoplay.js';
@@ -820,6 +825,7 @@ function showDevChrome() {
 function titleScreen() {
   endInspectSession();
   const saved = loadRun();
+  const coopSaved = classifyResumeMeta(loadCoopResume());
   const vol = Math.round(Music.getVolume() * 100);
   const vista = titleBgUrl();
   app.innerHTML = '';
@@ -841,8 +847,11 @@ function titleScreen() {
 
       <div class="title-stack">
         <div class="title-actions">
-          ${saved ? `<button class="btn primary" id="btn-continue">Continue — Fl.${saved.floor} · ${saved.name}</button>` : ''}
-          <button class="btn ${saved ? '' : 'primary'}" id="btn-new">New Climb</button>
+          ${coopSaved.kind === 'active' ? `<button class="btn primary" id="btn-coop-resume">Resume party — ${coopSaved.meta.code} · Fl.${coopSaved.meta.floor || 0}</button>` : ''}
+          ${coopSaved.kind === 'incompatible' ? `<button class="btn" id="btn-coop-incompatible">Party save incompatible</button>` : ''}
+          ${coopSaved.kind === 'unrecoverable' ? `<button class="btn" id="btn-coop-unrecoverable">Party save unrecoverable</button>` : ''}
+          ${saved ? `<button class="btn ${coopSaved.kind === 'active' ? '' : 'primary'}" id="btn-continue">Continue — Fl.${saved.floor} · ${saved.name}</button>` : ''}
+          <button class="btn ${saved || coopSaved.kind === 'active' ? '' : 'primary'}" id="btn-new">New Climb</button>
           <button class="btn" id="btn-coop">Play Together</button>
         </div>
         <div class="title-rail">
@@ -876,6 +885,9 @@ function titleScreen() {
     flash(() => creationFlow(), { biomeId: 'title', partySize: 2 });
   };
   if (saved) document.getElementById('btn-continue').onclick = () => { SFX.click(); run = saved; resumeRun(); };
+  document.getElementById('btn-coop-resume')?.addEventListener('click', () => { SFX.click(); resumeSavedCoop(); });
+  document.getElementById('btn-coop-incompatible')?.addEventListener('click', () => { SFX.click(); showCoopResumeProblem('incompatible'); });
+  document.getElementById('btn-coop-unrecoverable')?.addEventListener('click', () => { SFX.click(); showCoopResumeProblem('unrecoverable'); });
   document.getElementById('btn-coop').onclick = () => { SFX.click(); coopMenu(); };
   document.getElementById('btn-sanctum').onclick = () => { SFX.click(); sanctumScreen(); };
   document.getElementById('btn-history').onclick = () => { SFX.click(); showRunHistoryBrowser(); };
@@ -914,7 +926,7 @@ async function openPauseMenu() {
     </label>` : ''}
     <div class="pick-grid">
       <button class="pick-option" data-close="resume"><span class="po-name">Resume the climb</span></button>
-      ${coopS ? '' : `<button class="pick-option" data-close="save"><span class="po-name">Save &amp; return to title</span><span class="po-desc">Your climb waits where you left it.</span></button>`}
+      ${coopS ? `<button class="pick-option" data-close="leave"><span class="po-name">Leave &amp; resume later</span><span class="po-desc">The party keeps the last safe floor. Combat in progress is not saved.</span></button>` : `<button class="pick-option" data-close="save"><span class="po-name">Save &amp; return to title</span><span class="po-desc">Your climb waits where you left it.</span></button>`}
       <button class="pick-option" data-close="abandon"><span class="po-name" style="color:var(--blood)">${coopS ? 'Leave the party & abandon run' : 'Abandon run'}</span><span class="po-desc">The tower claims another. Shards are still awarded.</span></button>
     </div>`, { dismissible: true });
   wireVolumeSlider(document.getElementById('pause-vol'), document.getElementById('pause-vol-val'));
@@ -926,6 +938,7 @@ async function openPauseMenu() {
   if (ap) ap.onchange = () => setAutoPlay(ap.checked);
   const v = await p;
   if (v === 'save') { persistRunForLeave(); titleScreen(); }
+  if (v === 'leave') { leaveCoopForLater(); }
   if (v === 'abandon') endRun('abandon');
 }
 
@@ -1511,16 +1524,238 @@ function beginRun() {
   enterFloorScreen(true);
 }
 
+function leaveCoopForLater() {
+  teardownCoop();
+  run = null;
+  titleScreen();
+}
+
+async function discardCoopSave() {
+  const meta = loadCoopResume();
+  const token = meta?.token;
+  clearCoopResume();
+  if (!token) return;
+  try {
+    const net = await connectCoop(defaultServerUrl());
+    const done = new Promise(resolve => {
+      const offD = net.sys('discarded', () => { offD(); offE(); resolve(); });
+      const offE = net.sys('err', () => { offD(); offE(); resolve(); });
+    });
+    net.discard(token);
+    await Promise.race([done, sleep(4000)]);
+    net.close();
+  } catch {}
+}
+
+async function showCoopResumeProblem(code) {
+  const copy = resumeErrorCopy(code);
+  const v = await modal(`<h3>${copy.title}</h3>
+    <p class="modal-sub">${copy.body}</p>
+    <div class="pick-grid">
+      <button class="pick-option" data-close="discard"><span class="po-name">Discard save</span></button>
+      <button class="pick-option" data-close="ok"><span class="po-name">Return</span></button>
+    </div>`);
+  if (v === 'discard') await discardCoopSave();
+  titleScreen();
+}
+
+function waitRelay(net, types, ms = 8000) {
+  return new Promise((resolve, reject) => {
+    const offs = [];
+    let settled = false;
+    const finish = (fn, val) => {
+      if (settled) return;
+      settled = true;
+      for (const off of offs) off();
+      fn(val);
+    };
+    for (const t of types) offs.push(net.sys(t, m => finish(resolve, { t, m })));
+    offs.push(net.sys('err', m => finish(reject, Object.assign(new Error(m.why || 'err'), { code: m.code || 'unrecoverable' }))));
+    offs.push(net.sys('kicked', m => finish(reject, Object.assign(new Error(m.why || 'kicked'), { code: 'taken' }))));
+    sleep(ms).then(() => finish(reject, Object.assign(new Error('timeout'), { code: 'expired' })));
+  });
+}
+
+function watchKicked(net) {
+  net.sys('kicked', async () => {
+    teardownCoop();
+    run = null;
+    const copy = resumeErrorCopy('taken');
+    await modal(`<h3>${copy.title}</h3><p class="modal-sub">${copy.body}</p>
+      <div class="pick-grid"><button class="pick-option" data-close="ok" style="text-align:center"><span class="po-name">Return</span></button></div>`);
+    titleScreen();
+  });
+}
+
+function persistCoopResumeSlot(extra = {}) {
+  if (!coopS) return;
+  saveCoopResume({
+    ...(loadCoopResume() || {}),
+    token: coopS.net.resumeToken || loadCoopResume()?.token,
+    code: coopS.net.code,
+    playerId: coopS.net.you,
+    runId: coopS.net.runId || loadCoopResume()?.runId,
+    name: run?.name || extra.name || loadCoopResume()?.name,
+    floor: run?.floor ?? extra.floor ?? 0,
+    revision: extra.revision ?? loadCoopResume()?.revision ?? 0,
+    status: extra.status || 'active',
+    gameVersion: GAME_CONTENT_VERSION,
+  });
+}
+
+function coopWriteCheckpoint(phase) {
+  if (!coopS || !run?.coopMode) return;
+  const runId = coopS.net.runId;
+  if (!runId) return;
+  if (phase && phase !== 'floor-ready' && phase !== 'floor-resolved' && phase !== 'ended') return;
+  const usePhase = phase || 'floor-resolved';
+  const ser = serializeClimber(run);
+  if (!ser.ok) return;
+  const revision = checkpointRevision(run.floor, usePhase);
+  const payload = { climber: ser.climber, revision };
+  if (coopS.isHost) {
+    const built = buildCheckpoint({
+      runId, floor: run.floor, phase: usePhase, seed: coopS.seed, shared: coopS.exportShared(),
+    });
+    if (!built.ok) return;
+    payload.checkpoint = built.checkpoint;
+  }
+  coopS.net.sendCheckpoint(payload);
+  persistCoopResumeSlot({ revision, status: usePhase === 'ended' ? 'ended' : 'active' });
+}
+
+function coopSetPhase(phase) {
+  if (coopS?.isHost) coopS.net.sendPhase(phase);
+}
+
+async function resumeSavedCoop() {
+  const classified = classifyResumeMeta(loadCoopResume());
+  if (classified.kind === 'incompatible' || classified.kind === 'unrecoverable') {
+    return showCoopResumeProblem(classified.kind);
+  }
+  if (classified.kind !== 'active') return coopMenu();
+  const meta = classified.meta;
+  try {
+    const net = await connectCoop(defaultServerUrl());
+    const settled = waitRelay(net, ['resume-ok']);
+    net.resume(meta.code, meta.token, meta.name);
+    const { m } = await settled;
+    watchPartyLink(net, { name: meta.name, code: m.code, token: meta.token });
+    watchKicked(net);
+    coopS = new CoopSession(net);
+    if (m.live) coopS.applyLive(m.live);
+    else if (m.checkpoint?.shared) coopS.applyShared(m.checkpoint.shared);
+    persistCoopResumeSlot({ name: meta.name });
+    await enterRestoredCoop(m);
+  } catch (err) {
+    teardownCoop();
+    await showCoopResumeProblem(err.code || 'expired');
+  }
+}
+
+async function enterRestoredCoop(payload) {
+  if (payload.wait === 'combat') return showCoopWaitCombat(payload);
+  const climber = payload.climber;
+  if (!climber) return showCoopResumeProblem('unrecoverable');
+  if (payload.checkpoint) {
+    const v = validateCheckpoint(payload.checkpoint);
+    if (!v.ok) return showCoopResumeProblem(v.code || 'unrecoverable');
+  }
+  run = { ...climber, coopMode: true };
+  const cp = payload.checkpoint;
+  if (cp && run.floor < cp.floor) {
+    run.floor = cp.floor;
+    const biome = biomeForFloor(Math.max(1, run.floor));
+    run.biomeId = biome.id;
+    if (run.down) {
+      run.down = false;
+      run.hp = Math.max(1, Math.round(run.maxHp * CONFIG.death.respawnHpPct));
+      run.mp = Math.round(run.maxMp * CONFIG.death.respawnResourcePct);
+    }
+  }
+  ensureClimbStats(run);
+  const biome = biomeForFloor(Math.max(1, run.floor));
+  run.biomeId = biome.id;
+  setBiomeGlow(biome.glow);
+  setParticles(biome.particle);
+  Music.play(BIOME_MUSIC[run.biomeId] || 'forest');
+  coopS.onPartnerLeft = () => {
+    toast('A climber has left the party.', 'bad');
+    if (coopS.isHost && run && run.floor > 0 && !coopS.floorContent.has(run.floor)) {
+      hostPublishFloorContent();
+    }
+    refreshPartnerStrip();
+  };
+  coopS.net.on('rejoin', (d) => toast(`${d?.name || 'A climber'} rejoined the party.`, 'info'));
+  if (!cp || (cp.floor === 0 && cp.phase === 'floor-ready')) return beginRun();
+  const stage = floorChrome();
+  renderHud();
+  if (cp.phase === 'ended') return showCoopResumeProblem('unrecoverable');
+  if (cp.phase === 'floor-resolved') return nextFloorButton(stage);
+  return coopFloor(stage);
+}
+
+function showCoopWaitCombat(payload) {
+  app.innerHTML = '';
+  app.appendChild(el(`<div class="screen" style="max-width:560px">
+    <div class="select-header">
+      <h2>Rejoin held</h2>
+      <p>The party is in combat. Mid-combat snapshots cannot be restored. You will rejoin at the next safe floor.</p>
+    </div>
+    <div class="panel" style="padding:24px">
+      <p class="modal-sub">Waiting for the encounter to finish…</p>
+      <button class="btn ghost" id="btn-wait-leave">Return to title</button>
+    </div>
+  </div>`));
+  document.getElementById('btn-wait-leave').onclick = () => { SFX.click(); leaveCoopForLater(); };
+  const off = coopS.net.sys('checkpoint', m => {
+    if (m.wait === 'combat') return;
+    off();
+    enterRestoredCoop({
+      checkpoint: m.checkpoint,
+      live: m.live,
+      climber: payload.climber,
+      wait: null,
+    });
+  });
+}
+
+async function takeFreshCoopToken() {
+  const existing = classifyResumeMeta(loadCoopResume());
+  if (existing.kind === 'active') {
+    if (!confirm('This browser already has a saved party climb. Discard it and start another?')) return null;
+    await discardCoopSave();
+  } else if (existing.kind === 'incompatible' || existing.kind === 'unrecoverable') {
+    await discardCoopSave();
+  } else if (loadCoopResume()?.token) {
+    await discardCoopSave();
+  }
+  const token = newResumeToken();
+  saveCoopResume({ token, status: 'lobby', code: null, gameVersion: GAME_CONTENT_VERSION });
+  return token;
+}
+
 /* ============================================================
    CO-OP: menu, lobby, session plumbing
    ============================================================ */
 function coopMenu() {
+  const coopSaved = classifyResumeMeta(loadCoopResume());
   app.innerHTML = '';
   const scr = el(`<div class="screen" style="max-width:560px">
     <div class="select-header">
       <h2>Climb Together</h2>
       <p>One tower, one fate, up to four climbers. Combat is fought side by side;<br/>every choice is still your own — unless the party votes otherwise.</p>
     </div>
+    ${coopSaved.kind === 'active' ? `<div class="panel" style="padding:18px 24px;margin-bottom:12px">
+      <p style="margin:0 0 10px">Saved party <b>${coopSaved.meta.code}</b> · Floor ${coopSaved.meta.floor || 0}${coopSaved.meta.name ? ` · ${coopSaved.meta.name}` : ''}</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn primary" id="btn-menu-resume" style="flex:1">Resume / Rejoin</button>
+        <button class="btn ghost" id="btn-menu-discard">Discard</button>
+      </div>
+    </div>` : coopSaved.kind === 'incompatible' || coopSaved.kind === 'unrecoverable' ? `<div class="panel" style="padding:18px 24px;margin-bottom:12px">
+      <p style="margin:0 0 10px">${coopSaved.kind === 'incompatible' ? 'This party save is from an incompatible version.' : 'This party save cannot be restored.'}</p>
+      <button class="btn" id="btn-menu-discard">Discard save</button>
+    </div>` : ''}
     <div class="panel" style="padding:24px">
       <input class="name-input" id="coop-name" maxlength="16" placeholder="Your name..." style="width:100%;margin-bottom:14px" />
       <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -1542,6 +1777,7 @@ function coopMenu() {
       <div id="coop-publist" style="margin-top:10px"></div>
       <div id="coop-err" style="color:#f0a8a0;font-size:14px;margin-top:12px;min-height:20px"></div>
     </div>
+    <p class="modal-sub" style="text-align:center;margin-top:10px">One saved party climb per browser. The relay remembers it only while that server process is alive.</p>
     <div style="text-align:center;margin-top:16px"><button class="btn ghost small" id="btn-back">← Back</button></div>
   </div>`);
   app.appendChild(scr);
@@ -1553,6 +1789,8 @@ function coopMenu() {
     const name = nameInput.value.trim() || 'Climber';
     localStorage.setItem('dt_coop_name', name);
     errEl.textContent = 'Connecting to the tower...';
+    const token = await takeFreshCoopToken();
+    if (!token) { errEl.textContent = ''; return; }
     let net;
     try {
       net = await connectCoop(defaultServerUrl());
@@ -1562,16 +1800,18 @@ function coopMenu() {
     }
     net.sys('err', m => { errEl.textContent = m.why; net.close(); });
     const roomPromise = new Promise(r => { const off = net.sys('room', m => { off(); r(m); }); });
-    if (mode === 'create') net.create(name, scr.querySelector('#coop-public')?.checked || false);
-    else if (mode === 'quick') net.quickjoin(name);
+    if (mode === 'create') net.create(name, scr.querySelector('#coop-public')?.checked || false, token);
+    else if (mode === 'quick') net.quickjoin(name, token);
     else {
       const code = (joinCode || scr.querySelector('#coop-code').value.trim()).toUpperCase();
       if (code.length !== 4) { errEl.textContent = 'Party codes are 4 letters.'; net.close(); return; }
-      net.join(code, name);
+      net.join(code, name, token);
     }
     const roomMsg = await roomPromise;
-    watchPartyLink(net, { name, code: roomMsg.code, pub: !!roomMsg.pub });
+    watchPartyLink(net, { name, code: roomMsg.code, pub: !!roomMsg.pub, token });
+    watchKicked(net);
     coopS = new CoopSession(net);
+    persistCoopResumeSlot({ name, status: 'lobby' });
     if (mode === 'quick' && roomMsg.host) {
       toast('No open parties right now — you host a public one. Climbers can find you.', 'info');
     }
@@ -1614,6 +1854,13 @@ function coopMenu() {
   scr.querySelector('#btn-quick').onclick = () => { SFX.click(); go('quick'); };
   scr.querySelector('#btn-browse').onclick = () => { SFX.click(); browsePublic(); };
   scr.querySelector('#btn-back').onclick = () => { SFX.click(); titleScreen(); };
+  scr.querySelector('#btn-menu-resume')?.addEventListener('click', () => { SFX.click(); resumeSavedCoop(); });
+  scr.querySelector('#btn-menu-discard')?.addEventListener('click', async () => {
+    SFX.click();
+    if (!confirm('Discard this saved party climb? It cannot be restored after this.')) return;
+    await discardCoopSave();
+    coopMenu();
+  });
 }
 
 function coopLobby(myName) {
@@ -1683,6 +1930,13 @@ function coopLobby(myName) {
       fateRace: myPick.fateRace, fateClass: myPick.fateClass,
     });
     run.coopMode = true;
+    persistCoopResumeSlot({ name: myName, status: 'active' });
+    const onRun = () => {
+      persistCoopResumeSlot({ name: myName, status: 'active' });
+      coopWriteCheckpoint('floor-ready');
+    };
+    coopS.net.sys('run', onRun);
+    if (coopS.net.runId) onRun();
     if (coopS.partySize >= 3) unlock('party_of_three');
     if (coopS.partySize >= 4) unlock('party_of_four');
     meta.totalRuns++;
@@ -1703,6 +1957,7 @@ function coopLobby(myName) {
       }
       refreshPartnerStrip();
     };
+    coopS.net.on('rejoin', (d) => toast(`${d?.name || 'A climber'} rejoined the party.`, 'info'));
     gateEntry(() => beginRun());
   }
 
@@ -2031,10 +2286,43 @@ function watchPartyLink(net, resume) {
 async function recoverPartyLink(resume = {}) {
   const name = resume.name || 'Climber';
   const code = String(resume.code || coopS?.net?.code || '').toUpperCase();
+  const token = resume.token || coopS?.net?.resumeToken || loadCoopResume()?.token;
+  const climbing = !!(run && run.coopMode);
   const action = partyLinkRecovery({
-    climbing: !!(run && run.coopMode),
+    climbing,
     hasCode: code.length === 4,
+    hasToken: !!token,
   });
+
+  if (action === 'resume') {
+    toast('Party link dropped — reconnecting…', 'info');
+    teardownCoop();
+    try {
+      const net = await connectCoop(defaultServerUrl());
+      const settled = waitRelay(net, ['resume-ok', 'room']);
+      net.resume(code, token, name);
+      const { t, m } = await settled;
+      watchPartyLink(net, { name, code: m.code, token });
+      watchKicked(net);
+      coopS = new CoopSession(net);
+      if (t === 'resume-ok') {
+        if (m.live) coopS.applyLive(m.live);
+        else if (m.checkpoint?.shared) coopS.applyShared(m.checkpoint.shared);
+        persistCoopResumeSlot({ name });
+        toast('Rejoined the party.', 'info');
+        await enterRestoredCoop(m);
+        return;
+      }
+      coopLobby(name);
+      toast('Rejoined the party.', 'info');
+      return;
+    } catch (err) {
+      teardownCoop();
+      await showCoopResumeProblem(err.code || 'expired');
+      run = null;
+      return;
+    }
+  }
 
   if (action === 'rejoin') {
     toast('Party link dropped — reconnecting…', 'info');
@@ -2045,12 +2333,13 @@ async function recoverPartyLink(resume = {}) {
         const offRoom = net.sys('room', m => { offRoom(); offErr(); resolve(m); });
         const offErr = net.sys('err', m => { offRoom(); offErr(); reject(new Error(m.why || 'join failed')); });
       });
-      net.join(code, name);
+      net.join(code, name, token);
       const room = await Promise.race([
         settled,
         sleep(5000).then(() => { throw new Error('timeout'); }),
       ]);
-      watchPartyLink(net, { name, code: room.code, pub: !!room.pub });
+      watchPartyLink(net, { name, code: room.code, pub: !!room.pub, token });
+      watchKicked(net);
       coopS = new CoopSession(net);
       coopLobby(name);
       toast('Rejoined the party.', 'info');
@@ -2062,18 +2351,10 @@ async function recoverPartyLink(resume = {}) {
     teardownCoop();
   }
 
-  const climbing = action === 'exit-run';
-  await modal(`<h3>${climbing ? 'The party link broke' : 'Could not rejoin the party'}</h3>
-    <p class="modal-sub">${climbing
-      ? 'The connection ended. The climb cannot resume on this link.'
-      : 'The party is gone, or the tower did not answer. Start a new party when you are ready.'}</p>
+  await modal(`<h3>Could not rejoin the party</h3>
+    <p class="modal-sub">The party is gone, or the tower did not answer. Start a new party when you are ready.</p>
     <div class="pick-grid"><button class="pick-option" data-close="ok" style="text-align:center"><span class="po-name">Return</span></button></div>`);
-  if (climbing) {
-    run = null;
-    titleScreen();
-  } else {
-    coopMenu();
-  }
+  coopMenu();
 }
 
 function statusOf(run, act) {
@@ -2730,6 +3011,7 @@ async function fightGroup(stage, specs, {
     });
   }
   sheetCombatLock = true; renderHud();
+  if (coopS) coopSetPhase('combat');
   logCombatStart(enemies, { intro: text });
   const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
     container: stage, run, rng, enemies, modifier, introText: text,
@@ -2740,6 +3022,7 @@ async function fightGroup(stage, specs, {
   logCombatEnd(enemies, { result, gold, xp });
   clearPending();
   sheetCombatLock = false; renderHud();
+  if (coopS) coopSetPhase('safe');
   if (result === 'win') { if (noDamage) unlock('untouchable'); if (usedUltimate) unlock('overcharged'); }
 
   if (result === 'dead') {
@@ -3028,6 +3311,7 @@ async function fightGroupBoss(stage, enemies, boss, { resume = null } = {}) {
     });
   }
   sheetCombatLock = true; renderHud();
+  if (coopS) coopSetPhase('combat');
   logCombatStart(foes, { boss: true, intro: `${shown.name}: "${shown.taunt}"` });
   const { result, gold = 0, xp = 0, noDamage, usedUltimate } = await startCombat({
     container: stage, run, rng, enemies: foes,
@@ -3039,6 +3323,7 @@ async function fightGroupBoss(stage, enemies, boss, { resume = null } = {}) {
   logCombatEnd(foes, { result, gold, xp, boss: true });
   clearPending();
   sheetCombatLock = false; renderHud();
+  if (coopS) coopSetPhase('safe');
   if (result === 'dead') return endRun('dead');
   if (noDamage) unlock('untouchable');
   if (usedUltimate) unlock('overcharged');
@@ -3146,6 +3431,7 @@ async function coopFloor(stage) {
 
   const content = await coopS.waitFloor(run.floor);
   saveRun(run);
+  coopWriteCheckpoint('floor-ready');
 
   if (content.type === 'throne') {
     if (content.bossId) {
@@ -3161,12 +3447,14 @@ async function coopFloor(stage) {
     return coopCardChoice(stage, content.cards);
   }
   const ev = presentEvent(EVENTS.find(e => e.id === content.eventId) || EVENTS.find(e => e.id === 'campfire'), run);
-  run.seenEvents.push(ev.id);
-  noteEventTags(ev);
-  pushEventHistory(run, ev.category || 'recovery');
-  pushTakenEventHistory(run, ev.id);
-  recordEvent(run, ev);
-  saveRun(run);
+  if (!run.seenEvents.includes(ev.id)) {
+    run.seenEvents.push(ev.id);
+    noteEventTags(ev);
+    pushEventHistory(run, ev.category || 'recovery');
+    pushTakenEventHistory(run, ev.id);
+    recordEvent(run, ev);
+    saveRun(run);
+  }
   renderEventCard(stage, ev);
 }
 
@@ -3339,6 +3627,7 @@ async function sharedFightCard(stage, content) {
 async function coopFightShared(stage, enemies, { boss = null, mod = null, reward = null, introText = null } = {}) {
   Music.play(boss ? 'boss' : 'battle');
   coopS.broadcastStatus(statusOf(run, 'fighting'), 'fighting');
+  coopSetPhase('combat');
   const rng = runRng(run);
   sheetCombatLock = true; renderHud();
   const shown = boss ? shownBoss(boss) : null;
@@ -3353,6 +3642,7 @@ async function coopFightShared(stage, enemies, { boss = null, mod = null, reward
   });
   logCombatEnd(enemies, { result, gold, xp, boss: !!boss });
   sheetCombatLock = false; renderHud();
+  coopSetPhase('safe');
 
   if (result === 'wipe') return endRun('dead');
   if (noDamage) unlock('untouchable');
@@ -4837,6 +5127,7 @@ async function showOutcomePanel(stage, lines, ups = [], {
   stage.appendChild(panel);
   renderHud();
   Music.play(BIOME_MUSIC[run.biomeId] || 'forest');
+  if (coopS && advance) coopWriteCheckpoint('floor-resolved');
   await new Promise(r => {
     const btn = document.getElementById('continue');
     btn.onclick = () => {
@@ -4876,6 +5167,7 @@ function nextFloorButton(stage) {
     </div></div>`);
   stage.innerHTML = '';
   stage.appendChild(panel);
+  if (coopS) coopWriteCheckpoint('floor-resolved');
   let advancing = false;
   document.getElementById('continue').onclick = async () => {
     if (advancing) return;
@@ -5558,6 +5850,8 @@ async function secretEnding(stage) {
   const throneName = throneBoss?.name || 'the figure on the throne';
   const shortName = throneName.split(',')[0];
   Music.play('victory');
+  if (coopS) coopWriteCheckpoint('ended');
+  clearCoopResume();
   teardownCoop();
   unlock('secret');
   meta.wins++;
@@ -5618,6 +5912,7 @@ async function victoryScreen(type) {
     name: run.name, raceName: run.raceName, floor: run.floor, kills: run.kills,
     level: run.level, fame: run.fame, title: classTitle(run),
   } : null);
+  if (wasCoop) coopWriteCheckpoint('ended');
   if (!wasCoop) teardownCoop();
   else {
     coopS.resetRunBuffers();
@@ -5673,6 +5968,7 @@ async function endRun(cause) {
   const deadRun = run;
   const summary = deadRun ? buildClimbSummary(deadRun, cause, runRng(deadRun)) : null;
   if (summary) pushRunHistory(summary);
+  if (wasCoop) coopWriteCheckpoint('ended');
   if (!wasCoop) teardownCoop();
   else {
     coopS.resetRunBuffers();
@@ -5924,8 +6220,15 @@ function showFinalEndScreen({ wasCoop, myName, shards, isWin, snap, title, glyph
 
 function wireEndButtons(wasCoop, myName) {
   document.getElementById('btn-again')?.addEventListener('click', () => { meta = loadMeta(); creationFlow(); });
-  document.getElementById('btn-title')?.addEventListener('click', () => {
-    if (coopS) teardownCoop();
+  document.getElementById('btn-title')?.addEventListener('click', async () => {
+    if (coopS) {
+      const token = coopS.net.resumeToken || loadCoopResume()?.token;
+      if (token) {
+        try { coopS.net.discard(token); } catch {}
+      }
+      teardownCoop();
+    }
+    clearCoopResume();
     meta = loadMeta();
     titleScreen();
   });
@@ -5954,6 +6257,15 @@ function wireEndButtons(wasCoop, myName) {
     if (!coopS || coopS.requeueVotes.size < requeueNeeded()) return false;
     coopS.onRequeue = null;
     toast('The party climbs again.', 'info');
+    clearCoopResume();
+    saveCoopResume({
+      token: coopS.net.resumeToken,
+      code: coopS.net.code,
+      playerId: coopS.net.you,
+      name: myName,
+      status: 'lobby',
+      gameVersion: GAME_CONTENT_VERSION,
+    });
     // Clear elim state + reopen public searchability on the relay.
     coopS.eliminated.clear();
     coopS._syncRoster?.();

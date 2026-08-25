@@ -4,6 +4,7 @@
 // NPC memory, and secret-subclass accepts stay personal — never party votes.
 
 import { Net } from './net.js';
+import { applyLiveCatchup, applySharedState, exportSharedState } from './mp_checkpoint.js';
 
 export class CoopSession {
   constructor(net) {
@@ -420,6 +421,10 @@ export class CoopSession {
     }
     return true;
   }
+
+  exportShared() { return exportSharedState(this); }
+  applyShared(shared) { applySharedState(this, shared); }
+  applyLive(live) { applyLiveCatchup(this, live); }
 
   destroy() {
     for (const off of this.offs) off();

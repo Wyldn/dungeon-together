@@ -23,9 +23,9 @@ export function isMixedContentBlocked() {
   return false;
 }
 
-/** What to do when the transport drops. Mid-climb rooms cannot be rejoined. */
-export function partyLinkRecovery({ climbing = false, hasCode = false } = {}) {
-  if (climbing) return 'exit-run';
+/** What to do when the transport drops. Mid-climb seats resume via token. */
+export function partyLinkRecovery({ climbing = false, hasCode = false, hasToken = false } = {}) {
+  if (climbing && (hasToken || hasCode)) return 'resume';
   if (hasCode) return 'rejoin';
   return 'exit-lobby';
 }
@@ -40,6 +40,8 @@ export class Net {
     this.isHost = false;
     this.seed = null;
     this.roster = [];
+    this.runId = null;
+    this.resumeToken = null;
   }
 
   connect(url) {
@@ -61,10 +63,13 @@ export class Net {
       const any = this.handlers.get('*');
       if (any) for (const fn of [...any]) fn(msg.data, msg.from);
     } else {
-      if (msg.t === 'room') {
+      if (msg.t === 'room' || msg.t === 'resume-ok') {
         this.you = msg.you; this.code = msg.code; this.isHost = msg.host;
         this.seed = msg.seed; this.roster = msg.roster;
+        if (msg.runId) this.runId = msg.runId;
+        if (msg.token) this.resumeToken = msg.token;
       }
+      if (msg.t === 'run' && msg.runId) this.runId = msg.runId;
       if (msg.t === 'roster') this.roster = msg.roster;
       if (msg.t === 'left') {
         this.roster = msg.roster;
@@ -106,9 +111,27 @@ export class Net {
     return () => this.sysHandlers.get(t)?.delete(fn);
   }
 
-  create(name, pub = false) { this.ws.send(JSON.stringify({ t: 'create', name, pub })); }
-  join(code, name) { this.ws.send(JSON.stringify({ t: 'join', code, name })); }
-  quickjoin(name) { this.ws.send(JSON.stringify({ t: 'quickjoin', name })); }
+  create(name, pub = false, token = null) {
+    this.ws.send(JSON.stringify({ t: 'create', name, pub, token: token || undefined }));
+  }
+  join(code, name, token = null) {
+    this.ws.send(JSON.stringify({ t: 'join', code, name, token: token || undefined }));
+  }
+  quickjoin(name, token = null) {
+    this.ws.send(JSON.stringify({ t: 'quickjoin', name, token: token || undefined }));
+  }
+  resume(code, token, name = null) {
+    this.ws.send(JSON.stringify({ t: 'resume', code, token, name }));
+  }
+  discard(token = null) {
+    this.ws.send(JSON.stringify({ t: 'discard', token: token || this.resumeToken || undefined }));
+  }
+  sendCheckpoint(payload) {
+    this.ws.send(JSON.stringify({ t: 'checkpoint', ...payload }));
+  }
+  sendPhase(phase) {
+    this.ws.send(JSON.stringify({ t: 'phase', phase }));
+  }
   listPublic() { this.ws.send(JSON.stringify({ t: 'list' })); }
 
   close() {

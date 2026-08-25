@@ -100,7 +100,8 @@ export async function runPartyProxyTests(t) {
   t('missing location keeps direct public relay', defaultServerUrl(null) === PUBLIC_RELAY);
   t('https is not treated as mixed-content blocked', isMixedContentBlocked() === false);
   t('lobby drop recovers by rejoin', partyLinkRecovery({ climbing: false, hasCode: true }) === 'rejoin');
-  t('mid-climb drop exits the run', partyLinkRecovery({ climbing: true, hasCode: true }) === 'exit-run');
+  t('mid-climb drop resumes via token', partyLinkRecovery({ climbing: true, hasCode: true, hasToken: true }) === 'resume');
+  t('mid-climb drop with code still resumes', partyLinkRecovery({ climbing: true, hasCode: true }) === 'resume');
   t('no-code drop exits the lobby', partyLinkRecovery({ climbing: false, hasCode: false }) === 'exit-lobby');
 
   t('party path matches /party', isPartyPath('/party') && isPartyPath('/party/') && !isPartyPath('/index.html'));
