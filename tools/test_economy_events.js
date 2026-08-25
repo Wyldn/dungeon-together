@@ -267,3 +267,20 @@ export async function runEconomyEventTests(t) {
     t('mid pack pick when several exist', pick.kind === 'pack' && list.length >= 3 && pick.id === list[Math.floor(list.length / 2)].id);
   }
 }
+
+const standalone = process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('tools/test_economy_events.js');
+if (standalone) {
+  let pass = 0, fail = 0;
+  function t(name, cond) {
+    if (cond) pass++;
+    else { fail++; console.error('  ✗ FAIL:', name); }
+  }
+  try {
+    await runEconomyEventTests(t);
+  } catch (err) {
+    fail++;
+    console.error('  ✗ FAIL: economy events suite threw', err);
+  }
+  console.log(`${pass} passed, ${fail} failed`);
+  process.exit(fail ? 1 : 0);
+}

@@ -6,7 +6,7 @@ import { ENEMIES, BOSSES } from '../js/data/enemies.js';
 import { CONSUMABLES } from '../js/data/items.js';
 import { CONFIG } from '../js/data/config.js';
 import { TDC } from '../js/data/tdc.js';
-import { HEAL_CONSUMABLE_IDS } from '../js/economy.js';
+import { HEAL_CONSUMABLE_IDS, ensureHealConsumableIds } from '../js/economy.js';
 
 function walkOutcomes(node, visit, trail = []) {
   if (!node || typeof node !== 'object') return;
@@ -23,6 +23,7 @@ function walkOutcomes(node, visit, trail = []) {
 }
 
 function eventGoldPotionRows(ev) {
+  ensureHealConsumableIds();
   const goldGain = [];
   const goldSink = [];
   const potions = [];
@@ -50,6 +51,7 @@ function eventGoldPotionRows(ev) {
 }
 
 export function catalogEconomy() {
+  ensureHealConsumableIds();
   const events = EVENTS.map(ev => ({
     id: ev.id,
     biome: ev.biome,

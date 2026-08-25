@@ -9,12 +9,24 @@ import { CLASSES } from './data/classes.js';
 
 export const START_GOLD = 30;
 
-export const HEAL_CONSUMABLE_IDS = new Set(
-  CONSUMABLES.filter(c => c && (c.heal || c.healPct)).map(c => c.id),
-);
+// Filled on first use. Do not read CONSUMABLES at module init — eventtags
+// imports this file while items.js is still evaluating (circular graph).
+export const HEAL_CONSUMABLE_IDS = new Set();
+let healIdsReady = false;
+
+export function ensureHealConsumableIds() {
+  if (healIdsReady) return HEAL_CONSUMABLE_IDS;
+  if (!Array.isArray(CONSUMABLES) || !CONSUMABLES.length) return HEAL_CONSUMABLE_IDS;
+  for (const c of CONSUMABLES) {
+    if (c && (c.heal || c.healPct) && c.id) HEAL_CONSUMABLE_IDS.add(c.id);
+  }
+  healIdsReady = true;
+  return HEAL_CONSUMABLE_IDS;
+}
 
 export function isHealConsumableId(id) {
   if (!id) return false;
+  ensureHealConsumableIds();
   if (HEAL_CONSUMABLE_IDS.has(id)) return true;
   const c = itemById(id);
   return !!(c && (c.heal || c.healPct));

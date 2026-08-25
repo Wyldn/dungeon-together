@@ -9,6 +9,10 @@ import {
   resumeErrorCopy,
 } from '../js/mp_checkpoint.js';
 import { newRun } from '../js/state.js';
+import { EVENTS } from '../js/data/events.js';
+import { eventEligible } from '../js/data/world.js';
+import { applyShopBuy } from '../js/shop.js';
+import { spendEnemySpecialCharge } from '../js/systems.js';
 
 globalThis.localStorage = globalThis.localStorage || {
   getItem: () => null, setItem: () => {}, removeItem: () => {},
@@ -258,6 +262,67 @@ export async function runMpPersistTests(t) {
     h.receive(q, { t: 'create', name: 'Ava', token: '11'.repeat(16) });
     return q.last('err')?.code === 'has-save';
   })());
+
+  // Cross-commit integration: economy flags, shop gold, kiln once, boss remainder.
+  {
+    const stamped = climber('Ava', {
+      floor: 8,
+      gold: 55,
+      consumables: ['potion_s', 'potion_l'],
+      flags: { assay_paid: true },
+      goldSpent: 40,
+      goldSpentBy: { shop: 15, event: 25 },
+    });
+    stamped.world.threads = { assay: { stage: 'opened' } };
+    stamped.world.knowledge = ['assay_stamp'];
+    const ser = serializeClimber(stamped);
+    t('mp snapshot keeps personal gold', ser.ok && ser.climber.gold === 55);
+    t('mp snapshot keeps consumables', ser.ok && ser.climber.consumables.join(',') === 'potion_s,potion_l');
+    t('mp snapshot keeps assay flag and thread',
+      ser.ok && ser.climber.flags.assay_paid && ser.climber.world.threads.assay.stage === 'opened');
+    t('mp snapshot keeps goldSpentBy', ser.ok && ser.climber.goldSpentBy.shop === 15);
+  }
+
+  {
+    const shopper = climber('Ava', { gold: 120, consumables: [] });
+    shopper.pending = { kind: 'shop', eventId: 'merchant', stock: [{ kind: 'consumable', item: { id: 'potion_s' } }] };
+    const stock = [{ kind: 'consumable', item: { id: 'potion_s', name: 'Potion', price: 20 }, price: 20 }];
+    const bought = applyShopBuy(shopper, stock, 0, 0);
+    const goldAfter = shopper.gold;
+    const ser = serializeClimber(shopper);
+    t('shop buy succeeds before snapshot', bought.ok && shopper.consumables.includes('potion_s'));
+    t('shop pending is not restored from a safe climber', ser.ok && !ser.climber.pending);
+    t('shop gold is not replayed on re-serialize',
+      serializeClimber(ser.climber).climber.gold === goldAfter && ser.climber.gold === goldAfter);
+    t('sold-out listing cannot fire twice', applyShopBuy(shopper, stock, 0, 0).ok === false);
+  }
+
+  {
+    const kiln = EVENTS.find(e => e.id === 'remembering_kiln');
+    const fresh = climber('Ava', { floor: 14, biomeId: 'ruins', seenEvents: [] });
+    t('kiln eligible before it is resolved', eventEligible(kiln, fresh));
+    recordResolvedKiln(fresh);
+    const ser = serializeClimber(fresh);
+    const restored = { ...ser.climber, biomeId: 'ruins', floor: 14 };
+    t('kiln seenEvents survive the safe snapshot', ser.ok && ser.climber.seenEvents.includes('remembering_kiln'));
+    t('resolved kiln does not reappear after checkpoint', !eventEligible(kiln, restored));
+  }
+
+  {
+    const enemy = { boss: true, charge: 6, specials: [{ at: 4, name: 'Mid' }] };
+    t('partial boss spend leaves remainder', spendEnemySpecialCharge(enemy, enemy.specials[0]) === 4 && enemy.charge === 2);
+    const midBoss = serializeClimber(climber('Ava', { pending: { kind: 'boss', enemies: [enemy] } }));
+    t('boss charge bar is not client-restored from combat pending', midBoss.ok === false && midBoss.why === 'combat-pending');
+    const afterFight = serializeClimber(climber('Ava', { floor: 10 }));
+    t('safe checkpoint has no leftover enemy charge blob', afterFight.ok && afterFight.climber.charge == null && !afterFight.climber.pending);
+    const still = { boss: true, charge: 6 };
+    spendEnemySpecialCharge(still, { at: 4 });
+    t('remainder spend still banks after a safe climber snapshot', still.charge === 2);
+  }
+}
+
+function recordResolvedKiln(run) {
+  run.seenEvents = [...(run.seenEvents || []), 'remembering_kiln'];
 }
 
 const standalone = process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('tools/test_mp_persist.js');

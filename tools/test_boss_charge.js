@@ -147,3 +147,20 @@ export async function runBossChargeTests(t) {
     t('long sample is not signature-only', kit > sig);
   }
 }
+
+const standalone = process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('tools/test_boss_charge.js');
+if (standalone) {
+  let pass = 0, fail = 0;
+  function t(name, cond) {
+    if (cond) pass++;
+    else { fail++; console.error('  ✗ FAIL:', name); }
+  }
+  try {
+    await runBossChargeTests(t);
+  } catch (err) {
+    fail++;
+    console.error('  ✗ FAIL: boss charge suite threw', err);
+  }
+  console.log(`${pass} passed, ${fail} failed`);
+  process.exit(fail ? 1 : 0);
+}

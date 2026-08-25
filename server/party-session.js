@@ -283,6 +283,11 @@ function createPartyHub() {
     if (livePlayers(room).length) return;
     // Keep started climbs so they can be resumed from the last safe checkpoint.
     // Lobby rooms with nobody left still expire immediately.
+    // Retention: started-empty rooms live until this relay process exits.
+    // There is no idle TTL and no max-abandoned-rooms bound, so a long-lived
+    // Oracle accumulates one room plus seat snapshots per disconnected party.
+    // Bounded eviction or a multi-hour idle expiry is required for production
+    // traffic; a short (e.g. five-minute) cap would drop same-day resumes.
     if (!room.started) {
       for (const s of room.seats.values()) forgetToken(s);
       rooms.delete(room.code);
