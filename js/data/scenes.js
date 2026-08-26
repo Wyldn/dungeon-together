@@ -10,6 +10,7 @@ function still(file, position = 'center 42%', scale = 1.12) {
 
 /** Curated stills. Crop/scale are for #combat-bleed and card-art cover. */
 export const SCENES = {
+  title_grove: { url: 'assets/img/bg/title.png', position: 'center 40%', scale: 1.08 },
   lamora_sunset: still('lamora_sunset.jpg', 'center 38%', 1.08),
   night_castle: still('night_castle.jpg', 'center 40%', 1.1),
   forest_path: still('forest_path.jpg', 'center 48%', 1.18),
@@ -56,7 +57,7 @@ export const SCENES = {
   hill_layers: still('hill_layers.jpg', 'center 55%', 1.2),
 };
 
-export const TITLE_SCENE = 'lamora_sunset';
+export const TITLE_SCENE = 'title_grove';
 export const TRAVEL_SCENE = 'mountain_vista';
 
 const BIOME_INTRO = {
@@ -116,7 +117,7 @@ const BIOME_DEFAULT = {
   swamp: 'swamp_bayou',
   hell: 'night_castle',
   throne: 'lamora_sunset',
-  title: 'lamora_sunset',
+  title: 'title_grove',
   travelmap: 'mountain_vista',
 };
 

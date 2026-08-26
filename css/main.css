@@ -67,6 +67,10 @@ button { font-family: inherit; color: inherit; }
   display: flex; align-items: center; justify-content: center;
   background: radial-gradient(circle at 50% 38%, var(--bg-2), var(--bg-0) 78%);
 }
+#viewport.has-vista {
+  /* Own background-image is set inline so letterbox wings fill. */
+  image-rendering: auto;
+}
 /* Outside the scaled #frame — overflow+transform clips children that paint past it. */
 #title-bleed {
   display: none;
@@ -83,7 +87,7 @@ button { font-family: inherit; color: inherit; }
       rgba(8,5,16,.35) calc(50% + 640px * var(--frame-scale, 1)),
       rgba(8,5,16,.28) 100%),
     linear-gradient(180deg, rgba(8,5,16,.2) 0%, transparent 28%, rgba(8,5,16,.55) 72%, rgba(8,5,16,.88) 100%),
-    var(--title-vista, url('../assets/img/bg/title.jpg'));
+    var(--title-vista, url('../assets/img/bg/title.png'));
   background-size: 100% 100%, 100% 100%, cover;
   background-position: center, center, center 40%;
   background-repeat: no-repeat;
@@ -94,15 +98,14 @@ button { font-family: inherit; color: inherit; }
   box-shadow: none;
 }
 #viewport:has(.title-screen) #vignette { opacity: 0; }
-#viewport:has(.title-screen) .title-veil { opacity: 0; }
 /* Combat biome art lives outside #frame so it can fill the letterbox
    wings. HUD stays in the scaled 1280×720 stage and does not move. */
 #combat-bleed {
   display: none;
   position: absolute; inset: 0; z-index: 0;
   pointer-events: none;
-  image-rendering: pixelated;
-  background-color: var(--bg-0);
+  image-rendering: auto;
+  background-color: transparent;
   background-size: cover;
   background-position: center 42%;
   background-repeat: no-repeat;
@@ -110,17 +113,17 @@ button { font-family: inherit; color: inherit; }
   transform: scale(var(--bleed-scale, 1.12));
   transform-origin: center 42%;
 }
-#viewport:has(.combat-screen) #combat-bleed.has-bg { display: block; }
+#viewport.has-vista #combat-bleed.has-bg { display: block; }
 #combat-bleed.has-bg::before {
   content: '';
   position: absolute; inset: 0;
   background: rgba(10,8,14,.52);
 }
-#viewport:has(.combat-screen) #frame {
+#viewport.has-vista #frame {
   background: transparent;
   box-shadow: none;
 }
-#viewport:has(.combat-screen) #vignette { opacity: 0; }
+#viewport.has-vista #vignette { opacity: 0; }
 #viewport:has(.combat-screen) .battlefield.cx-bg,
 #viewport:has(.combat-screen) .battlefield.has-bg {
   background-image: none !important;
@@ -129,7 +132,8 @@ button { font-family: inherit; color: inherit; }
 #viewport:has(.combat-screen) .battlefield.has-bg::before { display: none; }
 /* Floor chrome (run HUD, partner strip, biome node trail) sits under the
    now-transparent battlefield and used to show through. Hide it in fights. */
-#viewport:has(.combat-screen) .screen.chrome > :not(#stage) {
+#viewport:has(.combat-screen) .screen.chrome > :not(#stage),
+#viewport:has(.tm-root) .screen.chrome > :not(#stage) {
   display: none !important;
 }
 #frame {
@@ -272,8 +276,6 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: .04em; }
   image-rendering: pixelated; border: none; border-radius: 0;
   box-shadow: none; margin: 0; z-index: 0; pointer-events: none;
 }
-/* Full-window bleed is the visible forest; keep this img for fallback only. */
-#viewport:has(.title-screen) .title-vista:not(.title-vista-fallback) { opacity: 0; }
 .title-vista-fallback {
   display: grid; place-items: center;
   background: radial-gradient(ellipse at 50% 35%, #2a2040, var(--bg-0) 70%);
@@ -1931,10 +1933,11 @@ html.hide-choice-hints .choice-hint:not(.choice-hint-keep) { display: none; }
    ============================================================ */
 .tm-root {
   position: fixed; inset: 0; z-index: 20; overflow: hidden;
+  /* Photo lives on #combat-bleed so ultrawide letterbox wings fill.
+     These veils stay here so nodes stay readable. */
   background:
     radial-gradient(ellipse 100% 70% at 50% 8%, color-mix(in srgb, var(--biome-glow) 20%, transparent), transparent 70%),
-    radial-gradient(ellipse 92% 82% at 50% 46%, rgba(10,6,24,.72), rgba(6,4,14,.98)),
-    var(--bg-0);
+    radial-gradient(ellipse 92% 82% at 50% 46%, rgba(10,6,24,.42), rgba(6,4,14,.58));
 }
 .tm-header { position: absolute; top: 18px; left: 24px; z-index: 25; max-width: 42%; }
 .tm-biome { font-family: var(--font-display); font-size: 13px; color: #f7ecce; text-shadow: 0 2px 0 #2a1c0b; }

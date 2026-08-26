@@ -196,6 +196,19 @@ export function titleBgUrl() {
   return resolveScene({ kind: 'title' })?.url || BIOME_BG.title || null;
 }
 
+/** Absolute url() so CSS custom properties resolve against the document, not css/. */
+export function cssUrl(path) {
+  if (!path || path === 'none') return 'none';
+  try {
+    const abs = typeof document !== 'undefined'
+      ? new URL(path, document.baseURI).href
+      : path;
+    return `url("${abs}")`;
+  } catch {
+    return `url("${path}")`;
+  }
+}
+
 export function applySceneToElement(el, rec, { scaleVar = null } = {}) {
   if (!el) return;
   if (!rec?.url) {
@@ -206,17 +219,40 @@ export function applySceneToElement(el, rec, { scaleVar = null } = {}) {
     return;
   }
   el.classList.add('has-bg');
-  el.style.backgroundImage = `url('${rec.url}')`;
+  el.style.backgroundImage = cssUrl(rec.url);
   if (rec.position) el.style.backgroundPosition = rec.position;
   if (scaleVar) el.style.setProperty(scaleVar, String(rec.scale || 1.12));
 }
 
+export function applyVistaBleed(rec) {
+  if (typeof document === 'undefined') return;
+  const bleed = document.getElementById('combat-bleed');
+  const vp = document.getElementById('viewport');
+  applySceneToElement(bleed, rec, { scaleVar: '--bleed-scale' });
+  if (!vp) return;
+  if (!rec?.url) {
+    vp.classList.remove('has-vista');
+    vp.style.backgroundImage = '';
+    vp.style.backgroundSize = '';
+    vp.style.backgroundPosition = '';
+    vp.style.backgroundRepeat = '';
+    return;
+  }
+  // Inline on #viewport so letterbox wings fill even if #combat-bleed is clipped.
+  vp.classList.add('has-vista');
+  vp.style.backgroundImage = cssUrl(rec.url);
+  vp.style.backgroundSize = 'cover';
+  vp.style.backgroundPosition = rec.position || 'center 42%';
+  vp.style.backgroundRepeat = 'no-repeat';
+}
+
 export function applyTitleBleed() {
   if (typeof document === 'undefined') return;
-  const bleed = document.getElementById('title-bleed');
   const rec = resolveScene({ kind: 'title' });
+  applyVistaBleed(rec);
+  const bleed = document.getElementById('title-bleed');
   if (!bleed || !rec?.url) return;
-  bleed.style.setProperty('--title-vista', `url('${rec.url}')`);
+  bleed.style.setProperty('--title-vista', cssUrl(rec.url));
 }
 
 /** Backdrop files the live game registry actually points at. */

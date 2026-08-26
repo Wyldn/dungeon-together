@@ -1,7 +1,7 @@
 // Ambient particle canvas — biome-themed weather (embers, snow, leaves,
 // spores, dust). Cheap: one rAF loop, ~60 particles, pauses when hidden.
 
-import { sceneRecord, biomeBgUrl } from './art.js';
+import { sceneRecord, biomeBgUrl, cssUrl } from './art.js';
 
 const canvas = typeof document !== 'undefined' ? document.getElementById('fx-canvas') : null;
 const g = canvas?.getContext?.('2d') || null;
@@ -135,8 +135,8 @@ export function walkTransition(swap, opts = {}) {
   const el = document.createElement('div');
   el.className = 'walk-overlay' + (skippable ? ' skippable' : '');
   el.style.setProperty('--walk-dur', `${durationMs}ms`);
-  el.style.setProperty('--walk-bg', bg ? `url("${bg}")` : 'none');
-  el.style.setProperty('--walk-sheet', `url("${WALK_SHEET}")`);
+  el.style.setProperty('--walk-bg', bg ? cssUrl(bg) : 'none');
+  el.style.setProperty('--walk-sheet', cssUrl(WALK_SHEET));
   el.innerHTML = `
     <div class="walk-bg" aria-hidden="true"></div>
     <div class="walk-haze" aria-hidden="true"></div>

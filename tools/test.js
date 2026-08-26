@@ -191,7 +191,7 @@ console.log('— live backgrounds —');
 
 console.log('— scene resolver —');
 {
-  t('title still is Lamora', (resolveScene({ kind: 'title' })?.url || '').includes('lamora_sunset'));
+  t('title still is the original grove', (resolveScene({ kind: 'title' })?.url || '').includes('title.png'));
   t('travel still is mountain vista', (resolveScene({ kind: 'travel' })?.url || '').includes('mountain_vista'));
   const f1 = resolveScene({ kind: 'combat', biomeId: 'forest', floor: 1 })?.url;
   const f4 = resolveScene({ kind: 'combat', biomeId: 'forest', floor: 4 })?.url;

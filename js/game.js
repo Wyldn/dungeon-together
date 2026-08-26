@@ -65,7 +65,7 @@ import {
   resumeErrorCopy, saveCoopResume, serializeClimber, validateCheckpoint,
 } from './mp_checkpoint.js';
 import { Music } from './music.js';
-import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl, raceArtHtml, originArtHtml, raceIconUrl, originIconUrl, eventCatUrl, npcArtUrl, enemySpriteHtml, registeredBackgrounds, registeredScenes, sceneRecord, applySceneToElement, applyTitleBleed } from './art.js';
+import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl, raceArtHtml, originArtHtml, raceIconUrl, originIconUrl, eventCatUrl, npcArtUrl, enemySpriteHtml, registeredBackgrounds, registeredScenes, sceneRecord, applySceneToElement, applyTitleBleed, applyVistaBleed } from './art.js';
 import { isAutoPlay, setAutoPlay, syncAutoPlayLoop } from './autoplay.js';
 import { reqMet as reqMetOf } from './requirements.js';
 import { biomeTier as biomeTierOf } from './biome_tier.js';
@@ -116,6 +116,7 @@ function applyCardBg(stage, opts = {}) {
     bossId: opts.bossId,
   });
   applySceneToElement(elx, rec);
+  applyVistaBleed(rec);
 }
 const LAST_FLOOR = 51;
 const NPC_DUELS = new Set(['crimson_stranger', 'frost_revenant', ...NPC_EVENTS]);

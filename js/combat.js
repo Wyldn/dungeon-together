@@ -55,7 +55,7 @@ export {
   collectEnemyRiders, initiativePenaltyFromStatuses,
 } from './combat_core.js';
 import { ICONS } from './icons.js';
-import { enemySpriteHtml, heroSpriteHtml, playHeroAnim, heroHasAnim, heroCombatSize, sceneRecord, applySceneToElement } from './art.js';
+import { enemySpriteHtml, heroSpriteHtml, playHeroAnim, heroHasAnim, heroCombatSize, sceneRecord, applySceneToElement, applyVistaBleed } from './art.js';
 import { enemyBoxHtml } from './data/sprite_present.js';
 import * as SpriteAnim from './anim.js';
 import { SFX } from './audio.js';
@@ -78,8 +78,7 @@ export function setCombatSleep(fn) {
 
 /** Paint the biome on #combat-bleed (outside the scaled frame) so letterbox wings fill. */
 function setCombatBleed(rec) {
-  const bleed = typeof document === 'undefined' ? null : document.getElementById('combat-bleed');
-  applySceneToElement(bleed, rec, { scaleVar: '--bleed-scale' });
+  applyVistaBleed(rec);
 }
 
 /** Live solo fight — used to persist mid-battle on Save. */

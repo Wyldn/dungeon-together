@@ -1069,7 +1069,7 @@ export const BIOME_BG = {
  "swamp": "assets/img/bg/swamp.jpg",
  "hell": "assets/img/bg/hell.jpg",
  "throne": "assets/img/bg/throne.jpg",
- "title": "assets/img/bg/title.jpg",
+ "title": "assets/img/bg/title.png",
  "travelmap": "assets/img/bg/travelmap.jpg"
 };
 

@@ -5,7 +5,7 @@
 
 import { CATEGORY_META, findEvent } from './data/events.js';
 import { presentEvent } from './data/world.js';
-import { travelMapBgUrl, eventCatUrl, enemySpriteHtml } from './art.js';
+import { eventCatUrl, enemySpriteHtml, sceneRecord, applyVistaBleed } from './art.js';
 import { findEnemySpec } from './data/enemies.js';
 import { makeRng } from './rng.js';
 
@@ -400,7 +400,7 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
     return `<div class="tm-party" id="tm-party">${chips}</div>`;
   })();
   stage.innerHTML = `
-    <div class="tm-root" ${travelMapBgUrl() ? `style="background-image:linear-gradient(rgba(8,5,20,.55),rgba(6,4,14,.82)),url('${travelMapBgUrl()}');background-size:cover;background-position:center"` : ''}>
+    <div class="tm-root">
       <div class="tm-header">
         <div class="tm-biome">${biome.name.toUpperCase()}</div>
         <div class="tm-sub">Choose your path, Awakened — step ${r.floor}</div>
@@ -440,6 +440,7 @@ export function renderTravelMap(stage, cards, coopCtx, ctx) {
         ${cards.map((c, i) => nodeHtml(c, i, pos[i].cx, pos[i].cy, { coop: !!coopCtx })).join('')}
       </div>
     </div>`;
+  applyVistaBleed(sceneRecord({ kind: 'travel', biomeId: biome.id, floor: r.floor }));
 
   const openSheet = (ev) => {
     ev?.preventDefault?.();
