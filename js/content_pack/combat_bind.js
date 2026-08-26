@@ -7,6 +7,7 @@ import {
   dispatchEffects, applyOutgoingMods, applyIncomingMods, packDeathSave,
   noteActionMemory, packCombatCleanup, partyMissingCount, applyDelayedEffects,
   consumeArmedOutgoing, consumeArmedIncoming, applyHotTick, applySavedHpRestore,
+  applyEvolvedGrant,
 } from './engine.js';
 import { packGet, packSet } from './state.js';
 
@@ -125,7 +126,8 @@ export function packAfterHit(f, e, sk, acc, { copyDepth = 0 } = {}) {
   if (!isPackOn() || !acc) return;
   applyStatuses(e, acc.statuses);
   if (e?.hp <= 0) {
-    dispatchEffects(f, 'onKill', { rng: f.rng, skill: sk, enemy: e, killing: true, copyDepth });
+    const killAcc = dispatchEffects(f, 'onKill', { rng: f.rng, skill: sk, enemy: e, killing: true, copyDepth });
+    applyEvolvedGrant(f.run, killAcc);
     packSet(f.run, 'combat', 'behaveExec', 1);
   }
   noteActionMemory(f.run, sk, e);

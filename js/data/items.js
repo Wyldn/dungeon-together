@@ -8,9 +8,12 @@ import { applyAffixes, finalizeLootItem } from './affixes.js';
 import { CLASSES } from './classes.js';
 import { CONFIG } from './config.js';
 import '../content_pack/bootstrap.js';
-import { packLookup, packEquipment } from '../content_pack/registry.js';
+import { packLookup, packEquipment, packRelicList } from '../content_pack/registry.js';
 import { isPackOn } from '../content_pack/flags.js';
-import { inOrdinaryLoot } from '../content_pack/acquisition.js';
+import {
+  inOrdinaryLoot, rollPackChannel, packRelicChannelEligible, classLootPool,
+  canonicalClassId,
+} from '../content_pack/acquisition.js';
 
 export const EQUIP_SLOTS = ['weapon', 'helmet', 'chest', 'legs', 'boots', 'accessory1', 'accessory2', 'accessory3'];
 
@@ -295,17 +298,30 @@ export function resolveItem(run, id) {
   return itemById(id, run?.gearBag);
 }
 
-/** Catalog entries with rarity UNIQUE (above legendary). */
+/** Catalog entries with rarity UNIQUE (above legendary). Exclusive rows never roll. */
 export function uniqueCatalog() {
-  return ALL_EQUIPMENT.filter(i => i.rarity === 'unique');
+  const vanilla = [
+    ...ALL_EQUIPMENT.filter(i => i.rarity === 'unique'),
+    ...RELICS.filter(r => r.rarity === 'unique'),
+  ];
+  if (!isPackOn()) return vanilla;
+  return vanilla.concat(
+    packEquipment().filter(i => i.rarity === 'unique'),
+    packRelicList().filter(r => r.rarity === 'unique'),
+  );
 }
 
 /** Catalog entries with rarity WRLD (above UNIQUE — one of each per run/party). */
 export function wrldCatalog() {
-  return [
+  const vanilla = [
     ...ALL_EQUIPMENT.filter(i => i.rarity === 'wrld'),
     ...RELICS.filter(r => r.rarity === 'wrld'),
   ];
+  if (!isPackOn()) return vanilla;
+  return vanilla.concat(
+    packEquipment().filter(i => i.rarity === 'wrld'),
+    packRelicList().filter(r => r.rarity === 'wrld'),
+  );
 }
 
 /** Ids the run already holds (equipped + pack + gearBag bases). */
@@ -360,9 +376,9 @@ export function markWrldClaimed(run, id, coop = null) {
  */
 export function rollUnique(rng, run = null, { preferUseful = false, classId = null } = {}) {
   const owned = ownedGearIds(run);
-  let pool = uniqueCatalog().filter(i => !owned.has(i.id) && !i.exclusive);
+  let pool = uniqueCatalog().filter(i => !owned.has(i.id) && !i.exclusive && !i.quest);
   if (!pool.length) return null;
-  const cls = classId || run?.classId;
+  const cls = canonicalClassId(classId || run?.classId);
   if (preferUseful && cls) {
     const useful = pool.filter(i => itemUsefulForClass(i, cls));
     // Prefer useful weapons; fall back to useful armor/accessory uniques.
@@ -384,14 +400,14 @@ export function rollUnique(rng, run = null, { preferUseful = false, classId = nu
 export function rollWrld(rng, run = null, { preferUseful = false, kind = 'any', coop = null, claim = true, classId = null } = {}) {
   const claimed = claimedWrldIds(run, coop);
   const ownedRelics = run?.relics || [];
-  let pool = wrldCatalog().filter(i => !claimed.has(i.id) && !i.exclusive && !relicMutexBlocked(i, ownedRelics));
+  let pool = wrldCatalog().filter(i => !claimed.has(i.id) && !i.exclusive && !i.quest && !relicMutexBlocked(i, ownedRelics));
   if (kind === 'relic') pool = pool.filter(i => !i.slot);
   else if (kind === 'equip') pool = pool.filter(i => !!i.slot);
   else if (kind === 'weapon') pool = pool.filter(i => i.slot === 'weapon');
   else if (kind === 'accessory') pool = pool.filter(i => i.slot === 'accessory');
   else if (kind && kind !== 'any') pool = pool.filter(i => i.slot === kind);
   if (!pool.length) return null;
-  const cls = classId || run?.classId;
+  const cls = canonicalClassId(classId || run?.classId);
   if (preferUseful && cls) {
     const useful = pool.filter(i => !i.slot || i.slot !== 'weapon' || itemUsefulForClass(i, cls));
     if (useful.length) pool = useful;
@@ -483,19 +499,50 @@ function lootEquipmentPool() {
 export function rollEquipment(rng, tier, luckBonus = 0, opts = {}) {
   const floor = opts.floor ?? 1;
   const run = opts.run || null;
-  const classId = opts.classId || run?.classId || null;
+  const classId = canonicalClassId(opts.classId || run?.classId || null);
   const usefulBias = opts.usefulBias ?? (classId ? 3.5 : 1); // ~78% toward useful
   const requireUseful = !!opts.requireUseful && classId;
   const wantSlot = opts.slot || null;
   const wantWtype = opts.wtype || null;
   // event-exclusive + starter kit + UNIQUE + WRLD never surface in ordinary loot/shops
   const excludeIds = opts.excludeIds || [];
+
+  if (isPackOn() && rng && opts.channel !== 'ordinary') {
+    const prefer = opts.channel === 'class' || opts.channel === 'bloodline' || opts.channel === 'biome_find'
+      ? opts.channel
+      : (opts.preferChannel || null);
+    let packHit = null;
+    if (opts.channel === 'class') {
+      const pool = classLootPool(classId, { floor, biomeId: run?.biomeId })
+        .filter(i => (!wantSlot || i.slot === wantSlot) && (!wantWtype || i.wtype === wantWtype)
+          && (!requireUseful || itemUsefulForClass(i, classId)));
+      if (pool.length) packHit = pool[Math.floor(rng.next() * pool.length)] || pool[0];
+    } else if (prefer || opts.channel == null) {
+      packHit = rollPackChannel(rng, run, {
+        floor, biomeId: run?.biomeId || opts.biomeId, classId, raceId: run?.raceId, prefer,
+      });
+    }
+    if (packHit && (!wantSlot || packHit.slot === wantSlot) && (!wantWtype || packHit.wtype === wantWtype)
+      && (!requireUseful || itemUsefulForClass(packHit, classId))
+      && !excludeIds.includes(packHit.id)) {
+      const affixed = packHit.noAffix
+        ? { ...packHit, baseId: packHit.id, affixes: [] }
+        : applyAffixes(packHit, rng, { floor });
+      return finalizeLootItem(affixed, rng, run);
+    }
+    if (opts.channel === 'class' || opts.channel === 'bloodline' || opts.channel === 'biome_find') {
+      return null;
+    }
+  }
+
   const catalog = lootEquipmentPool();
   const matches = (i, looseTier = false, useExclude = true) => {
     if (i.exclusive) return false;
     if (i.starter) return false;
     if (i.rarity === 'unique' || i.unique) return false;
     if (i.rarity === 'wrld' || i.wrld) return false;
+    if (i.minFloor != null && floor < i.minFloor) return false;
+    if (i.maxFloor != null && floor > i.maxFloor) return false;
     if (wantSlot && i.slot !== wantSlot) return false;
     if (useExclude && excludeIds.length && excludeIds.includes(i.id)) return false;
     if (wantWtype && i.wtype !== wantWtype) return false;
@@ -518,7 +565,8 @@ export function rollEquipment(rng, tier, luckBonus = 0, opts = {}) {
     ? { common: 0.35, uncommon: 1.6, rare: 3.2, epic: 5.5, legendary: 8 }
     : null;
   const weighted = pool.map(i => {
-    let w = (RARITY_W[i.rarity] || 1) + (i.rarity !== 'common' ? luckBonus : 0);
+    let w = (i.lootWeight != null ? i.lootWeight : (RARITY_W[i.rarity] || 1))
+      + (i.rarity !== 'common' ? luckBonus : 0);
     if (bumpW) w *= (bumpW[i.rarity] || 1);
     if (classId && itemUsefulForClass(i, classId)) w *= usefulBias;
     if ((i.tier || 1) >= Math.max(2, tier - 1)) w *= 1.15;
@@ -542,17 +590,27 @@ export function rollEquipment(rng, tier, luckBonus = 0, opts = {}) {
   return finalizeLootItem(affixed, rng, run);
 }
 
+function liveRelicPool() {
+  if (!isPackOn()) return RELICS;
+  return RELICS.concat(packRelicList().filter(packRelicChannelEligible));
+}
+
 /** True if `candidate` shares a mutex group with any already-owned relic. */
 export function relicMutexBlocked(candidate, ownedIds = []) {
   if (!candidate?.mutex) return false;
   const owned = new Set(ownedIds);
-  return RELICS.some(r => r.mutex === candidate.mutex && owned.has(r.id));
+  return liveRelicPool().concat(isPackOn() ? packRelicList() : []).some(
+    r => r.mutex === candidate.mutex && owned.has(r.id),
+  );
 }
 
 export function rollRelic(rng, owned = [], luckBonus = 0) {
-  const pool = RELICS.filter(r =>
+  const catalog = liveRelicPool();
+  const pool = catalog.filter(r =>
     !owned.includes(r.id)
     && r.rarity !== 'wrld' && !r.wrld
+    && r.rarity !== 'unique' && !r.unique
+    && !r.exclusive && !r.quest
     && !relicMutexBlocked(r, owned)
   );
   if (!pool.length) return null;
@@ -568,6 +626,7 @@ export function shopConsumablePool(tier = 1) {
 /** Merchant listing price for UNIQUE / WRLD — event-channel, not catalog value. */
 export function shopListingPrice(item) {
   if (!item) return 0;
+  if (item.contentPack && item.price) return item.price;
   if (item.rarity === 'wrld' || item.wrld) return CONFIG.economy.shopWrldPrice ?? 820;
   if (item.rarity === 'unique' || item.unique) return CONFIG.economy.shopUniquePrice ?? 450;
   return item.price || 0;

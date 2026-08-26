@@ -26,6 +26,7 @@ PACK_EVENTS.push(
   clsEv('cp_ranger_three_trails', 'archer', 'forest', 'Three Trails, One Set of Footprints',
     'The Ranger may identify a treasure route, an NPC route, or the safest route. Choosing one permanently closes the others.', [
       w('Treasure route', 'gear, the other paths close', { item: 'cp_three_trails_longbow', flag: 'cp_trail_hunt' }),
+      w('World-scent route', 'a legendary javelin, the other paths close', { item: 'cp_world_scent_javelin', flag: 'cp_trail_scent' }),
       w('NPC route', 'Fame and a name', { fame: 4, flag: 'cp_trail_rescue' }),
       w('Safest route', 'HP restored, quieter climb', { hpPct: 0.15, flag: 'cp_trail_escape' }),
     ], { glyph: '🏹' }),
@@ -80,7 +81,8 @@ PACK_EVENTS.push(
       w('Temporarily entrust gear to the pack (floor-scoped)', 'you walk through light', { flag: 'cp_gear_entrusted', item: 'cp_empty_hand_seal' }),
       w('Surrender one item permanently', 'offering', { offering: { kinds: ['pack'] }, fame: 2 }, { req: { offering: true } }),
       w('Meditate and lose HP instead', 'the definition was always the body', { hp: -12, flag: 'cp_empty_meditated' }),
-      w('Expose the gate\'s definition of possession as flawed', 'it opens anyway', { fame: 3, flag: 'cp_possession_flawed' }),
+      w('Expose the gate\'s definition of possession as flawed', 'it opens anyway, and yields the staff of no possession', { fame: 3, flag: 'cp_possession_flawed', item: 'cp_staff_no_possession', resolveCurse: 'inventory_weak' }),
+      w('Wear the robe that owns nothing', 'cursed emptiness', { item: 'cp_possessionless_robe', flag: 'cp_robe_worn' }),
     ], { glyph: '✋' }),
   clsEv('cp_monk_heartbeat_floor', 'monk', 'swamp', 'The Heartbeat Under the Floor',
     'Match the dungeon\'s rhythm, disrupt it, or silence it.', [
@@ -115,12 +117,14 @@ PACK_EVENTS.push(
   clsEv('cp_bard_wrong_encore', 'bard', 'frost', 'The Wrong Encore',
     'An audience demands a song you have not written yet.', [
       w('Invent it', 'Fame', { fame: 4, item: 'cp_rivals_encore_violin' }),
+      w('Ring the final chorus instead', 'a legendary bell-instrument', { fame: 2, item: 'cp_bell_final_chorus', flag: 'cp_final_chorus' }),
       w('Steal a rival\'s refrain', 'power, debt', { item: 'cp_applause_eater_lute', flag: 'cp_stolen_refrain' }),
       w('Refuse to perform', 'they boo the System instead', { fame: 2, flag: 'cp_encore_refused' }),
     ], { glyph: '🎻' }),
   clsEv('cp_necro_seventh_funeral_event', 'necromancer', 'swamp', 'Seventh Funeral',
     'Six graves are occupied. The seventh is labeled with your handwriting.', [
       w('Lie down in it briefly', 'a Remain, max HP', { maxHp: -3, item: 'cp_seventh_hero_phylactery', flag: 'cp_seventh_grave' }),
+      w('Reap the unplanted grave', 'a cursed harvest', { item: 'cp_corpse_flower_sickle', flag: 'cp_grave_reaped' }),
       w('Fill it with someone already dead', 'taxonomy', { fame: 2, flag: 'cp_grave_filled' }),
       w('Leave it empty', 'the list stays wrong', { fame: 1 }),
     ], { glyph: '⚰️' }),
@@ -143,8 +147,8 @@ const coop = (id, title, text, choices, extra = {}) => ev({
 PACK_EVENTS.push(
   coop('cp_split_gate', 'The Split Gate',
     'The party divides between two rooms with different information. One side chooses the cost; the other chooses the reward. Host-authoritative; both rooms resolve as one atomic outcome.', [
-      w('Accept the split', 'asymmetric information, equal expected value', { gold: 20, hp: -6, flag: 'cp_split_accepted' }),
-      w('Pay gold to keep the party together', 'sink', { gold: -35, fame: 1 }, { req: { gold: 35 } }),
+      w('Accept the split', 'asymmetric information, equal expected value', { gold: 20, hp: -6, flag: 'cp_split_accepted', pay: 'actor', receive: 'split' }),
+      w('Pay gold to keep the party together', 'sink', { gold: -35, fame: 1, pay: 'party', receive: 'party' }, { req: { gold: 35 } }),
     ], { glyph: '🚪' }),
   coop('cp_one_potion_two_patients', 'One Potion, Two Patients',
     'Two players are injured, but the shrine can heal only one.', [
@@ -156,14 +160,14 @@ PACK_EVENTS.push(
     ], { biome: 'ruins', glyph: '🧪', cat: 'recovery' }),
   coop('cp_secret_offers', 'Secret Offers',
     'Each player privately receives a different bargain. Consequences are revealed before final confirmation unless secrecy is the theme. Host-authoritative.', [
-      w('Take 60 gold; another player loses 8 HP', 'asymmetric', { gold: 60, flag: 'cp_secret_gold' }),
-      w('Gain Fame; another player forfeits the event reward', 'spotlight', { fame: 3, flag: 'cp_secret_fame' }),
-      w('Refuse, giving everyone a smaller reward', 'fair', { gold: 15, fame: 1 }),
+      w('Take 60 gold; another player loses 8 HP', 'asymmetric', { gold: 60, flag: 'cp_secret_gold', pay: 'none', receive: 'actor', otherPay: 'volunteer', otherCost: { hp: 8 } }),
+      w('Gain Fame; another player forfeits the event reward', 'spotlight', { fame: 3, flag: 'cp_secret_fame', pay: 'none', receive: 'actor', otherPay: 'volunteer' }),
+      w('Refuse, giving everyone a smaller reward', 'fair', { gold: 15, fame: 1, pay: 'none', receive: 'party' }),
     ], { glyph: '✉️' }),
   coop('cp_volunteers_door', "The Volunteer's Door",
     'One player may lose max HP so everyone receives a gear choice. The volunteer gets first selection or a unique later payoff.', [
-      w('Volunteer', 'max HP, first pick', { maxHp: -3, item: 'cp_gate_iron_sword', flag: 'cp_volunteer_gear' }),
-      w('Pay gold instead', 'no volunteer', { gold: -40, item: 'cp_rootwoven_vest' }, { req: { gold: 40 } }),
+      w('Volunteer', 'max HP, first pick', { maxHp: -3, item: 'cp_gate_iron_sword', flag: 'cp_volunteer_gear', pay: 'volunteer', receive: 'volunteer' }),
+      w('Pay gold instead', 'no volunteer', { gold: -40, item: 'cp_rootwoven_vest', pay: 'party', receive: 'party' }, { req: { gold: 40 } }),
     ], { biome: 'forest', glyph: '🚪' }),
   coop('cp_pack_exchange', 'Pack Exchange',
     'The dungeon swaps two players\' consumable inventories until the next safe floor. Not mid-combat.', [
@@ -228,7 +232,7 @@ PACK_EVENTS.push(
     choices: [
       w('Accept a defensive relic', 'coward\'s prize', { item: 'cp_cowardice_plaque', flag: 'cp_coward_accepted' }),
       w('Reject the label and take a forced challenge', 'fight', { combat: { enemies: ['treant'] }, fame: 2 }),
-      w('Spend Fame to rename the achievement', 'Survival Route', { fame: -4, flag: 'cp_renamed_coward' }),
+      w('Spend Fame to rename the achievement', 'Survival Route', { fame: -4, flag: 'cp_renamed_coward', resolveCurse: 'fame_defense' }),
       w('Reveal that survival was the intended heroic route', 'a quieter ending', { fame: 3, flag: 'cp_survival_heroic' }),
     ],
   }),
@@ -237,6 +241,7 @@ PACK_EVENTS.push(
     text: 'The party discovers future patch notes describing changes to its world.',
     choices: [
       w('Exploit one predicted change for gold', 'gold', { gold: 50, flag: 'cp_patch_exploited' }),
+      w('Record an unwritten achievement instead', 'the ledger notices', { item: 'cp_unwritten_achievement', flag: 'cp_unwritten_taken' }),
       w('Prevent a listed NPC removal', 'Fame', { fame: 4, flag: 'cp_npc_preserved' }),
       w('Preserve a soon-to-be-weakened item', 'flag', { flag: 'cp_item_preserved' }),
       w('Give the notes to the administrator fragment', 'evidence', { flag: 'cp_notes_to_admin' }),
@@ -247,8 +252,8 @@ PACK_EVENTS.push(
     title: 'Inventory Item: "A Teammate"',
     text: 'A corrupted window lists one party member as tradeable equipment. Co-op response depends on the named player\'s choice. Disconnect is never this condition.',
     choices: [
-      w('Close the window', 'you refuse the metaphor', { fame: 2, flag: 'cp_window_closed' }),
-      w('Inspect its impossible stats', 'a prison memory', { flag: 'cp_prison_memory', world: { knowledge: 'cp_listed_person' } }),
+      w('Close the window', 'you refuse the metaphor', { fame: 2, flag: 'cp_window_closed', resolveCurse: 'unequip_wielder' }),
+      w('Inspect its impossible stats', 'a prison memory, and a listing that names you', { flag: 'cp_prison_memory', item: 'cp_blade_lists_you', world: { knowledge: 'cp_listed_person' } }),
       w('Attempt to unequip them', 'you cannot; a memory opens', { flag: 'cp_unequip_failed' }),
       w('Sell the listing — not the person — for counterfeit System currency', 'fake gold', { gold: 40, flag: 'cp_sold_listing' }),
     ],

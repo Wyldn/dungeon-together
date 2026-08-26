@@ -1,0 +1,245 @@
+{
+  "startingCommitSha": "cf607bcd3c941c7840fad42da5ed6253bbcc7d85",
+  "families": [
+    {
+      "family": "thread:cp_gate_inward",
+      "startEvent": "cp_backward_threshold",
+      "startAppearance": 1,
+      "revisitAppearance": 1,
+      "completionProbability": 1,
+      "medianFloorsBetweenStages": 1,
+      "medianWeightShare": 0.014483175931384238,
+      "medianCompetingPool": 59,
+      "biomeTransitionRisk": true,
+      "identityRoute": true,
+      "soloAndMultiplayer": {
+        "identityScope": "actor",
+        "coop": false
+      }
+    },
+    {
+      "family": "thread:cp_returned_extra",
+      "startEvent": "cp_seventh_summoned",
+      "startAppearance": 1,
+      "revisitAppearance": 1,
+      "completionProbability": 1,
+      "medianFloorsBetweenStages": 11,
+      "medianWeightShare": 0.014483175931384238,
+      "medianCompetingPool": 59,
+      "biomeTransitionRisk": true,
+      "identityRoute": true,
+      "soloAndMultiplayer": {
+        "identityScope": "actor",
+        "coop": false
+      }
+    },
+    {
+      "family": "thread:cp_hero_bureau",
+      "startEvent": "cp_provisional_rank",
+      "startAppearance": 1,
+      "revisitAppearance": 1,
+      "completionProbability": 1,
+      "medianFloorsBetweenStages": 1,
+      "medianWeightShare": 0.014483175931384238,
+      "medianCompetingPool": 59,
+      "biomeTransitionRisk": true,
+      "identityRoute": true,
+      "soloAndMultiplayer": {
+        "identityScope": "actor",
+        "coop": false
+      }
+    },
+    {
+      "family": "thread:cp_crimson_save",
+      "startEvent": "cp_save_your_blood",
+      "startAppearance": 1,
+      "revisitAppearance": 1,
+      "completionProbability": 1,
+      "medianFloorsBetweenStages": 11,
+      "medianWeightShare": 0.010180881995028052,
+      "medianCompetingPool": 86,
+      "biomeTransitionRisk": true,
+      "identityRoute": true,
+      "soloAndMultiplayer": {
+        "identityScope": "actor",
+        "coop": false
+      }
+    },
+    {
+      "family": "thread:cp_echo_party",
+      "startEvent": "cp_familiar_corpses",
+      "startAppearance": 1,
+      "revisitAppearance": 1,
+      "completionProbability": 1,
+      "medianFloorsBetweenStages": 1,
+      "medianWeightShare": 0.014483175931384238,
+      "medianCompetingPool": 59,
+      "biomeTransitionRisk": true,
+      "identityRoute": true,
+      "soloAndMultiplayer": {
+        "identityScope": "actor",
+        "coop": false
+      }
+    },
+    {
+      "family": "thread:cp_bell_companion",
+      "startEvent": "cp_bell_beneath_roots",
+      "startAppearance": 1,
+      "revisitAppearance": 1,
+      "completionProbability": 1,
+      "medianFloorsBetweenStages": 1,
+      "medianWeightShare": 0.014483175931384238,
+      "medianCompetingPool": 59,
+      "biomeTransitionRisk": true,
+      "identityRoute": true,
+      "soloAndMultiplayer": {
+        "identityScope": "actor",
+        "coop": false
+      }
+    },
+    {
+      "family": "thread:cp_nameless_saint",
+      "startEvent": "cp_shrine_without_idol",
+      "startAppearance": 1,
+      "revisitAppearance": 1,
+      "completionProbability": 1,
+      "medianFloorsBetweenStages": 11,
+      "medianWeightShare": 0.014483175931384238,
+      "medianCompetingPool": 59,
+      "biomeTransitionRisk": true,
+      "identityRoute": true,
+      "soloAndMultiplayer": {
+        "identityScope": "actor",
+        "coop": false
+      }
+    },
+    {
+      "family": "thread:cp_gate_beast_egg",
+      "startEvent": "cp_hatched_before_laid",
+      "startAppearance": 1,
+      "revisitAppearance": 1,
+      "completionProbability": 1,
+      "medianFloorsBetweenStages": 1,
+      "medianWeightShare": 0.014483175931384238,
+      "medianCompetingPool": 59,
+      "biomeTransitionRisk": true,
+      "identityRoute": false,
+      "soloAndMultiplayer": {
+        "identityScope": "actor",
+        "coop": false
+      }
+    },
+    {
+      "family": "thread:cp_seven_owners",
+      "startEvent": "cp_first_owner_coward",
+      "startAppearance": 1,
+      "revisitAppearance": 1,
+      "completionProbability": 1,
+      "medianFloorsBetweenStages": 1,
+      "medianWeightShare": 0.010180881995028052,
+      "medianCompetingPool": 86,
+      "biomeTransitionRisk": false,
+      "identityRoute": false,
+      "soloAndMultiplayer": {
+        "identityScope": "actor",
+        "coop": false
+      }
+    },
+    {
+      "family": "thread:cp_false_system",
+      "startEvent": "cp_optional_mandatory",
+      "startAppearance": 1,
+      "revisitAppearance": 1,
+      "completionProbability": 1,
+      "medianFloorsBetweenStages": 21,
+      "medianWeightShare": 0.014483175931384238,
+      "medianCompetingPool": 59,
+      "biomeTransitionRisk": true,
+      "identityRoute": true,
+      "soloAndMultiplayer": {
+        "identityScope": "actor",
+        "coop": false
+      }
+    },
+    {
+      "family": "thread:cp_futures_merchant",
+      "startEvent": "cp_buy_something_you_might_need",
+      "startAppearance": 1,
+      "revisitAppearance": 1,
+      "completionProbability": 1,
+      "medianFloorsBetweenStages": 11,
+      "medianWeightShare": 0.014483175931384238,
+      "medianCompetingPool": 59,
+      "biomeTransitionRisk": true,
+      "identityRoute": true,
+      "soloAndMultiplayer": {
+        "identityScope": "actor",
+        "coop": false
+      }
+    },
+    {
+      "family": "thread:cp_fame_eater",
+      "startEvent": "cp_creature_applauding",
+      "startAppearance": 1,
+      "revisitAppearance": 1,
+      "completionProbability": 1,
+      "medianFloorsBetweenStages": 11,
+      "medianWeightShare": 0.010180881995028052,
+      "medianCompetingPool": 86,
+      "biomeTransitionRisk": true,
+      "identityRoute": true,
+      "soloAndMultiplayer": {
+        "identityScope": "actor",
+        "coop": false
+      }
+    },
+    {
+      "family": "thread:cp_drowned_royals",
+      "startEvent": "cp_crown_shallow_water",
+      "startAppearance": 1,
+      "revisitAppearance": 1,
+      "completionProbability": 1,
+      "medianFloorsBetweenStages": 1,
+      "medianWeightShare": 0.014483175931384238,
+      "medianCompetingPool": 59,
+      "biomeTransitionRisk": true,
+      "identityRoute": true,
+      "soloAndMultiplayer": {
+        "identityScope": "actor",
+        "coop": false
+      }
+    },
+    {
+      "family": "thread:cp_gate_mason",
+      "startEvent": "cp_worker_not_wizard",
+      "startAppearance": 1,
+      "revisitAppearance": 1,
+      "completionProbability": 1,
+      "medianFloorsBetweenStages": 11,
+      "medianWeightShare": 0.014483175931384238,
+      "medianCompetingPool": 59,
+      "biomeTransitionRisk": true,
+      "identityRoute": true,
+      "soloAndMultiplayer": {
+        "identityScope": "actor",
+        "coop": false
+      }
+    },
+    {
+      "family": "thread:cp_ashen_rivals",
+      "startEvent": "cp_campfire_across_path",
+      "startAppearance": 1,
+      "revisitAppearance": 1,
+      "completionProbability": 1,
+      "medianFloorsBetweenStages": 1,
+      "medianWeightShare": 0.014483175931384238,
+      "medianCompetingPool": 59,
+      "biomeTransitionRisk": true,
+      "identityRoute": true,
+      "soloAndMultiplayer": {
+        "identityScope": "actor",
+        "coop": false
+      }
+    }
+  ]
+}

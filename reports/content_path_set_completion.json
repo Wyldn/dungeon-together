@@ -1,0 +1,385 @@
+{
+  "startingCommitSha": "cf607bcd3c941c7840fad42da5ed6253bbcc7d85",
+  "sets": [
+    {
+      "id": "set:last_bastion:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_last_bastion_helm",
+        "cp_last_bastion_chest",
+        "cp_last_bastion_legs"
+      ]
+    },
+    {
+      "id": "set:last_bastion:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_last_bastion_helm",
+        "cp_last_bastion_chest",
+        "cp_last_bastion_legs"
+      ]
+    },
+    {
+      "id": "set:illegal_margin:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_illegal_margin_helm",
+        "cp_illegal_margin_chest",
+        "cp_illegal_margin_legs"
+      ]
+    },
+    {
+      "id": "set:illegal_margin:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_illegal_margin_helm",
+        "cp_illegal_margin_chest",
+        "cp_illegal_margin_legs"
+      ]
+    },
+    {
+      "id": "set:three_trails:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_three_trails_helm",
+        "cp_three_trails_chest",
+        "cp_three_trails_legs"
+      ]
+    },
+    {
+      "id": "set:three_trails:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_three_trails_helm",
+        "cp_three_trails_chest",
+        "cp_three_trails_legs"
+      ]
+    },
+    {
+      "id": "set:unseen_auditor:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_unseen_auditor_helm",
+        "cp_unseen_auditor_chest",
+        "cp_unseen_auditor_legs"
+      ]
+    },
+    {
+      "id": "set:unseen_auditor:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_unseen_auditor_helm",
+        "cp_unseen_auditor_chest",
+        "cp_unseen_auditor_legs"
+      ]
+    },
+    {
+      "id": "set:nameless_saint:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_nameless_saint_helm",
+        "cp_nameless_saint_chest",
+        "cp_nameless_saint_legs"
+      ]
+    },
+    {
+      "id": "set:nameless_saint:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_nameless_saint_helm",
+        "cp_nameless_saint_chest",
+        "cp_nameless_saint_legs"
+      ]
+    },
+    {
+      "id": "set:empty_gate:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_empty_gate_helm",
+        "cp_empty_gate_chest",
+        "cp_empty_gate_legs"
+      ]
+    },
+    {
+      "id": "set:empty_gate:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_empty_gate_helm",
+        "cp_empty_gate_chest",
+        "cp_empty_gate_legs"
+      ]
+    },
+    {
+      "id": "set:stolen_applause:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_stolen_applause_helm",
+        "cp_stolen_applause_chest",
+        "cp_stolen_applause_legs"
+      ]
+    },
+    {
+      "id": "set:stolen_applause:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_stolen_applause_helm",
+        "cp_stolen_applause_chest",
+        "cp_stolen_applause_legs"
+      ]
+    },
+    {
+      "id": "set:seventh_funeral:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_seventh_funeral_helm",
+        "cp_seventh_funeral_chest",
+        "cp_seventh_funeral_legs"
+      ]
+    },
+    {
+      "id": "set:seventh_funeral:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_seventh_funeral_helm",
+        "cp_seventh_funeral_chest",
+        "cp_seventh_funeral_legs"
+      ]
+    },
+    {
+      "id": "set:inward_edge:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_inward_edge_helm",
+        "cp_inward_edge_chest",
+        "cp_inward_edge_legs"
+      ]
+    },
+    {
+      "id": "set:inward_edge:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_inward_edge_helm",
+        "cp_inward_edge_chest",
+        "cp_inward_edge_legs"
+      ]
+    },
+    {
+      "id": "set:clause_seven:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_clause_seven_helm",
+        "cp_clause_seven_chest",
+        "cp_clause_seven_legs"
+      ]
+    },
+    {
+      "id": "set:clause_seven:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_clause_seven_helm",
+        "cp_clause_seven_chest",
+        "cp_clause_seven_legs"
+      ]
+    },
+    {
+      "id": "set:raid_wake:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_raid_wake_helm",
+        "cp_raid_wake_chest",
+        "cp_raid_wake_legs"
+      ]
+    },
+    {
+      "id": "set:raid_wake:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_raid_wake_helm",
+        "cp_raid_wake_chest",
+        "cp_raid_wake_legs"
+      ]
+    },
+    {
+      "id": "set:many_banner:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_many_banner_helm",
+        "cp_many_banner_chest",
+        "cp_many_banner_legs"
+      ]
+    },
+    {
+      "id": "set:many_banner:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_many_banner_helm",
+        "cp_many_banner_chest",
+        "cp_many_banner_legs"
+      ]
+    },
+    {
+      "id": "set:memory_bark:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_memory_bark_helm",
+        "cp_memory_bark_chest",
+        "cp_memory_bark_legs"
+      ]
+    },
+    {
+      "id": "set:memory_bark:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_memory_bark_helm",
+        "cp_memory_bark_chest",
+        "cp_memory_bark_legs"
+      ]
+    },
+    {
+      "id": "set:oathscar:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_oathscar_helm",
+        "cp_oathscar_chest",
+        "cp_oathscar_legs"
+      ]
+    },
+    {
+      "id": "set:oathscar:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_oathscar_helm",
+        "cp_oathscar_chest",
+        "cp_oathscar_legs"
+      ]
+    },
+    {
+      "id": "set:mason_plate:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_mason_plate_helm",
+        "cp_mason_plate_chest",
+        "cp_mason_plate_legs"
+      ]
+    },
+    {
+      "id": "set:mason_plate:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_mason_plate_helm",
+        "cp_mason_plate_chest",
+        "cp_mason_plate_legs"
+      ]
+    },
+    {
+      "id": "set:hidden_pocket:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_hidden_pocket_helm",
+        "cp_hidden_pocket_chest",
+        "cp_hidden_pocket_legs"
+      ]
+    },
+    {
+      "id": "set:hidden_pocket:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_hidden_pocket_helm",
+        "cp_hidden_pocket_chest",
+        "cp_hidden_pocket_legs"
+      ]
+    },
+    {
+      "id": "set:clauseplate:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_clauseplate_helm",
+        "cp_clauseplate_chest",
+        "cp_clauseplate_legs"
+      ]
+    },
+    {
+      "id": "set:clauseplate:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_clauseplate_helm",
+        "cp_clauseplate_chest",
+        "cp_clauseplate_legs"
+      ]
+    },
+    {
+      "id": "set:packhide:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_packhide_helm",
+        "cp_packhide_chest",
+        "cp_packhide_legs"
+      ]
+    },
+    {
+      "id": "set:packhide:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_packhide_helm",
+        "cp_packhide_chest",
+        "cp_packhide_legs"
+      ]
+    },
+    {
+      "id": "set:hingescale:2",
+      "ok": true,
+      "worn": 2,
+      "pieces": [
+        "cp_hingescale_helm",
+        "cp_hingescale_chest",
+        "cp_hingescale_legs"
+      ]
+    },
+    {
+      "id": "set:hingescale:3",
+      "ok": true,
+      "worn": 3,
+      "pieces": [
+        "cp_hingescale_helm",
+        "cp_hingescale_chest",
+        "cp_hingescale_legs"
+      ]
+    }
+  ]
+}

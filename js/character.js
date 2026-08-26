@@ -295,12 +295,26 @@ export function gainXp(run, amount, rng) {
 }
 
 // Skills the player could learn right now.
+export function learnableClassTechniques(run) {
+  return learnableSkills(run).filter(sk => !sk.bloodline && sk.capability !== 'bloodline_art');
+}
+
+export function learnableBloodlineArts(run) {
+  const extra = isPackOn() ? Object.values(packSkillMap()) : [];
+  return extra.filter(sk => {
+    if (!sk.bloodline || sk.offer === false) return false;
+    if (sk.bloodline !== run.raceId) return false;
+    if ((run.arts || []).includes(sk.id) || (run.knownSkills || []).includes(sk.id)) return false;
+    return true;
+  });
+}
+
 export function learnableSkills(run) {
   const tier = skillTier(run);
   const extra = isPackOn() ? Object.values(packSkillMap()) : [];
   return [...Object.values(SKILLS), ...extra].filter(sk => {
     if ((sk.tier || 1) > tier || sk.offer === false || run.knownSkills.includes(sk.id)) return false;
-    if (sk.bloodline) return sk.bloodline === run.raceId;
+    if (sk.bloodline || sk.capability === 'bloodline_art') return false;
     return sk.class === run.classId;
   });
 }

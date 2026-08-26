@@ -10,6 +10,7 @@ import { LIMITS, SAFE_ARCHETYPES, HOOKS } from './schema.js';
 import { packGet, packSet, packAdd, cleanupAfterAction, cleanupAfterTurn, cleanupAfterCombat } from './state.js';
 import { mutexBlocked } from './mutex.js';
 import { packSkillById, packLookup } from './registry.js';
+import { noteDiscovery } from '../compendium_seen.js';
 
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
@@ -447,9 +448,20 @@ function applyOp(ef, ctx) {
         turns: ef.delayTurns || 1, applyOp: 'modIncoming', mult: ef.mult || 1, add: ef.add || 0,
       });
       break;
-    case 'evolveItem':
-      packAdd(run, 'run', `evo:${ef.itemId || ctx.item?.id}`, 1);
+    case 'evolveItem': {
+      const id = ef.itemId || ctx.item?.id;
+      const inst = ctx.item?.instanceId || id;
+      if (!id) break;
+      packAdd(run, 'run', `evo:${inst}`, 1);
+      const need = ef.amount || 7;
+      const n = Number(packGet(run, 'run', `evo:${inst}`, 0) || 0);
+      if (n >= need && !packGet(run, 'run', `evolved:${inst}`)) {
+        packSet(run, 'run', `evolved:${inst}`, 1);
+        acc.evolveTo = ctx.item?.evolvesTo || ef.evolvesTo || id;
+        acc.evolveFrom = id;
+      }
       break;
+    }
     case 'crackItem':
       packSet(run, 'run', `cracked:${ef.itemId || ctx.item?.id}`, 1);
       break;
@@ -502,6 +514,14 @@ function applyOp(ef, ctx) {
   }
 }
 
+function noteMeasure(env, kind, op) {
+  const bag = env?.fight?.measure || env?.run?._cpMeasure;
+  if (!bag || !op) return;
+  const dest = kind === 'capped' ? (bag.effectCaps || (bag.effectCaps = {}))
+    : (bag.effectOps || (bag.effectOps = {}));
+  dest[op] = (dest[op] || 0) + 1;
+}
+
 /**
  * Dispatch all matching effects for a hook. Returns an accumulator the
  * caller applies (damage mults, wards, summons). Never throws on pack-off.
@@ -547,9 +567,13 @@ export function dispatchEffects(fightOrRun, hook, ctx = {}) {
     env.instanceId = row.instanceId;
     env.item = row.item;
     if (!whenOk(row.ef, env)) continue;
-    if (overCap(row.ef, env)) continue;
+    if (overCap(row.ef, env)) {
+      noteMeasure(env, 'capped', row.ef.op);
+      continue;
+    }
     applyOp(row.ef, env);
     markFired(row.ef, env);
+    noteMeasure(env, 'fired', row.ef.op);
   }
   return acc;
 }
@@ -638,9 +662,37 @@ export function packCombatCleanup(run, kind) {
 }
 
 export function partyMissingCount(fight, party = []) {
-  if (party.length) return party.filter(p => p.down || p.over || p.hp <= 0).length;
+  const downed = (p) => (p.down || p.over || p.hp <= 0)
+    && !p.disconnected && p.connected !== false && p.absent !== true;
+  if (party.length) return party.filter(downed).length;
   if (!fight) return 0;
-  return fight.run?.down ? 1 : 0;
+  const run = fight.run;
+  if (run?.disconnected || run?.connected === false) return 0;
+  return run?.down ? 1 : 0;
+}
+
+export function applyEvolvedGrant(run, acc) {
+  if (!run || !acc?.evolveTo || acc.evolveTo === acc.evolveFrom) return false;
+  const key = `evolvedApplied:${acc.evolveFrom || 'x'}:${acc.evolveTo}`;
+  if (packGet(run, 'run', key)) return false;
+  const next = packLookup(acc.evolveTo);
+  if (!next) return false;
+  packSet(run, 'run', key, 1);
+  for (const slot of Object.keys(run.equipment || {})) {
+    const id = run.equipment[slot];
+    if (!id) continue;
+    if (id === acc.evolveFrom || String(id).split('__')[0] === acc.evolveFrom) {
+      run.equipment[slot] = next.id;
+    }
+  }
+  const inv = run.inventory || [];
+  for (let i = 0; i < inv.length; i++) {
+    if (inv[i] === acc.evolveFrom || String(inv[i]).split('__')[0] === acc.evolveFrom) {
+      inv[i] = next.id;
+    }
+  }
+  noteDiscovery(next.id);
+  return true;
 }
 
 export function packDeathSave(fight, acc) {

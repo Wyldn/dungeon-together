@@ -65,7 +65,7 @@ import {
   resumeErrorCopy, saveCoopResume, serializeClimber, validateCheckpoint,
 } from './mp_checkpoint.js';
 import { Music } from './music.js';
-import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl, raceArtHtml, originArtHtml, raceIconUrl, originIconUrl, eventCatUrl, npcArtUrl, enemySpriteHtml } from './art.js';
+import { heroSpriteHtml, itemIconHtml, biomeBgUrl, titleBgUrl, raceArtHtml, originArtHtml, raceIconUrl, originIconUrl, eventCatUrl, npcArtUrl, enemySpriteHtml, registeredBackgrounds, registeredScenes, sceneRecord, applySceneToElement, applyTitleBleed } from './art.js';
 import { isAutoPlay, setAutoPlay, syncAutoPlayLoop } from './autoplay.js';
 import { reqMet as reqMetOf } from './requirements.js';
 import { biomeTier as biomeTierOf } from './biome_tier.js';
@@ -96,11 +96,26 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const BOSS_FLOORS = Object.keys(BOSSES).map(Number);
 const BIOME_MUSIC = { forest: 'forest', ruins: 'ruins', frost: 'frost', swamp: 'swamp', hell: 'hell', throne: 'boss' };
 
-// pixel backdrop behind every card-art panel for the current biome
-function applyCardBg(stage) {
+// pixel backdrop behind every card-art panel for the current scene
+function applyCardBg(stage, opts = {}) {
   const elx = stage?.querySelector?.('.card-art');
-  const bg = run && biomeBgUrl(run.biomeId);
-  if (elx && bg) { elx.classList.add('has-bg'); elx.style.backgroundImage = `url('${bg}')`; }
+  const kind = opts.kind
+    || (opts.originIntro ? 'origin'
+      : opts.boss ? 'boss'
+      : opts.event?.type === 'rest' ? 'rest'
+      : opts.event?.shop || opts.event?.type === 'shop' ? 'shop'
+      : opts.event ? 'event'
+      : 'combat');
+  const rec = sceneRecord({
+    kind,
+    biomeId: run?.biomeId || opts.biomeId,
+    floor: run?.floor,
+    eventId: opts.event?.id,
+    originId: opts.originIntro ? run?.originId : opts.originId,
+    bg: opts.event?.bg || opts.bg,
+    bossId: opts.bossId,
+  });
+  applySceneToElement(elx, rec);
 }
 const LAST_FLOOR = 51;
 const NPC_DUELS = new Set(['crimson_stranger', 'frost_revenant', ...NPC_EVENTS]);
@@ -124,6 +139,7 @@ export function boot() {
   syncAutoPlayLoop();
   applyChoiceHintPref();
   if (devJump()) return;
+  applyTitleBleed();
   titleScreen();
 }
 
@@ -217,7 +233,7 @@ function devJump() {
 
 /* ============================================================
    DEBUG / COMPENDIUM SCREEN (§17) — every class, subclass, skill,
-   relic, equipment piece, enemy and boss, with their sprites.
+   relic, equipment piece, enemy, boss, and live backdrop.
    ============================================================ */
 let inspectSession = null;
 
@@ -771,10 +787,49 @@ function debugScreen({ debug = false } = {}) {
   const oldmanStrip = ['oldman_gentle', 'oldman_wrath']
     .map(id => `<div class="dbg-enemy">${spriteMini(enemySpriteHtml(id, { elite: true, boss: !!NPC_ENEMIES[id]?.boss, target: THUMB }))}<div><b>${NPC_ENEMIES[id]?.name || id}</b></div></div>`).join('');
 
+  const MENU_BG = {
+    title: { name: 'Title Vista', note: 'Title screen backdrop' },
+    travelmap: { name: 'Travel Map', note: 'Floor path / travel map backdrop' },
+  };
+  const bgThumb = (url, accent) => url
+    ? `<div class="dbg-bg-thumb" style="background-image:url('${dbgEsc(url)}');${accent ? `--accent:${dbgEsc(accent)}` : ''}"></div>`
+    : '<div class="dbg-bg-thumb dbg-bg-missing">—</div>';
+  const biomeIds = new Set(BIOMES.map(b => b.id));
+  const biomeBgHtml = BIOMES.map(b => {
+    const url = biomeBgUrl(b.id);
+    const floors = b.floors[0] === b.floors[1] ? `Floor ${b.floors[0]}` : `Floors ${b.floors[0]}–${b.floors[1]}`;
+    return `<div class="dbg-card dbg-bg-card" style="--accent:${dbgEsc(b.glow)}">
+      ${bgThumb(url, b.glow)}
+      <div class="dbg-bg-meta">
+        <b>${dbgEsc(b.name)}</b> <span class="tag">${dbgEsc(b.id)}</span>
+        <div class="dbg-dim">${dbgEsc(floors)} · ${dbgEsc(b.particle)}</div>
+        <div class="dbg-dim">${dbgEsc(b.flavor)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  const extraBgs = registeredBackgrounds().filter(e => !biomeIds.has(e.id));
+  const extraBgHtml = extraBgs.map(s => {
+    const copy = MENU_BG[s.id] || { name: s.id, note: 'Registered backdrop' };
+    return `<div class="dbg-card dbg-bg-card">
+      ${bgThumb(s.url)}
+      <div class="dbg-bg-meta">
+        <b>${dbgEsc(copy.name)}</b> <span class="tag">${dbgEsc(s.id)}</span>
+        <div class="dbg-dim">${dbgEsc(copy.note)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  const sceneHtml = registeredScenes().map(s => `<div class="dbg-card dbg-bg-card">
+      ${bgThumb(s.url)}
+      <div class="dbg-bg-meta">
+        <b>${dbgEsc(s.id)}</b>
+        <div class="dbg-dim">${dbgEsc(s.position || '')} · scale ${dbgEsc(String(s.scale || 1))}</div>
+      </div>
+    </div>`).join('');
+
   app.innerHTML = '';
   const scr = el(`<div class="screen dbg-screen">
     <div class="select-header"><h2>${debug ? 'Compendium / Debug' : 'Compendium'}</h2><p>${debug
-      ? 'Every class, technique, relic, item, enemy, boss, NPC, and event in the tower.'
+      ? 'Every class, technique, relic, item, enemy, boss, NPC, event, and background in the tower.'
       : 'Callings, techniques, relics, and creatures of the tower. Hidden paths stay hidden. Cursed gear is a trait, not a rarity.'}</p></div>
     <div style="text-align:center;margin-bottom:12px"><button class="btn small" id="dbg-back">← Title</button></div>
     <div class="dbg-tabs">
@@ -785,6 +840,7 @@ function debugScreen({ debug = false } = {}) {
       <button class="btn small" data-tab="events">Events</button>
       <button class="btn small" data-tab="enemies">Bestiary</button>
       <button class="btn small" data-tab="npcs">NPCs</button>
+      <button class="btn small" data-tab="backgrounds">Backgrounds</button>
       ${debug ? '<button class="btn small" data-tab="world">World</button>' : ''}
     </div>
     <div id="dbg-filter-host">${renderFilterBar(filters)}</div>
@@ -798,6 +854,11 @@ function debugScreen({ debug = false } = {}) {
       <div class="dbg-group"><h4>NPC Encounters</h4><div class="dbg-grid">${npcHtml}</div></div>
       <div class="dbg-group"><h4>Farmstead faces</h4><div class="dbg-enemy-grid">${farmerStrip}</div></div>
       <div class="dbg-group"><h4>The Old Man</h4><div class="dbg-enemy-grid">${oldmanStrip}</div></div>
+    </div>
+    <div class="dbg-panel" id="dbg-backgrounds" style="display:none">
+      <div class="dbg-group"><h4>Biomes <span class="dbg-dim">(${BIOMES.length})</span></h4><div class="dbg-bg-grid">${biomeBgHtml}</div></div>
+      ${extraBgs.length ? `<div class="dbg-group"><h4>Menus &amp; Maps <span class="dbg-dim">(${extraBgs.length})</span></h4><div class="dbg-bg-grid">${extraBgHtml}</div></div>` : ''}
+      <div class="dbg-group"><h4>Scenes <span class="dbg-dim">(${registeredScenes().length})</span></h4><div class="dbg-bg-grid">${sceneHtml}</div></div>
     </div>
     ${debug ? `<div class="dbg-panel" id="dbg-world" style="display:none">${worldDebugHtml()}</div>` : ''}
   </div>`);
@@ -831,7 +892,7 @@ function debugScreen({ debug = false } = {}) {
   });
   const panels = {
     classes: 'dbg-classes', skills: 'dbg-skills', equip: 'dbg-equip', relics: 'dbg-relics',
-    events: 'dbg-events', enemies: 'dbg-enemies', npcs: 'dbg-npcs',
+    events: 'dbg-events', enemies: 'dbg-enemies', npcs: 'dbg-npcs', backgrounds: 'dbg-backgrounds',
   };
   if (debug) panels.world = 'dbg-world';
   const catalogTabs = new Set(['skills', 'equip', 'relics', 'events']);
@@ -854,6 +915,7 @@ function showDevChrome() {
 
 function titleScreen() {
   endInspectSession();
+  applyTitleBleed();
   const saved = loadRun();
   const coopSaved = classifyResumeMeta(loadCoopResume());
   const vol = Math.round(Music.getVolume() * 100);
@@ -912,7 +974,7 @@ function titleScreen() {
     SFX.click();
     if (saved && !confirm('Abandon the current climb? Your climber will not be remembered kindly.')) return;
     clearRun(); run = null;
-    flash(() => creationFlow(), { biomeId: 'title', partySize: 2 });
+    flash(() => creationFlow(), { biomeId: 'title', kind: 'title', partySize: 2 });
   };
   if (saved) document.getElementById('btn-continue').onclick = () => { SFX.click(); run = saved; resumeRun(); };
   document.getElementById('btn-coop-resume')?.addEventListener('click', () => { SFX.click(); resumeSavedCoop(); });
@@ -1532,6 +1594,8 @@ function gateEntry(then) {
   const partySize = Math.max(1, 1 + (coopS?.partners?.size || 0));
   walkTransition(then, {
     biomeId: run?.biomeId || 'forest',
+    floor: run?.floor || 1,
+    kind: 'biome_intro',
     partySize,
     caption: 'THE CLIMB BEGINS',
     durationMs: quick ? 900 : 2200,
@@ -1548,6 +1612,7 @@ function beginRun() {
     renderEventCard(stage, {
       id: 'origin_' + origin.id, category: 'unknown', type: 'story',
       glyph: origin.glyph, title: origin.title, text: origin.text, choices: origin.choices,
+      bg: origin.bg,
     }, { originIntro: true });
     return;
   }
@@ -2697,7 +2762,7 @@ async function nextFloor() {
           <div class="card-choices"><button class="${choiceBtnClass('Step through the gate')}" id="go"><span class="choice-label">Step through the gate</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
         </div>
       </div></div>`;
-    applyCardBg(stage);
+    applyCardBg(stage, { kind: 'biome_intro' });
     SFX.cardDeal();
     await new Promise(r => document.getElementById('go').onclick = () => { SFX.click(); r(); });
   }
@@ -2730,6 +2795,8 @@ function travelCtx() {
     run, coopS, resolveCard,
     flash: (swap) => flash(swap, {
       biomeId: run.biomeId || biomeForFloor(run.floor).id,
+      floor: run.floor,
+      kind: 'combat',
       partySize,
     }),
     biome: biomeForFloor(run.floor),
@@ -2983,7 +3050,7 @@ async function encounterFloor(stage, prebuiltGroup = null, hpMult = 1) {
         </div>
       </div>
     </div></div>`;
-  applyCardBg(stage);
+  applyCardBg(stage, { kind: 'combat' });
   SFX.cardDeal();
 
   appendChronicle(run, {
@@ -3268,7 +3335,7 @@ async function modifierFloor(stage) {
         </div>
       </div>
     </div></div>`;
-  applyCardBg(stage);
+  applyCardBg(stage, { kind: 'combat' });
   SFX.cardDeal();
   document.getElementById('go').onclick = () => {
     SFX.click();
@@ -3310,7 +3377,7 @@ async function bossFloor(stage, { resume = null } = {}) {
         </div>
       </div>
     </div></div>`;
-  applyCardBg(stage);
+  applyCardBg(stage, { kind: 'boss', boss: true, bossId: boss.id });
   SFX.bossIntro();
   document.getElementById('go').onclick = async () => {
     SFX.click();
@@ -3643,6 +3710,7 @@ async function sharedFightCard(stage, content) {
         </div>
       </div>
     </div></div>`;
+  applyCardBg(stage, { kind: boss ? 'boss' : 'combat', boss: !!boss, bossId: boss?.id });
   if (boss) {
     SFX.bossIntro();
     logBossPowerCheck(boss, { gate: true });
@@ -3717,7 +3785,7 @@ async function throneRoomCoop(stage) {
         <div class="card-choices"><div class="modifier-banner" style="border-color:var(--panel-edge);color:var(--ink-dim)">⏳ The party leader answers the King…</div></div>
       </div>
     </div></div>`;
-  applyCardBg(stage);
+  applyCardBg(stage, { kind: 'boss', boss: true, bossId: boss.id });
   SFX.bossIntro();
   const handleThrone = async d => {
     if (d.ending === 'secret') return secretEnding(stage);
@@ -3816,7 +3884,7 @@ function renderEventCard(stage, ev, { originIntro = false } = {}) {
         <div class="card-choices" id="choices"></div>
       </div>
     </div></div>`;
-  applyCardBg(stage);
+  applyCardBg(stage, { event: ev, originIntro });
   SFX.cardDeal();
 
   const box = document.getElementById('choices');
@@ -3872,7 +3940,7 @@ function coopEventChoice(stage, ev) {
         <div id="ev-vote-status" class="dbg-dim" style="margin-top:8px;text-align:center"></div>
       </div>
     </div></div>`;
-  applyCardBg(stage);
+  applyCardBg(stage, { event: ev });
   SFX.cardDeal();
 
   const box = document.getElementById('choices');
@@ -4136,6 +4204,7 @@ async function applyOutcomeSolo(stage, ev, o, rng, lines, opts = {}) {
     onLearnSkill: (sk) => maybeEquipSkill(sk),
     chooseFuture: pickFutureCategory,
     chooseOption: (options, { skillCost }) => pickSpoilsOption(o.reward, options, skillCost),
+    coop: coopS,
   });
   saveRun(run);
   renderHud();
@@ -4432,7 +4501,7 @@ async function applyOutcomeCoop(stage, ev, o, rng, lines, opts = {}) {
   if (o.item) {
     const item = resolveItem(run, o.item) || itemById(o.item);
     if (!item) lines.push({ text: 'The promised object is missing from this timeline.', cls: 'bad' });
-    else await grantCatalogItem(run, item, lines, { onEquip: (it, ls) => offerEquipment(it, ls) });
+    else await grantCatalogItem(run, item, lines, { onEquip: (it, ls) => offerEquipment(it, ls), coop: coopS });
   }
   if (o.relicRoll) {
     const r = rollRelic(rng, run.relics, Math.floor(d.lk / 3) + (sparkle ? (o._sparkleLuck || 5) : 0));
@@ -5585,6 +5654,7 @@ async function shopScreen(stage, ev, { resumeStock = null } = {}) {
           <div class="card-choices"><button class="${choiceBtnClass('Take your leave')}" id="leave"><span class="choice-label">Take your leave</span>${choiceHintSpan('⟶', { keep: true })}</button></div>
         </div>
       </div></div>`;
+    applyCardBg(stage, { kind: 'shop', event: ev });
 
     stage.querySelectorAll('[data-i]').forEach(btn => btn.onclick = async () => {
       if (visit.busy) return;
@@ -5911,7 +5981,7 @@ async function throneRoom(stage) {
         <div class="card-choices" id="choices"></div>
       </div>
     </div></div>`;
-  applyCardBg(stage);
+  applyCardBg(stage, { kind: 'boss', boss: true, bossId: boss.id });
   SFX.bossIntro();
 
   const box = document.getElementById('choices');

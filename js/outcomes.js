@@ -19,7 +19,8 @@ import { mimicSpec } from './data/enemies.js';
 import { pickEventEnemyIds, specsFromEnemyIds, maybeEscortNpcDuel, buildEventFightEnemies } from './encounter.js';
 import { earnGold, spendGold, applyGoldDelta } from './economy.js';
 import { applyOfferingOutcome, defaultOfferingPick } from './offering.js';
-import { grantCatalogItem } from './content_pack/grants.js';
+import { grantCatalogItem, grantPackSkill, maybeCampfirePackFind, resolveCurseOnRun } from './content_pack/grants.js';
+import { recipientRule } from './content_pack/acquisition.js';
 import { packOnEventResolve } from './content_pack/world_bind.js';
 
 const STAT_ROLL = { str: 'Strength', dex: 'Agility', int: 'Intellect', wis: 'Wisdom', lk: 'Luck' };
@@ -285,25 +286,45 @@ export async function applyEventOutcome(run, ev, o, rng, hooks = {}) {
       requireUseful: true, usefulBias: 10,
       slot: wantWeapon ? 'weapon' : (rng.chance(0.5) ? 'accessory' : null),
       rarityBump: sparkle && !!o._sparkleRarityBump,
+      channel: 'class',
+    }) || rollEquipment(rng, Math.max(biomeTier(run.biomeId), 2), luck, {
+      floor: run.floor, run, classId: run.classId,
+      requireUseful: true, usefulBias: 10,
+      slot: wantWeapon ? 'weapon' : (rng.chance(0.5) ? 'accessory' : null),
+      rarityBump: sparkle && !!o._sparkleRarityBump,
+      channel: 'ordinary',
     });
     if (item) await onItem(item, lines);
   }
   if (o.item) {
     const item = resolveItem(run, o.item) || itemById(o.item);
     if (!item) lines.push({ text: 'The promised object is missing from this timeline.', cls: 'bad' });
-    else await grantCatalogItem(run, item, lines, { onEquip: (it, ls) => onItem(it, ls) });
+    else await grantCatalogItem(run, item, lines, { onEquip: (it, ls) => onItem(it, ls), coop: hooks.coop || null });
   }
   if (o.relicRoll) {
     const r = rollRelic(rng, run.relics, Math.floor(d.lk / 3) + (sparkle ? (o._sparkleLuck || 5) : 0));
     if (r) { run.relics.push(r.id); lines.push({ text: `Relic: ${r.name} — ${r.desc}`, cls: 'item' }); }
   }
   if (o.consumable) {
-    run.consumables.push(o.consumable);
-    lines.push({ text: `Received: ${itemById(o.consumable).name}`, cls: 'item' });
+    const it = itemById(o.consumable);
+    if (it) await grantCatalogItem(run, it, lines, { onEquip: (item, ls) => onItem(item, ls), coop: hooks.coop });
+    else {
+      run.consumables.push(o.consumable);
+      lines.push({ text: `Received: ${o.consumable}`, cls: 'item' });
+    }
   }
   if (o.consumable2) {
-    run.consumables.push(o.consumable2);
-    lines.push({ text: `Received: ${itemById(o.consumable2).name}`, cls: 'item' });
+    const it2 = itemById(o.consumable2);
+    if (it2) await grantCatalogItem(run, it2, lines, { onEquip: (item, ls) => onItem(item, ls), coop: hooks.coop });
+    else {
+      run.consumables.push(o.consumable2);
+      lines.push({ text: `Received: ${o.consumable2}`, cls: 'item' });
+    }
+  }
+  if (o.skill) grantPackSkill(run, o.skill, lines);
+  if (o.art) grantPackSkill(run, o.art, lines);
+  if (o.resolveCurse) {
+    for (const ref of [].concat(o.resolveCurse)) resolveCurseOnRun(run, ref, lines);
   }
   if (o.useItem) {
     const i = run.consumables.indexOf(o.useItem);
@@ -375,6 +396,7 @@ export async function applyEventOutcome(run, ev, o, rng, hooks = {}) {
   }
 
   if (o.combat) {
+    run.lastOwnership = recipientRule(o, ev);
     return finalizeCombat(run, ev, o, rng, lines, ups, partySize, { alreadyAdvanced: false });
   }
 
@@ -383,6 +405,10 @@ export async function applyEventOutcome(run, ev, o, rng, hooks = {}) {
 
 function finishOutcome(run, ev, o, lines, ups, { alreadyAdvanced, rng }) {
   packOnEventResolve(run, ev, o, rng);
+  run.lastOwnership = recipientRule(o, ev);
+  if (ev?.id === 'campfire' || ev?.type === 'rest') {
+    maybeCampfirePackFind(run, rng, lines);
+  }
   if (!alreadyAdvanced && rng) rng.advance();
   if (run.hp <= 0) return { kind: 'dead', lines, ups };
   return { kind: 'done', lines, ups, coopTrade: !!o.coopTrade, originIntro: false };

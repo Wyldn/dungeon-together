@@ -55,7 +55,7 @@ export {
   collectEnemyRiders, initiativePenaltyFromStatuses,
 } from './combat_core.js';
 import { ICONS } from './icons.js';
-import { enemySpriteHtml, heroSpriteHtml, playHeroAnim, heroHasAnim, heroCombatSize, biomeBgUrl } from './art.js';
+import { enemySpriteHtml, heroSpriteHtml, playHeroAnim, heroHasAnim, heroCombatSize, sceneRecord, applySceneToElement } from './art.js';
 import { enemyBoxHtml } from './data/sprite_present.js';
 import * as SpriteAnim from './anim.js';
 import { SFX } from './audio.js';
@@ -77,16 +77,9 @@ export function setCombatSleep(fn) {
 }
 
 /** Paint the biome on #combat-bleed (outside the scaled frame) so letterbox wings fill. */
-function setCombatBleed(bg) {
+function setCombatBleed(rec) {
   const bleed = typeof document === 'undefined' ? null : document.getElementById('combat-bleed');
-  if (!bleed) return;
-  if (bg) {
-    bleed.style.backgroundImage = `url('${bg}')`;
-    bleed.classList.add('has-bg');
-  } else {
-    bleed.style.backgroundImage = '';
-    bleed.classList.remove('has-bg');
-  }
+  applySceneToElement(bleed, rec, { scaleVar: '--bleed-scale' });
 }
 
 /** Live solo fight — used to persist mid-battle on Save. */
@@ -623,9 +616,15 @@ class Fight {
         </div>
       </div>`;
     const bf = this.el.querySelector('.battlefield');
-    const bg = biomeBgUrl(this.run.biomeId);
-    if (bf && bg) { bf.classList.add('has-bg'); bf.style.backgroundImage = `url('${bg}')`; }
-    setCombatBleed(bg);
+    const isBoss = !!(this.boss || this.enemies?.some(e => e.boss));
+    const rec = sceneRecord({
+      kind: isBoss ? 'boss' : 'combat',
+      biomeId: this.run.biomeId,
+      floor: this.run.floor,
+      bossId: this.boss?.id || this.enemies?.find(e => e.boss)?.id,
+    });
+    applySceneToElement(bf, rec);
+    setCombatBleed(rec);
     const charBtn = this.el.querySelector('#cx-character');
     if (charBtn) charBtn.onclick = () => this.onCharacter?.();
     this.el.querySelector('#cx-settings')?.addEventListener('click', () => this.onSettings?.());

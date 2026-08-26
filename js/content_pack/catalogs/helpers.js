@@ -1,62 +1,99 @@
 import { capabilityEnabled } from '../flags.js';
+import { catalogPrice, dropWeightFor } from '../rarity.js';
+
+function chaseIdentity(p) {
+  return !!(p.unique || p.wrld || p.rarity === 'unique' || p.rarity === 'wrld');
+}
+
+function defaultAcquisition(p) {
+  if (p.acquisition) return p.acquisition;
+  if (p.wrld || p.rarity === 'wrld') return 'wrld';
+  if (p.unique || p.rarity === 'unique') return 'unique';
+  if (p.packOrdinary) return 'ordinary';
+  return 'event';
+}
+
+/** Exclusive = not ordinary loot. Unique/WRLD are always exclusive. */
+function defaultExclusive(p) {
+  if (p.exclusive != null) return !!p.exclusive;
+  if (p.packOrdinary) return false;
+  if (p.wrld || p.rarity === 'wrld' || p.unique || p.rarity === 'unique') return true;
+  return true;
+}
 
 export function wpn(p) {
-  const exclusive = p.exclusive !== false && !p.packOrdinary;
+  const exclusive = defaultExclusive(p);
+  const chase = chaseIdentity(p);
+  const rarity = p.rarity;
+  const tier = p.tier || 2;
   return {
     slot: 'weapon',
-    rarity: p.rarity || 'uncommon',
-    tier: p.tier || 2,
-    price: p.price || (36 + (p.tier || 2) * 42),
+    tier,
+    price: p.price ?? (rarity ? catalogPrice('equipment', rarity, tier) : undefined),
+    lootWeight: p.lootWeight ?? (p.packOrdinary && rarity ? Math.max(1, Math.round(dropWeightFor(rarity) * 0.4)) : undefined),
     exclusive,
     contentPack: true,
-    acquisition: p.acquisition || (p.packOrdinary ? 'ordinary' : 'event'),
+    acquisition: defaultAcquisition(p),
     sourceId: p.sourceId || p.id,
     playable: p.playable || 'as_proposed',
-    noAffix: !!p.unique || !!p.wrld,
+    noAffix: chase || !!p.noAffix,
     ...p,
     exclusive,
+    noAffix: chase || !!p.noAffix,
   };
 }
 
 export function gear(p) {
-  const exclusive = p.exclusive !== false && !p.packOrdinary;
+  const exclusive = defaultExclusive(p);
+  const chase = chaseIdentity(p);
+  const rarity = p.rarity;
+  const tier = p.tier || 2;
   return {
-    rarity: p.rarity || 'uncommon',
-    tier: p.tier || 2,
-    price: p.price || (30 + (p.tier || 2) * 38),
+    tier,
+    price: p.price ?? (rarity ? catalogPrice('equipment', rarity, tier) : undefined),
+    lootWeight: p.lootWeight ?? (p.packOrdinary && rarity ? Math.max(1, Math.round(dropWeightFor(rarity) * 0.4)) : undefined),
     exclusive,
     contentPack: true,
-    acquisition: p.acquisition || (p.packOrdinary ? 'ordinary' : 'event'),
+    acquisition: defaultAcquisition(p),
     sourceId: p.sourceId || p.id,
     playable: p.playable || 'as_proposed',
-    noAffix: !!p.unique || !!p.wrld,
+    noAffix: chase || !!p.noAffix,
     ...p,
     exclusive,
+    noAffix: chase || !!p.noAffix,
   };
 }
 
 export function relic(p) {
+  const chase = chaseIdentity(p);
+  const rarity = p.rarity;
   return {
-    rarity: p.rarity || 'rare',
-    exclusive: p.exclusive !== false,
+    exclusive: defaultExclusive({ ...p, acquisition: p.acquisition || defaultAcquisition(p) }),
     contentPack: true,
-    acquisition: p.acquisition || 'event',
+    acquisition: defaultAcquisition(p),
     sourceId: p.sourceId || p.id,
     playable: p.playable || 'as_proposed',
     quest: !!p.quest,
+    unique: !!p.unique || rarity === 'unique',
+    wrld: !!p.wrld || rarity === 'wrld',
+    noAffix: chase,
+    price: p.price ?? (rarity ? catalogPrice('relic', rarity, p.tier || 3) : undefined),
     ...p,
+    unique: !!p.unique || rarity === 'unique' || p.rarity === 'unique',
+    wrld: !!p.wrld || rarity === 'wrld' || p.rarity === 'wrld',
+    noAffix: chase || p.rarity === 'unique' || p.rarity === 'wrld' || !!p.unique || !!p.wrld,
   };
 }
 
 export function potion(p) {
+  const rarity = p.rarity;
   return {
-    rarity: p.rarity || 'uncommon',
     exclusive: p.exclusive !== false,
     contentPack: true,
-    acquisition: p.acquisition || 'event',
+    acquisition: defaultAcquisition(p),
     sourceId: p.sourceId || p.id,
     playable: p.playable || 'as_proposed',
-    price: p.price || 40,
+    price: p.price ?? (rarity ? catalogPrice('consumable', rarity, p.tier || 1) : undefined),
     shopMaxTier: p.shopMaxTier ?? 0,
     ...p,
   };

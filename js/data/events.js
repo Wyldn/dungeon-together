@@ -2,6 +2,7 @@
 //
 // Card shape:
 //   { id, biome: 'any'|biomeId, category, type, glyph, title, text, w,
+//     bg?: sceneId,  // optional named still from js/data/scenes.js
 //     tags?: string[],  // modifiers from eventtags.js (defaults in eventtagmap.js)
 //     cond?(state), when?: object, variants?: [...], family?, onSee?,
 //     once?: true, affinity?: {classes?, races?, underdog?},
@@ -65,7 +66,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'campfire', biome: 'any', category: 'recovery', type: 'rest', glyph: '🔥', w: 8,
+    id: 'campfire', biome: 'any', bg: 'mountain_cabin', category: 'recovery', type: 'rest', glyph: '🔥', w: 8,
     title: 'A Moment of Peace',
     text: 'A sheltered alcove, dry wood, and — miraculously — no immediate threats. The tower allows rest the way a cat allows a mouse to catch its breath.',
     variants: [
@@ -189,7 +190,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'merchant', biome: 'any', category: 'merchant', type: 'shop', npc: 'old_man', glyph: '🧳', w: 14,
+    id: 'merchant', biome: 'any', bg: 'town_street', category: 'merchant', type: 'shop', npc: 'old_man', glyph: '🧳', w: 14,
     title: 'The Hooded Merchant',
     text: 'A figure in a patchwork cloak has set up shop in a place no shop should exist. "Climbers! My favorite kind of customer. Repeat business is rare, but the margins are excellent."',
     shop: true,
@@ -746,7 +747,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'crimson_stranger', biome: 'any', category: 'dangerous', type: 'risk', glyph: '🧛', w: 5, once: true, cond: s => s.floor >= 4,
+    id: 'crimson_stranger', biome: 'any', bg: 'night_castle', category: 'dangerous', type: 'risk', glyph: '🧛', w: 5, once: true, cond: s => s.floor >= 4,
     title: 'The Crimson Stranger',
     text: 'A figure in a high collar leans against the wall as though it has all the centuries in the world. "You have good blood," it observes, not unkindly. "I do not NEED it. But I would enjoy earning it. One duel — and if you win, you may take something of mine that suits you."',
     choices: [
@@ -1052,7 +1053,7 @@ export const EVENTS = [
 
   /* ==================== FOREST (1–10) ==================== */
   {
-    id: 'wounded_adventurer', biome: 'forest', category: 'social', type: 'story', npc: 'girl', glyph: '🩹', w: 8, once: true,
+    id: 'wounded_adventurer', biome: 'forest', bg: 'forest_path', category: 'social', type: 'story', npc: 'girl', glyph: '🩹', w: 8, once: true,
     onSee: { char: { id: 'mira', met: true, loc: 'forest', memory: 'found_bleeding' }, thread: { id: 'mira', stage: 'met' } },
     title: 'The Wounded Climber',
     text: 'A young climber slumps against a tree, clutching a gashed side. The bark beside her is split the same way — too clean for a wolf. Her party left her — "the run matters more," they said. She looks up at you with the specific hope of someone who has stopped expecting it.\n\nYou could close the wound. It would come out of you — your own vitality, not a potion.',
@@ -1081,7 +1082,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'fey_bargain', biome: 'forest', category: 'dangerous', type: 'risk', glyph: '🧚', w: 6,
+    id: 'fey_bargain', biome: 'forest', bg: 'forest_garden', category: 'dangerous', type: 'risk', glyph: '🧚', w: 6,
     affinity: { races: ['elf', 'halfling'] },
     title: 'A Fey Bargain',
     text: 'A creature of twilight and bad intentions perches on a mushroom. "Trade, mortal? I collect things people don\'t know they\'ll miss." Its smile has too many angles.',
@@ -1097,7 +1098,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'bandit_toll', biome: 'forest', category: 'social', type: 'story', glyph: '🪓', w: 7,
+    id: 'bandit_toll', biome: 'forest', bg: 'forest_bridge', category: 'social', type: 'story', glyph: '🪓', w: 7,
     title: 'The Toll Bridge',
     text: 'Bandits have barricaded the only path with a fallen log and a hand-painted sign: "TOLE: 40 GOLD." The log sits on a milestone the moss has been swallowing — a court-mark, half-eaten. Their leader shrugs. "Everyone\'s gotta eat, and the tower don\'t pay wages."',
     variants: [
@@ -1118,7 +1119,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'beehive', biome: 'forest', category: 'dangerous', type: 'risk', glyph: '🐝', w: 5,
+    id: 'beehive', biome: 'forest', bg: 'forest_tree', category: 'dangerous', type: 'risk', glyph: '🐝', w: 5,
     title: 'The Honeyed Hollow',
     text: 'A hive the size of a wagon drips golden honey into the hollow of an ancient oak. The hum is deep enough to feel in your teeth. Tower honey. Probably enchanted. Definitely guarded.',
     choices: [
@@ -1133,7 +1134,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'ancient_tree', biome: 'forest', category: 'mystery', type: 'story', glyph: '🌳', w: 5, once: true,
+    id: 'ancient_tree', biome: 'forest', bg: 'forest_canopy', category: 'mystery', type: 'story', glyph: '🌳', w: 5, once: true,
     affinity: { races: ['beastfolk', 'elf'] },
     title: 'The Tree That Speaks',
     text: 'The great oak\'s bark shifts into something like a face. "CLIMBER." Its voice is centuries rubbing together. "I HAVE STOOD SINCE THE FIRST FLOOR WAS LAID. THE ELDERWOOD — SYLVANOR — STILL JUDGES AT THE GATE. ASK. ONE. QUESTION."',
@@ -1149,7 +1150,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'wolf_ambush', biome: 'forest', category: 'dangerous', type: 'risk', glyph: '🌒', w: 5,
+    id: 'wolf_ambush', biome: 'forest', bg: 'forest_pines', category: 'dangerous', type: 'risk', glyph: '🌒', w: 5,
     when: { flag: 'angered_forest' },
     title: 'The Forest Remembers',
     text: 'The smoke from the hive drifted far. Yellow eyes ring the clearing — the forest has sent collectors for its grievance.',
@@ -1164,7 +1165,7 @@ export const EVENTS = [
   },
 
   {
-    id: 'slime_crown', biome: 'forest', category: 'dangerous', type: 'risk', glyph: '🟢', w: 5,
+    id: 'slime_crown', biome: 'forest', bg: 'forest_meadow', category: 'dangerous', type: 'risk', glyph: '🟢', w: 5,
     title: 'The Quivering Crown',
     text: 'A ring of grove-slimes has crowned a larger blob with a stolen bird\'s nest. It burps at you in what might be a royal decree. The smaller ones look ready to enforce protocol.',
     choices: [
@@ -1179,7 +1180,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'orc_logging_camp', biome: 'forest', category: 'combat', type: 'risk', glyph: '🪓', w: 6,
+    id: 'orc_logging_camp', biome: 'forest', bg: 'forest_farm', category: 'combat', type: 'risk', glyph: '🪓', w: 6,
     title: 'The Logging Camp',
     text: 'Axes ring ahead — not harvesting. The orcs are cutting a corridor because, they shout, the trees have been walking toward floor ten. A dusk-lurker sits in a cage behind them, watching the grove assemble with too many eyes.',
     choices: [
@@ -1194,7 +1195,7 @@ export const EVENTS = [
 
   /* ==================== RUINS (11–20) ==================== */
   {
-    id: 'void_stare', biome: 'ruins', category: 'dangerous', type: 'risk', glyph: '🧿', w: 5,
+    id: 'void_stare', biome: 'ruins', bg: 'cave_ruins', category: 'dangerous', type: 'risk', glyph: '🧿', w: 5,
     title: 'The Unblinking Hall',
     text: 'A corridor ends in a floating knot of eyes and claws. A horned stalker kneels before it like a parishioner. Neither has blinked since you arrived.',
     choices: [
@@ -1207,7 +1208,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'buried_library', biome: 'ruins', category: 'mystery', type: 'story', glyph: '📚', w: 6, once: true,
+    id: 'buried_library', biome: 'ruins', bg: 'school_library', category: 'mystery', type: 'story', glyph: '📚', w: 6, once: true,
     affinity: { classes: ['mage'] },
     title: 'The Buried Library',
     text: 'Shelves stretch down into darkness, holding the recorded history of the fallen kingdom. Most books crumble at a touch. One — bound in silver — does not. Its lock is a riddle in a dead language.',
@@ -1283,7 +1284,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'ghost_king', biome: 'ruins', category: 'social', type: 'story', npc: 'soldier', glyph: '👻', w: 4, once: true,
+    id: 'ghost_king', biome: 'ruins', bg: 'coastal_fortress', category: 'social', type: 'story', npc: 'soldier', glyph: '👻', w: 4, once: true,
     onSee: { char: { id: 'ghost_king', met: true, loc: 'ruins', memory: 'met' }, thread: { id: 'king', stage: 'met' } },
     title: 'The King Who Stayed',
     text: 'A translucent figure sits on a broken throne, crown askew. "My kingdom fell in a single night when the tower grew through it," the ghost says. "I stayed to file a complaint. The line has not moved in six hundred years."',
@@ -1415,7 +1416,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'warm_hearth', biome: 'frost', category: 'recovery', type: 'rest', glyph: '🏠', w: 7,
+    id: 'warm_hearth', biome: 'frost', bg: 'mountain_cabin', category: 'recovery', type: 'rest', glyph: '🏠', w: 7,
     title: 'The Impossible Cottage',
     text: 'A cottage with warm windows sits in the frozen wasteland, smoke curling from its chimney. The door is unlocked. Dinner for one is on the table, still hot. A note: "FOR THE CLIMBER. EAT. REST. THE COLD IS NOT PERSONAL, BUT I AM. VESSALIA\'S COURT IS AHEAD. DO NOT BOW TO ICE THAT USED TO BE A PERSON." — V.',
     variants: [
@@ -1467,7 +1468,7 @@ export const EVENTS = [
 
   /* ==================== SWAMP (31–40) ==================== */
   {
-    id: 'witch_hut', biome: 'swamp', category: 'mystery', type: 'story', glyph: '🧹', w: 6,
+    id: 'witch_hut', biome: 'swamp', bg: 'swamp_bayou', category: 'mystery', type: 'story', glyph: '🧹', w: 6,
     onSee: { char: { id: 'witch', met: true, loc: 'swamp', memory: 'appointment' }, thread: { id: 'witch', stage: 'met' } },
     title: 'The Hut on Heron Legs',
     text: 'A hut strides through the mire on stilted bird legs, then settles in front of you, blocking the path with the confidence of a scheduled appointment. A crone leans out. "You\'re LATE. Come in. The tea\'s gone bitter twice."',
@@ -1632,7 +1633,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'cowards_gate', biome: 'hell', category: 'unknown', type: 'story', glyph: '🌀', w: 7, cond: s => s.floor >= 43 && !s.coopMode, once: true,
+    id: 'cowards_gate', biome: 'hell', bg: 'ocean_sunrise', category: 'unknown', type: 'story', glyph: '🌀', w: 7, cond: s => s.floor >= 43 && !s.coopMode, once: true,
     title: 'The Coward\'s Gate',
     text: 'A shimmering portal hums in an alcove, showing green fields, a road home, ordinary weather. Above it, carved politely: "NO SHAME. THE TOWER COUNTS SURVIVORS TOO."\n\nThis is real. This is a way OUT — with everything you carry, breathing, alive. The Demon King is eight floors up, and he is not polite.',
     choices: [
@@ -1643,7 +1644,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'last_rest', biome: 'hell', category: 'recovery', type: 'rest', glyph: '🕯️', w: 6,
+    id: 'last_rest', biome: 'hell', bg: 'school_hall', category: 'recovery', type: 'rest', glyph: '🕯️', w: 6,
     title: 'The Vigil Room',
     text: 'A small stone room untouched by the heat. Hundreds of candles, each lit by a climber who rested here before the final floors. Some candles have burned for centuries. Most went out quickly. There is one unlit candle, and a match, waiting.',
     variants: [

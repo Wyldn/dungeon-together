@@ -1,0 +1,361 @@
+{
+  "startingCommitSha": "cf607bcd3c941c7840fad42da5ed6253bbcc7d85",
+  "curses": [
+    {
+      "id": "curse:cp_cowards_first_sword:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_sixth_owner_you",
+          "choiceLabel": "Reject it"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_coinmouth_maul:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_furnace_honest_metal",
+          "choiceLabel": "Purify cursed gear for gold"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_applause_knife:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_most_famous_meal",
+          "choiceLabel": "Kill it and recover part of the Fame"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_crimson_checkpoint_blade:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_collector_continued_lives",
+          "choiceLabel": "Surrender the ward and settle"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_unregistered_hero_weapon:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_person_story_rejected",
+          "choiceLabel": "Restore their name"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_gate_parasite_bow:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_gate_parasites",
+          "choiceLabel": "Cleanse them"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_previous_timeline_axe:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_one_timeline_throne",
+          "choiceLabel": "Prove both parties are manipulated"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_missing_eighth_oath:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_seventh_owner",
+          "choiceLabel": "Free all previous owners"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_funeral_receipt_dagger:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_grave_tax",
+          "choiceLabel": "Invoke burial law"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_false_system_staff:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_customer_support_boss",
+          "choiceLabel": "File an appeal using accumulated evidence"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_crownless_kings_scepter:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_court_beneath_bog",
+          "choiceLabel": "Refuse monarchy"
+        },
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_king_waiting_hell",
+          "choiceLabel": "Return the crown"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_fame_eater_tooth:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_most_famous_meal",
+          "choiceLabel": "Kill it and recover part of the Fame"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_bell_clapper_greatclub:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_bell_rings_again",
+          "choiceLabel": "Pay a large party-wide ransom"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_drowned_brides_rapier:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_wedding_ice",
+          "choiceLabel": "Complete the ceremony"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_blade_lists_you:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_inventory_teammate",
+          "choiceLabel": "Close the window"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_armor_applauding_crowd:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_achievement_cowardice",
+          "choiceLabel": "Spend Fame to rename the achievement"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_second_timeline_plate:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_one_timeline_throne",
+          "choiceLabel": "Prove both parties are manipulated"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_the_empty_seat:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_bell_rings_again",
+          "choiceLabel": "Pay a large party-wide ransom"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_royal_claimant_mantle:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_court_beneath_bog",
+          "choiceLabel": "Refuse monarchy"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_gate_parasite_carapace:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_gate_parasites",
+          "choiceLabel": "Cleanse them"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_crimson_memory_mail:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "campfire",
+          "competes": true,
+          "note": "campfire cleanse"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_armor_mandatory_optionality:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_customer_support_boss",
+          "choiceLabel": "File an appeal using accumulated evidence"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_furnace_honest_plate:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_furnace_honest_metal",
+          "choiceLabel": "Purify cursed gear for gold"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_drowned_court_dress:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_court_beneath_bog",
+          "choiceLabel": "Refuse monarchy"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_grave_tax_shroud:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_grave_tax",
+          "choiceLabel": "Invoke burial law"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_possessionless_robe:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_monk_empty_handed",
+          "choiceLabel": "Expose the gate's definition of possession as flawed"
+        }
+      ]
+    },
+    {
+      "id": "curse:cp_final_gate_uniform:resolved",
+      "ok": true,
+      "resolved": true,
+      "sources": [
+        {
+          "type": "event",
+          "competes": false,
+          "eventId": "cp_last_gate_inspection",
+          "choiceLabel": "Help certify a safe escape gate"
+        }
+      ]
+    }
+  ]
+}

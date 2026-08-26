@@ -100,6 +100,24 @@ each event's own text:
 | `ashen_sovereign` (Spike Sovereign) | Alt boss F51 | Throne | Monster Creature… | `pixel-0101-*.png` (`spike_sovereign.png`) |
 | Forest biome BG | Backdrop | Floors 1–10 | parallax_forest_pack web | `v2/layers/{back,middle,front}.png` composited → `assets/img/bg/forest.png` |
 
+## Scene backgrounds (`js/data/scenes.js`)
+
+Floor-band + event stills live in `assets/img/bg/scenes/`. Runtime never
+loads the source zips. Re-promote with:
+
+```bash
+python tools/promote_bg_scenes.py
+```
+
+Named events may set `bg: 'scene_id'`. Origins may set the same. Combat and
+generic cards use the floor band. Title is Lamora; throne F51 is Lamora;
+`cowards_gate` is the ocean sunrise. Magical School interiors are origin /
+library rhymes only — not a seventh biome.
+
+Packs sit in `assets/img/NEW_ASSETS/backgrounds/` (zips + `_extracted/`).
+`Magical School.zip` is not committed (300MB); selected interiors were
+extracted, resized, and filed under `school_*.jpg`.
+
 ### New events that reference these enemies
 
 | Event id | Biome | Combat |

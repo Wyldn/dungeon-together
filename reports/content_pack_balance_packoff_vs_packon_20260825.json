@@ -13,8 +13,8 @@
       "outcome": "stopped",
       "deathFloor": null,
       "floor": 8,
-      "gold": 260,
-      "hp": 14,
+      "gold": 201,
+      "hp": 38,
       "heals": 0
     }
   },
@@ -31,8 +31,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 159,
-        "heals": 2
+        "gold": 56,
+        "heals": 0
       }
     },
     "mage": {
@@ -47,8 +47,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 159,
-        "heals": 2
+        "gold": 9,
+        "heals": 0
       }
     },
     "archer": {
@@ -63,7 +63,7 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 180,
+        "gold": 220,
         "heals": 0
       }
     },
@@ -79,8 +79,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 69,
-        "heals": 0
+        "gold": 60,
+        "heals": 1
       }
     },
     "priest": {
@@ -95,8 +95,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 221,
-        "heals": 2
+        "gold": 111,
+        "heals": 0
       }
     },
     "monk": {
@@ -111,8 +111,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 126,
-        "heals": 2
+        "gold": 20,
+        "heals": 0
       }
     },
     "warlock": {
@@ -127,8 +127,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 158,
-        "heals": 1
+        "gold": 106,
+        "heals": 0
       }
     },
     "bard": {
@@ -143,8 +143,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 192,
-        "heals": 1
+        "gold": 54,
+        "heals": 0
       }
     },
     "necromancer": {
@@ -159,8 +159,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 139,
-        "heals": 2
+        "gold": 54,
+        "heals": 0
       }
     },
     "spellsword": {
@@ -175,8 +175,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 139,
-        "heals": 2
+        "gold": 60,
+        "heals": 0
       }
     },
     "viking": {
@@ -191,8 +191,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 159,
-        "heals": 2
+        "gold": 56,
+        "heals": 0
       }
     }
   },
@@ -209,8 +209,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 159,
-        "heals": 2
+        "gold": 56,
+        "heals": 0
       }
     },
     "elf": {
@@ -225,8 +225,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 39,
-        "heals": 2
+        "gold": 54,
+        "heals": 0
       }
     },
     "orc": {
@@ -241,8 +241,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 143,
-        "heals": 2
+        "gold": 56,
+        "heals": 0
       }
     },
     "dwarf": {
@@ -257,8 +257,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 164,
-        "heals": 2
+        "gold": 65,
+        "heals": 0
       }
     },
     "halfling": {
@@ -273,8 +273,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 39,
-        "heals": 2
+        "gold": 177,
+        "heals": 0
       }
     },
     "tiefling": {
@@ -289,8 +289,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 159,
-        "heals": 2
+        "gold": 3,
+        "heals": 1
       }
     },
     "beastfolk": {
@@ -305,8 +305,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 195,
-        "heals": 1
+        "gold": 54,
+        "heals": 0
       }
     },
     "dragonkin": {
@@ -321,8 +321,8 @@
         "outcome": "stopped",
         "deathFloor": null,
         "floor": 6,
-        "gold": 143,
-        "heals": 2
+        "gold": 49,
+        "heals": 0
       }
     }
   }

@@ -1,0 +1,3064 @@
+{
+  "generatedAt": "2026-08-26T02:58:28.213Z",
+  "packId": "design_council_2026",
+  "gate": 7,
+  "deployed": false,
+  "fallbackAnalysis": {
+    "removed": [
+      {
+        "site": "catalogs/helpers.js wpn()",
+        "previous": "p.rarity || 'uncommon'",
+        "effect": "weapons without rarity became Uncommon"
+      },
+      {
+        "site": "catalogs/helpers.js gear()",
+        "previous": "p.rarity || 'uncommon'",
+        "effect": "armor/accessories without rarity became Uncommon"
+      },
+      {
+        "site": "catalogs/helpers.js relic()",
+        "previous": "p.rarity || 'rare'",
+        "effect": "every relic without rarity became Rare"
+      },
+      {
+        "site": "catalogs/helpers.js potion()",
+        "previous": "p.rarity || 'uncommon'",
+        "effect": "every consumable without rarity became Uncommon"
+      },
+      {
+        "site": "catalogs/armor.js setPieces()",
+        "previous": "extra.rarity || 'rare'",
+        "effect": "class set pieces without rarity became Rare"
+      }
+    ],
+    "notCategoryFallback": [
+      "compendium/curse display defaults (must never fire once catalogs validate)",
+      "affix roll base.rarity || common (vanilla loot templates always declare rarity)"
+    ],
+    "conclusion": "Bulk Rare relics and Uncommon consumables were helper defaults, not per-entry authoring. Class armor sets used a group Rare default in setPieces. Foundation/class/bloodline weapons mostly declared rarity explicitly.",
+    "currentSource": {
+      "packEntries": 319,
+      "authoredExplicit": 319,
+      "missingLiteral": []
+    },
+    "priorCompendium": {
+      "note": "Before this pass, helper defaults assigned Rare to every relic without a rarity key and Uncommon to every consumable without a rarity key. Class setPieces defaulted to Rare. Those helpers no longer assign rarity.",
+      "relicsWereAllRare": 37,
+      "consumablesWereAllUncommon": 64,
+      "setPiecesWereRare": 57
+    }
+  },
+  "vanilla": {
+    "equipment": {
+      "counts": {
+        "common": 22,
+        "uncommon": 38,
+        "rare": 53,
+        "epic": 23,
+        "legendary": 9,
+        "unique": 12,
+        "wrld": 12,
+        "missing": 0,
+        "total": 169
+      },
+      "ordinaryDenom": 145,
+      "ordinaryPct": {
+        "common": 0.15172413793103448,
+        "uncommon": 0.2620689655172414,
+        "rare": 0.36551724137931035,
+        "epic": 0.15862068965517243,
+        "legendary": 0.06206896551724138
+      },
+      "unique": 12,
+      "wrld": 12,
+      "bandKey": "ordinaryEquipment",
+      "bands": {
+        "common": [
+          0.2,
+          0.3
+        ],
+        "uncommon": [
+          0.25,
+          0.35
+        ],
+        "rare": [
+          0.2,
+          0.3
+        ],
+        "epic": [
+          0.1,
+          0.18
+        ],
+        "legendary": [
+          0.03,
+          0.08
+        ]
+      },
+      "inBand": {
+        "common": false,
+        "uncommon": true,
+        "rare": false,
+        "epic": true,
+        "legendary": true
+      }
+    },
+    "relics": {
+      "counts": {
+        "common": 2,
+        "uncommon": 6,
+        "rare": 7,
+        "epic": 4,
+        "legendary": 5,
+        "unique": 0,
+        "wrld": 3,
+        "missing": 0,
+        "total": 27
+      },
+      "ordinaryDenom": 24,
+      "ordinaryPct": {
+        "common": 0.08333333333333333,
+        "uncommon": 0.25,
+        "rare": 0.2916666666666667,
+        "epic": 0.16666666666666666,
+        "legendary": 0.20833333333333334
+      },
+      "unique": 0,
+      "wrld": 3,
+      "bandKey": "relics",
+      "bands": {
+        "common": [
+          0.05,
+          0.15
+        ],
+        "uncommon": [
+          0.2,
+          0.3
+        ],
+        "rare": [
+          0.25,
+          0.35
+        ],
+        "epic": [
+          0.15,
+          0.25
+        ],
+        "legendary": [
+          0.08,
+          0.15
+        ]
+      },
+      "inBand": {
+        "common": true,
+        "uncommon": true,
+        "rare": true,
+        "epic": true,
+        "legendary": false
+      }
+    },
+    "consumables": {
+      "counts": {
+        "common": 5,
+        "uncommon": 7,
+        "rare": 3,
+        "epic": 0,
+        "legendary": 0,
+        "unique": 0,
+        "wrld": 0,
+        "missing": 0,
+        "total": 15
+      },
+      "ordinaryDenom": 15,
+      "ordinaryPct": {
+        "common": 0.3333333333333333,
+        "uncommon": 0.4666666666666667,
+        "rare": 0.2,
+        "epic": 0,
+        "legendary": 0
+      },
+      "unique": 0,
+      "wrld": 0,
+      "bandKey": "consumables",
+      "bands": {
+        "common": [
+          0.3,
+          0.45
+        ],
+        "uncommon": [
+          0.3,
+          0.4
+        ],
+        "rare": [
+          0.15,
+          0.25
+        ],
+        "epic": [
+          0.05,
+          0.1
+        ],
+        "legendary": [
+          0.01,
+          0.05
+        ]
+      },
+      "inBand": {
+        "common": true,
+        "uncommon": false,
+        "rare": true,
+        "epic": false,
+        "legendary": false
+      }
+    },
+    "ordinaryLoot": {
+      "counts": {
+        "common": 13,
+        "uncommon": 32,
+        "rare": 42,
+        "epic": 19,
+        "legendary": 7,
+        "unique": 0,
+        "wrld": 0,
+        "missing": 0,
+        "total": 113
+      },
+      "ordinaryDenom": 113,
+      "ordinaryPct": {
+        "common": 0.11504424778761062,
+        "uncommon": 0.2831858407079646,
+        "rare": 0.37168141592920356,
+        "epic": 0.168141592920354,
+        "legendary": 0.061946902654867256
+      },
+      "unique": 0,
+      "wrld": 0,
+      "bandKey": "ordinaryEquipment",
+      "bands": {
+        "common": [
+          0.2,
+          0.3
+        ],
+        "uncommon": [
+          0.25,
+          0.35
+        ],
+        "rare": [
+          0.2,
+          0.3
+        ],
+        "epic": [
+          0.1,
+          0.18
+        ],
+        "legendary": [
+          0.03,
+          0.08
+        ]
+      },
+      "inBand": {
+        "common": false,
+        "uncommon": true,
+        "rare": false,
+        "epic": true,
+        "legendary": true
+      }
+    }
+  },
+  "pack": {
+    "equipment": {
+      "counts": {
+        "common": 16,
+        "uncommon": 76,
+        "rare": 63,
+        "epic": 50,
+        "legendary": 10,
+        "unique": 3,
+        "wrld": 0,
+        "missing": 0,
+        "total": 218
+      },
+      "ordinaryDenom": 215,
+      "ordinaryPct": {
+        "common": 0.07441860465116279,
+        "uncommon": 0.35348837209302325,
+        "rare": 0.2930232558139535,
+        "epic": 0.23255813953488372,
+        "legendary": 0.046511627906976744
+      },
+      "unique": 3,
+      "wrld": 0,
+      "bandKey": "ordinaryEquipment",
+      "bands": {
+        "common": [
+          0.2,
+          0.3
+        ],
+        "uncommon": [
+          0.25,
+          0.35
+        ],
+        "rare": [
+          0.2,
+          0.3
+        ],
+        "epic": [
+          0.1,
+          0.18
+        ],
+        "legendary": [
+          0.03,
+          0.08
+        ]
+      },
+      "inBand": {
+        "common": false,
+        "uncommon": false,
+        "rare": true,
+        "epic": false,
+        "legendary": true
+      }
+    },
+    "ordinaryEquipment": {
+      "counts": {
+        "common": 10,
+        "uncommon": 1,
+        "rare": 0,
+        "epic": 0,
+        "legendary": 0,
+        "unique": 0,
+        "wrld": 0,
+        "missing": 0,
+        "total": 11
+      },
+      "ordinaryDenom": 11,
+      "ordinaryPct": {
+        "common": 0.9090909090909091,
+        "uncommon": 0.09090909090909091,
+        "rare": 0,
+        "epic": 0,
+        "legendary": 0
+      },
+      "unique": 0,
+      "wrld": 0,
+      "bandKey": "ordinaryEquipment",
+      "bands": {
+        "common": [
+          0.2,
+          0.3
+        ],
+        "uncommon": [
+          0.25,
+          0.35
+        ],
+        "rare": [
+          0.2,
+          0.3
+        ],
+        "epic": [
+          0.1,
+          0.18
+        ],
+        "legendary": [
+          0.03,
+          0.08
+        ]
+      },
+      "inBand": {
+        "common": false,
+        "uncommon": false,
+        "rare": false,
+        "epic": false,
+        "legendary": false
+      }
+    },
+    "relics": {
+      "counts": {
+        "common": 4,
+        "uncommon": 10,
+        "rare": 12,
+        "epic": 6,
+        "legendary": 2,
+        "unique": 2,
+        "wrld": 1,
+        "missing": 0,
+        "total": 37
+      },
+      "ordinaryDenom": 34,
+      "ordinaryPct": {
+        "common": 0.11764705882352941,
+        "uncommon": 0.29411764705882354,
+        "rare": 0.35294117647058826,
+        "epic": 0.17647058823529413,
+        "legendary": 0.058823529411764705
+      },
+      "unique": 2,
+      "wrld": 1,
+      "bandKey": "relics",
+      "bands": {
+        "common": [
+          0.05,
+          0.15
+        ],
+        "uncommon": [
+          0.2,
+          0.3
+        ],
+        "rare": [
+          0.25,
+          0.35
+        ],
+        "epic": [
+          0.15,
+          0.25
+        ],
+        "legendary": [
+          0.08,
+          0.15
+        ]
+      },
+      "inBand": {
+        "common": true,
+        "uncommon": true,
+        "rare": false,
+        "epic": true,
+        "legendary": false
+      }
+    },
+    "consumables": {
+      "counts": {
+        "common": 22,
+        "uncommon": 22,
+        "rare": 11,
+        "epic": 6,
+        "legendary": 3,
+        "unique": 0,
+        "wrld": 0,
+        "missing": 0,
+        "total": 64
+      },
+      "ordinaryDenom": 64,
+      "ordinaryPct": {
+        "common": 0.34375,
+        "uncommon": 0.34375,
+        "rare": 0.171875,
+        "epic": 0.09375,
+        "legendary": 0.046875
+      },
+      "unique": 0,
+      "wrld": 0,
+      "bandKey": "consumables",
+      "bands": {
+        "common": [
+          0.3,
+          0.45
+        ],
+        "uncommon": [
+          0.3,
+          0.4
+        ],
+        "rare": [
+          0.15,
+          0.25
+        ],
+        "epic": [
+          0.05,
+          0.1
+        ],
+        "legendary": [
+          0.01,
+          0.05
+        ]
+      },
+      "inBand": {
+        "common": true,
+        "uncommon": true,
+        "rare": true,
+        "epic": true,
+        "legendary": true
+      }
+    },
+    "bySlot": {
+      "weapon": {
+        "counts": {
+          "common": 10,
+          "uncommon": 27,
+          "rare": 35,
+          "epic": 45,
+          "legendary": 10,
+          "unique": 2,
+          "wrld": 0,
+          "missing": 0,
+          "total": 129
+        },
+        "ordinaryDenom": 127,
+        "ordinaryPct": {
+          "common": 0.07874015748031496,
+          "uncommon": 0.2125984251968504,
+          "rare": 0.2755905511811024,
+          "epic": 0.3543307086614173,
+          "legendary": 0.07874015748031496
+        },
+        "unique": 2,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "helmet": {
+        "counts": {
+          "common": 1,
+          "uncommon": 21,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 22
+        },
+        "ordinaryDenom": 22,
+        "ordinaryPct": {
+          "common": 0.045454545454545456,
+          "uncommon": 0.9545454545454546,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "chest": {
+        "counts": {
+          "common": 3,
+          "uncommon": 6,
+          "rare": 28,
+          "epic": 5,
+          "legendary": 0,
+          "unique": 1,
+          "wrld": 0,
+          "missing": 0,
+          "total": 43
+        },
+        "ordinaryDenom": 42,
+        "ordinaryPct": {
+          "common": 0.07142857142857142,
+          "uncommon": 0.14285714285714285,
+          "rare": 0.6666666666666666,
+          "epic": 0.11904761904761904,
+          "legendary": 0
+        },
+        "unique": 1,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "legs": {
+        "counts": {
+          "common": 1,
+          "uncommon": 20,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 21
+        },
+        "ordinaryDenom": 21,
+        "ordinaryPct": {
+          "common": 0.047619047619047616,
+          "uncommon": 0.9523809523809523,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "boots": {
+        "counts": {
+          "common": 1,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 1
+        },
+        "ordinaryDenom": 1,
+        "ordinaryPct": {
+          "common": 1,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "accessory": {
+        "counts": {
+          "common": 0,
+          "uncommon": 2,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 2
+        },
+        "ordinaryDenom": 2,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 1,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      }
+    },
+    "byAcquisition": {
+      "ordinary": {
+        "counts": {
+          "common": 10,
+          "uncommon": 1,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 11
+        },
+        "ordinaryDenom": 11,
+        "ordinaryPct": {
+          "common": 0.9090909090909091,
+          "uncommon": 0.09090909090909091,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "event": {
+        "counts": {
+          "common": 32,
+          "uncommon": 54,
+          "rare": 28,
+          "epic": 12,
+          "legendary": 5,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 131
+        },
+        "ordinaryDenom": 131,
+        "ordinaryPct": {
+          "common": 0.24427480916030533,
+          "uncommon": 0.4122137404580153,
+          "rare": 0.21374045801526717,
+          "epic": 0.0916030534351145,
+          "legendary": 0.03816793893129771
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "class": {
+        "counts": {
+          "common": 0,
+          "uncommon": 22,
+          "rare": 38,
+          "epic": 28,
+          "legendary": 10,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 98
+        },
+        "ordinaryDenom": 98,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.22448979591836735,
+          "rare": 0.3877551020408163,
+          "epic": 0.2857142857142857,
+          "legendary": 0.10204081632653061
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "unique": {
+        "counts": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 3,
+          "wrld": 0,
+          "missing": 0,
+          "total": 3
+        },
+        "ordinaryDenom": 0,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 3,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "bloodline": {
+        "counts": {
+          "common": 0,
+          "uncommon": 31,
+          "rare": 9,
+          "epic": 8,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 48
+        },
+        "ordinaryDenom": 48,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.6458333333333334,
+          "rare": 0.1875,
+          "epic": 0.16666666666666666,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "cursed": {
+        "counts": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 11,
+          "epic": 14,
+          "legendary": 0,
+          "unique": 2,
+          "wrld": 0,
+          "missing": 0,
+          "total": 27
+        },
+        "ordinaryDenom": 25,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0.44,
+          "epic": 0.56,
+          "legendary": 0
+        },
+        "unique": 2,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "wrld": {
+        "counts": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 1,
+          "missing": 0,
+          "total": 1
+        },
+        "ordinaryDenom": 0,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 1,
+        "inBand": {}
+      }
+    },
+    "byClass": {
+      "warrior": {
+        "counts": {
+          "common": 0,
+          "uncommon": 2,
+          "rare": 4,
+          "epic": 2,
+          "legendary": 1,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 9
+        },
+        "ordinaryDenom": 9,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.2222222222222222,
+          "rare": 0.4444444444444444,
+          "epic": 0.2222222222222222,
+          "legendary": 0.1111111111111111
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "mage": {
+        "counts": {
+          "common": 0,
+          "uncommon": 2,
+          "rare": 4,
+          "epic": 2,
+          "legendary": 1,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 9
+        },
+        "ordinaryDenom": 9,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.2222222222222222,
+          "rare": 0.4444444444444444,
+          "epic": 0.2222222222222222,
+          "legendary": 0.1111111111111111
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "archer": {
+        "counts": {
+          "common": 0,
+          "uncommon": 2,
+          "rare": 3,
+          "epic": 3,
+          "legendary": 1,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 9
+        },
+        "ordinaryDenom": 9,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.2222222222222222,
+          "rare": 0.3333333333333333,
+          "epic": 0.3333333333333333,
+          "legendary": 0.1111111111111111
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "rogue": {
+        "counts": {
+          "common": 0,
+          "uncommon": 2,
+          "rare": 4,
+          "epic": 2,
+          "legendary": 1,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 9
+        },
+        "ordinaryDenom": 9,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.2222222222222222,
+          "rare": 0.4444444444444444,
+          "epic": 0.2222222222222222,
+          "legendary": 0.1111111111111111
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "priest": {
+        "counts": {
+          "common": 0,
+          "uncommon": 2,
+          "rare": 4,
+          "epic": 2,
+          "legendary": 1,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 9
+        },
+        "ordinaryDenom": 9,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.2222222222222222,
+          "rare": 0.4444444444444444,
+          "epic": 0.2222222222222222,
+          "legendary": 0.1111111111111111
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "monk": {
+        "counts": {
+          "common": 0,
+          "uncommon": 2,
+          "rare": 4,
+          "epic": 2,
+          "legendary": 1,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 9
+        },
+        "ordinaryDenom": 9,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.2222222222222222,
+          "rare": 0.4444444444444444,
+          "epic": 0.2222222222222222,
+          "legendary": 0.1111111111111111
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "bard": {
+        "counts": {
+          "common": 0,
+          "uncommon": 2,
+          "rare": 3,
+          "epic": 3,
+          "legendary": 1,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 9
+        },
+        "ordinaryDenom": 9,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.2222222222222222,
+          "rare": 0.3333333333333333,
+          "epic": 0.3333333333333333,
+          "legendary": 0.1111111111111111
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "necromancer": {
+        "counts": {
+          "common": 0,
+          "uncommon": 2,
+          "rare": 3,
+          "epic": 3,
+          "legendary": 1,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 9
+        },
+        "ordinaryDenom": 9,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.2222222222222222,
+          "rare": 0.3333333333333333,
+          "epic": 0.3333333333333333,
+          "legendary": 0.1111111111111111
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "spellsword": {
+        "counts": {
+          "common": 0,
+          "uncommon": 2,
+          "rare": 3,
+          "epic": 3,
+          "legendary": 0,
+          "unique": 1,
+          "wrld": 0,
+          "missing": 0,
+          "total": 9
+        },
+        "ordinaryDenom": 8,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.25,
+          "rare": 0.375,
+          "epic": 0.375,
+          "legendary": 0
+        },
+        "unique": 1,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "warlock": {
+        "counts": {
+          "common": 0,
+          "uncommon": 2,
+          "rare": 3,
+          "epic": 3,
+          "legendary": 1,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 9
+        },
+        "ordinaryDenom": 9,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.2222222222222222,
+          "rare": 0.3333333333333333,
+          "epic": 0.3333333333333333,
+          "legendary": 0.1111111111111111
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "viking": {
+        "counts": {
+          "common": 0,
+          "uncommon": 2,
+          "rare": 3,
+          "epic": 3,
+          "legendary": 1,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 9
+        },
+        "ordinaryDenom": 9,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.2222222222222222,
+          "rare": 0.3333333333333333,
+          "epic": 0.3333333333333333,
+          "legendary": 0.1111111111111111
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      }
+    },
+    "byBloodline": {
+      "human": {
+        "counts": {
+          "common": 0,
+          "uncommon": 4,
+          "rare": 1,
+          "epic": 1,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 6
+        },
+        "ordinaryDenom": 6,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.6666666666666666,
+          "rare": 0.16666666666666666,
+          "epic": 0.16666666666666666,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "elf": {
+        "counts": {
+          "common": 0,
+          "uncommon": 3,
+          "rare": 2,
+          "epic": 1,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 6
+        },
+        "ordinaryDenom": 6,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.5,
+          "rare": 0.3333333333333333,
+          "epic": 0.16666666666666666,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "orc": {
+        "counts": {
+          "common": 0,
+          "uncommon": 4,
+          "rare": 1,
+          "epic": 1,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 6
+        },
+        "ordinaryDenom": 6,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.6666666666666666,
+          "rare": 0.16666666666666666,
+          "epic": 0.16666666666666666,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "dwarf": {
+        "counts": {
+          "common": 0,
+          "uncommon": 4,
+          "rare": 1,
+          "epic": 1,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 6
+        },
+        "ordinaryDenom": 6,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.6666666666666666,
+          "rare": 0.16666666666666666,
+          "epic": 0.16666666666666666,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "halfling": {
+        "counts": {
+          "common": 0,
+          "uncommon": 5,
+          "rare": 1,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 6
+        },
+        "ordinaryDenom": 6,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.8333333333333334,
+          "rare": 0.16666666666666666,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "tiefling": {
+        "counts": {
+          "common": 0,
+          "uncommon": 4,
+          "rare": 1,
+          "epic": 1,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 6
+        },
+        "ordinaryDenom": 6,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.6666666666666666,
+          "rare": 0.16666666666666666,
+          "epic": 0.16666666666666666,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "beastfolk": {
+        "counts": {
+          "common": 0,
+          "uncommon": 4,
+          "rare": 1,
+          "epic": 1,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 6
+        },
+        "ordinaryDenom": 6,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.6666666666666666,
+          "rare": 0.16666666666666666,
+          "epic": 0.16666666666666666,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "dragonkin": {
+        "counts": {
+          "common": 0,
+          "uncommon": 3,
+          "rare": 1,
+          "epic": 2,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 0,
+          "total": 6
+        },
+        "ordinaryDenom": 6,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0.5,
+          "rare": 0.16666666666666666,
+          "epic": 0.3333333333333333,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      }
+    },
+    "byFloorBand": {
+      "1-10 forest": {
+        "counts": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 148,
+          "total": 148
+        },
+        "ordinaryDenom": 0,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "31-40 swamp": {
+        "counts": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 20,
+          "total": 20
+        },
+        "ordinaryDenom": 0,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "11-20 ruins": {
+        "counts": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 75,
+          "total": 75
+        },
+        "ordinaryDenom": 0,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "21-30 frost": {
+        "counts": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 43,
+          "total": 43
+        },
+        "ordinaryDenom": 0,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "41-50 hell": {
+        "counts": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 33,
+          "total": 33
+        },
+        "ordinaryDenom": 0,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      }
+    },
+    "byBiome": {
+      "forest": {
+        "counts": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 22,
+          "total": 22
+        },
+        "ordinaryDenom": 0,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "swamp": {
+        "counts": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 21,
+          "total": 21
+        },
+        "ordinaryDenom": 0,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "ruins": {
+        "counts": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 25,
+          "total": 25
+        },
+        "ordinaryDenom": 0,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "hell": {
+        "counts": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 39,
+          "total": 39
+        },
+        "ordinaryDenom": 0,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      },
+      "frost": {
+        "counts": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0,
+          "unique": 0,
+          "wrld": 0,
+          "missing": 14,
+          "total": 14
+        },
+        "ordinaryDenom": 0,
+        "ordinaryPct": {
+          "common": 0,
+          "uncommon": 0,
+          "rare": 0,
+          "epic": 0,
+          "legendary": 0
+        },
+        "unique": 0,
+        "wrld": 0,
+        "inBand": {}
+      }
+    },
+    "slotOpportunities": {
+      "weapon": {
+        "total": 129,
+        "unique": 2,
+        "wrld": 0,
+        "legendary": 10,
+        "uniqueFlagNotRarity": 10
+      },
+      "helmet": {
+        "total": 22,
+        "unique": 0,
+        "wrld": 0,
+        "legendary": 0,
+        "uniqueFlagNotRarity": 0
+      },
+      "chest": {
+        "total": 43,
+        "unique": 1,
+        "wrld": 0,
+        "legendary": 0,
+        "uniqueFlagNotRarity": 0
+      },
+      "legs": {
+        "total": 21,
+        "unique": 0,
+        "wrld": 0,
+        "legendary": 0,
+        "uniqueFlagNotRarity": 0
+      },
+      "boots": {
+        "total": 1,
+        "unique": 0,
+        "wrld": 0,
+        "legendary": 0,
+        "uniqueFlagNotRarity": 0
+      },
+      "accessory": {
+        "total": 2,
+        "unique": 0,
+        "wrld": 0,
+        "legendary": 0,
+        "uniqueFlagNotRarity": 0
+      },
+      "relic": {
+        "total": 37,
+        "unique": 2,
+        "wrld": 1,
+        "legendary": 2,
+        "uniqueFlagNotRarity": 0
+      },
+      "consumable": {
+        "total": 64,
+        "unique": 0,
+        "wrld": 0,
+        "legendary": 3,
+        "uniqueFlagNotRarity": 0
+      }
+    }
+  },
+  "combinedOrdinaryLoot": {
+    "counts": {
+      "common": 23,
+      "uncommon": 33,
+      "rare": 42,
+      "epic": 19,
+      "legendary": 7,
+      "unique": 0,
+      "wrld": 0,
+      "missing": 0,
+      "total": 124
+    },
+    "ordinaryDenom": 124,
+    "ordinaryPct": {
+      "common": 0.18548387096774194,
+      "uncommon": 0.2661290322580645,
+      "rare": 0.3387096774193548,
+      "epic": 0.1532258064516129,
+      "legendary": 0.056451612903225805
+    },
+    "unique": 0,
+    "wrld": 0,
+    "bandKey": "ordinaryEquipment",
+    "bands": {
+      "common": [
+        0.2,
+        0.3
+      ],
+      "uncommon": [
+        0.25,
+        0.35
+      ],
+      "rare": [
+        0.2,
+        0.3
+      ],
+      "epic": [
+        0.1,
+        0.18
+      ],
+      "legendary": [
+        0.03,
+        0.08
+      ]
+    },
+    "inBand": {
+      "common": false,
+      "uncommon": true,
+      "rare": false,
+      "epic": true,
+      "legendary": true
+    }
+  },
+  "uniqueCatalogSize": 17,
+  "wrldCatalogSize": 16,
+  "rarityChanges": [
+    {
+      "id": "cp_seventh_owner_sword",
+      "name": "Seventh-Owner Sword",
+      "from": "legendary",
+      "to": "unique",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Named identity, exclusive grant, non-duplicable, non-affixable, and excluded from ordinary loot/shop."
+    },
+    {
+      "id": "cp_many_banner_longsword",
+      "name": "Many-Banner Longsword",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Bloodline tier-2 weapon was authored Rare in bulk. Identity kept; numbers were already Uncommon-band."
+    },
+    {
+      "id": "cp_witness_spear",
+      "name": "Witness Spear",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Bloodline tier-2 weapon was authored Rare in bulk. Identity kept; numbers were already Uncommon-band."
+    },
+    {
+      "id": "cp_memory_branch_bow",
+      "name": "Memory-Branch Bow",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Bloodline tier-2 weapon was authored Rare in bulk. Identity kept; numbers were already Uncommon-band."
+    },
+    {
+      "id": "cp_tollbreaker_cleaver",
+      "name": "Tollbreaker Cleaver",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Bloodline tier-2 weapon was authored Rare in bulk. Identity kept; numbers were already Uncommon-band."
+    },
+    {
+      "id": "cp_clan_weight_maul",
+      "name": "Clan-Weight Maul",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Bloodline tier-2 weapon was authored Rare in bulk. Identity kept; numbers were already Uncommon-band."
+    },
+    {
+      "id": "cp_gate_mason_hammer",
+      "name": "Gate-Mason Hammer",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Bloodline tier-2 weapon was authored Rare in bulk. Identity kept; numbers were already Uncommon-band."
+    },
+    {
+      "id": "cp_ledger_pick",
+      "name": "Ledger Pick",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Bloodline tier-2 weapon was authored Rare in bulk. Identity kept; numbers were already Uncommon-band."
+    },
+    {
+      "id": "cp_pocket_gate_knife",
+      "name": "Pocket-Gate Knife",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Bloodline tier-2 weapon was authored Rare in bulk. Identity kept; numbers were already Uncommon-band."
+    },
+    {
+      "id": "cp_second_breakfast_sling",
+      "name": "Second-Breakfast Sling",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Bloodline tier-2 weapon was authored Rare in bulk. Identity kept; numbers were already Uncommon-band."
+    },
+    {
+      "id": "cp_toll_skipping_cane",
+      "name": "Toll-Skipping Cane",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Bloodline tier-2 weapon was authored Rare in bulk. Identity kept; numbers were already Uncommon-band."
+    },
+    {
+      "id": "cp_appeal_denied_trident",
+      "name": "Appeal-Denied Trident",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Bloodline tier-2 weapon was authored Rare in bulk. Identity kept; numbers were already Uncommon-band."
+    },
+    {
+      "id": "cp_ember_ink_dagger",
+      "name": "Ember-Ink Dagger",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Bloodline tier-2 weapon was authored Rare in bulk. Identity kept; numbers were already Uncommon-band."
+    },
+    {
+      "id": "cp_scent_of_tomorrow_claws",
+      "name": "Scent-of-Tomorrow Claws",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Bloodline tier-2 weapon was authored Rare in bulk. Identity kept; numbers were already Uncommon-band."
+    },
+    {
+      "id": "cp_moon_fang_shortbow",
+      "name": "Moon-Fang Shortbow",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Bloodline tier-2 weapon was authored Rare in bulk. Identity kept; numbers were already Uncommon-band."
+    },
+    {
+      "id": "cp_hoardscale_hammer",
+      "name": "Hoardscale Hammer",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Bloodline tier-2 weapon was authored Rare in bulk. Identity kept; numbers were already Uncommon-band."
+    },
+    {
+      "id": "cp_drowned_brides_rapier",
+      "name": "Drowned Bride's Rapier",
+      "from": "rare",
+      "to": "epic",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Defining cursed/class mechanic already sat in the Epic band."
+    },
+    {
+      "id": "cp_blade_lists_you",
+      "name": "The Blade That Lists You as Equipment",
+      "from": "legendary",
+      "to": "unique",
+      "category": "weapon",
+      "slot": "weapon",
+      "explanation": "Named identity, exclusive grant, non-duplicable, non-affixable, and excluded from ordinary loot/shop."
+    },
+    {
+      "id": "cp_last_bastion_helm",
+      "name": "Last Bastion Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_last_bastion_legs",
+      "name": "Last Bastion Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_illegal_margin_helm",
+      "name": "Illegal Margin Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_illegal_margin_legs",
+      "name": "Illegal Margin Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_three_trails_helm",
+      "name": "Three Trails Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_three_trails_legs",
+      "name": "Three Trails Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_unseen_auditor_helm",
+      "name": "Unseen Auditor Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_unseen_auditor_legs",
+      "name": "Unseen Auditor Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_nameless_saint_helm",
+      "name": "Nameless Saint Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_nameless_saint_legs",
+      "name": "Nameless Saint Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_empty_gate_helm",
+      "name": "Empty Gate Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_empty_gate_legs",
+      "name": "Empty Gate Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_stolen_applause_helm",
+      "name": "Stolen Applause Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_stolen_applause_legs",
+      "name": "Stolen Applause Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_seventh_funeral_helm",
+      "name": "Seventh Funeral Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_seventh_funeral_legs",
+      "name": "Seventh Funeral Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_inward_edge_helm",
+      "name": "Inward Edge Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_inward_edge_legs",
+      "name": "Inward Edge Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_clause_seven_helm",
+      "name": "Clause Seven Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_clause_seven_legs",
+      "name": "Clause Seven Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_raid_wake_helm",
+      "name": "Raid Wake Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_raid_wake_legs",
+      "name": "Raid Wake Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_many_banner_helm",
+      "name": "Many-Banner Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_many_banner_legs",
+      "name": "Many-Banner Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_memory_bark_helm",
+      "name": "Memory-Bark Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_memory_bark_legs",
+      "name": "Memory-Bark Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_oathscar_helm",
+      "name": "Oathscar Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_oathscar_legs",
+      "name": "Oathscar Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_mason_plate_helm",
+      "name": "Mason Plate Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_mason_plate_legs",
+      "name": "Mason Plate Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_hidden_pocket_helm",
+      "name": "Hidden-Pocket Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_hidden_pocket_legs",
+      "name": "Hidden-Pocket Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_clauseplate_helm",
+      "name": "Clauseplate Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_clauseplate_legs",
+      "name": "Clauseplate Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_packhide_helm",
+      "name": "Packhide Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_packhide_legs",
+      "name": "Packhide Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_hingescale_helm",
+      "name": "Hingescale Helm",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "helmet",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_hingescale_legs",
+      "name": "Hingescale Greaves",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "armor",
+      "slot": "legs",
+      "explanation": "Set helm/greaves were a group Rare default; 3pc bonus is the identity, so off-chest pieces drop to Uncommon."
+    },
+    {
+      "id": "cp_the_empty_seat",
+      "name": "The Empty Seat",
+      "from": "epic",
+      "to": "unique",
+      "category": "armor",
+      "slot": "chest",
+      "explanation": "Named identity, exclusive grant, non-duplicable, non-affixable, and excluded from ordinary loot/shop."
+    },
+    {
+      "id": "cp_seventh_nameplate",
+      "name": "Seventh Nameplate",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to uncommon from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_provisional_hero_badge",
+      "name": "Provisional Hero Badge",
+      "from": "rare",
+      "to": "epic",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to epic from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_crimson_crystal_shard",
+      "name": "Crimson Crystal Shard",
+      "from": "rare",
+      "to": "legendary",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to legendary from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_last_companions_bell",
+      "name": "Last Companion's Bell",
+      "from": "rare",
+      "to": "unique",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to unique from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_empty_saint_icon",
+      "name": "Empty Saint Icon",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to uncommon from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_gate_beast_eggshell",
+      "name": "Gate-Beast Eggshell",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to uncommon from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_ring_seven_owners",
+      "name": "Ring of Seven Owners",
+      "from": "rare",
+      "to": "legendary",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to legendary from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_redacted_support_ticket",
+      "name": "Redacted Support Ticket",
+      "from": "rare",
+      "to": "epic",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to epic from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_receipt_from_tomorrow",
+      "name": "Receipt from Tomorrow",
+      "from": "rare",
+      "to": "epic",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to epic from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_drowned_crown_fragment",
+      "name": "Drowned Crown Fragment",
+      "from": "rare",
+      "to": "epic",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to epic from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_ashen_rival_ember",
+      "name": "Ashen Rival's Ember",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to uncommon from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_bottle_of_applause",
+      "name": "Bottle of Applause",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to uncommon from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_unminted_coin",
+      "name": "Unminted Coin",
+      "from": "rare",
+      "to": "common",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to common from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_kiln_memory_slag",
+      "name": "Kiln Memory Slag",
+      "from": "rare",
+      "to": "common",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to common from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_moss_chapel_candle",
+      "name": "Moss Chapel Candle",
+      "from": "rare",
+      "to": "common",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to common from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_cowardice_plaque",
+      "name": "Plaque of Intended Survival",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to uncommon from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_frogs_hero_license",
+      "name": "Frog's Hero License",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to uncommon from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_demon_queue_token",
+      "name": "Demon's Queue Token",
+      "from": "rare",
+      "to": "epic",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to epic from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_corpse_flower_seed",
+      "name": "Corpse-Flower Seed",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to uncommon from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_invisible_toll_receipt",
+      "name": "Invisible Toll Receipt",
+      "from": "rare",
+      "to": "common",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to common from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_refugee_camp_banner",
+      "name": "Refugee Camp Banner",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to uncommon from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_administrators_bent_key",
+      "name": "Administrator's Bent Key",
+      "from": "rare",
+      "to": "epic",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to epic from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_unwritten_achievement",
+      "name": "The Unwritten Achievement",
+      "from": "rare",
+      "to": "wrld",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to wrld from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_empty_inventory_slot",
+      "name": "Empty Inventory Slot",
+      "from": "rare",
+      "to": "uncommon",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to uncommon from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_thrones_blank_sheet",
+      "name": "Throne's Blank Character Sheet",
+      "from": "rare",
+      "to": "unique",
+      "category": "relic",
+      "slot": "relic",
+      "explanation": "Relic helper defaulted every missing rarity to Rare. Reclassified to unique from actual power, exclusivity, and identity."
+    },
+    {
+      "id": "cp_stitchleaf_tonic",
+      "name": "Stitchleaf Tonic",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_gate_salt_vial",
+      "name": "Gate-Salt Vial",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_ashmilk_flask",
+      "name": "Ashmilk Flask",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_iceblood_cordial",
+      "name": "Iceblood Cordial",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_bog_antivenom",
+      "name": "Bog Antivenom",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_last_companions_dose",
+      "name": "Last Companion's Dose",
+      "from": "uncommon",
+      "to": "epic",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to epic from heal/combat significance."
+    },
+    {
+      "id": "cp_crimson_continuance",
+      "name": "Crimson Continuance",
+      "from": "uncommon",
+      "to": "epic",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to epic from heal/combat significance."
+    },
+    {
+      "id": "cp_pilgrims_shared_cup",
+      "name": "Pilgrim's Shared Cup",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_corpse_flower_nectar",
+      "name": "Corpse-Flower Nectar",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_unregistered_remedy",
+      "name": "Unregistered Remedy",
+      "from": "uncommon",
+      "to": "rare",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to rare from heal/combat significance."
+    },
+    {
+      "id": "cp_kilnfire_ampoule",
+      "name": "Kilnfire Ampoule",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_rootbomb",
+      "name": "Rootbomb",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_frostglass_dust",
+      "name": "Frostglass Dust",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_bogfire_jar",
+      "name": "Bogfire Jar",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_gate_nail_bundle",
+      "name": "Gate-Nail Bundle",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_mirror_coin",
+      "name": "Mirror Coin",
+      "from": "uncommon",
+      "to": "epic",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to epic from heal/combat significance."
+    },
+    {
+      "id": "cp_crowned_deer_musk",
+      "name": "Crowned-Deer Musk",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_invisible_toll_powder",
+      "name": "Invisible Toll Powder",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_echo_chalk",
+      "name": "Echo Chalk",
+      "from": "uncommon",
+      "to": "epic",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to epic from heal/combat significance."
+    },
+    {
+      "id": "cp_system_static_grenade",
+      "name": "System Static Grenade",
+      "from": "uncommon",
+      "to": "epic",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to epic from heal/combat significance."
+    },
+    {
+      "id": "cp_surveyors_flare",
+      "name": "Surveyor's Flare",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_refugee_smokecloth",
+      "name": "Refugee Smokecloth",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_frozen_hearth_coal",
+      "name": "Frozen Hearth Coal",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_swamp_reed_filter",
+      "name": "Swamp Reed Filter",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_reforging_resin",
+      "name": "Reforging Resin",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_funeral_receipt",
+      "name": "Funeral Receipt",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_futures_contract_stub",
+      "name": "Futures Contract Stub",
+      "from": "uncommon",
+      "to": "rare",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to rare from heal/combat significance."
+    },
+    {
+      "id": "cp_masons_chalk",
+      "name": "Mason's Chalk",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_portable_kiln_brick",
+      "name": "Portable Kiln Brick",
+      "from": "uncommon",
+      "to": "rare",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to rare from heal/combat significance."
+    },
+    {
+      "id": "cp_memory_thread",
+      "name": "Memory Thread",
+      "from": "uncommon",
+      "to": "rare",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to rare from heal/combat significance."
+    },
+    {
+      "id": "cp_monster_lure_incense",
+      "name": "Monster-Lure Incense",
+      "from": "uncommon",
+      "to": "rare",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to rare from heal/combat significance."
+    },
+    {
+      "id": "cp_pilgrims_ration",
+      "name": "Pilgrim's Ration",
+      "from": "uncommon",
+      "to": "common",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to common from heal/combat significance."
+    },
+    {
+      "id": "cp_potion_too_much_healing",
+      "name": "Potion of Too Much Healing",
+      "from": "uncommon",
+      "to": "legendary",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to legendary from heal/combat significance."
+    },
+    {
+      "id": "cp_tomorrows_antidote",
+      "name": "Tomorrow's Antidote",
+      "from": "uncommon",
+      "to": "rare",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to rare from heal/combat significance."
+    },
+    {
+      "id": "cp_false_resurrection_draught",
+      "name": "False Resurrection Draught",
+      "from": "uncommon",
+      "to": "epic",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to epic from heal/combat significance."
+    },
+    {
+      "id": "cp_fame_distillate",
+      "name": "Fame Distillate",
+      "from": "uncommon",
+      "to": "rare",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to rare from heal/combat significance."
+    },
+    {
+      "id": "cp_liquid_contract",
+      "name": "Liquid Contract",
+      "from": "uncommon",
+      "to": "rare",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to rare from heal/combat significance."
+    },
+    {
+      "id": "cp_gate_parasite_culture",
+      "name": "Gate-Parasite Culture",
+      "from": "uncommon",
+      "to": "rare",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to rare from heal/combat significance."
+    },
+    {
+      "id": "cp_drowned_memory_wine",
+      "name": "Drowned Memory Wine",
+      "from": "uncommon",
+      "to": "rare",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to rare from heal/combat significance."
+    },
+    {
+      "id": "cp_crimson_save_ink",
+      "name": "Crimson Save Ink",
+      "from": "uncommon",
+      "to": "legendary",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to legendary from heal/combat significance."
+    },
+    {
+      "id": "cp_heroic_overdose",
+      "name": "Heroic Overdose",
+      "from": "uncommon",
+      "to": "legendary",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to legendary from heal/combat significance."
+    },
+    {
+      "id": "cp_system_crash_tonic",
+      "name": "System-Crash Tonic",
+      "from": "uncommon",
+      "to": "rare",
+      "category": "consumable",
+      "slot": "consumable",
+      "explanation": "Consumable helper defaulted every missing rarity to Uncommon. Reclassified to rare from heal/combat significance."
+    }
+  ],
+  "numericalChanges": [
+    {
+      "id": "cp_world_shutting_door",
+      "field": "atk",
+      "from": 10,
+      "to": 12,
+      "why": "Legendary intercept identity was under the class-capstone floor."
+    },
+    {
+      "id": "cp_world_shutting_door",
+      "field": "interceptAoe.pct",
+      "from": 0.55,
+      "to": 0.7,
+      "why": "Defining mechanic; engine clamp is 0.7."
+    },
+    {
+      "id": "cp_administrator_error_scepter",
+      "field": "atk",
+      "from": 8,
+      "to": 10,
+      "why": "Legendary floor after keeping Unique rarity off the class pile."
+    },
+    {
+      "id": "cp_administrator_error_scepter",
+      "field": "weakenIntent",
+      "from": null,
+      "to": 0.85,
+      "why": "Once-per-combat intent weaken is the signature, not extra INT."
+    },
+    {
+      "id": "cp_world_scent_javelin",
+      "field": "atk",
+      "from": 9,
+      "to": 11,
+      "why": "Legendary mark-hunter floor."
+    },
+    {
+      "id": "cp_world_scent_javelin",
+      "field": "vsMarked",
+      "from": null,
+      "to": 1.18,
+      "why": "Defining mark rider."
+    },
+    {
+      "id": "cp_black_ledger_stiletto",
+      "field": "crit",
+      "from": 10,
+      "to": 14,
+      "why": "Legendary crit identity."
+    },
+    {
+      "id": "cp_black_ledger_stiletto",
+      "field": "modDamage.add",
+      "from": 2,
+      "to": 4,
+      "why": "Ledger fee on hit."
+    },
+    {
+      "id": "cp_staff_seven_forgotten_names",
+      "field": "atk",
+      "from": 7,
+      "to": 9,
+      "why": "Legendary floor."
+    },
+    {
+      "id": "cp_staff_seven_forgotten_names",
+      "field": "biomeAdd",
+      "from": 1,
+      "to": 2,
+      "why": "Biome-name rider, not generic ATK."
+    },
+    {
+      "id": "cp_staff_no_possession",
+      "field": "atk",
+      "from": 8,
+      "to": 10,
+      "why": "Legendary floor."
+    },
+    {
+      "id": "cp_staff_no_possession",
+      "field": "dmgMult",
+      "from": 1.15,
+      "to": 1.22,
+      "why": "Empty-handed signature."
+    },
+    {
+      "id": "cp_bell_final_chorus",
+      "field": "atk",
+      "from": 7,
+      "to": 9,
+      "why": "Legendary floor."
+    },
+    {
+      "id": "cp_bell_final_chorus",
+      "field": "crescendo",
+      "from": 1.2,
+      "to": 1.3,
+      "why": "Chorus rider."
+    },
+    {
+      "id": "cp_corpse_flower_sickle",
+      "field": "heal",
+      "from": 0.05,
+      "to": 0.08,
+      "why": "Kill-bloom identity."
+    },
+    {
+      "id": "cp_corpse_flower_sickle",
+      "field": "grantResource",
+      "from": 6,
+      "to": 10,
+      "why": "Necromancer resource signature."
+    },
+    {
+      "id": "cp_seventh_signature_contract",
+      "field": "atk",
+      "from": 8,
+      "to": 10,
+      "why": "Legendary floor."
+    },
+    {
+      "id": "cp_valhalla_boarding_axe",
+      "field": "heal",
+      "from": 0.08,
+      "to": 0.12,
+      "why": "Boarding lifesteal identity."
+    },
+    {
+      "id": "cp_valhalla_boarding_axe",
+      "field": "grantResource",
+      "from": 8,
+      "to": 12,
+      "why": "Fury window."
+    },
+    {
+      "id": "cp_seventh_owner_sword",
+      "field": "atk",
+      "from": 10,
+      "to": 14,
+      "why": "Unique rarity promotion; still below vanilla Unique ATK on purpose."
+    },
+    {
+      "id": "cp_seventh_owner_sword",
+      "field": "dmgMult",
+      "from": 1.1,
+      "to": 1.15,
+      "why": "Owner-chain rider."
+    },
+    {
+      "id": "cp_blade_lists_you",
+      "field": "atk",
+      "from": 9,
+      "to": 12,
+      "why": "Unique cursed listing."
+    },
+    {
+      "id": "cp_blade_lists_you",
+      "field": "contestLethal",
+      "from": 10,
+      "to": 14,
+      "why": "Unequip-person is a lethal contest, not deletion."
+    },
+    {
+      "id": "cp_unwritten_achievement",
+      "field": "allStats",
+      "from": 0,
+      "to": 2,
+      "why": "WRLD identity; below World Seed (+5)."
+    },
+    {
+      "id": "cp_unwritten_achievement",
+      "field": "xpMult",
+      "from": 1,
+      "to": 1.2,
+      "why": "WRLD ledger, not ordinary XP stick."
+    },
+    {
+      "id": "cp_unwritten_achievement",
+      "field": "fameGainMult",
+      "from": 1,
+      "to": 1.25,
+      "why": "Unusual-deed fame rider."
+    },
+    {
+      "id": "cp_last_companions_dose",
+      "field": "rarity",
+      "from": "uncommon",
+      "to": "epic",
+      "why": "Party-triage heal is run-shaping, not a bulk uncommon potion."
+    },
+    {
+      "id": "cp_crimson_continuance",
+      "field": "rarity",
+      "from": "uncommon",
+      "to": "epic",
+      "why": "1-HP continuance is an epic consumable, not a shop uncommon."
+    },
+    {
+      "id": "cp_echo_chalk",
+      "field": "echoMult",
+      "from": 0.4,
+      "to": 0.55,
+      "why": "Epic echo consumable."
+    },
+    {
+      "id": "cp_false_resurrection_draught",
+      "field": "echoMult",
+      "from": 0.45,
+      "to": 0.6,
+      "why": "Epic false-revive echo."
+    },
+    {
+      "id": "cp_potion_too_much_healing",
+      "field": "healPct",
+      "from": 0.55,
+      "to": 1,
+      "why": "Legendary full heal with a max-HP wound."
+    },
+    {
+      "id": "cp_heroic_overdose",
+      "field": "grantCharge",
+      "from": 1,
+      "to": 3,
+      "why": "Legendary charge spike, not a second startCharge relic."
+    },
+    {
+      "id": "cp_crimson_save_ink",
+      "field": "healPct",
+      "from": 0,
+      "to": 0.2,
+      "why": "Legendary HP snapshot plus a heal rider; still not a save-file restore."
+    }
+  ],
+  "uniqueRules": [
+    {
+      "id": "cp_seventh_owner_sword",
+      "rarity": "unique",
+      "ordinaryLoot": false,
+      "shopEligible": false,
+      "affixEligible": false,
+      "duplicatePolicy": "character",
+      "named": true,
+      "specialAcquisition": true,
+      "grantEvents": [
+        "cp_seventh_owner"
+      ]
+    },
+    {
+      "id": "cp_blade_lists_you",
+      "rarity": "unique",
+      "ordinaryLoot": false,
+      "shopEligible": false,
+      "affixEligible": false,
+      "duplicatePolicy": "character",
+      "named": true,
+      "specialAcquisition": true,
+      "grantEvents": [
+        "cp_inventory_teammate"
+      ]
+    },
+    {
+      "id": "cp_the_empty_seat",
+      "rarity": "unique",
+      "ordinaryLoot": false,
+      "shopEligible": false,
+      "affixEligible": false,
+      "duplicatePolicy": "character",
+      "named": true,
+      "specialAcquisition": true,
+      "grantEvents": [
+        "cp_empty_place_camp"
+      ]
+    },
+    {
+      "id": "cp_last_companions_bell",
+      "rarity": "unique",
+      "ordinaryLoot": false,
+      "shopEligible": false,
+      "affixEligible": false,
+      "duplicatePolicy": "character",
+      "named": true,
+      "specialAcquisition": true,
+      "grantEvents": [
+        "cp_bell_rings_again"
+      ]
+    },
+    {
+      "id": "cp_thrones_blank_sheet",
+      "rarity": "unique",
+      "ordinaryLoot": false,
+      "shopEligible": false,
+      "affixEligible": false,
+      "duplicatePolicy": "character",
+      "named": true,
+      "specialAcquisition": true,
+      "grantEvents": [
+        "cp_throne_empty_sheet"
+      ]
+    }
+  ],
+  "wrldRules": [
+    {
+      "id": "cp_unwritten_achievement",
+      "rarity": "wrld",
+      "ordinaryLoot": false,
+      "shopEligible": false,
+      "affixEligible": false,
+      "duplicatePolicy": "party_claim",
+      "grantEvents": [
+        "cp_weakest_link",
+        "cp_patch_notes_tomorrow"
+      ]
+    }
+  ],
+  "uniqueRuleFailures": [],
+  "wrldRuleFailures": [],
+  "missingRarity": [],
+  "powerMisses": [],
+  "compendiumMismatch": [],
+  "cursedAsRarity": [],
+  "remainingConcerns": [
+    "Do not deploy. Kill switch remains ?pack=0 / DT_CONTENT_PACK=0.",
+    "No Unique/WRLD consumables: single-use claim semantics were judged too easy to hoard or duplicate across reconnect/checkpoint.",
+    "Helmet, legs, boots, and accessory still have no pack Unique or WRLD pieces — class set greaves stay Uncommon on purpose.",
+    "Pack Unique items are exclusive event grants and do not enter rollUnique; vanilla Unique chase tables are unchanged.",
+    "Pack WRLD relic (The Unwritten Achievement) is event-granted and claim-ledgered; it is excluded from shops, ordinary relic rolls, and the 1% duel WRLD table.",
+    "Class signature weapons remain Legendary with unique:true rather than Unique rarity so Unique stays scarce.",
+    "Healing pack consumables stay shopMaxTier 0 so vanilla potion_s is not diluted.",
+    "Pack relics remain event-exclusive; rarity now drives price and identity, not random relic-table flooding.",
+    "Consumable outcome grants (o.consumable) still push IDs directly; Unique/WRLD consumables were not added."
+  ],
+  "entryCount": 530,
+  "packEntryCount": 319,
+  "vanillaEntryCount": 211
+}

@@ -6,16 +6,16 @@ import { EVENTS, findEvent } from '../js/data/events.js';
 import { presentEvent, recordEvent } from '../js/data/world.js';
 import { classifyFloor, dealLiveFloorCards, LAST_FLOOR } from '../js/data/floorcards.js';
 import { biomeForFloor, ENEMIES, pickBossForFloor, pickTrialModifier, ALT_BOSSES } from '../js/data/enemies.js';
-import { CONSUMABLES } from '../js/data/items.js';
+import { CONSUMABLES, itemById, itemUsefulForClass, itemIncompatibleForClass } from '../js/data/items.js';
 import { planBossEncounter, pushEventHistory, pushEncounterHistory, pushTakenEventHistory } from '../js/data/balance.js';
 import { gainXp } from '../js/character.js';
-import { reqMet } from '../js/requirements.js';
+import { cursedSellBlocked } from '../js/content_pack/grants.js';
 import { resolveEventBranch, applyEventOutcome } from '../js/outcomes.js';
 import {
   applyVictoryRewards, applyEliteVictoryFind,
   grantReward, rollBossHoard, applyItemAct,
 } from '../js/rewards.js';
-import { buildShopStock, shopDiscount, applyShopBuy, applyShopHeal, applyShopLeave, applyShopRestock } from '../js/shop.js';
+import { buildShopStock, shopDiscount, applyShopBuy, applyShopHeal, applyShopLeave, applyShopRestock, shopPrice } from '../js/shop.js';
 import {
   planEncounterGroup, encounterOptions, resolveEncounterApproach, isSpecialEventFoe,
 } from '../js/encounter.js';
@@ -27,7 +27,7 @@ import { buildEnemy } from '../js/combat_core.js';
 import { runHeadlessFight } from './combat_headless.js';
 import { baselinePolicy } from './policies/baseline.js';
 import { scriptedPolicy } from './policies/scripted.js';
-import { defaultOfferingPick } from '../js/offering.js';
+import { reqMet } from '../js/requirements.js';
 
 function specMeta(specs) {
   return (specs || []).map(s => ({
@@ -47,6 +47,7 @@ export function resourceSnap(run) {
     gold: run.gold,
     goldEarned: run.goldEarned || 0,
     goldSpent: run.goldSpent || 0,
+    fame: run.fame || 0,
     mp: run.mp,
     maxMp: run.maxMp,
     level: run.level,
@@ -57,6 +58,7 @@ export function resourceSnap(run) {
     }).length,
     relics: (run.relics || []).length,
     skills: (run.skills || []).length,
+    arts: (run.arts || []).length,
     equipped: Object.values(run.equipment || {}).filter(Boolean).length,
   };
 }
@@ -78,22 +80,86 @@ export function classifyDeathCause(floorKind, meta, floor) {
   return 'unknown';
 }
 
-function hooksFor(run, policy) {
+function bump(map, key, n = 1) {
+  if (!map || key == null) return;
+  map[key] = (map[key] || 0) + n;
+}
+
+function recordGrant(run, item, act, channel, floor) {
+  const bag = run._cpMeasure;
+  if (!bag || !item) return;
+  const id = item.baseId || item.id;
+  const rarity = item.rarity || 'unknown';
+  const useful = itemUsefulForClass(item, run.classId);
+  const incompatible = itemIncompatibleForClass(item, run.classId);
+  bag.grants.push({
+    id, rarity, act, channel, floor: floor || run.floor,
+    useful: !!useful, incompatible: !!incompatible,
+    cursed: !!(item.curse || item.acquisition === 'cursed'),
+    evolving: !!(item.evolvesTo || (item.effects || []).some(e => e?.op === 'evolveItem')),
+    unique: !!(item.unique || rarity === 'unique'),
+    wrld: !!(item.wrld || rarity === 'wrld'),
+    setId: item.setId || null,
+    classBound: item.classBound || null,
+    resonance: item.resonance || null,
+    slot: item.slot || null,
+    pack: !!item.contentPack,
+  });
+  bump(bag.rarityByChannel[channel] || (bag.rarityByChannel[channel] = {}), rarity);
+  bump(bag.rarityByFloor[String(floor || run.floor)] || (bag.rarityByFloor[String(floor || run.floor)] = {}), rarity);
+}
+
+function mergeFightMeasure(run, fight) {
+  const bag = run._cpMeasure;
+  const m = fight?.measure;
+  if (!bag || !m) return;
+  bag.combat.n += 1;
+  bag.combat.damageDealt += m.damageDealt || 0;
+  bag.combat.damageTaken += m.damageTaken || fight.damageTaken || 0;
+  bag.combat.healed += m.healed || 0;
+  bag.combat.lifesteal += m.lifesteal || 0;
+  bag.combat.shields += m.shields || 0;
+  bag.combat.revives += m.revives || 0;
+  bag.combat.deathwards += m.deathwards || 0;
+  bag.combat.packWards += m.packWards || 0;
+  bag.combat.rounds += fight.round || 0;
+  bag.combat.mpStarve += m.mpStarve || 0;
+  bag.combat.mpOverflow += m.mpOverflow || 0;
+  bag.combat.cdBlocked += m.cdBlocked || 0;
+  bag.combat.cdActive += m.cdActive || 0;
+  bag.combat.chargeStarve += m.chargeStarve || 0;
+  for (const [id, n] of Object.entries(m.skillUses || {})) bump(bag.skillUses, id, n);
+  for (const [id, n] of Object.entries(m.consumableUses || {})) bump(bag.consumableUses, id, n);
+}
+
+function hooksFor(run, policy, channel = 'loot') {
   return {
     runRng,
     onItem: async (item, lines) => {
       const pick = policy.chooseEquip?.(run, item) || { act: 'stash' };
+      if (pick.act === 'sell' && cursedSellBlocked(run, item)) pick.act = 'stash';
       const r = applyItemAct(run, item, pick.act, pick.slot);
+      recordGrant(run, item, r.act || pick.act, channel, run.floor);
       if (r.act === 'equip') lines.push({ text: `Equipped: ${item.name}`, cls: 'item' });
       else if (r.act === 'sell') lines.push({ text: `Sold ${item.name} for ${r.gold}g`, cls: 'gold' });
       else lines.push({ text: `Stashed: ${item.name}`, cls: 'item' });
     },
     onLearnSkill: async (sk) => {
+      const bag = run._cpMeasure;
+      if (bag && sk?.id) {
+        bump(bag.skillOffered, sk.id);
+        if (sk.bloodline) bump(bag.artLearned, sk.id);
+        else if (sk.contentPack || String(sk.id).startsWith('cp_')) bump(bag.techLearned, sk.id);
+      }
       policy.chooseSkillEquip?.(run, sk);
     },
     chooseFuture: () => policy.chooseWaypoint?.(run) || 'recovery',
     chooseOption: (options, ctx) => policy.chooseOption?.(options, ctx),
-    chooseRelic: (choices) => policy.chooseRelic?.(choices),
+    chooseRelic: (choices) => {
+      const pick = policy.chooseRelic?.(choices);
+      if (pick) recordGrant(run, pick, 'relic', channel, run.floor);
+      return pick;
+    },
     chooseOffering: (r, spec) => policy.chooseOffering?.(r, spec) || defaultOfferingPick(r, spec),
     unlock: () => {},
   };
@@ -116,6 +182,7 @@ async function doFight(run, policy, enemies, { modifier = null, boss = null, rew
     policy: (f) => policy.chooseCombatAction(f),
     faithful: true,
   });
+  mergeFightMeasure(run, result);
   const fightMeta = {
     combat: true,
     enemies: specMeta(enemies),
@@ -123,6 +190,13 @@ async function doFight(run, policy, enemies, { modifier = null, boss = null, rew
     special: (enemies || []).some(e => isSpecialEventFoe(e)),
     bossId: boss?.id || null,
     isAltBoss: !!(boss?.id && isAltBossId(boss.id)),
+    measure: result.measure ? {
+      damageDealt: result.measure.damageDealt || 0,
+      damageTaken: result.measure.damageTaken || result.damageTaken || 0,
+      healed: result.measure.healed || 0,
+      lifesteal: result.measure.lifesteal || 0,
+      rounds: result.round || 0,
+    } : null,
   };
   if (result.result === 'dead' || run.hp <= 0) {
     return { outcome: 'dead', meta: fightMeta };
@@ -130,8 +204,9 @@ async function doFight(run, policy, enemies, { modifier = null, boss = null, rew
   if (result.result !== 'win') return { outcome: result.result || 'ok', meta: fightMeta };
   const gold = result.gold || 0;
   const xp = result.xp || 0;
+  const channel = boss ? 'boss' : ((enemies || []).some(e => e.elite) ? 'elite' : 'combat');
   const { lines, elitePending } = applyVictoryRewards(run, enemies, gold, xp, { boss, reward });
-  const h = hooksFor(run, policy);
+  const h = hooksFor(run, policy, channel);
   if (elitePending) await applyEliteVictoryFind(run, lines, h);
   const ups = gainXp(run, xp, runRng(run));
   await applyUps(run, ups, policy);
@@ -139,7 +214,7 @@ async function doFight(run, policy, enemies, { modifier = null, boss = null, rew
     const rewardUps = await grantReward(run, reward, lines, { ...h, paySkills: true });
     await applyUps(run, rewardUps, policy);
   }
-  if (boss) await rollBossHoard(run, h);
+  if (boss) await rollBossHoard(run, hooksFor(run, policy, 'boss'));
   return { outcome: 'cleared', gold, xp, lines, meta: fightMeta };
 }
 
@@ -165,7 +240,7 @@ async function resolveEvent(run, ev, policy) {
   const { outcome, roll } = resolveEventBranch(run, presented, choice, rng, { sparkle });
   const lines = roll ? [roll.line] : [];
   const result = await applyEventOutcome(run, presented, outcome, rng, {
-    ...hooksFor(run, policy),
+    ...hooksFor(run, policy, 'event'),
     sparkle,
     lines,
   });
@@ -187,32 +262,58 @@ async function resolveShop(run, ev, policy) {
   const stock = buildShopStock(run, rng);
   const { discount } = shopDiscount(run);
   let boughtHere = false;
+  const bag = run._cpMeasure;
+  if (bag) {
+    bag.shop.visits += 1;
+    for (const s of stock) {
+      const p = shopPrice(s.price, discount);
+      if (run.gold < p) bag.shop.unaffordable += 1;
+      if (s.item) {
+        bump(bag.shopOffers, s.item.baseId || s.item.id);
+        bump(bag.rarityByChannel.shop || (bag.rarityByChannel.shop = {}), s.item.rarity || 'unknown');
+      }
+    }
+  }
   for (let guard = 0; guard < 24; guard++) {
     const act = policy.chooseShopAction(run, stock, { discount, ev });
     if (!act || act.act === 'leave') break;
     if (act.act === 'heal') {
       const r = applyShopHeal(run, discount);
-      if (r.ok) boughtHere = true;
+      if (r.ok) {
+        boughtHere = true;
+        if (bag) bag.shop.heals += 1;
+      }
       else break;
       continue;
     }
     if (act.act === 'restock') {
       const r = applyShopRestock(run, stock, rng, discount);
-      if (r.ok) boughtHere = true;
+      if (r.ok) {
+        boughtHere = true;
+        if (bag) bag.shop.restocks += 1;
+      }
       else break;
       continue;
     }
     if (act.act === 'buy') {
+      const listing = stock[act.i];
       const r = applyShopBuy(run, stock, act.i, discount, { runRng });
       if (!r.ok) break;
       boughtHere = true;
+      if (bag) {
+        bag.shop.purchases += 1;
+        bump(bag.shopBuys, listing?.item?.baseId || listing?.item?.id || listing?.kind);
+      }
       if (r.listing?.kind === 'equip') {
-        await hooksFor(run, policy).onItem(r.listing.item, []);
+        await hooksFor(run, policy, 'shop').onItem(r.listing.item, []);
+      } else if (r.listing?.item) {
+        recordGrant(run, r.listing.item, 'buy', 'shop', run.floor);
       }
     }
   }
   applyShopLeave(run, boughtHere);
-  return { outcome: 'ok', meta: { kind: 'shop' } };
+  if (bag && !boughtHere) bag.shop.skipped += 1;
+  return { outcome: 'ok', meta: { kind: 'shop', bought: boughtHere } };
 }
 
 async function resolveEncounter(run, policy, prebuilt, hpMult) {
@@ -332,9 +433,35 @@ async function resolveThroneFloor(run, policy) {
 }
 
 export async function simulateClimbV2(run, policy, opts = {}) {
+  if (run._cpMeasure) {
+    const innerOffer = policy.chooseSkillOffer?.bind(policy);
+    policy = {
+      ...policy,
+      chooseSkillOffer(r, pool) {
+        const bag = r._cpMeasure;
+        if (bag) {
+          for (const sk of pool || []) {
+            if (!sk?.id) continue;
+            bump(bag.skillOffered, sk.id);
+            if (sk.bloodline) bump(bag.artOffered, sk.id);
+            else if (sk.contentPack || String(sk.id).startsWith('cp_')) bump(bag.techOffered, sk.id);
+          }
+        }
+        const pick = innerOffer ? innerOffer(r, pool) : pool[0];
+        if (bag && pick?.id) {
+          bump(bag.skillPicked, pick.id);
+          if (pick.bloodline) bump(bag.artPicked, pick.id);
+          else if (pick.contentPack || String(pick.id).startsWith('cp_')) bump(bag.techPicked, pick.id);
+        }
+        return pick;
+      },
+    };
+  }
   const maxFloors = opts.maxFloors ?? LAST_FLOOR;
   const checkpoints = opts.checkpoints || [];
+  const light = !!opts.skipCheckpoints;
   const mark = (label) => {
+    if (light && label !== 'start' && !opts.stopAfterDeal) return null;
     const cp = climbCheckpoint(run, { label });
     checkpoints.push(cp);
     if (opts.onCheckpoint) opts.onCheckpoint(cp);
@@ -350,6 +477,14 @@ export async function simulateClimbV2(run, policy, opts = {}) {
     mark(`enter_${run.floor}_${kind}`);
     const enter = resourceSnap(run);
     const biome = biomeForFloor(run.floor);
+    const bag = run._cpMeasure;
+    if (bag && (kind === 'boss' || kind === 'throne')) {
+      bag.bossEnter[run.floor] = {
+        floor: run.floor, kind, hp: enter.hp, maxHp: enter.maxHp, hpPct: enter.hpPct,
+        mp: enter.mp, maxMp: enter.maxMp, gold: enter.gold, fame: enter.fame,
+        healConsumables: enter.healConsumables,
+      };
+    }
 
     let step;
     let offered = null;
@@ -375,6 +510,26 @@ export async function simulateClimbV2(run, policy, opts = {}) {
       step = await resolveTravelCard(run, card, policy);
     }
     mark(`after_${run.floor}`);
+    if (bag) {
+      if (step?.meta?.eventId) {
+        bump(bag.events, step.meta.eventId);
+        if ((run.seenEvents || []).filter(id => id === step.meta.eventId).length > 1) {
+          bump(bag.repeatedEvents, step.meta.eventId);
+        }
+      }
+      if (kind === 'boss' || kind === 'throne') {
+        const id = step?.meta?.bossId || 'unknown';
+        bag.bosses[id] = bag.bosses[id] || { id, floors: {}, arrive: 0, win: 0, lose: 0 };
+        bag.bosses[id].arrive += 1;
+        bump(bag.bosses[id].floors, String(run.floor));
+        if (step?.outcome === 'dead') bag.bosses[id].lose += 1;
+        else bag.bosses[id].win += 1;
+        if (run.floor === 10) {
+          bag.f10.arrive += 1;
+          if (step?.outcome !== 'dead') bag.f10.win += 1;
+        }
+      }
+    }
     const rec = {
       floor: run.floor,
       kind,
@@ -390,7 +545,10 @@ export async function simulateClimbV2(run, policy, opts = {}) {
       rec.deathCause = classifyDeathCause(kind, step?.meta, run.floor);
       rec.starved = enter.gold < 15 && enter.healConsumables === 0 && enter.hpPct < 0.35;
     }
-    trace.push(rec);
+    if (!opts.dropTrace) trace.push(rec);
+    else if (step?.outcome === 'dead' || kind === 'boss' || kind === 'throne') {
+      trace.push(rec);
+    }
     if (opts.onFloor) opts.onFloor(rec, run);
     if (step?.outcome === 'dead') { outcome = 'dead'; break; }
     if (step?.outcome === 'escape') { outcome = 'escape'; break; }
@@ -411,8 +569,10 @@ export async function simulateClimbV2(run, policy, opts = {}) {
   const snap = climbSnapshot(run, { outcome, checkpoints });
   snap.trace = trace;
   snap.classId = run.classId;
+  snap.raceId = run.raceId;
   snap.seed = run.seed;
   snap.growthRank = run.growthRank || null;
+  snap.measure = run._cpMeasure || null;
   return snap;
 }
 

@@ -1,5 +1,7 @@
 // Allowlisted declarative effect schema. Unknown keys/hooks/ops are errors.
 
+import { VALID_RARITIES, rarityErrors } from './rarity.js';
+
 export const SCOPES = Object.freeze([
   'action', 'turn', 'combat', 'floor', 'biome', 'run', 'permanent',
 ]);
@@ -57,6 +59,8 @@ export const MUTEX_FAMILIES = Object.freeze([
 export const ACQUISITION = Object.freeze([
   'ordinary', 'class', 'bloodline', 'event', 'cursed', 'boss', 'unique', 'wrld',
 ]);
+
+export { VALID_RARITIES };
 
 export const LIMITS = Object.freeze({
   copyDepth: 1,
@@ -152,7 +156,7 @@ export const ITEM_KEYS_ALLOWED = new Set([
   'resonance', 'curse', 'resolution', 'quest', 'contentPack',
   'acquisition', 'capability', 'sourceId', 'packOrdinary', 'lootWeight',
   'classBound', 'evolvesTo', 'instanceKeys', 'status', 'playable',
-  'curseDrawback',
+  'curseDrawback', 'minFloor', 'maxFloor', 'biomes',
   'adaptation', 'heal', 'healPct', 'healPerFloor', 'mana', 'fame',
   'bombDmg', 'bombPerFloor', 'cure', 'foodBuff', 'shopMaxTier', 'appraisal',
   'reveal', 'extraSkillSlots', 'startCharge', 'deathward', 'revive',
@@ -174,8 +178,15 @@ export function validateItem(item, path = 'item') {
   if (item.acquisition && !ACQUISITION.includes(item.acquisition)) {
     errors.push(`${path}: unknown acquisition '${item.acquisition}'`);
   }
-  if (item.rarity === 'cursed') {
-    errors.push(`${path}: 'cursed' is a trait, not a rarity`);
+  errors.push(...rarityErrors(item, path));
+  if ((item.rarity === 'unique' || item.unique) && item.packOrdinary) {
+    errors.push(`${path}: Unique items must not enter ordinary loot`);
+  }
+  if ((item.rarity === 'wrld' || item.wrld) && item.packOrdinary) {
+    errors.push(`${path}: WRLD items must not enter ordinary loot`);
+  }
+  if ((item.rarity === 'unique' || item.rarity === 'wrld') && item.noAffix === false) {
+    errors.push(`${path}: Unique/WRLD items default to non-affixable`);
   }
   if (item.curse && !item.resolution) {
     errors.push(`${path}: cursed item must declare a resolution route`);

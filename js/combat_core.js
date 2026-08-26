@@ -390,16 +390,20 @@ export function deathSaves(f) {
   if (gearHas(f.run, 'revive') && !f.run.usedRevive) {
     f.run.usedRevive = true;
     f.run.hp = Math.round(f.run.maxHp * CONFIG.death.reviveHpPct);
+    if (f.measure) f.measure.revives = (f.measure.revives || 0) + 1;
     f.log('The Phoenix Feather ignites — you rise from the ashes!', 'log-sys');
     return;
   }
   if (gearHas(f.run, 'deathward') && !f.usedDeathward) {
     f.usedDeathward = true;
     f.run.hp = 1;
+    if (f.measure) f.measure.deathwards = (f.measure.deathwards || 0) + 1;
     f.log('The Cracked Hourglass shatters — time stumbles, and you are spared. Barely.', 'log-sys');
     return;
   }
+  const beforeHp = f.run.hp;
   packTryDeathSave(f);
+  if (f.measure && f.run.hp > beforeHp) f.measure.packWards = (f.measure.packWards || 0) + 1;
 }
 
 export function applyEnrage(f) {
@@ -663,7 +667,11 @@ export function resolvePlayerHit(f, e, sk, d) {
   const ls = (sk.lifesteal || 0) + d.lifesteal;
   if (ls > 0) {
     const capped = Math.min(dmg * ls, f.run.maxHp * CONFIG.combat.lifestealCapPct * (d.lifestealCapMult || 1));
-    heal(f.run, capped);
+    const amt = heal(f.run, capped);
+    if (amt > 0) {
+      f._healed?.(amt);
+      if (f.measure) f.measure.lifesteal = (f.measure.lifesteal || 0) + amt;
+    }
   }
   if (e.hp <= 0) combatLogLine(f, `${e.name} is defeated!`, 'log-ally');
 
@@ -676,6 +684,7 @@ export function resolvePlayerHit(f, e, sk, d) {
 export function applySelfSkill(f, sk, d) {
   if (sk.shield) {
     f.player.statuses.shield = { mult: sk.shield, turns: CONFIG.defense.wardTurns };
+    if (f.measure) f.measure.shields = (f.measure.shields || 0) + 1;
     f.log(`You raise a ward — ${Math.round(sk.shield * 100)}% damage blocked for ${CONFIG.defense.wardTurns} turns.`, 'log-ally');
     if (f.run.classId === 'spellsword') {
       f.player.scriptedEdge = true;
@@ -1337,6 +1346,13 @@ export function createCombatContext(run, rng, enemies, modifier = null, opts = {
     usedDeathward: false,
     usedUltimate: false,
     damageTaken: 0,
+    measure: {
+      damageDealt: 0, damageTaken: 0, healed: 0, lifesteal: 0,
+      shields: 0, revives: 0, deathwards: 0, packWards: 0,
+      skillUses: {}, consumableUses: {},
+      mpStarve: 0, mpOverflow: 0, chargeStarve: 0, cdBlocked: 0,
+      effectOps: {}, effectCaps: {},
+    },
     _actingKey: null,
     shared: false,
     locked: false,

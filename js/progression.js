@@ -1,9 +1,10 @@
 import { SKILLS, skillById } from './data/skills.js';
-import { learnableSkills, applySubclass, skillCapacity } from './character.js';
+import { learnableSkills, learnableBloodlineArts, applySubclass, skillCapacity } from './character.js';
 import { runRng } from './state.js';
 import { noteDiscovery } from './compendium_seen.js';
 
 export const SKILL_OFFER_LEVELS = [5, 9, 13, 17, 21, 25];
+export const ART_OFFER_LEVELS = [5, 13];
 
 /** Shuffle learnable skills, take 3, advance once. */
 export function offerSkillPool(run, rng) {
@@ -64,6 +65,18 @@ export function applyLevelProgression(run, ups, policy, hooks = {}) {
           const eq = policy.chooseSkillEquip?.(run, pick);
           applySkillLearn(run, pick.id, eq || {});
           results.push({ kind: 'skill', id: pick.id });
+        }
+      }
+    }
+    if (ART_OFFER_LEVELS.includes(up.level)) {
+      const arts = learnableBloodlineArts(run);
+      if (arts.length) {
+        const pick = policy.chooseArtOffer?.(run, arts) || policy.chooseSkillOffer?.(run, arts) || arts[0];
+        if (pick?.id) {
+          applySkillLearn(run, pick.id, {});
+          run.arts = run.arts || [];
+          if (!run.arts.includes(pick.id)) run.arts.push(pick.id);
+          results.push({ kind: 'art', id: pick.id });
         }
       }
     }

@@ -15,6 +15,7 @@ import { runRng } from './state.js';
 import { biomeTier } from './biome_tier.js';
 import { earnGold, spendGold } from './economy.js';
 import { noteDiscovery } from './compendium_seen.js';
+import { cursedSellBlocked, bindCurseOwnership } from './content_pack/grants.js';
 
 export function computeCombatPayout(run, rng, enemies, mod = {}) {
   const d = derived(run);
@@ -39,13 +40,18 @@ export function applyItemAct(run, item, act, slot = null) {
       if (!run.gearBag) run.gearBag = {};
       run.gearBag[item.id] = item;
     }
+    bindCurseOwnership(run, item);
     return { act: 'equip', slot };
   }
   if (act === 'stash') {
     run.inventory.push(item.id);
+    bindCurseOwnership(run, item);
     return { act: 'stash' };
   }
   if (act === 'sell') {
+    if (cursedSellBlocked(run, item)) {
+      return { act: 'stash-blocked', reason: 'curse' };
+    }
     const sellPrice = sellGold(item);
     earnGold(run, sellPrice, 'sell');
     if (run.gearBag && item.instanceId) delete run.gearBag[item.id];

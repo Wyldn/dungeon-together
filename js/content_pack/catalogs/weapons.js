@@ -7,12 +7,12 @@ const guardNext = [
 
 export const PACK_WEAPONS = [
   /* ---- I. Foundation ---- */
-  wpn({ id: 'cp_gate_iron_sword', name: 'Gate-Iron Sword', wtype: 'sword', rarity: 'common', tier: 1, atk: 3, packOrdinary: true,
+  wpn({ id: 'cp_gate_iron_sword', name: 'Gate-Iron Sword', wtype: 'sword', rarity: 'common', tier: 1, atk: 3, packOrdinary: true, minFloor: 1, maxFloor: 20,
     desc: 'Sword · +3 dmg. Guarding before a strike slightly strengthens the next hit.', effects: guardNext }),
-  wpn({ id: 'cp_surveyors_spear', name: "Surveyor's Spear", wtype: 'spear', rarity: 'common', tier: 1, atk: 3, packOrdinary: true,
+  wpn({ id: 'cp_surveyors_spear', name: "Surveyor's Spear", wtype: 'spear', rarity: 'common', tier: 1, atk: 3, packOrdinary: true, minFloor: 1, maxFloor: 20,
     desc: 'Spear · +3 dmg. Extra bite against enemies winding a charged special.',
     effects: [ef('onHit', 'modDamage', { vsCharging: 1.18 })] }),
-  wpn({ id: 'cp_root_cutter_axe', name: 'Root-Cutter Axe', wtype: 'axe', rarity: 'common', tier: 1, atk: 3, packOrdinary: true,
+  wpn({ id: 'cp_root_cutter_axe', name: 'Root-Cutter Axe', wtype: 'axe', rarity: 'common', tier: 1, atk: 3, packOrdinary: true, minFloor: 1, maxFloor: 20,
     desc: 'Axe · +3 dmg. Better against shields, roots, and defensive statuses.',
     effects: [ef('onHit', 'modDamage', { vsShielded: 1.16, vsStatus: 'frail', mult: 1.08 })] }),
   wpn({ id: 'cp_kiln_hammer', name: 'Kiln Hammer', wtype: 'mace', rarity: 'common', tier: 1, atk: 3,
@@ -24,7 +24,7 @@ export const PACK_WEAPONS = [
   wpn({ id: 'cp_bog_hook', name: 'Bog Hook', wtype: 'axe', rarity: 'common', tier: 1, atk: 2,
     desc: 'Axe · +2 dmg. Pulls attention toward the wielder.',
     effects: [ef('onHit', 'applyStatus', { status: 'marked', turns: 1 })] }),
-  wpn({ id: 'cp_ashwood_bow', name: 'Ashwood Bow', wtype: 'bow', rarity: 'common', tier: 1, atk: 3, packOrdinary: true,
+  wpn({ id: 'cp_ashwood_bow', name: 'Ashwood Bow', wtype: 'bow', rarity: 'common', tier: 1, atk: 3, packOrdinary: true, minFloor: 1, maxFloor: 20,
     desc: 'Bow · +3 dmg. First attack against each enemy is slightly stronger.',
     effects: [ef('onHit', 'modDamage', { mult: 1.12, firstHit: true })] }),
   wpn({ id: 'cp_ruin_repeater', name: 'Ruin Repeater', wtype: 'bow', rarity: 'uncommon', tier: 2, atk: 4,
@@ -33,7 +33,7 @@ export const PACK_WEAPONS = [
   wpn({ id: 'cp_court_rapier', name: 'Court Rapier', wtype: 'sword', rarity: 'uncommon', tier: 2, atk: 4, dex: 1,
     desc: 'Sword · +4 dmg, +1 DEX. Precision after avoiding damage.',
     effects: [ef('onMiss', 'setFlag', { key: 'evaded', scope: 'turn' }), ef('onHit', 'modDamage', { mult: 1.12, when: { flag: 'evaded' } })] }),
-  wpn({ id: 'cp_pilgrims_staff', name: "Pilgrim's Staff", wtype: 'staff', rarity: 'common', tier: 1, atk: 2, wis: 2, packOrdinary: true,
+  wpn({ id: 'cp_pilgrims_staff', name: "Pilgrim's Staff", wtype: 'staff', rarity: 'common', tier: 1, atk: 2, wis: 2, packOrdinary: true, minFloor: 1, maxFloor: 20,
     desc: 'Staff · +2 dmg, +2 WIS. Improves defensive and healing techniques.',
     effects: [ef('onHeal', 'heal', { pct: 0.02 })] }),
   wpn({ id: 'cp_grave_mace', name: 'Grave Mace', wtype: 'mace', rarity: 'uncommon', tier: 2, atk: 4,
@@ -52,14 +52,14 @@ export const PACK_WEAPONS = [
   wpn({ id: 'cp_gate_nail_javelins', name: 'Gate Nail Javelins', wtype: 'spear', rarity: 'uncommon', tier: 2, atk: 3,
     desc: 'Spear · +3 dmg. Interferes with enemy charge.',
     effects: [ef('onHit', 'reduceCharge', { amount: 1, once: 'turn' })] }),
-  wpn({ id: 'cp_iron_knuckle_wraps', name: 'Iron Knuckle Wraps', wtype: 'fist', rarity: 'common', tier: 1, atk: 3, packOrdinary: true,
+  wpn({ id: 'cp_iron_knuckle_wraps', name: 'Iron Knuckle Wraps', wtype: 'fist', rarity: 'common', tier: 1, atk: 3, packOrdinary: true, minFloor: 1, maxFloor: 20,
     desc: 'Fist · +3 dmg. Repeated basics gradually strengthen until another action is used.',
     effects: [ef('onHit', 'addCounter', { key: 'wrapCombo', scope: 'combat', when: { differentFromPrior: false } }),
       ef('onHit', 'modDamage', { add: 1 })] }),
   wpn({ id: 'cp_scavenger_war_scythe', name: "Scavenger's War Scythe", wtype: 'axe', rarity: 'uncommon', tier: 2, atk: 4,
     desc: 'Axe · +4 dmg. Small benefit when finishing weakened enemies.',
     effects: [ef('onKill', 'grantCharge', { amount: 1, once: 'combat' })] }),
-  wpn({ id: 'cp_spellknife', name: 'Spellknife', wtype: 'dagger', rarity: 'uncommon', tier: 2, atk: 3, int: 1, packOrdinary: true,
+  wpn({ id: 'cp_spellknife', name: 'Spellknife', wtype: 'dagger', rarity: 'uncommon', tier: 2, atk: 3, int: 1, packOrdinary: true, minFloor: 6, maxFloor: 30,
     desc: 'Dagger · +3 dmg, +1 INT. Converts a sliver of magical potency into the hit.',
     effects: [ef('onHit', 'modDamage', { add: 1 })] }),
   wpn({ id: 'cp_monsterbone_club', name: 'Monsterbone Club', wtype: 'mace', rarity: 'uncommon', tier: 2, atk: 4,
@@ -98,9 +98,9 @@ export const PACK_WEAPONS = [
   wpn({ id: 'cp_coward_kings_shieldblade', name: "Coward King's Shieldblade", wtype: 'sword', rarity: 'rare', tier: 3, atk: 5, def: 2, classBound: 'warrior', acquisition: 'class',
     desc: 'Warrior · very strong while Guarding; weaker when striking someone else\'s target.',
     effects: [ef('onGuard', 'setFlag', { key: 'cowardGuard', scope: 'turn' }), ef('onHit', 'modDamage', { mult: 1.2, when: { flag: 'cowardGuard' } })] }),
-  wpn({ id: 'cp_world_shutting_door', name: 'World-Shutting Door', wtype: 'mace', rarity: 'legendary', tier: 5, atk: 10, def: 3, classBound: 'warrior', acquisition: 'class', unique: true,
+  wpn({ id: 'cp_world_shutting_door', name: 'World-Shutting Door', wtype: 'mace', rarity: 'legendary', tier: 5, atk: 12, def: 3, classBound: 'warrior', acquisition: 'class', unique: true,
     desc: 'Legendary tower shield-weapon. Once per combat, intercept an AOE into personal damage.',
-    effects: [ef('beforeDamageTaken', 'interceptAoe', { pct: 0.55, once: 'combat', mutex: 'damage_redirect' })] }),
+    effects: [ef('beforeDamageTaken', 'interceptAoe', { pct: 0.7, once: 'combat', mutex: 'damage_redirect' })] }),
 
   /* Mage */
   wpn({ id: 'cp_margin_script_staff', name: 'Margin-Script Staff', wtype: 'staff', rarity: 'rare', tier: 3, atk: 4, int: 3, classBound: 'mage', acquisition: 'class',
@@ -121,9 +121,12 @@ export const PACK_WEAPONS = [
     desc: 'Mage · one spell per combat can be prepared and released later at improved potency.',
     effects: [ef('onSkillUse', 'setFlag', { key: 'prepared', scope: 'combat' }),
       ef('onHit', 'modDamage', { mult: 1.18, when: { flag: 'prepared' }, once: 'combat' })] }),
-  wpn({ id: 'cp_administrator_error_scepter', name: 'Administrator Error Scepter', wtype: 'staff', rarity: 'legendary', tier: 5, atk: 8, int: 5, classBound: 'mage', acquisition: 'class', unique: true,
-    desc: 'Legendary · transform one resisted status into another once per combat.',
-    effects: [ef('onHit', 'convertStatus', { status: 'weaken', statusTo: 'frail', once: 'combat' })] }),
+  wpn({ id: 'cp_administrator_error_scepter', name: 'Administrator Error Scepter', wtype: 'staff', rarity: 'legendary', tier: 5, atk: 10, int: 5, classBound: 'mage', acquisition: 'class', unique: true,
+    desc: 'Legendary · transform one resisted status into another once per combat, then weaken the next intent.',
+    effects: [
+      ef('onHit', 'convertStatus', { status: 'weaken', statusTo: 'frail', once: 'combat' }),
+      ef('onHit', 'weakenIntent', { mult: 0.85, once: 'combat' }),
+    ] }),
 
   /* Ranger (archer) */
   wpn({ id: 'cp_three_trails_longbow', name: 'Three-Trails Longbow', wtype: 'bow', rarity: 'rare', tier: 3, atk: 6, dex: 2, classBound: 'archer', acquisition: 'class',
@@ -145,9 +148,13 @@ export const PACK_WEAPONS = [
     desc: 'Ranger · every third distinct target hit triggers a controlled extra shot (depth 1).',
     effects: [ef('onHit', 'addCounter', { key: 'distinctHits', scope: 'combat' }),
       ef('onHit', 'echoAction', { mult: 0.4, once: 'turn', capability: 'echo_copy' })] }),
-  wpn({ id: 'cp_world_scent_javelin', name: 'World-Scent Javelin', wtype: 'spear', rarity: 'legendary', tier: 5, atk: 9, dex: 4, classBound: 'archer', acquisition: 'class', unique: true,
+  wpn({ id: 'cp_world_scent_javelin', name: 'World-Scent Javelin', wtype: 'spear', rarity: 'legendary', tier: 5, atk: 11, dex: 4, classBound: 'archer', acquisition: 'class', unique: true,
     desc: 'Legendary spear · mark an enemy across phases (normalized family id only).',
-    effects: [ef('onHit', 'markTarget'), ef('onCombatStart', 'storeMemory', { key: 'preyFamily', scope: 'run' })] }),
+    effects: [
+      ef('onHit', 'markTarget'),
+      ef('onHit', 'modDamage', { when: { targetMarked: true }, mult: 1.18 }),
+      ef('onCombatStart', 'storeMemory', { key: 'preyFamily', scope: 'run' }),
+    ] }),
 
   /* Rogue */
   wpn({ id: 'cp_receipt_knife', name: 'Receipt Knife', wtype: 'dagger', rarity: 'rare', tier: 3, atk: 4, crit: 6, classBound: 'rogue', acquisition: 'class',
@@ -165,9 +172,9 @@ export const PACK_WEAPONS = [
   wpn({ id: 'cp_counterfeit_halo_chakram', name: 'Counterfeit Halo Chakram', wtype: 'dagger', rarity: 'rare', tier: 3, atk: 4, classBound: 'rogue', acquisition: 'class',
     desc: 'Rogue · Fame when used honorably; bonus damage when that Fame is spent dishonestly.',
     effects: [ef('onKill', 'gainFame', { amount: 1, once: 'combat' }), ef('onHit', 'spendFamePower', { fame: 1, mult: 1.12, once: 'turn' })] }),
-  wpn({ id: 'cp_black_ledger_stiletto', name: 'Black-Ledger Stiletto', wtype: 'dagger', rarity: 'legendary', tier: 5, atk: 8, crit: 10, classBound: 'rogue', acquisition: 'class', unique: true,
+  wpn({ id: 'cp_black_ledger_stiletto', name: 'Black-Ledger Stiletto', wtype: 'dagger', rarity: 'legendary', tier: 5, atk: 8, crit: 14, classBound: 'rogue', acquisition: 'class', unique: true,
     desc: 'Legendary · records damage owed and collects when a target tries to heal or shield.',
-    effects: [ef('onHit', 'addCounter', { key: 'owed', scope: 'combat' }), ef('onHit', 'modDamage', { add: 2 })] }),
+    effects: [ef('onHit', 'addCounter', { key: 'owed', scope: 'combat' }), ef('onHit', 'modDamage', { add: 4 })] }),
 
   /* Priest */
   wpn({ id: 'cp_nameless_reliquary', name: 'Nameless Reliquary', wtype: 'mace', rarity: 'rare', tier: 3, atk: 4, wis: 3, classBound: 'priest', acquisition: 'class',
@@ -185,9 +192,9 @@ export const PACK_WEAPONS = [
   wpn({ id: 'cp_censer_funeral_gate', name: 'Censer of the Funeral Gate', wtype: 'mace', rarity: 'rare', tier: 3, atk: 4, wis: 3, classBound: 'priest', acquisition: 'class',
     desc: 'Priest · overhealing becomes a temporary ward.',
     effects: [ef('onHeal', 'overhealWard')] }),
-  wpn({ id: 'cp_staff_seven_forgotten_names', name: 'Staff of Seven Forgotten Names', wtype: 'staff', rarity: 'legendary', tier: 5, atk: 7, wis: 5, classBound: 'priest', acquisition: 'class', unique: true,
+  wpn({ id: 'cp_staff_seven_forgotten_names', name: 'Staff of Seven Forgotten Names', wtype: 'staff', rarity: 'legendary', tier: 5, atk: 9, wis: 5, classBound: 'priest', acquisition: 'class', unique: true,
     desc: 'Legendary · collects one name from each major biome and awakens at the throne.',
-    effects: [ef('onBiomeEnter', 'addCounter', { key: 'names', scope: 'run' }), ef('onHit', 'modDamage', { add: 1 })] }),
+    effects: [ef('onBiomeEnter', 'addCounter', { key: 'names', scope: 'run' }), ef('onHit', 'modDamage', { add: 2 })] }),
 
   /* Monk */
   wpn({ id: 'cp_root_memory_wraps', name: 'Root-Memory Wraps', wtype: 'fist', rarity: 'rare', tier: 3, atk: 5, dex: 2, classBound: 'monk', acquisition: 'class',
@@ -206,9 +213,9 @@ export const PACK_WEAPONS = [
   wpn({ id: 'cp_gate_carrying_bracers', name: 'Gate-Carrying Bracers', wtype: 'fist', rarity: 'rare', tier: 3, atk: 5, classBound: 'monk', acquisition: 'class',
     desc: 'Monk · protecting allies adds Burden that converts into damage or healing.',
     effects: [ef('onDamageTaken', 'addCounter', { key: 'burden', scope: 'combat' }), ef('onHit', 'modDamage', { add: 1 })] }),
-  wpn({ id: 'cp_staff_no_possession', name: 'Staff of No Possession', wtype: 'staff', rarity: 'legendary', tier: 5, atk: 8, dex: 3, classBound: 'monk', acquisition: 'class', unique: true,
+  wpn({ id: 'cp_staff_no_possession', name: 'Staff of No Possession', wtype: 'staff', rarity: 'legendary', tier: 5, atk: 10, dex: 3, classBound: 'monk', acquisition: 'class', unique: true,
     desc: 'Legendary · temporarily disables one relic (mutex) to awaken a powerful stance.',
-    effects: [ef('onCombatStart', 'chooseStance', { stance: 'empty' }), ef('onHit', 'modDamage', { mult: 1.15 })],
+    effects: [ef('onCombatStart', 'chooseStance', { stance: 'empty' }), ef('onHit', 'modDamage', { mult: 1.22 })],
     playable: 'adapted', adaptation: 'Does not strip relics mid-combat; mutexes one extra-relic family and grants Empty stance instead.' }),
 
   /* Bard */
@@ -228,9 +235,9 @@ export const PACK_WEAPONS = [
   wpn({ id: 'cp_drowned_court_viola', name: 'Drowned Court Viola', wtype: 'instrument', rarity: 'epic', tier: 4, atk: 5, classBound: 'bard', acquisition: 'class',
     desc: 'Bard · lingering refrain when enemies change phase.',
     effects: [ef('onPhaseChange', 'statusChance', { status: 'weaken', chance: 1 })] }),
-  wpn({ id: 'cp_bell_final_chorus', name: 'Bell of the Final Chorus', wtype: 'instrument', rarity: 'legendary', tier: 5, atk: 7, lk: 4, classBound: 'bard', acquisition: 'class', unique: true,
+  wpn({ id: 'cp_bell_final_chorus', name: 'Bell of the Final Chorus', wtype: 'instrument', rarity: 'legendary', tier: 5, atk: 9, lk: 4, classBound: 'bard', acquisition: 'class', unique: true,
     desc: 'Legendary · combines currently active song flags into one crescendo once per combat.',
-    effects: [ef('onHit', 'modDamage', { mult: 1.2, once: 'combat' })] }),
+    effects: [ef('onHit', 'modDamage', { mult: 1.3, once: 'combat' })] }),
 
   /* Necromancer */
   wpn({ id: 'cp_seventh_hero_phylactery', name: 'Seventh-Hero Phylactery', wtype: 'staff', rarity: 'epic', tier: 4, atk: 5, int: 3, classBound: 'necromancer', acquisition: 'class',
@@ -250,7 +257,7 @@ export const PACK_WEAPONS = [
     effects: [ef('onHit', 'applyStatus', { status: 'marked', turns: 2 }), ef('onHit', 'modDamage', { when: { targetMarked: true }, mult: 1.15 })] }),
   wpn({ id: 'cp_corpse_flower_sickle', name: 'Corpse-Flower Sickle', wtype: 'dagger', rarity: 'legendary', tier: 5, atk: 8, int: 4, classBound: 'necromancer', acquisition: 'class', unique: true,
     desc: 'Legendary · grows different blooms from burned, poisoned, frozen, or cursed corpses.',
-    effects: [ef('onKill', 'heal', { pct: 0.05, when: { status: 'burn' } }), ef('onKill', 'grantResource', { amount: 6 })] }),
+    effects: [ef('onKill', 'heal', { pct: 0.08, when: { status: 'burn' } }), ef('onKill', 'grantResource', { amount: 10 })] }),
 
   /* Spellsword */
   wpn({ id: 'cp_inward_gate_blade', name: 'Inward-Gate Blade', wtype: 'sword', rarity: 'rare', tier: 3, atk: 6, int: 2, classBound: 'spellsword', acquisition: 'class',
@@ -268,9 +275,9 @@ export const PACK_WEAPONS = [
   wpn({ id: 'cp_split_gate_twinblade', name: 'Split-Gate Twinblade', wtype: 'sword', rarity: 'epic', tier: 4, atk: 6, int: 2, classBound: 'spellsword', acquisition: 'class',
     desc: 'Spellsword · physical and magical halves empower each other when alternated.',
     effects: [ef('onHit', 'modDamage', { mult: 1.12, when: { differentFromPrior: true } })] }),
-  wpn({ id: 'cp_seventh_owner_sword', name: 'Seventh-Owner Sword', wtype: 'sword', rarity: 'legendary', tier: 5, atk: 11, classBound: 'spellsword', acquisition: 'event', unique: true, quest: true,
-    desc: 'Legendary evolving blade. Final rider depends on owner-chain flags (normalized).',
-    effects: [ef('onHit', 'modDamage', { mult: 1.1 }), ef('onKill', 'evolveItem', { itemId: 'cp_seventh_owner_sword' })] }),
+  wpn({ id: 'cp_seventh_owner_sword', name: 'Seventh-Owner Sword', wtype: 'sword', rarity: 'unique', tier: 5, atk: 14, classBound: 'spellsword', acquisition: 'unique', unique: true, quest: true,
+    desc: 'UNIQUE evolving blade. Final rider depends on owner-chain flags (normalized). One owner at a time.',
+    effects: [ef('onHit', 'modDamage', { mult: 1.15 }), ef('onKill', 'evolveItem', { itemId: 'cp_seventh_owner_sword' })] }),
 
   /* Warlock parity */
   wpn({ id: 'cp_clause_seven_stylus', name: 'Clause-Seven Stylus', wtype: 'dagger', rarity: 'rare', tier: 3, atk: 5, int: 2, classBound: 'warlock', acquisition: 'class',
@@ -288,7 +295,7 @@ export const PACK_WEAPONS = [
   wpn({ id: 'cp_hell_margin_scepter', name: 'Hell-Margin Scepter', wtype: 'staff', rarity: 'epic', tier: 4, atk: 6, int: 3, classBound: 'warlock', acquisition: 'class',
     desc: 'Warlock · once per combat, contest a punitive effect at a visible HP price.',
     effects: [ef('beforeDamageTaken', 'contestLethal', { amount: 8, once: 'combat' })] }),
-  wpn({ id: 'cp_seventh_signature_contract', name: 'Seventh-Signature Contract', wtype: 'staff', rarity: 'legendary', tier: 5, atk: 8, int: 5, classBound: 'warlock', acquisition: 'class', unique: true,
+  wpn({ id: 'cp_seventh_signature_contract', name: 'Seventh-Signature Contract', wtype: 'staff', rarity: 'legendary', tier: 5, atk: 10, int: 5, classBound: 'warlock', acquisition: 'class', unique: true,
     desc: 'Legendary · stores one safe minor archetype from a hexed kill.',
     effects: [ef('onKill', 'storeArchetype'), ef('onHit', 'applyStatus', { status: 'hexed', turns: 2 })] }),
 
@@ -313,5 +320,5 @@ export const PACK_WEAPONS = [
     effects: [ef('onHit', 'modDamage', { vsStatus: 'frozen', mult: 1.18 })] }),
   wpn({ id: 'cp_valhalla_boarding_axe', name: 'Valhalla Boarding Axe', wtype: 'axe', rarity: 'legendary', tier: 5, atk: 12, str: 4, classBound: 'viking', acquisition: 'class', unique: true,
     desc: 'Legendary · once per combat, a killing blow refunds a sliver of Fury and HP.',
-    effects: [ef('onKill', 'heal', { pct: 0.08, once: 'combat' }), ef('onKill', 'grantResource', { amount: 8, once: 'combat' })] }),
+    effects: [ef('onKill', 'heal', { pct: 0.12, once: 'combat' }), ef('onKill', 'grantResource', { amount: 12, once: 'combat' })] }),
 ];

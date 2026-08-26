@@ -1,13 +1,14 @@
 // Live merchant stock, price, and heal. buildShopStock owns one advance().
 
 import { CONFIG } from './data/config.js';
-import { CONSUMABLES, rollEquipment, rollRelic, rollUnique, rollWrld, shopConsumablePool, shopListingPrice, itemUsefulForClass, resolveItem, sellGold } from './data/items.js';
+import { CONSUMABLES, rollEquipment, rollRelic, rollUnique, rollWrld, shopConsumablePool, shopListingPrice, itemUsefulForClass, resolveItem, sellGold, markWrldClaimed } from './data/items.js';
 import { charRel } from './data/world.js';
 import { biomeTier } from './biome_tier.js';
 import { appraiseRun } from './character.js';
 import { applyWorldPatch } from './data/world.js';
 import { earnGold, spendGold, healConsumableCount } from './economy.js';
 import { packOnShopAction } from './content_pack/world_bind.js';
+import { cursedSellBlocked } from './content_pack/grants.js';
 import { packGet, packSet } from './content_pack/state.js';
 import { noteDiscovery } from './compendium_seen.js';
 
@@ -99,7 +100,14 @@ export function buildShopStock(run, rng, { resumeStock = null, coop = null } = {
       requireUseful: earlyOrMid && i === 0,
       slot: (tier === 1 && i === 0) ? 'weapon' : undefined,
       excludeIds,
-    });
+      channel: i === 0 ? 'class' : undefined,
+    }) || (i === 0 ? rollEquipment(rng, tier, 2, {
+      floor: run.floor, run, classId: run.classId, usefulBias: 4,
+      requireUseful: earlyOrMid,
+      slot: (tier === 1) ? 'weapon' : undefined,
+      excludeIds,
+      channel: 'ordinary',
+    }) : null);
     if (item) stock.push({ kind: 'equip', item, price: item.price });
   }
   if (earlyOrMid) {
@@ -211,6 +219,9 @@ export function applyShopBuy(run, stock, index, discount, hooks = {}) {
     }
   }
   if (s.kind === 'relic') run.relics.push(s.item.id);
+  if (s.item && (s.item.rarity === 'wrld' || s.item.wrld)) {
+    markWrldClaimed(run, s.item.baseId || s.item.id, hooks.coop || null);
+  }
   stock.splice(index, 1);
   packOnShopAction(run, 'buy', { price: p });
   if (hadReserve) packSet(run, 'run', 'receiptSpent', 1);
@@ -227,6 +238,9 @@ export function applyShopSell(run, index, { from = 'inventory' } = {}) {
   }
   const id = inv[index];
   const item = resolveItem(run, id);
+  if (cursedSellBlocked(run, item)) {
+    return { ok: false, reason: 'curse', item, id };
+  }
   const gold = sellGold(item, { from });
   inv.splice(index, 1);
   if (run.gearBag && id && run.gearBag[id]) delete run.gearBag[id];

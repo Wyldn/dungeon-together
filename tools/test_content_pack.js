@@ -1,5 +1,5 @@
 // Content-pack tests. Pack-off must remain a no-op for vanilla catalogs.
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { makeRng } from '../js/rng.js';
@@ -8,6 +8,8 @@ import { SKILLS } from '../js/data/skills.js';
 import { EVENTS } from '../js/data/events.js';
 import {
   ALL_EQUIPMENT, RELICS, CONSUMABLES, itemById, rollEquipment, shopConsumablePool,
+  uniqueCatalog, wrldCatalog, rollRelic, rollUnique, rollWrld, claimedWrldIds,
+  sellGold, shopListingPrice,
 } from '../js/data/items.js';
 import { eventDrawPool } from '../js/data/events.js';
 import { CLASSES } from '../js/data/classes.js';
@@ -35,6 +37,11 @@ import { CHECKPOINT_SCHEMA, GAME_CONTENT_VERSION, serializeClimber, migrateCheck
 import { createCombatContext, resolvePlayerHit, deathSaves } from '../js/combat_core.js';
 import { buildEnemy } from '../js/combat_core.js';
 import { makeV2Run, simulateClimbV2, baselinePolicy } from './run_climb_v2.js';
+import { grantCatalogItem } from '../js/content_pack/grants.js';
+import { VALID_RARITIES, fitsPowerBand } from '../js/content_pack/rarity.js';
+import { wpn } from '../js/content_pack/catalogs/helpers.js';
+import { writeRarityAudit } from './audit_rarity.js';
+import { catalogEntries } from '../js/compendium.js';
 import { runCompendiumTests } from './test_compendium.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -117,9 +124,88 @@ export async function runContentPackTests(t) {
   t('pack consumables are not shop-eligible at biome 1',
     !cat.consumables.some(c => !c.exclusive && (c.shopMaxTier == null || c.shopMaxTier >= 1)));
 
+  console.log('— rarity model / Unique / WRLD —');
+  setPackEnabled(true);
+  const helperSrc = readFileSync(join(__dirname, '..', 'js', 'content_pack', 'catalogs', 'helpers.js'), 'utf8');
+  const armorSrc = readFileSync(join(__dirname, '..', 'js', 'content_pack', 'catalogs', 'armor.js'), 'utf8');
+  t('helpers do not invent a rarity', !/\.rarity\s*\|\|\s*'/.test(helperSrc));
+  t('setPieces does not default rarity', !/extra\.rarity\s*\|\|\s*'/.test(armorSrc) && !/pieceRarity\s*\|\|\s*'/.test(armorSrc));
+  t('missing rarity is a validation error',
+    validateItem({ id: 'cp_no_rarity', name: 'No Rarity', desc: 'test', slot: 'weapon' }).some(e => /missing rarity/.test(e)));
+  t('helper without rarity still fails validation',
+    validateItem(wpn({ id: 'cp_bare_wpn', name: 'Bare', desc: 'test', wtype: 'sword' }), 'bare').some(e => /missing rarity/.test(e)));
+  t('every enabled pack catalog row has an explicit valid rarity',
+    [...cat.items, ...cat.relics, ...cat.consumables].every(i => VALID_RARITIES.includes(i.rarity)));
+  t('cursed is a trait not a rarity in pack catalogs',
+    [...cat.items, ...cat.relics, ...cat.consumables].every(i => i.rarity !== 'cursed'));
+  t('Unique/WRLD never enter ordinary loot',
+    !cat.items.filter(inOrdinaryLoot).some(i => i.rarity === 'unique' || i.rarity === 'wrld' || i.unique || i.wrld));
+  const uniqueRows = [...cat.items, ...cat.relics].filter(i => i.rarity === 'unique');
+  const wrldRows = [...cat.items, ...cat.relics].filter(i => i.rarity === 'wrld');
+  t('Unique rows are exclusive, non-affixable, named',
+    uniqueRows.length >= 3 && uniqueRows.every(i => i.exclusive && i.noAffix && i.name && i.name !== '???'));
+  t('WRLD rows use the claim identity',
+    wrldRows.length === 1 && wrldRows[0].id === 'cp_unwritten_achievement' && wrldRows[0].wrld && wrldRows[0].exclusive);
+  t('no Unique/WRLD consumables',
+    cat.consumables.every(c => c.rarity !== 'unique' && c.rarity !== 'wrld' && !c.unique && !c.wrld));
+  t('consumables include Epic and Legendary',
+    cat.consumables.some(c => c.rarity === 'epic') && cat.consumables.filter(c => c.rarity === 'legendary').length >= 3);
+  const powerMiss = [...cat.items, ...cat.relics, ...cat.consumables].filter(i => !fitsPowerBand(i).ok);
+  t('pack items fit category power bands', powerMiss.length === 0);
+  if (powerMiss.length) {
+    console.error('  power misses', powerMiss.slice(0, 16).map(i => `${i.id} ${i.rarity} ${fitsPowerBand(i).score} ${JSON.stringify(fitsPowerBand(i).band)}`));
+  }
+  t('pack Unique catalog includes relics when on', uniqueCatalog().some(i => i.id === 'cp_last_companions_bell'));
+  t('pack WRLD catalog includes the unwritten achievement', wrldCatalog().some(i => i.id === 'cp_unwritten_achievement'));
+
+  setPackEnabled(true);
+  const uniqueGrant = fakeRun({ inventory: ['cp_seventh_owner_sword'] });
+  const uniqueAgain = await grantCatalogItem(uniqueGrant, packLookup('cp_seventh_owner_sword'), []);
+  t('second Unique grant is refused', uniqueAgain == null);
+  const wrldSent = [];
+  const wrldCoop = { claimedWrld: new Set(), net: { send: (m) => wrldSent.push(m) } };
+  const wrldRun = fakeRun();
+  const wrldKind = await grantCatalogItem(wrldRun, packLookup('cp_unwritten_achievement'), [], { coop: wrldCoop });
+  t('WRLD grant uses the party ledger', wrldKind === 'relic' && wrldRun.claimedWrld.includes('cp_unwritten_achievement'));
+  t('WRLD claim is multiplayer-authoritative', wrldSent.some(m => m.k === 'wrldclaim' && m.id === 'cp_unwritten_achievement'));
+  const wrldRun2 = fakeRun();
+  const wrldDup = await grantCatalogItem(wrldRun2, packLookup('cp_unwritten_achievement'), [], { coop: wrldCoop });
+  t('second WRLD grant is refused from the shared ledger', wrldDup == null && claimedWrldIds(wrldRun2, wrldCoop).has('cp_unwritten_achievement'));
+  const exclusiveUnique = [];
+  for (let i = 0; i < 40; i++) {
+    exclusiveUnique.push(rollUnique(makeRng(100 + i), fakeRun(), {}));
+    exclusiveUnique.push(rollWrld(makeRng(200 + i), fakeRun(), { claim: false }));
+    exclusiveUnique.push(rollRelic(makeRng(300 + i), []));
+    exclusiveUnique.push(rollEquipment(makeRng(400 + i), 5, 0, { floor: 40, classId: 'warrior' }));
+  }
+  t('pack Unique/WRLD never appear in chase or ordinary rolls',
+    exclusiveUnique.filter(Boolean).every(i => !String(i.id).startsWith('cp_')
+      || (i.rarity !== 'unique' && i.rarity !== 'wrld' && !i.unique && !i.wrld)));
+  t('pack Unique resale uses authored price',
+    shopListingPrice(packLookup('cp_seventh_owner_sword')) === packLookup('cp_seventh_owner_sword').price
+    && sellGold(packLookup('cp_seventh_owner_sword')) > 0);
+  const inst = serializeClimber({
+    ...fakeRun({ seed: 9, name: 'Rarity', level: 1, xp: 0, xpNext: 32, maxHp: 40, maxMp: 20,
+      stats: { str: 8, dex: 5, int: 3, wis: 5, lk: 4 } }),
+    inventory: ['cp_gate_iron_sword'],
+    gearBag: { cp_gate_iron_sword: { id: 'cp_gate_iron_sword', baseId: 'cp_gate_iron_sword', affixes: [{ id: 'keen' }] } },
+    packState: { run: { 'evo:cp_seventh_owner_sword': 2 } },
+    className: 'Warrior', raceName: 'Human',
+  });
+  t('save/reload preserves gearBag instance and pack evo counters',
+    inst.ok
+    && inst.climber.gearBag?.cp_gate_iron_sword?.affixes?.[0]?.id === 'keen'
+    && inst.climber.packState?.run?.['evo:cp_seventh_owner_sword'] === 2);
+  const liveRarity = catalogEntries({ packOn: true });
+  t('Compendium rarities match runtime pack catalogs',
+    [...cat.items, ...cat.relics, ...cat.consumables].every(it => {
+      const row = liveRarity.find(e => e.id === it.id);
+      return row && row.rarity === it.rarity;
+    }));
+
   console.log('— Gate 2 legacy mirrors —');
   const legacyErrs = Object.entries(LEGACY_MIRRORS).flatMap(([id, fx]) => fx.flatMap(ef => validateItem({
-    id: `legacy_${id}`, name: id, desc: 'mirror', effects: [ef],
+    id: `legacy_${id}`, name: id, desc: 'mirror', rarity: 'common', effects: [ef],
   }, id)));
   t('legacy mirrors validate and are tagged', Object.values(LEGACY_MIRRORS).every(fx => fx.every(e => e.legacyMirror)));
   t('legacy mirror schema clean', legacyErrs.length === 0);
@@ -393,4 +479,9 @@ export async function runContentPackTests(t) {
   }, null, 2));
   writeFileSync(join(reportDir, 'content_pack_capability_matrix_20260825.json'), JSON.stringify(status.capabilityMatrix, null, 2));
   writeFileSync(join(reportDir, 'content_pack_migration_notes_20260825.json'), JSON.stringify(status.migration, null, 2));
+  const rarityAudit = writeRarityAudit();
+  t('rarity audit has no missing rarities', rarityAudit.audit.missingRarity.length === 0);
+  t('rarity audit Unique/WRLD rules hold', rarityAudit.audit.uniqueRuleFailures.length === 0 && rarityAudit.audit.wrldRuleFailures.length === 0);
+  t('rarity audit Compendium matches runtime', rarityAudit.audit.compendiumMismatch.length === 0);
+  t('rarity audit remains undeployed', rarityAudit.audit.deployed === false);
 }

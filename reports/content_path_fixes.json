@@ -1,0 +1,16 @@
+{
+  "startingCommitSha": "cf607bcd3c941c7840fad42da5ed6253bbcc7d85",
+  "fixes": [
+    "Named Unique class signatures onto existing class events (Ranger javelin, Monk staff, Bard bell, Necromancer sickle).",
+    "Named remaining cursed weapons/armor onto themed events (Fame Eater tooth, Coinmouth Maul, Eighth Oath, Funeral Receipt dagger, Bell-clapper Greatclub, Crimson Memory Mail, Mandatory Optionality, Furnace-Honest Plate, Drowned dress/rapier, Possessionless Robe, Final Gate Uniform).",
+    "Named quest relics Ring of Seven Owners, Hoard's First Coin, Administrator's Bent Key, and Funeral Receipt consumable onto matching chains.",
+    "Set royalClaimant and cp_seventh_met as produced flags; persistFlag producers (bentKey, crownFragment, paidGrave) counted as flag sources.",
+    "Expanded chain when.any so identity/alternate first-event choices still unlock revisits (False System, Futures, Fame Eater, Seven Owners, Inward Gate, Bell, Crimson, Echo, Drowned Court).",
+    "Wired resolveCurse outcomes onto resolution choices; campfire resolves remember_damage; resolveCurse accepts curse ids and arrays.",
+    "Class/bloodline/biome-find competing loot channels; Unique/WRLD remain out of ordinary loot; WRLD grants use the party claim ledger.",
+    "learnableSkills excludes bloodline arts; ART_OFFER_LEVELS grant into arts + knownSkills; ranger maps to archer via classIdsMatch.",
+    "partyMissingCount ignores disconnect; cursed sell blocked until resolved; Unique duplicate refused per climber.",
+    "Recipient pay/receive recorded on coop outcomes; lastOwnership stamped in applyEventOutcome.",
+    "Acquisition graph, static validators, deterministic pursuit traces (floorMin/biome windows, preferred grant branches, instance-isolated evolution), and satellite reports."
+  ]
+}

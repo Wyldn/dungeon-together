@@ -61,6 +61,23 @@ Converted WAV → OGG for the web; loop points implemented per the pack's manual
   procedural class hero placeholders for classes without a pack, bows and fist
   wraps, fallback icons, and remaining biome backdrop scenes. Warrior / Mage /
   Viking / Archer / Monk / Necromancer use the dedicated packs below instead.
+- **Pixel-art backgrounds** (curated into `assets/img/bg/scenes/`, resolved by
+  `js/data/scenes.js`; source packs under `assets/img/NEW_ASSETS/backgrounds/`):
+  - *Pixel1992 — Sunny Castles* — academy / ruins castle stills
+  - *Free Pixel Art Forest* — late-forest canopy
+  - *Free Pixel Art Hill* — composited hill layers
+  - *Free Summer Pixel Art Backgrounds* — forest meadow / pines / farm
+  - *Nature Landscapes Free Pixel Art* — forest tree / valley / skyfield
+  - *free-winter-backgrounds-pixel-art* — frost woods / birch / pass
+  - *ocean-and-clouds-free-pixel-art-backgrounds* — ocean sunrise (Coward's Gate)
+  - *Free-Horizontal-Game-Backgrounds* — slag / ground stills
+  - *Parallax Cave* — flattened to `cave_ruins` (ruins interiors)
+  - *Magical School* — origin classrooms / library / hall (selected interiors;
+    the 300MB zip stays in Downloads, not in git)
+  - *New free backgrounds parts 1–5* — cloud dusk and extra stills
+  - Attached high-res stills: Lamora (Demon King castle / title / throne),
+    night castle, river bridge, garden, swamp bayou, snow range, winter road,
+    medieval towns, coastal fortress, mountain vista, tower overlook, cabin
 - **Archer / Ranger hero** — *ArcherHero* pack (Idle, Run, Jump, Attacks, Dash,
   Death). Commercial/non-commercial use allowed; credits appreciated. Built into
   strips via `tools/build_archer.py`.

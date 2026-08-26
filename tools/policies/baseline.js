@@ -70,6 +70,12 @@ export function baselinePolicy(opts = {}) {
     },
     chooseEquip(run, item) {
       if (!item?.slot) return { act: 'stash' };
+      if (item.curse || item.acquisition === 'cursed') {
+        const slot = item.slot === 'accessory'
+          ? (['accessory1', 'accessory2', 'accessory3'].find(s => !run.equipment[s]) || 'accessory1')
+          : item.slot;
+        return { act: 'equip', slot };
+      }
       const cur = item.slot === 'accessory'
         ? null
         : (run.equipment[item.slot] ? itemById(run.equipment[item.slot]) : null);

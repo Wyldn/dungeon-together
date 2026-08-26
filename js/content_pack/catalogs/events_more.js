@@ -20,7 +20,7 @@ PACK_EVENTS.push(...steps('cp_crimson_save', '🩸', [
       w('Permanently lose 4 max HP for a lethal ward', 'ward + cost', { maxHp: -4, item: 'cp_crimson_crystal_shard', flag: 'cp_ward_taken' }),
       w('Pay 80 gold for a weaker ward', 'gold ward', { gold: -80, flag: 'cp_ward_weak', item: 'cp_crimson_continuance' }, { req: { gold: 80 } }),
       w('Insert a potion', 'corrupted draught', { useItem: 'potion_s', consumable: 'cp_false_resurrection_draught', flag: 'cp_ward_corrupt' }, { req: { item: 'potion_s' } }),
-      w('Refuse; mark it fraudulent', 'you saw through it', { flag: 'cp_crystal_fraud', fame: 2 }),
+      w('Refuse; mark it fraudulent', 'you saw through it', { flag: 'cp_crystal_fraud', fame: 2, item: 'cp_crimson_memory_mail' }),
       idc({ race: 'dragonkin' }, 'Recognize broken soul-storage', 'you know this machine', { flag: 'cp_crystal_fraud', world: { knowledge: 'cp_soul_storage' } }),
       idc({ race: 'tiefling' }, 'Renegotiate the death clause', 'smaller print', { maxHp: -2, flag: 'cp_ward_taken' }),
       idc({ class: 'necromancer' }, 'Extract a stored unlived death', 'a mark, not a save', { flag: 'cp_unlived_stored', item: 'cp_scythe_unlived_deaths' }),
@@ -29,7 +29,7 @@ PACK_EVENTS.push(...steps('cp_crimson_save', '🩸', [
     ] },
   { id: 'cp_load_unlived_injury', biome: 'swamp', flag: 'cp_injury_dealt',
     title: 'Load an Unlived Injury', text: 'The crystal presents wounds from a timeline that has not happened.',
-    when: { any: [{ flag: 'cp_ward_taken' }, { flag: 'cp_ward_weak' }, { flag: 'cp_crystal_fraud' }, { flag: 'cp_ward_corrupt' }] },
+    when: { any: [{ flag: 'cp_unlived_stored' }, { flag: 'cp_ward_taken' }, { flag: 'cp_ward_weak' }, { flag: 'cp_crystal_fraud' }, { flag: 'cp_ward_corrupt' }] },
     choices: [
       w('Accept the wounds now for a powerful item', 'pay HP, gain gear', { hp: -16, item: 'cp_previous_timeline_axe', flag: 'cp_injury_dealt' }),
       w('Pay gold to delete the recorded future', 'erased', { gold: -55, flag: 'cp_future_deleted' }, { req: { gold: 55 } }),
@@ -40,7 +40,7 @@ PACK_EVENTS.push(...steps('cp_crimson_save', '🩸', [
     title: 'The Collector of Continued Lives', text: 'Every avoided death accumulated a debt.',
     when: { any: [{ flag: 'cp_injury_dealt' }, { flag: 'cp_future_deleted' }, { flag: 'cp_crystal_broken' }, { flag: 'cp_injury_shared' }] },
     choices: [
-      w('Surrender the ward and settle', 'peace', { flag: 'cp_crimson_closed' }),
+      w('Surrender the ward and settle', 'peace', { flag: 'cp_crimson_closed', resolveCurse: 'maxhp_ward' }),
       w('Fight the collector', 'combat', { combat: { enemies: ['wight'] }, item: 'cp_crimson_checkpoint_blade', flag: 'cp_crimson_closed' }),
       w('Sacrifice Fame so history says the deaths never happened', 'erasure', { fame: -6, flag: 'cp_crimson_closed' }),
       w('Admit it was never a save point', 'the interface fractures', { flag: 'cp_system_fracture', item: 'cp_administrator_error_scepter' }),
@@ -72,7 +72,7 @@ PACK_EVENTS.push(...steps('cp_echo_party', '👥', [
     ] },
   { id: 'cp_echo_party_frost', biome: 'frost', flag: 'cp_echo_duel',
     title: 'Echo Party', text: 'The dead party appears alive and claims the current group is the copy.',
-    when: { any: [{ flag: 'cp_follow_warning' }, { flag: 'cp_notes_burned' }, { flag: 'cp_notes_sold' }, { flag: 'cp_notes_split' }, { flag: 'cp_notes_truth' }] },
+    when: { any: [{ flag: 'cp_follow_warning' }, { flag: 'cp_notes_burned' }, { flag: 'cp_notes_sold' }, { flag: 'cp_notes_split' }, { flag: 'cp_notes_truth' }, { flag: 'cp_notes_read' }] },
     choices: [
       w('Duel counterpart against counterpart', 'fight', { combat: { enemies: ['frozen_soldier'] }, flag: 'cp_echo_duel' }),
       w('Exchange one chosen gear item', 'offering', { offering: { kinds: ['pack'] }, flag: 'cp_echo_swap' }, { req: { offering: true } }),
@@ -86,7 +86,7 @@ PACK_EVENTS.push(...steps('cp_echo_party', '👥', [
       w('Merge timelines', 'mixed blessing and curse', { item: 'cp_second_timeline_plate', flag: 'cp_echo_merged' }),
       w('Destroy the echoes', 'unstable gear', { item: 'cp_previous_timeline_axe', flag: 'cp_echo_destroyed' }),
       w('Let them proceed', 'consolation relic', { item: 'cp_portrait_previous_party', flag: 'cp_echo_yielded' }),
-      w('Prove both parties are manipulated', 'joint assault flag', { flag: 'cp_system_joint', fame: 3 }),
+      w('Prove both parties are manipulated', 'joint assault flag', { flag: 'cp_system_joint', fame: 3, resolveCurse: ['echo_hit', 'echo_last_skill'] }),
     ] },
 ]));
 
@@ -98,13 +98,14 @@ PACK_EVENTS.push(...steps('cp_bell_companion', '🔔', [
       w('Ring without naming anyone', 'everyone loses a little HP', { hp: -6, flag: 'cp_bell_rung' }),
       w('Volunteer', 'you become bell_bearer', { flag: 'cp_bell_bearer', fame: 2 }),
       w('Break the clapper', 'lesser material', { gold: 25, item: 'cp_bell_clapper_shard', flag: 'cp_bell_broken' }),
+      w('Wield the clapper as a greatclub', 'it still wants a missing name', { item: 'cp_bell_clapper_greatclub', flag: 'cp_bell_broken' }),
       idc({ race: 'orc' }, 'Swear the abandonment burden personally', 'oath', { flag: 'cp_bell_bearer', fame: 1 }),
       idc({ race: 'halfling' }, 'Find an impossible path that leaves no one', 'a gap in the roots', { flag: 'cp_bell_skipped' }),
       idc({ class: 'bard' }, 'Keep a volunteer\'s presence alive through song', 'a name in the refrain', { flag: 'cp_bell_song' }),
     ] },
   { id: 'cp_door_counts_one_less', biome: 'ruins', flag: 'cp_door_paid',
     title: 'The Door That Counts One Less', text: 'The next sealed door opens only if one climber remains outside.',
-    when: { any: [{ flag: 'cp_bell_rung' }, { flag: 'cp_bell_bearer' }, { flag: 'cp_bell_broken' }, { flag: 'cp_bell_song' }, { flag: 'cp_bell_skipped' }] },
+    when: { any: [{ flag: 'cp_bell_rung' }, { flag: 'cp_bell_bearer' }, { flag: 'cp_bell_broken' }, { flag: 'cp_bell_song' }, { flag: 'cp_bell_skipped' }, { flag: 'cp_bell_ignored' }] },
     choices: [
       w('A volunteer sits out the next event', 'no reward next card (flag)', { flag: 'cp_volunteer_out' }),
       w('Everyone pays 35 gold', 'buy the count', { gold: -35, flag: 'cp_door_paid' }, { req: { gold: 35 } }),
@@ -116,7 +117,7 @@ PACK_EVENTS.push(...steps('cp_bell_companion', '🔔', [
     title: 'The Empty Place at Camp', text: 'The dungeon creates a flawless imitation of whoever previously volunteered.',
     when: { any: [{ flag: 'cp_volunteer_out' }, { flag: 'cp_door_paid' }, { flag: 'cp_bell_bearer' }] },
     choices: [
-      w('Accept the imitation as temporary support', 'betrayal risk', { flag: 'cp_imitation_accepted' }),
+      w('Accept the imitation as temporary support', 'betrayal risk, an empty seat', { flag: 'cp_imitation_accepted', item: 'cp_the_empty_seat' }),
       w('Reject it', 'Fame', { fame: 3, flag: 'cp_imitation_rejected' }),
       w('Give it the volunteer\'s gear to stabilize it', 'offering', { offering: { kinds: ['pack'] }, flag: 'cp_imitation_fed' }, { req: { offering: true } }),
       w('Ask what happened in the abandoned timeline', 'a story', { flag: 'cp_imitation_asked', world: { knowledge: 'cp_abandoned_timeline' } }),
@@ -126,7 +127,7 @@ PACK_EVENTS.push(...steps('cp_bell_companion', '🔔', [
     title: 'When the Bell Rings Again', text: 'The original volunteer is trapped behind the gate. Permanent abandon requires explicit unanimous consent. Disconnect is never this condition.',
     when: { any: [{ flag: 'cp_imitation_accepted' }, { flag: 'cp_imitation_rejected' }, { flag: 'cp_imitation_fed' }, { flag: 'cp_imitation_asked' }] },
     choices: [
-      w('Pay a large party-wide ransom', 'gold', { gold: -90, flag: 'cp_bell_ransomed' }, { req: { gold: 90 } }),
+      w('Pay a large party-wide ransom', 'gold', { gold: -90, flag: 'cp_bell_ransomed', resolveCurse: ['needs_downed_ally', 'missing_allies'] }, { req: { gold: 90 } }),
       w('Surrender the imitation', 'it goes instead', { flag: 'cp_imitation_surrendered' }),
       w('Fight a rescue with reduced starting health', 'hard rescue', { hp: -12, combat: { enemies: ['hag'] }, flag: 'cp_bell_rescued' }),
       w('Permanently abandon them for a unique relic (unanimous)', 'Last Companion\'s Bell', { item: 'cp_last_companions_bell', flag: 'cp_bell_abandoned', fame: -5 }),
@@ -149,7 +150,7 @@ PACK_EVENTS.push(...steps('cp_nameless_saint', '🕊️', [
     ] },
   { id: 'cp_miracles_wrong_name', biome: 'frost', flag: 'cp_worship',
     title: 'Miracles in the Wrong Name', text: 'Travelers now worship the named party member.',
-    when: { any: [{ flag: 'cp_saint_named' }, { flag: 'cp_shrine_potion' }, { flag: 'cp_shrine_gold' }, { flag: 'cp_shrine_blood' }] },
+    when: { any: [{ flag: 'cp_saint_named' }, { flag: 'cp_shrine_potion' }, { flag: 'cp_shrine_gold' }, { flag: 'cp_shrine_blood' }, { flag: 'cp_shrine_question' }, { flag: 'cp_shrine_infernal' }, { flag: 'cp_shrine_list' }, { flag: 'cp_shrine_dead' }] },
     choices: [
       w('Accept the worship', 'Fame', { fame: 5, flag: 'cp_worship_accepted' }),
       w('Correct the story', 'smaller honest blessing', { fame: 2, item: 'cp_empty_saint_icon', flag: 'cp_worship_corrected' }),

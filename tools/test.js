@@ -9,7 +9,9 @@ import { RACES } from '../js/data/races.js';
 import { ORIGINS, defaultOriginId } from '../js/data/origins.js';
 import { SKILLS } from '../js/data/skills.js';
 import { EVENTS, CATEGORY_META } from '../js/data/events.js';
-import { ENEMIES, BOSSES, ALT_BOSSES, SECRET_BOSS, MODIFIERS, pickTrialModifier, biomeForFloor, findEnemySpec, WANDERING_ENEMIES, isGalleryNpc, NPC_ENEMIES, mimicSpec } from '../js/data/enemies.js';
+import { BIOMES, ENEMIES, BOSSES, ALT_BOSSES, SECRET_BOSS, MODIFIERS, pickTrialModifier, biomeForFloor, findEnemySpec, WANDERING_ENEMIES, isGalleryNpc, NPC_ENEMIES, mimicSpec } from '../js/data/enemies.js';
+import { biomeBgUrl, titleBgUrl, travelMapBgUrl, registeredBackgrounds } from '../js/art.js';
+import { resolveScene, SCENES, EVENT_SCENES, ORIGIN_SCENES } from '../js/data/scenes.js';
 import { ROSTER } from '../js/data/roster_worlds.js';
 import { summonSpecFor } from '../js/combat_core.js';
 import {
@@ -175,6 +177,37 @@ for (const o of ORIGINS) t(`${o.id}: playable (has choices)`, Array.isArray(o.ch
 t('warrior default origin is Ninth Hall', defaultOriginId('warrior') === 'sword_academy');
 t('mage default origin is Academy', defaultOriginId('mage') === 'mage_academy');
 t('every class has a known default origin', Object.keys(CLASSES).every(id => ORIGINS.some(o => o.id === defaultOriginId(id))));
+
+console.log('— live backgrounds —');
+{
+  const ids = new Set(registeredBackgrounds().map(e => e.id));
+  t('every climb biome has a registered backdrop', BIOMES.every(b => ids.has(b.id) && biomeBgUrl(b.id)));
+  t('title vista is registered', ids.has('title') && !!titleBgUrl());
+  t('travel map is registered', ids.has('travelmap') && !!travelMapBgUrl());
+  t('registry extras are only menus and maps', registeredBackgrounds()
+    .filter(e => !BIOMES.some(b => b.id === e.id))
+    .every(e => e.id === 'title' || e.id === 'travelmap'));
+}
+
+console.log('— scene resolver —');
+{
+  t('title still is Lamora', (resolveScene({ kind: 'title' })?.url || '').includes('lamora_sunset'));
+  t('travel still is mountain vista', (resolveScene({ kind: 'travel' })?.url || '').includes('mountain_vista'));
+  const f1 = resolveScene({ kind: 'combat', biomeId: 'forest', floor: 1 })?.url;
+  const f4 = resolveScene({ kind: 'combat', biomeId: 'forest', floor: 4 })?.url;
+  const f10 = resolveScene({ kind: 'combat', biomeId: 'forest', floor: 10 })?.url;
+  t('forest F1 is the gate path', (f1 || '').includes('forest_path'));
+  t('forest F4 is the toll bridge', (f4 || '').includes('forest_bridge'));
+  t('forest F10 is the canopy court', (f10 || '').includes('forest_canopy'));
+  t('forest F1 / F4 / F10 are distinct', f1 && f4 && f10 && f1 !== f4 && f4 !== f10 && f1 !== f10);
+  t('bandit_toll event still is the bridge', (resolveScene({ kind: 'event', eventId: 'bandit_toll' })?.url || '').includes('forest_bridge'));
+  t('coward\'s gate is the ocean road home', (resolveScene({ kind: 'event', eventId: 'cowards_gate' })?.url || '').includes('ocean_sunrise'));
+  t('mage origin is the classroom', (resolveScene({ kind: 'origin', originId: 'mage_academy' })?.url || '').includes('school_classroom'));
+  t('throne boss is Lamora', (resolveScene({ kind: 'boss', floor: 51, biomeId: 'throne' })?.url || '').includes('lamora_sunset'));
+  t('every event scene id exists', Object.values(EVENT_SCENES).every(id => !!SCENES[id]));
+  t('every origin scene id exists', Object.values(ORIGIN_SCENES).every(id => !!SCENES[id]));
+  t('every origin catalogs a still', ORIGINS.every(o => !o.bg || !!SCENES[o.bg]));
+}
 
 console.log('— skills & Battle Charge (handoff §11) —');
 t('universal Strike exists', SKILLS.basic_attack && SKILLS.basic_attack.charge === 0 && SKILLS.basic_attack.cost === 0);
@@ -2891,6 +2924,18 @@ console.log('— narrative event pacing —');
 {
   const { runContentPackTests } = await import('./test_content_pack.js');
   await runContentPackTests(t);
+  setPackEnabled(false);
+}
+
+{
+  const { runContentPathTests } = await import('./test_content_path.js');
+  await runContentPathTests(t);
+  setPackEnabled(false);
+}
+
+{
+  const { runContentPackBalanceHarnessTests } = await import('./test_content_pack_balance.js');
+  runContentPackBalanceHarnessTests(t);
   setPackEnabled(false);
 }
 

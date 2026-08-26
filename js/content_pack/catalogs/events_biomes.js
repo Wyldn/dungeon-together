@@ -49,7 +49,7 @@ PACK_EVENTS.push(
     w('Pay for the missing rings', 'gold', { gold: -35, item: 'cp_frozen_wedding_ring' }, { req: { gold: 35 } }),
     w('Steal the dowry', 'gold, disgrace', { gold: 45, fame: -3 }),
     w('Object: one ghost is an impostor', 'the ice cracks', { combat: { enemies: ['ice_maiden'] }, fame: 2 }),
-    idc({ class: 'priest' }, 'Complete the ceremony', 'rites', { fame: 4, item: 'cp_frozen_wedding_ring' }),
+    idc({ class: 'priest' }, 'Complete the ceremony', 'rites', { fame: 4, item: 'cp_frozen_wedding_ring', resolveCurse: 'self_second_hit' }),
     idc({ class: 'mage' }, 'Reveal they died centuries apart', 'a chronological kindness', { fame: 2, flag: 'cp_wedding_time' }),
   ], { glyph: '💍', cat: 'social' }),
   stand('cp_monster_glacier', 'frost', 'The Monster in the Glacier', 'A supposedly legendary monster is conscious and begging not to be excavated.', [
@@ -172,7 +172,8 @@ PACK_EVENTS.push(
     w('Bid a future reward for a sealed name', 'debt', { flag: 'cp_sealed_name' }),
   ], { glyph: '🔨', cat: 'equipment' }),
   stand('cp_furnace_honest_metal', 'hell', 'Furnace of Honest Metal', 'The furnace burns away every lie attached to an item.', [
-    w('Purify cursed gear for gold', 'if you carry a curse', { gold: -30, flag: 'cp_purified' }, { req: { gold: 30 } }),
+    w('Purify cursed gear for gold', 'if you carry a curse', { gold: -30, flag: 'cp_purified', resolveCurse: ['no_buffs', 'eats_gold'] }, { req: { gold: 30 } }),
+    w('Wear the plate it will not lie about', 'honest metal, no buffs', { item: 'cp_furnace_honest_plate', flag: 'cp_furnace_worn' }),
     w('Sacrifice one item to strengthen another', 'offering', { offering: { kinds: ['pack'] } }, { req: { offering: true } }),
     w('Place a famous item inside', 'lose Fame, improve it', { fame: -3, flag: 'cp_fame_forged' }),
     w('Put in a quest object and alter a chain', 'dangerous', { flag: 'cp_quest_burned' }),

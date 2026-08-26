@@ -5,6 +5,7 @@
 
 import { noteNarrativeTake } from './eventpace.js';
 import { noteDiscovery } from '../compendium_seen.js';
+import { classIdsMatch } from '../content_pack/acquisition.js';
 
 export function emptyWorld() {
   return {
@@ -586,8 +587,8 @@ export function evalWhen(run, when) {
   if (when.fame != null && (run.fame || 0) < when.fame) return false;
   if (when.gold != null && (run.gold || 0) < when.gold) return false;
   if (when.level != null && (run.level || 1) < when.level) return false;
-  if (when.classId && run.classId !== when.classId) return false;
-  if (when.classes && !when.classes.includes(run.classId)) return false;
+  if (when.classId && !classIdsMatch(run.classId, when.classId)) return false;
+  if (when.classes && !when.classes.some(c => classIdsMatch(run.classId, c))) return false;
   if (when.subclassId && run.subclassId !== when.subclassId) return false;
   if (when.secretTaken && !secretPathTaken(run)) return false;
   if (when.race && run.raceId !== when.race) return false;

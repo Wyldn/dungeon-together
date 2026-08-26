@@ -2,6 +2,7 @@ import { CLASSES } from './data/classes.js';
 import { derived } from './character.js';
 import { hasEligibleOffering } from './offering.js';
 import { packGet } from './content_pack/state.js';
+import { classIdsMatch } from './content_pack/acquisition.js';
 
 const STAT_WHY = {
   str: 'strength', dex: 'deftness', int: 'learning', wis: 'insight', lk: 'fortune',
@@ -22,8 +23,8 @@ export function reqMet(run, req, ctx = {}) {
   if (req.stat && d[req.stat] < req.min) {
     return { ok: false, why: 'you lack the ' + (STAT_WHY[req.stat] || 'gift') };
   }
-  if (req.class && !classIds.includes(req.class)) {
-    return { ok: false, why: `${CLASSES[req.class]?.name || req.class} only` };
+  if (req.class && !classIds.some(id => classIdsMatch(id, req.class))) {
+    return { ok: false, why: `${CLASSES[req.class === 'ranger' ? 'archer' : req.class]?.name || req.class} only` };
   }
   if (req.race && !raceIds.includes(req.race)) {
     return { ok: false, why: `${req.race} bloodline only` };

@@ -83,7 +83,7 @@ button { font-family: inherit; color: inherit; }
       rgba(8,5,16,.35) calc(50% + 640px * var(--frame-scale, 1)),
       rgba(8,5,16,.28) 100%),
     linear-gradient(180deg, rgba(8,5,16,.2) 0%, transparent 28%, rgba(8,5,16,.55) 72%, rgba(8,5,16,.88) 100%),
-    url('../assets/img/bg/title.png');
+    var(--title-vista, url('../assets/img/bg/title.jpg'));
   background-size: 100% 100%, 100% 100%, cover;
   background-position: center, center, center 40%;
   background-repeat: no-repeat;
@@ -106,9 +106,8 @@ button { font-family: inherit; color: inherit; }
   background-size: cover;
   background-position: center 42%;
   background-repeat: no-repeat;
-  /* Zoom past the art's black tree pillars so the lit grove reaches
-     the monitor edges. Clipped by #viewport overflow. */
-  transform: scale(1.32);
+  /* Per-scene crop; default milder than the old forest-pillar 1.32 zoom. */
+  transform: scale(var(--bleed-scale, 1.12));
   transform-origin: center 42%;
 }
 #viewport:has(.combat-screen) #combat-bleed.has-bg { display: block; }
@@ -2669,6 +2668,20 @@ body.crystal-holding #app > .screen { transform: scale(.93); transform-origin: 5
 .dbg-choice .dbg-dim { flex-basis: auto; margin-top: 1px; }
 .dbg-enemy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
 .dbg-enemy { display: flex; align-items: center; gap: 10px; border: 1px solid var(--panel-edge); background: rgba(20,13,38,.5); padding: 6px 8px; }
+.dbg-bg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.dbg-bg-card { display: flex; flex-direction: column; gap: 10px; padding: 0; overflow: hidden; }
+.dbg-bg-thumb {
+  width: 100%; height: 120px;
+  background-size: cover; background-position: center;
+  image-rendering: pixelated;
+  border-bottom: 2px solid var(--accent, var(--panel-edge));
+  background-color: rgba(10, 8, 18, .8);
+}
+.dbg-bg-thumb.dbg-bg-missing {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-dim); font-size: 22px;
+}
+.dbg-bg-meta { padding: 0 14px 12px; }
 .dbg-inspect { font-size: 14px; }
 .dbg-inspect-row {
   display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;

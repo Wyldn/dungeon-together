@@ -1,7 +1,7 @@
 // Ambient particle canvas — biome-themed weather (embers, snow, leaves,
 // spores, dust). Cheap: one rAF loop, ~60 particles, pauses when hidden.
 
-import { biomeBgUrl } from './art.js';
+import { sceneRecord, biomeBgUrl } from './art.js';
 
 const canvas = typeof document !== 'undefined' ? document.getElementById('fx-canvas') : null;
 const g = canvas?.getContext?.('2d') || null;
@@ -112,6 +112,8 @@ const WALK_SHEET = 'assets/img/fx/knight_walk.png';
 export function walkTransition(swap, opts = {}) {
   const {
     biomeId = 'forest',
+    floor = null,
+    kind = 'combat',
     partySize = 1,
     caption = '',
     durationMs = 1400,
@@ -122,7 +124,8 @@ export function walkTransition(swap, opts = {}) {
   if (reduce) { swap && swap(); return; }
 
   const n = Math.max(1, Math.min(4, partySize | 0));
-  const bg = biomeBgUrl(biomeId) || biomeBgUrl('forest') || '';
+  const rec = sceneRecord({ kind, biomeId, floor }) || {};
+  const bg = rec.url || biomeBgUrl(biomeId) || biomeBgUrl('forest') || '';
   const knights = Array.from({ length: n }, (_, i) => {
     const lag = i * 28;
     const bob = (i % 3) * 10;

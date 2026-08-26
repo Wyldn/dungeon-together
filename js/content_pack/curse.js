@@ -43,7 +43,7 @@ export function curseInfo(item, run = null) {
   return {
     cursed: isCursedItem(item),
     curseId: item.curse || null,
-    rarity: item.rarity || 'common',
+    rarity: item.rarity,
     acquisition: item.acquisition || (isCursedItem(item) ? 'cursed' : null),
     drawback: curseDrawbackText(item),
     resolution: item.resolution || null,

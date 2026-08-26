@@ -3,6 +3,7 @@
 
 import { ENEMY_ART, HERO_ART, ITEM_ART, BIOME_BG, RACE_ART, ORIGIN_ART, EVENT_CAT_ART, NPC_ART } from './data/artmap.js';
 import { buildHeroSkinArt, defaultAppearanceId } from './data/appearances.js';
+import { resolveScene, listedScenes } from './data/scenes.js';
 
 const HERO_SKINS = buildHeroSkinArt();
 
@@ -175,16 +176,58 @@ export function itemIconHtml(id, size = 34) {
   return `<img class="px-icon" src="${f}" style="width:${size}px;height:${size}px" alt="" />`;
 }
 
+export function sceneRecord(ctx = {}) {
+  return resolveScene(ctx);
+}
+
+export function sceneBgUrl(ctx = {}) {
+  return resolveScene(ctx)?.url || null;
+}
+
 export function biomeBgUrl(biomeId) {
-  return BIOME_BG[biomeId] || null;
+  return resolveScene({ kind: 'combat', biomeId })?.url || BIOME_BG[biomeId] || null;
 }
 
 export function travelMapBgUrl() {
-  return BIOME_BG.travelmap || null;
+  return resolveScene({ kind: 'travel' })?.url || BIOME_BG.travelmap || null;
 }
 
 export function titleBgUrl() {
-  return BIOME_BG.title || null;
+  return resolveScene({ kind: 'title' })?.url || BIOME_BG.title || null;
+}
+
+export function applySceneToElement(el, rec, { scaleVar = null } = {}) {
+  if (!el) return;
+  if (!rec?.url) {
+    el.classList.remove('has-bg');
+    el.style.backgroundImage = '';
+    el.style.backgroundPosition = '';
+    if (scaleVar) el.style.removeProperty(scaleVar);
+    return;
+  }
+  el.classList.add('has-bg');
+  el.style.backgroundImage = `url('${rec.url}')`;
+  if (rec.position) el.style.backgroundPosition = rec.position;
+  if (scaleVar) el.style.setProperty(scaleVar, String(rec.scale || 1.12));
+}
+
+export function applyTitleBleed() {
+  if (typeof document === 'undefined') return;
+  const bleed = document.getElementById('title-bleed');
+  const rec = resolveScene({ kind: 'title' });
+  if (!bleed || !rec?.url) return;
+  bleed.style.setProperty('--title-vista', `url('${rec.url}')`);
+}
+
+/** Backdrop files the live game registry actually points at. */
+export function registeredBackgrounds() {
+  return Object.entries(BIOME_BG)
+    .filter(([, url]) => !!url)
+    .map(([id, url]) => ({ id, url }));
+}
+
+export function registeredScenes() {
+  return listedScenes();
 }
 
 // pixel-scaled <img> for a race portrait / origin emblem (creation showcase)

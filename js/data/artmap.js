@@ -1063,14 +1063,14 @@ export const HERO_ART = {
 };
 
 export const BIOME_BG = {
- "forest": "assets/img/bg/forest.png",
- "ruins": "assets/img/bg/ruins.png",
- "frost": "assets/img/bg/frost.png",
- "swamp": "assets/img/bg/swamp.png",
- "hell": "assets/img/bg/hell.png",
- "throne": "assets/img/bg/throne.png",
- "title": "assets/img/bg/title.png",
- "travelmap": "assets/img/bg/travelmap.png"
+ "forest": "assets/img/bg/forest.jpg",
+ "ruins": "assets/img/bg/ruins.jpg",
+ "frost": "assets/img/bg/frost.jpg",
+ "swamp": "assets/img/bg/swamp.jpg",
+ "hell": "assets/img/bg/hell.jpg",
+ "throne": "assets/img/bg/throne.jpg",
+ "title": "assets/img/bg/title.jpg",
+ "travelmap": "assets/img/bg/travelmap.jpg"
 };
 
 export const MUSIC_TRACKS = {
